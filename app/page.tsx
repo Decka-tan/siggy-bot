@@ -9,7 +9,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-bg text-text-primary">
       {/* Hero Section */}
       <section className="h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
-        <div className="relative z-10 text-center max-w-4xl mx-auto">
+        <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center justify-center">
           <motion.h1
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -45,12 +45,12 @@ export default function LandingPage() {
           </motion.div>
         </div>
 
-        {/* Scroll Indicator */}
+        {/* Scroll Indicator - CENTERED */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 1, ease: "easeOut" }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center text-text-secondary z-10"
+          className="absolute bottom-8 left-0 right-0 flex flex-col items-center text-text-secondary z-10"
         >
           <span className="text-xs uppercase tracking-[0.2em] mb-2 font-mono">Scroll for more</span>
           <motion.div
