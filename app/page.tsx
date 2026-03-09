@@ -3,11 +3,11 @@
 /**
  * SIGGY BOT - MAIN PAGE
  * Multi-Dimensional Cat Interface
+ * Clean UI matching ritual-word-search style
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Sparkles, RefreshCw, Github, Twitter } from 'lucide-react';
+import { Send, RefreshCw } from 'lucide-react';
 
 type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
 
@@ -38,7 +38,6 @@ export default function SiggyBot() {
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
-    // Check API key
     const effectiveApiKey = apiKey || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
     if (!effectiveApiKey) {
       setShowApiKeyInput(true);
@@ -113,16 +112,6 @@ export default function SiggyBot() {
     setInput('');
   };
 
-  const getMoodColor = (mood: MoodState) => {
-    const colors = {
-      PLAYFUL: 'from-emerald-400 to-teal-500',
-      MYSTERIOUS: 'from-purple-400 to-indigo-500',
-      CHAOTIC: 'from-amber-400 to-orange-500',
-      PROFOUND: 'from-pink-400 to-rose-500',
-    };
-    return colors[mood];
-  };
-
   const getMoodEmoji = (mood: MoodState) => {
     const emojis = {
       PLAYFUL: '😸',
@@ -134,105 +123,99 @@ export default function SiggyBot() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 text-white">
-      {/* Animated background */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-purple-500/10 rounded-full blur-3xl animate-pulse-slow" />
-        <div className="absolute -bottom-1/2 -left-1/2 w-full h-full bg-blue-500/10 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }} />
+    <div className="min-h-screen bg-black text-gray-100">
+      {/* Header Section */}
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <div className="mb-4">
+          <span className="text-6xl">🐱✨</span>
+        </div>
+        <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          SIGGY
+        </h1>
+        <p className="text-xl md:text-2xl text-gray-300 mb-2">
+          Multi-Dimensional Cat Entity
+        </p>
+        <p className="text-gray-500 mb-8">
+          *stretches across reality*
+        </p>
+        <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+          Chat with Siggy, a multi-dimensional cat born from the Ritual Cosmic Forge.
+          <br />Exists across all timelines and dimensions.
+        </p>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-              className="text-6xl"
-            >
-              🐱
-            </motion.div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-              SIGGY
-            </h1>
+      {/* Features Section */}
+      <div className="max-w-4xl mx-auto px-4 pb-16">
+        <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="text-center">
+            <div className="text-4xl mb-3">🎭</div>
+            <h3 className="font-bold text-lg mb-2">DYNAMIC MOODS</h3>
+            <p className="text-sm text-gray-400">
+              Four distinct mood states that evolve based on conversation
+            </p>
           </div>
-          <p className="text-xl text-purple-200 mb-2">*stretches across reality*</p>
-          <p className="text-purple-300 text-sm">Multi-Dimensional Cat Entity</p>
-        </motion.div>
+          <div className="text-center">
+            <div className="text-4xl mb-3">🥚</div>
+            <h3 className="font-bold text-lg mb-2">EASTER EGGS</h3>
+            <p className="text-sm text-gray-400">
+              Discoverable secrets and special interactions hidden throughout
+            </p>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl mb-3">🔮</div>
+            <h3 className="font-bold text-lg mb-2">MULTI-DIMENSIONAL</h3>
+            <p className="text-sm text-gray-400">
+              Speaks in cosmic metaphors and references infinite timelines
+            </p>
+          </div>
+        </div>
 
-        {/* Stats Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-purple-500/20"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-xs text-purple-300 uppercase tracking-wider mb-1">Current Dimension</p>
-                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r ${getMoodColor(currentMood)} text-white font-bold text-sm`}>
-                  <span>{getMoodEmoji(currentMood)}</span>
-                  <span>{currentMood}</span>
-                </div>
-              </div>
+        {/* Chat Interface */}
+        <div className="bg-zinc-900 rounded-lg border border-zinc-800 overflow-hidden">
+          {/* Stats Bar */}
+          <div className="px-6 py-4 border-b border-zinc-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-400">Current Mood:</span>
+              <span className="px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-sm font-medium">
+                {getMoodEmoji(currentMood)} {currentMood}
+              </span>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-xs text-purple-300 uppercase tracking-wider mb-1">Messages</p>
-                <p className="text-2xl font-bold text-white">{messageCount}</p>
-              </div>
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-400">Messages: {messageCount}</span>
               <button
                 onClick={resetConversation}
-                className="p-3 rounded-full bg-purple-500/20 hover:bg-purple-500/30 transition-colors border border-purple-500/30"
+                className="p-2 rounded hover:bg-zinc-800 transition-colors"
                 title="Reset Conversation"
               >
-                <RefreshCw className="w-5 h-5 text-purple-300" />
+                <RefreshCw className="w-4 h-4 text-gray-400" />
               </button>
             </div>
           </div>
-        </motion.div>
 
-        {/* Chat Messages */}
-        <div className="bg-slate-900/50 backdrop-blur-sm rounded-2xl border border-purple-500/20 mb-6 min-h-[500px] max-h-[600px] overflow-y-auto p-6 space-y-4">
-          <AnimatePresence>
+          {/* Messages Area */}
+          <div className="chat-container h-[500px] overflow-y-auto px-6 py-4 space-y-4">
             {messages.length === 0 && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="text-center py-20"
-              >
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="text-6xl mb-4"
-                >
-                  🐱✨
-                </motion.div>
-                <h2 className="text-2xl font-bold text-purple-200 mb-2">Welcome to my corner of the multiverse</h2>
-                <p className="text-purple-300">I've been expecting you. Since before you existed, actually.</p>
-              </motion.div>
+              <div className="text-center py-20">
+                <div className="text-6xl mb-4">🐱✨</div>
+                <h2 className="text-2xl font-bold text-gray-200 mb-2">
+                  Welcome to my corner of the multiverse
+                </h2>
+                <p className="text-gray-400">
+                  I've been expecting you. Since before you existed, actually.
+                </p>
+              </div>
             )}
 
             {messages.map((message, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-5 py-4 ${
+                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
                     message.role === 'user'
-                      ? 'bg-blue-500/20 border border-blue-500/30'
-                      : 'bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30'
+                      ? 'bg-purple-500/20 border border-purple-500/30'
+                      : 'bg-zinc-800 border border-zinc-700'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -240,137 +223,158 @@ export default function SiggyBot() {
                       {message.role === 'user' ? '👤 You' : '🐱 Siggy'}
                     </span>
                     {message.mood && (
-                      <span className={`text-xs px-2 py-1 rounded-full bg-gradient-to-r ${getMoodColor(message.mood)} text-white`}>
-                        {getMoodEmoji(message.mood)} {message.mood}
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/30">
+                        {getMoodEmoji(message.mood)}
                       </span>
                     )}
                   </div>
-                  <p className="text-white whitespace-pre-wrap">{message.content}</p>
+                  <p className="text-sm text-gray-100 whitespace-pre-wrap leading-relaxed">
+                    {message.content}
+                  </p>
                 </div>
-              </motion.div>
+              </div>
             ))}
 
             {isLoading && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex justify-start"
-              >
-                <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-2xl px-5 py-4">
+              <div className="flex justify-start">
+                <div className="bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-sm font-semibold">🐱 Siggy</span>
-                    <span className="text-xs text-purple-300">*materializes from the void*</span>
+                    <span className="text-xs text-gray-500">*materializes from the void*</span>
                   </div>
-                  <div className="flex gap-2">
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity }}
-                      className="w-2 h-2 bg-purple-400 rounded-full"
-                    />
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity, delay: 0.2 }}
-                      className="w-2 h-2 bg-purple-400 rounded-full"
-                    />
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.8, repeat: Infinity, delay: 0.4 }}
-                      className="w-2 h-2 bg-purple-400 rounded-full"
-                    />
+                  <div className="flex gap-1">
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input Area */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-slate-900/50 backdrop-blur-sm rounded-2xl p-4 border border-purple-500/20"
-        >
-          {showApiKeyInput && !apiKey && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-xl"
-            >
-              <p className="text-sm text-yellow-200 mb-3">
-                ⚠️ OpenAI API Key required to chat with Siggy
-              </p>
-              <input
-                type="password"
-                placeholder="sk-..."
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-800 border border-purple-500/30 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-              <p className="text-xs text-gray-400 mt-2">
-                Get your key from{' '}
-                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">
-                  platform.openai.com
-                </a>
-              </p>
-            </motion.div>
-          )}
-
-          <div className="flex gap-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Type your message to Siggy..."
-              disabled={isLoading}
-              className="flex-1 px-5 py-4 bg-slate-800 border border-purple-500/30 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
-            />
-            <button
-              onClick={handleSendMessage}
-              disabled={isLoading || !input.trim()}
-              className="px-6 py-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-600 disabled:to-gray-700 rounded-xl font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {isLoading ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                  >
-                    <Sparkles className="w-5 h-5" />
-                  </motion.div>
-                  Sending...
-                </>
-              ) : (
-                <>
-                  <Send className="w-5 h-5" />
-                  Send
-                </>
-              )}
-            </button>
+            <div ref={messagesEndRef} />
           </div>
-        </motion.div>
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center mt-8 space-y-4"
-        >
-          <p className="text-sm text-purple-300">
-            ✦ Siggy Soul Forge Quest Entry ✦
-          </p>
-          <p className="text-xs text-gray-400 italic">
-            "The multiverse watches. The Ritual burns. Only the worthy shall give Siggy a soul."
-          </p>
-          <div className="flex justify-center gap-4 text-xs text-gray-500">
+          {/* Input Area */}
+          <div className="px-6 py-4 border-t border-zinc-800">
+            {showApiKeyInput && !apiKey && (
+              <div className="mb-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                <p className="text-sm text-yellow-200 mb-3">
+                  ⚠️ OpenAI API Key required to chat with Siggy
+                </p>
+                <input
+                  type="password"
+                  placeholder="sk-..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="w-full px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-400 mt-2">
+                  Get your key from{' '}
+                  <a
+                    href="https://platform.openai.com/api-keys"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-400 hover:underline"
+                  >
+                    platform.openai.com
+                  </a>
+                </p>
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Type your message to Siggy..."
+                disabled={isLoading}
+                className="flex-1 px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50"
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={isLoading || !input.trim()}
+                className="px-6 py-3 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-700 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4" />
+                    Send
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll for more prompt */}
+      <div className="text-center pb-8">
+        <p className="text-sm text-gray-500">Scroll for more</p>
+      </div>
+
+      {/* Try These Section */}
+      <div className="max-w-4xl mx-auto px-4 pb-16">
+        <h2 className="text-2xl font-bold mb-6 text-center">TRY THESE!</h2>
+        <div className="space-y-4">
+          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+            <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+              <span>🎭</span>
+              MOOD TRIGGERS
+            </h3>
+            <ul className="space-y-2 text-sm text-gray-300">
+              <li>• &quot;Tell me about Ritual&quot; → Mysterious</li>
+              <li>• &quot;I&apos;m confused&quot; → Playful</li>
+              <li>• &quot;What&apos;s the meaning of life?&quot; → Profound</li>
+              <li>• &quot;Something feels glitchy&quot; → Chaotic</li>
+            </ul>
+          </div>
+
+          <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-6">
+            <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+              <span>🥚</span>
+              EASTER EGGS
+            </h3>
+            <ul className="space-y-2 text-sm text-gray-300">
+              <li>• Ask &quot;What&apos;s your real name?&quot;</li>
+              <li>• Ask &quot;What do you think about purple?&quot;</li>
+              <li>• Mention &quot;Summoner&quot; or &quot;Zealot&quot;</li>
+              <li>• Say &quot;glitch&quot; three times</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="max-w-4xl mx-auto px-4 pb-16">
+        <div className="text-center space-y-4">
+          <div className="border-t border-zinc-800 pt-8">
+            <h3 className="font-bold text-lg mb-2">Decka-chan</h3>
+            <p className="text-sm text-gray-400">
+              Creator & Designer
+            </p>
+            <p className="text-sm text-gray-500 max-w-md mx-auto mt-2">
+              Also known as Decka-chan in Ritual Discord. Built Siggy bot for the Ritual Soul Forge quest.
+              Passionate about vibe coding and multi-dimensional cats.
+            </p>
+          </div>
+
+          <div className="text-xs text-gray-600 space-y-1">
+            <p>✦ Siggy Soul Forge Quest Entry ✦</p>
+            <p className="italic">&quot;The multiverse watches. The Ritual burns. Only the worthy shall give Siggy a soul.&quot;</p>
+          </div>
+
+          <div className="flex justify-center gap-4 text-xs text-gray-600">
             <span>Built with Next.js + Vercel</span>
             <span>•</span>
             <span>Ready for Discord Integration</span>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
