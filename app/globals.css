@@ -3,75 +3,13 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-    --font-display: "Anton", sans-serif;
-
-    /* Dark Mode (Ritual Theme) */
-    --color-bg: #050505;
-    --color-surface: #121212;
-    --color-border: #262626;
-    --color-accent: #00FF94;
-    --color-text-primary: #FAFAFA;
-    --color-text-secondary: #A3A3A3;
-  }
-
-  .light {
-    --color-bg: #FFFFFF;
-    --color-surface: #F5F5F5;
-    --color-border: #E0E0E0;
-    --color-accent: #00AA6C;
-    --color-text-primary: #1A1A1A;
-    --color-text-secondary: #666666';
-  }
-
-  * {
-    @apply transition-colors duration-200;
-  }
-
-  body {
-    @apply bg-bg text-text-primary font-sans antialiased;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
-  }
-
-  ::selection {
-    @apply bg-accent text-black;
-  }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar {
-    @apply w-2;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-bg;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-border rounded;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-text-secondary;
-  }
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Anton", sans-serif;
 }
 
-@layer utilities {
-  .animate-mask-run {
-    animation: mask-run 8s linear infinite;
-  }
-
-  @keyframes mask-run {
-    0% {
-      -webkit-mask-position: 200% 0;
-      mask-position: 200% 0;
-    }
-    100% {
-      -webkit-mask-position: -200% 0;
-      mask-position: -200% 0;
-    }
-  }
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
