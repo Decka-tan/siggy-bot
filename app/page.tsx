@@ -7,7 +7,7 @@ import { ChevronDown, ArrowRight } from 'lucide-react';
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg text-text-primary">
-      {/* Hero Section - Full screen like ritual-word-search */}
+      {/* Hero Section */}
       <section className="h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
         <div className="relative z-10 text-center max-w-4xl mx-auto">
           <motion.h1
@@ -127,7 +127,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
                 D
@@ -143,7 +143,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
                 E
@@ -159,7 +159,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
                 M
