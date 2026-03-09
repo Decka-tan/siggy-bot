@@ -108,56 +108,29 @@ export default function ChatPage() {
     setInput('');
   };
 
-  const getMoodEmoji = (mood: MoodState) => {
-    const emojis = {
-      PLAYFUL: 'P',
-      MYSTERIOUS: 'M',
-      CHAOTIC: 'C',
-      PROFOUND: 'P',
-    };
-    return emojis[mood];
-  };
-
   return (
-    <div className="min-h-screen bg-bg text-text-primary flex flex-col">
-      {/* Header */}
-      <header className="border-t border-border px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link href="/">
-            <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              <span className="font-mono text-sm uppercase tracking-wider">Back</span>
-            </button>
-          </Link>
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-mono text-text-secondary">
-              Mood: <span className="text-accent">{currentMood}</span>
-            </span>
-            <span className="text-xs font-mono text-text-secondary">
-              Messages: {messageCount}
-            </span>
-            <button
-              onClick={resetConversation}
-              className="p-2 rounded hover:bg-surface transition-colors"
-              title="Reset"
-            >
-              <RefreshCw className="w-4 h-4 text-text-secondary" />
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-bg text-text-primary flex flex-col pt-24">
+      {/* Back Button */}
+      <div className="px-6 pb-6">
+        <Link href="/">
+          <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors font-mono text-xs uppercase tracking-wider">
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+        </Link>
+      </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-hidden px-6 py-8">
+      <div className="flex-1 overflow-hidden px-6 pb-8">
         <div className="max-w-4xl mx-auto h-full flex flex-col">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto mb-6 space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-20">
-                <h2 className="text-4xl font-display tracking-wide uppercase mb-4">
+                <h2 className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-6">
                   Welcome to the multiverse
                 </h2>
-                <p className="text-text-secondary">
+                <p className="text-text-secondary text-lg">
                   I&apos;ve been expecting you. Since before you existed, actually.
                 </p>
               </div>
@@ -171,19 +144,19 @@ export default function ChatPage() {
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                  className={`max-w-[80%] rounded-2xl px-6 py-4 ${
                     message.role === 'user'
                       ? 'bg-surface border border-border'
                       : 'bg-surface border border-border'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-mono font-semibold">
+                    <span className="text-xs font-mono font-semibold text-text-primary">
                       {message.role === 'user' ? 'YOU' : 'SIGGY'}
                     </span>
                     {message.mood && (
-                      <span className="text-xs font-mono px-2 py-0.5 rounded bg-accent/10 text-accent">
-                        {getMoodEmoji(message.mood)}
+                      <span className="text-xs font-mono px-2 py-1 rounded bg-accent/10 text-accent uppercase">
+                        {message.mood}
                       </span>
                     )}
                   </div>
@@ -196,10 +169,10 @@ export default function ChatPage() {
 
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-surface border border-border rounded-lg px-4 py-3">
+                <div className="bg-surface border border-border rounded-2xl px-6 py-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xs font-mono font-semibold">SIGGY</span>
-                    <span className="text-xs text-text-secondary">*materializes*</span>
+                    <span className="text-xs font-mono font-semibold text-text-primary">SIGGY</span>
+                    <span className="text-xs text-text-secondary">*materializes from the void*</span>
                   </div>
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -212,12 +185,31 @@ export default function ChatPage() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Controls */}
+          <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+            <div className="font-mono text-xs text-text-secondary">
+              Mood: <span className="text-accent uppercase">{currentMood}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="font-mono text-xs text-text-secondary">
+                Messages: {messageCount}
+              </span>
+              <button
+                onClick={resetConversation}
+                className="p-2 rounded hover:bg-surface transition-colors text-text-secondary hover:text-text-primary"
+                title="Reset"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
           {/* Input Area */}
-          <div className="border-t border-border pt-6">
+          <div>
             {showApiKeyInput && !apiKey && (
-              <div className="mb-4 p-4 bg-surface border border-border rounded-lg">
-                <p className="text-sm text-text-secondary mb-3">
-                  OpenAI API Key required
+              <div className="mb-4 p-4 bg-surface border border-border rounded-2xl">
+                <p className="text-sm text-text-secondary mb-3 font-mono">
+                  OpenAI API Key Required
                 </p>
                 <input
                   type="password"

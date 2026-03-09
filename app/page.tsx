@@ -2,12 +2,12 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-bg text-text-primary">
-      {/* Hero Section */}
+      {/* Hero Section - Full screen like ritual-word-search */}
       <section className="h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
         <div className="relative z-10 text-center max-w-4xl mx-auto">
           <motion.h1
@@ -37,8 +37,9 @@ export default function LandingPage() {
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Link href="/chat">
-              <button className="w-full sm:w-auto bg-accent text-black hover:bg-accent/90 font-mono text-sm uppercase tracking-wider px-8 py-4 rounded-lg transition-all">
+              <button className="group w-full sm:w-auto bg-accent text-black hover:bg-accent/90 font-mono text-sm uppercase tracking-wider px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-3">
                 Start Chatting
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
           </motion.div>
@@ -71,7 +72,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
           >
-            WHAT IS SIGGY?
+            What is Siggy?
           </motion.h2>
 
           <div className="max-w-3xl mx-auto text-center space-y-6 text-text-secondary leading-relaxed">
@@ -117,7 +118,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
           >
-            WHY CHAT WITH SIGGY?
+            Why Chat With Siggy?
           </motion.h2>
 
           <div className="grid gap-6 sm:grid-cols-3">
@@ -128,10 +129,10 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all group"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent">
-                <span className="text-2xl">M</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
+                D
               </div>
-              <h3 className="font-display text-lg mb-2">DYNAMIC MOODS</h3>
+              <h3 className="font-display text-lg mb-2">Dynamic Moods</h3>
               <p className="text-sm text-text-secondary">
                 Four distinct mood states evolve based on your conversation. From playful to profound, chaotic to mysterious.
               </p>
@@ -144,10 +145,10 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all group"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent">
-                <span className="text-2xl">E</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
+                E
               </div>
-              <h3 className="font-display text-lg mb-2">EASTER EGGS</h3>
+              <h3 className="font-display text-lg mb-2">Easter Eggs</h3>
               <p className="text-sm text-text-secondary">
                 Discover hidden interactions, special responses, and dimensional glitches. The more you explore, the more you find.
               </p>
@@ -160,10 +161,10 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all group"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent">
-                <span className="text-2xl">D</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
+                M
               </div>
-              <h3 className="font-display text-lg mb-2">MULTI-DIMENSIONAL</h3>
+              <h3 className="font-display text-lg mb-2">Multi-Dimensional</h3>
               <p className="text-sm text-text-secondary">
                 Speaks in cosmic metaphors, references infinite timelines, and breaks the fourth wall.
               </p>
@@ -182,7 +183,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-12"
           >
-            TRY THESE
+            Try These
           </motion.h2>
 
           <div className="grid gap-6 sm:grid-cols-2">
@@ -192,7 +193,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="p-6 rounded-2xl border border-border"
             >
-              <h3 className="font-display text-xl mb-4 text-accent">MOOD TRIGGERS</h3>
+              <h3 className="font-display text-xl mb-4 text-accent">Mood Triggers</h3>
               <ul className="space-y-2 text-text-secondary text-sm">
                 <li>&quot;Tell me about Ritual&quot; → Mysterious mode</li>
                 <li>&quot;I&apos;m confused&quot; → Playful mode</li>
@@ -208,7 +209,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="p-6 rounded-2xl border border-border"
             >
-              <h3 className="font-display text-xl mb-4 text-accent">EASTER EGGS</h3>
+              <h3 className="font-display text-xl mb-4 text-accent">Easter Eggs</h3>
               <ul className="space-y-2 text-text-secondary text-sm">
                 <li>Ask &quot;What&apos;s your real name?&quot;</li>
                 <li>Ask &quot;What do you think about purple?&quot;</li>
@@ -219,30 +220,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="py-24 px-6 border-t border-border bg-bg">
-        <div className="max-w-6xl mx-auto text-center space-y-6">
-          <div>
-            <h3 className="font-display text-2xl mb-2">Decka-chan</h3>
-            <p className="text-sm text-text-secondary">Creator & Designer</p>
-            <p className="text-sm text-text-secondary max-w-md mx-auto mt-3">
-              Also known as Decka-chan in Ritual Discord. Built Siggy bot for the Ritual Soul Forge quest.
-            </p>
-          </div>
-
-          <div className="text-xs text-text-secondary space-y-1 pt-8">
-            <p>Siggy Soul Forge Quest Entry</p>
-            <p className="italic">&quot;The multiverse watches. The Ritual burns. Only the worthy shall give Siggy a soul.&quot;</p>
-          </div>
-
-          <div className="flex justify-center gap-4 text-xs text-text-secondary">
-            <span>Built with Next.js + Vercel</span>
-            <span>•</span>
-            <span>Ready for Discord Integration</span>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
