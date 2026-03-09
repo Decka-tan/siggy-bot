@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ChevronDown, ArrowRight } from 'lucide-react';
+import { Bio } from '@/components/layout/Bio';
 
 export default function LandingPage() {
   return (
@@ -221,64 +222,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* About/Bio Section */}
-      <section className="py-24 px-6 border-t border-border bg-bg">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center space-y-6">
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-8"
-            >
-              Decka-chan
-            </motion.h2>
+      {/* Bio Section */}
+      <Bio />
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-sm text-text-secondary"
-            >
-              Creator & Designer
-            </motion.p>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-sm text-text-secondary max-w-md mx-auto leading-relaxed"
-            >
-              As known as Decka-chan in Ritual Discord. Cute anime girl on Ritual. Ritty on Ritual Discord. Passionate about graphic design, lettering, and vibe coding.
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"
-            >
-              <a
-                href="https://github.com/Decka-tan"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-surface border border-border hover:border-accent hover:text-accent transition-all font-mono text-sm uppercase tracking-wider rounded-lg"
-              >
-                GitHub
-              </a>
-              <a
-                href="https://github.com/Decka-tan/ritual-word-search"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-6 py-3 bg-surface border border-border hover:border-accent hover:text-accent transition-all font-mono text-sm uppercase tracking-wider rounded-lg"
-              >
-                Ritual Word Search
-              </a>
-            </motion.div>
+      {/* Footer Credits */}
+      <section className="py-12 px-6 border-t border-border bg-bg">
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-xs text-text-secondary font-mono uppercase tracking-widest">
+            Siggy Soul Forge Quest Entry
+          </p>
+          <p className="text-xs text-text-secondary italic mt-2">
+            &quot;The multiverse watches. The Ritual burns. Only the worthy shall give Siggy a soul.&quot;
+          </p>
+          <div className="flex justify-center gap-4 text-xs text-text-secondary mt-4">
+            <span>Built with Next.js + Vercel</span>
+            <span>•</span>
+            <span>Ready for Discord Integration</span>
           </div>
         </div>
       </section>
