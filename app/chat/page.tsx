@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Send, BookOpen } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Trash2 } from 'lucide-react';
 
 type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
 
@@ -12,6 +12,13 @@ interface Message {
   content: string;
   mood?: MoodState;
 }
+
+const moodColors: Record<MoodState, string> = {
+  PLAYFUL: 'bg-pink-500/20 border-pink-500/30 text-pink-400',
+  MYSTERIOUS: 'bg-purple-500/20 border-purple-500/30 text-purple-400',
+  CHAOTIC: 'bg-red-500/20 border-red-500/30 text-red-400',
+  PROFOUND: 'bg-amber-500/20 border-amber-500/30 text-amber-400',
+};
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -108,11 +115,16 @@ export default function ChatPage() {
     setInput('');
   };
 
+  const clearApiKey = () => {
+    setApiKey('');
+    setShowApiKeyInput(false);
+  };
+
   return (
-    <div className="min-h-screen bg-bg text-text-primary flex flex-col pt-24">
+    <div className="min-h-screen bg-bg text-text-primary flex flex flex-col pt-24">
       {/* Back Button + Mode Switch */}
       <div className="px-6 pb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
           <Link href="/">
             <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors font-mono text-xs uppercase tracking-wider">
               <ArrowLeft className="w-4 h-4" />
@@ -128,21 +140,40 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Chat Container */}
       <div className="flex-1 overflow-hidden px-6 pb-8">
         <div className="max-w-4xl mx-auto h-full flex flex-col">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto mb-6 space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-20">
-                <div className="text-8xl mb-6">👧✨</div>
-                <h2 className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-6">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="text-8xl mb-6"
+                >
+                  👧✨
+                </motion.div>
+                <h2 className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-accent bg-clip-text text-transparent">
                   Welcome to Earth
                 </h2>
                 <p className="text-text-secondary text-lg max-w-xl mx-auto">
                   I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth
                   and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
                 </p>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex justify-center gap-4 mt-8"
+                >
+                  <span className="px-3 py-1 rounded-full bg-pink-500/20 border border-pink-500/30 text-xs font-mono uppercase">
+                    😸 PLAYFUL
+                  </span>
+                  <span className="text-text-secondary text-xs">•</span>
+                  <span className="text-xs text-text-secondary">Just chat with me!</span>
+                </motion.div>
               </div>
             )}
 
@@ -154,7 +185,7 @@ export default function ChatPage() {
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-2xl px-6 py-4 ${
+                  className={`max-w-[85%] rounded-2xl px-6 py-4 ${
                     message.role === 'user'
                       ? 'bg-surface border border-border'
                       : 'bg-surface border border-border'
@@ -165,9 +196,13 @@ export default function ChatPage() {
                       {message.role === 'user' ? 'YOU' : 'SIGGY'}
                     </span>
                     {message.mood && (
-                      <span className="text-xs font-mono px-2 py-1 rounded bg-accent/10 text-accent uppercase">
+                      <motion.span
+                        initial={{ scale: 0.8 }}
+                        animate={{ scale: 1 }}
+                        className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}
+                      >
                         {message.mood}
-                      </span>
+                      </motion.span>
                     )}
                   </div>
                   <p className="text-sm text-text-primary whitespace-pre-wrap leading-relaxed">
@@ -185,9 +220,9 @@ export default function ChatPage() {
                     <span className="text-xs text-text-secondary">*tapping on phone*</span>
                   </div>
                   <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </div>
@@ -198,7 +233,7 @@ export default function ChatPage() {
           {/* Controls */}
           <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
             <div className="font-mono text-xs text-text-secondary">
-              Mood: <span className="text-accent uppercase">{currentMood}</span>
+              Mood: <span className={`ml-2 px-2 py-1 rounded-full ${moodColors[currentMood]}`}>{currentMood}</span>
             </div>
             <div className="flex items-center gap-4">
               <span className="font-mono text-xs text-text-secondary">
@@ -228,17 +263,28 @@ export default function ChatPage() {
                   onChange={(e) => setApiKey(e.target.value)}
                   className="w-full px-4 py-3 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent font-mono text-sm"
                 />
-                <p className="text-xs text-text-secondary mt-2">
-                  Get your key from{' '}
-                  <a
-                    href="https://platform.openai.com/api-keys"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent hover:underline"
-                  >
-                    platform.openai.com
-                  </a>
-                </p>
+                <div className="flex items-center justify-between mt-3">
+                  <p className="text-xs text-text-secondary">
+                    Get your key from{' '}
+                    <a
+                      href="https://platform.openai.com/api-keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-accent hover:underline"
+                    >
+                      platform.openai.com
+                    </a>
+                  </p>
+                  {apiKey && (
+                    <button
+                      onClick={clearApiKey}
+                      className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Clear
+                    </button>
+                  )}
+                </div>
               </div>
             )}
 
@@ -255,7 +301,7 @@ export default function ChatPage() {
               <button
                 onClick={handleSendMessage}
                 disabled={isLoading || !input.trim()}
-                className="px-6 py-3 bg-accent text-black hover:bg-accent/90 disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-6 py-3 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-sm uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {isLoading ? (
                   <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />

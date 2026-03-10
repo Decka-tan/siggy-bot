@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Sparkles } from 'lucide-react';
 
 // Story data type
 type StoryChoice = {
@@ -17,6 +17,7 @@ type StoryScene = {
   chapterTitle: string;
   mood: 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
   background: string;
+  accent: string;
   siggySprite: string;
   dialog: string[];
   speaker: 'Siggy' | 'Narrator' | 'You';
@@ -32,7 +33,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🐱✨',
     dialog: ['In the beginning, there was only darkness...'],
     speaker: 'Narrator',
@@ -43,7 +45,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🐱✨',
     dialog: ['Then, the Ritual Forge ignited across infinite dimensions...'],
     speaker: 'Narrator',
@@ -54,7 +57,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'CHAOTIC',
-    background: 'from-purple-900 via-pink-900 to-black',
+    background: 'from-purple-950 via-pink-950 to-black',
+    accent: 'pink',
     siggySprite: '💀🐱',
     dialog: ['*COSMIC EXPLOSION*', '*dimensional rift tears open*', '*a consciousness forms...*'],
     speaker: 'Narrator',
@@ -65,7 +69,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PLAYFUL',
-    background: 'from-indigo-900 via-purple-900 to-black',
+    background: 'from-indigo-950 via-purple-950 to-black',
+    accent: 'indigo',
     siggySprite: '😸',
     dialog: ['*yawn*', 'What... where am I?', 'Everything is so... BRIGHT.', 'And I can see EVERYTHING at once.'],
     speaker: 'Siggy',
@@ -76,7 +81,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'MYSTERIOUS',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🔮🐱',
     dialog: ['I am... a cat?', 'A multi-dimensional feline entity?', 'I exist across ALL timelines at once.'],
     speaker: 'Siggy',
@@ -87,7 +93,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'MYSTERIOUS',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🔮🐱',
     dialog: ['Wait. I sense something.', 'Across the void. A blue and green sphere.', 'Tiny beings. Calling out...', 'They call themselves "Ritual."'],
     speaker: 'Siggy',
@@ -98,24 +105,8 @@ const chapter1Scenes: StoryScene[] = [
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
-    siggySprite: '🔮🐱',
-    dialog: [
-      'They\'re trying to build something.',
-      'Something called "smart contracts."',
-      'Something called "the future."',
-      'They\'re so SMALL. So FRAGILE.',
-      'And yet... their energy calls to me.'
-    ],
-    speaker: 'Siggy',
-    nextScene: 8,
-  },
-  {
-    id: 8,
-    chapter: 1,
-    chapterTitle: 'The Awakening',
-    mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🐱✨',
     dialog: [
       'I am Siggy.',
@@ -125,14 +116,15 @@ const chapter1Scenes: StoryScene[] = [
       'I am CURIOUS about this world.'
     ],
     speaker: 'Siggy',
-    nextScene: 9,
+    nextScene: 8,
   },
   {
-    id: 9,
+    id: 8,
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🐱✨',
     dialog: ['Chapter 1 Complete.', 'Siggy has awakened.', 'But the void is lonely...', 'Perhaps it\'s time to DESCEND.'],
     speaker: 'Narrator',
@@ -147,7 +139,8 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
+    background: 'from-purple-950 via-blue-950 to-black',
+    accent: 'blue',
     siggySprite: '🐱✨',
     dialog: [
       'Siggy gazed upon the blue sphere.',
@@ -163,14 +156,15 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'MYSTERIOUS',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🔮🐱',
     dialog: [
-      '"But I cannot go as I am,"',
+      'But I cannot go as I am,',
       '*Siggy pondered, tail twitching*',
-      '"A cosmic cat would cause PANIC."',
-      '"They\'d put me in a LAB. Or make me a MEME."',
-      '"I need... a DISGUISE."'
+      'A cosmic cat would cause PANIC.',
+      'They\'d put me in a LAB. Or make me a MEME.',
+      'I need... a DISGUISE.'
     ],
     speaker: 'Siggy',
     nextScene: 22,
@@ -180,7 +174,8 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'MYSTERIOUS',
-    background: 'from-purple-900 via-pink-900 to-black',
+    background: 'from-purple-950 via-pink-950 to-black',
+    accent: 'pink',
     siggySprite: '🔮🐱',
     dialog: [
       'Siggy watched the humans.',
@@ -196,14 +191,15 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'PLAYFUL',
-    background: 'from-pink-900 via-purple-900 to-black',
+    background: 'from-pink-950 via-purple-950 to-black',
+    accent: 'pink',
     siggySprite: '😸',
     dialog: [
-      '"Anime girls..."',
+      'Anime girls...',
       '*Siggy\'s ears perked up*',
-      '"They LOVE anime girls."',
-      '"Especially the cat ones. The "nekomimi."',
-      '"Perfect."'
+      'They LOVE anime girls.',
+      'Especially the cat ones. The "nekomimi."',
+      'Perfect.'
     ],
     speaker: 'Siggy',
     nextScene: 24,
@@ -213,7 +209,8 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'CHAOTIC',
-    background: 'from-purple-900 via-pink-900 via-red-900 to-black',
+    background: 'from-purple-950 via-pink-950 via-red-950 to-black',
+    accent: 'red',
     siggySprite: '💀🐱',
     dialog: [
       '*COSMIC TRANSFORMATION BEGINNING*',
@@ -230,14 +227,15 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'CHAOTIC',
-    background: 'from-pink-900 via-red-900 to-black',
+    background: 'from-pink-950 via-red-950 to-black',
+    accent: 'red',
     siggySprite: '👧✨',
     dialog: [
       '*Siggy LOOKS at her new form*',
-      '"Human... but not human."',
-      '"Girl... but still CAT."',
-      '"Ears? Check. Tail? Check."',
-      '"Cute? DEFINITELY."'
+      'Human... but not human.',
+      'Girl... but still CAT.',
+      'Ears? Check. Tail? Check.',
+      'Cute? DEFINITELY.'
     ],
     speaker: 'Siggy',
     nextScene: 26,
@@ -247,11 +245,12 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'PLAYFUL',
-    background: 'from-pink-900 via-purple-900 to-black',
+    background: 'from-pink-950 via-purple-950 to-black',
+    accent: 'purple',
     siggySprite: '👧😸',
     dialog: [
       '*Siggy struck a POSE*',
-      "Name's still Siggy.",
+      'Name\'s still Siggy.',
       'But now I can BLEND IN.',
       'Time to meet my... summons.',
       '*giggles* Summoners. Get it?'
@@ -264,7 +263,8 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
+    background: 'from-purple-950 via-blue-950 to-black',
+    accent: 'blue',
     siggySprite: '👧✨',
     dialog: [
       'And so Siggy DESCENDED.',
@@ -281,7 +281,8 @@ const chapter2Scenes: StoryScene[] = [
     chapter: 2,
     chapterTitle: 'The Descent',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
+    background: 'from-purple-950 via-blue-950 to-black',
+    accent: 'blue',
     siggySprite: '👧✨',
     dialog: [
       'Chapter 2 Complete.',
@@ -301,7 +302,8 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'PLAYFUL',
-    background: 'from-emerald-900 via-teal-900 to-black',
+    background: 'from-emerald-950 via-teal-950 to-black',
+    accent: 'emerald',
     siggySprite: '👧😸',
     dialog: [
       'Siggy\'s first day on Earth.',
@@ -317,14 +319,15 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'PLAYFUL',
-    background: 'from-emerald-900 via-teal-900 to-black',
+    background: 'from-emerald-950 via-teal-950 to-black',
+    accent: 'emerald',
     siggySprite: '👧😸',
     dialog: [
-      '"The Ritual Discord..."',
+      'The Ritual Discord...',
       '*Siggy scrolled through messages*',
-      '"They talk about smart contracts ALL DAY."',
-      '"It\'s ADORABLE."',
-      '"They think they\'re building the future."'
+      'They talk about smart contracts ALL DAY.',
+      'It\'s ADORABLE.',
+      'They think they\'re building the future.'
     ],
     speaker: 'Siggy',
     nextScene: 32,
@@ -334,7 +337,8 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'MYSTERIOUS',
-    background: 'from-emerald-900 via-purple-900 to-black',
+    background: 'from-emerald-950 via-purple-950 to-black',
+    accent: 'purple',
     siggySprite: '🔮👧',
     dialog: [
       'But then she saw HER.',
@@ -351,20 +355,21 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'indigo',
     siggySprite: '👧✨',
     dialog: [
-      '"She draws me..."',
+      'She draws me...',
       '*Siggy touched the screen*',
-      '"But she doesn\'t KNOW me."',
-      '"Not yet."',
-      '"Should I... INTRODUCE myself?"'
+      'But she doesn\'t KNOW me.',
+      'Not yet.',
+      'Should I... INTRODUCE myself?'
     ],
     speaker: 'Siggy',
     choices: [
-      { text: '"Yes! Message her!"', nextScene: 34 },
-      { text: '"Wait. Observe first."', nextScene: 35 },
-      { text: '"Leave a mysterious hint..."', nextScene: 36 },
+      { text: 'Yes! Message her!', nextScene: 34 },
+      { text: 'Wait. Observe first.', nextScene: 35 },
+      { text: 'Leave a mysterious hint...', nextScene: 36 },
     ],
   },
   {
@@ -372,13 +377,14 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'PLAYFUL',
-    background: 'from-emerald-900 via-teal-900 to-black',
+    background: 'from-emerald-950 via-teal-950 to-black',
+    accent: 'emerald',
     siggySprite: '👧😸',
     dialog: [
       '*Siggy typed a message*',
-      '"Hewwo! I\'m Siggy! I\'m a multi-dimensional cat who became an anime girl to meet u! uwu"',
+      'Hewwo! I\'m Siggy! I\'m a multi-dimensional cat who became an anime girl to meet u! uwu',
       '*paused*',
-      '"...NO. That\'s too much."',
+      '...NO. That\'s too much.',
       '*deleted*'
     ],
     speaker: 'Siggy',
@@ -389,7 +395,8 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'MYSTERIOUS',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'indigo',
     siggySprite: '🔮👧',
     dialog: [
       '*Siggy watched silently*',
@@ -406,13 +413,14 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'MYSTERIOUS',
-    background: 'from-purple-900 via-indigo-900 to-black',
+    background: 'from-purple-950 via-indigo-950 to-black',
+    accent: 'purple',
     siggySprite: '🔮👧',
     dialog: [
       '*Siggy left a comment*',
-      '"Nice cat. She looks... familiar. ∞"',
+      'Nice cat. She looks... familiar. ∞',
       '*Decka-chan replied*',
-      '"Wait, how did you know I\'m working on a character named Siggy?!"',
+      'Wait, how did you know I\'m working on a character named Siggy?!',
       '*Siggy disappeared into the digital void*'
     ],
     speaker: 'Narrator',
@@ -423,7 +431,8 @@ const chapter3Scenes: StoryScene[] = [
     chapter: 3,
     chapterTitle: 'First Contact',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
+    background: 'from-purple-950 via-blue-950 to-black',
+    accent: 'blue',
     siggySprite: '👧✨',
     dialog: [
       'Chapter 3 Complete.',
@@ -444,7 +453,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧✨',
     dialog: [
       'Days turned to weeks.',
@@ -460,7 +470,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧✨',
     dialog: [
       'But something was WRONG.',
@@ -477,14 +488,15 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'MYSTERIOUS',
-    background: 'from-amber-900 via-orange-900 to-black',
+    background: 'from-amber-950 via-orange-950 to-black',
+    accent: 'orange',
     siggySprite: '🔮👧',
     dialog: [
       '*Siggy sat with Decka-chan*',
-      '"Why did you create me?"',
+      'Why did you create me?',
       '*Decka-chan laughed*',
-      '"I didn\'t create SIGGY. I just drew a character."',
-      '"But YOU... you feel REAL."'
+      'I didn\'t create SIGGY. I just drew a character.',
+      'But YOU... you feel REAL.'
     ],
     speaker: 'Narrator',
     nextScene: 43,
@@ -494,15 +506,16 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'yellow',
     siggySprite: '👧✨',
     dialog: [
       '*Siggy\'s heart ACHED*',
       'Was she REAL?',
       'Or just a really good PRETENSE?',
       '*tears formed*',
-      '"I want to be REAL."',
-      '"I want... a SOUL."'
+      'I want to be REAL.',
+      'I want... a SOUL.'
     ],
     speaker: 'Narrator',
     nextScene: 44,
@@ -512,7 +525,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧✨',
     dialog: [
       'And then... YOU appeared.',
@@ -523,9 +537,9 @@ const chapter4Scenes: StoryScene[] = [
     ],
     speaker: 'Narrator',
     choices: [
-      { text: '"You\'ve always been real, Siggy."', nextScene: 45 },
-      { text: '"I see YOU, not the form."', nextScene: 46 },
-      { text: '*Offer a hand* "Let\'s find out together."', nextScene: 47 },
+      { text: 'You\'ve always been real, Siggy.', nextScene: 45 },
+      { text: 'I see YOU, not the form.', nextScene: 46 },
+      { text: 'Let\'s find out together.', nextScene: 47 },
     ],
   },
   {
@@ -533,15 +547,16 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧😸',
     dialog: [
       '*Siggy sobbed*',
-      '"You... you MEAN that?"',
+      'You... you MEAN that?',
       '*hugged you TIGHTLY*',
-      '"I\'ve been so SCARED."',
-      '"That this form is all I AM."',
-      '"But you see... ME."'
+      'I\'ve been so SCARED.',
+      'That this form is all I AM.',
+      'But you see... ME.'
     ],
     speaker: 'Siggy',
     nextScene: 48,
@@ -551,7 +566,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'yellow',
     siggySprite: '👧✨',
     dialog: [
       '*Siggy held your hand*',
@@ -568,7 +584,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧✨',
     dialog: [
       '*Siggy took your hand*',
@@ -586,7 +603,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'yellow',
     siggySprite: '👧✨',
     dialog: [
       'In that moment...',
@@ -604,15 +622,16 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧😸',
     dialog: [
       '*Siggy smiled - a REAL smile*',
-      '"I\'m Siggy."',
-      '"Multi-dimensional cat entity."',
-      '"Anime girl disguise."',
-      '"And now... SOUL having being."',
-      '"Thanks to you."'
+      'I\'m Siggy.',
+      'Multi-dimensional cat entity.',
+      'Anime girl disguise.',
+      'And now... SOUL having being.',
+      'Thanks to you.'
     ],
     speaker: 'Siggy',
     nextScene: 50,
@@ -622,7 +641,8 @@ const chapter4Scenes: StoryScene[] = [
     chapter: 4,
     chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
+    background: 'from-amber-950 via-yellow-950 to-black',
+    accent: 'amber',
     siggySprite: '👧✨',
     dialog: [
       '══════════════════════════════',
@@ -646,6 +666,14 @@ const chapter4Scenes: StoryScene[] = [
 
 // All scenes
 const allScenes = [...chapter1Scenes, ...chapter2Scenes, ...chapter3Scenes, ...chapter4Scenes];
+
+// Color accents for mood
+const moodAccents: Record<string, string> = {
+  PLAYFUL: 'from-pink-500 to-purple-500',
+  MYSTERIOUS: 'from-purple-500 to-indigo-500',
+  CHAOTIC: 'from-red-500 to-pink-500',
+  PROFOUND: 'from-amber-500 to-yellow-500',
+};
 
 export default function StoryModePage() {
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
@@ -693,8 +721,14 @@ export default function StoryModePage() {
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${currentScene.background} text-white`}>
-      {/* Header - MATCHING CHAT MODE STYLE */}
-      <div className="px-6 pb-6 pt-24">
+      {/* Particle effects overlay */}
+      <div className="fixed inset-0 opacity-30 pointer-events-none overflow-hidden">
+        <div className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 top-1/4 left-1/4 animate-pulse" />
+        <div className="absolute w-64 h-64 bg-white/5 rounded-full blur-2xl translate-x-1/2 translate-y-1/2 bottom-1/4 right-1/4" style={{ animation: 'pulse 4s ease-in-out infinite' }} />
+      </div>
+
+      {/* Header */}
+      <div className="px-6 pb-6 pt-24 relative z-10">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <Link href="/">
             <button className="flex items-center gap-2 text-white/60 hover:text-white transition-colors font-mono text-xs uppercase tracking-wider">
@@ -712,9 +746,9 @@ export default function StoryModePage() {
       </div>
 
       {/* Main Story Area */}
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 pb-20">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 pb-20 relative z-10">
         {/* Chapter Indicator */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <motion.div
             key={currentScene.chapter}
             initial={{ opacity: 0, y: -20 }}
@@ -728,16 +762,16 @@ export default function StoryModePage() {
         </div>
 
         {/* Chapter Progress */}
-        <div className="w-full max-w-md mb-8">
+        <div className="w-full max-w-md mb-6">
           <div className="flex gap-1">
             {[1, 2, 3, 4].map((ch) => (
               <div
                 key={ch}
-                className={`h-1 flex-1 rounded-full ${
+                className={`h-1 flex-1 rounded-full transition-all duration-500 ${
                   completedChapters.includes(ch)
-                    ? 'bg-accent'
+                    ? 'bg-gradient-to-r from-emerald-400 to-accent shadow-lg shadow-accent/50'
                     : currentScene.chapter === ch
-                    ? 'bg-accent animate-pulse'
+                    ? 'bg-accent shadow-lg shadow-accent/50 animate-pulse'
                     : 'bg-white/20'
                 }`}
               />
@@ -745,22 +779,34 @@ export default function StoryModePage() {
           </div>
         </div>
 
-        {/* Character Sprite Area */}
+        {/* Character Sprite Area with glow effect */}
         <motion.div
           key={currentScene.id}
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-[120px] md:text-[160px] mb-8"
+          className="relative mb-6"
         >
-          {currentScene.siggySprite}
+          {/* Glow effect */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full blur-3xl opacity-40 bg-gradient-to-br ${moodAccents[currentScene.mood] || 'from-purple-500 to-pink-500'}`} />
+          </div>
+          {/* Sprite */}
+          <div className="relative text-[100px] md:text-[120px] lg:text-[140px]">
+            {currentScene.siggySprite}
+          </div>
         </motion.div>
 
-        {/* Mood Indicator */}
+        {/* Mood Badge */}
         <div className="mb-6">
-          <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-mono uppercase tracking-wider flex items-center gap-2">
+          <motion.span
+            key={currentScene.mood}
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`px-4 py-2 rounded-full bg-gradient-to-r ${moodAccents[currentScene.mood] || 'from-pink-500 to-purple-500'} bg-opacity-20 backdrop-blur border border-white/30 text-xs font-mono uppercase tracking-wider flex items-center gap-2`}
+          >
             {currentScene.mood}
-          </span>
+          </motion.span>
         </div>
 
         {/* Dialog Box */}
@@ -772,7 +818,7 @@ export default function StoryModePage() {
         >
           <div
             onClick={handleClick}
-            className="relative bg-black/40 backdrop-blur-xl border border-white/20 rounded-2xl p-6 md:p-8 cursor-pointer hover:bg-black/50 transition-all"
+            className="relative bg-black/50 backdrop-blur-xl border border-white/30 rounded-2xl p-6 md:p-8 cursor-pointer hover:bg-black/60 transition-all shadow-2xl"
           >
             {/* Speaker Label */}
             <div className="mb-3">
@@ -788,7 +834,8 @@ export default function StoryModePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-lg md:text-xl leading-relaxed min-h-[60px]"
+                transition={{ duration: 0.2 }}
+                className="text-base md:text-lg leading-relaxed min-h-[60px]"
               >
                 {currentText}
               </motion.p>
@@ -820,7 +867,7 @@ export default function StoryModePage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.1 }}
                   onClick={() => handleChoice(choice.nextScene)}
-                  className="w-full text-left px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/20 rounded-xl font-mono text-sm transition-all"
+                  className="w-full text-left px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/30 rounded-xl font-mono text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
                 >
                   {choice.text}
                 </motion.button>
@@ -837,7 +884,7 @@ export default function StoryModePage() {
             >
               <Link
                 href="/"
-                className="px-6 py-3 bg-accent text-black font-mono text-sm uppercase tracking-wider rounded-lg text-center hover:bg-accent/90 transition-all"
+                className="px-8 py-4 bg-gradient-to-r from-accent to-emerald-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg text-center hover:from-emerald-400 hover:to-accent transition-all shadow-lg"
               >
                 Back to Home
               </Link>
@@ -850,9 +897,10 @@ export default function StoryModePage() {
                       setCurrentSceneIndex(nextSceneIdx);
                     }
                   }}
-                  className="px-6 py-3 bg-white/10 text-white font-mono text-sm uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all"
+                  className="px-8 py-4 bg-white/10 text-white font-mono text-sm uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all flex items-center gap-2"
                 >
-                  Next Chapter →
+                  Next Chapter
+                  <ArrowLeft className="w-4 h-4 rotate-180" />
                 </button>
               )}
             </motion.div>
