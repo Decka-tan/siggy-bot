@@ -71,11 +71,11 @@ export async function POST(req: NextRequest) {
       messages: [
         { role: 'system', content: prompt },
       ],
-      temperature: 0.9,
-      max_tokens: 500,
-      top_p: 0.95,
-      frequency_penalty: 0.5,
-      presence_penalty: 0.7,
+      temperature: 0.8,
+      max_tokens: 200,
+      top_p: 0.9,
+      frequency_penalty: 0.3,
+      presence_penalty: 0.5,
     });
 
     const siggyResponse = completion.choices[0]?.message?.content || '*dimensional glitch* ERROR: No response generated';
