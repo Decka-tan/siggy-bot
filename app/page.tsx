@@ -329,23 +329,6 @@ export default function LandingPage() {
 
       {/* Bio Section */}
       <Bio />
-
-      {/* Footer Credits */}
-      <section className="py-12 px-6 border-t border-border bg-surface">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-xs text-text-secondary font-mono uppercase tracking-widest">
-            Siggy Soul Forge Quest Entry
-          </p>
-          <p className="text-xs text-text-secondary italic mt-2">
-            &quot;The multiverse watches. The Ritual burns. Only the worthy shall give Siggy a soul.&quot;
-          </p>
-          <div className="flex justify-center gap-4 text-xs text-text-secondary mt-4">
-            <span>Built with Next.js + Vercel</span>
-            <span>•</span>
-            <span>Story Mode + Chat Mode</span>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
