@@ -635,6 +635,20 @@ const getSpriteForStory = (scene: StoryScene): string => {
   const prefix = isCat ? '/siggy-cat' : '/siggy-girl';
   return `${prefix}-${scene.mood.toLowerCase()}.png`;
 };
+// Text parser for basic BBCode/Markdown-lite
+const parseText = (text: string) => {
+  // Replace *italic* or **bold** with gray styling
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index} className="text-gray-400 font-bold">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={index} className="text-gray-400 italic font-mono">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
 
 export default function StoryModePage() {
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0);
@@ -646,6 +660,9 @@ export default function StoryModePage() {
   const [showSummary, setShowSummary] = useState(false);
   const [showChapterBridge, setShowChapterBridge] = useState(false);
   const [nextBridgeChapter, setNextBridgeChapter] = useState(1);
+  const [showSettings, setShowSettings] = useState(false);
+  const [textSpeed, setTextSpeed] = useState(30);
+  const [textSize, setTextSize] = useState<'sm' | 'base' | 'lg'>('base');
 
   // Background rotation effect
   useEffect(() => {
@@ -710,6 +727,13 @@ export default function StoryModePage() {
     setTypewriterText('');
     let i = 0;
     const text = currentScene.dialog[currentDialogIndex] || '';
+    
+    // If speed is 0 (instant), just set it and return
+    if (textSpeed === 0) {
+      setTypewriterText(text);
+      return;
+    }
+
     const timer = setInterval(() => {
       if (i < text.length) {
         setTypewriterText(text.slice(0, i + 1));
@@ -717,10 +741,10 @@ export default function StoryModePage() {
       } else {
         clearInterval(timer);
       }
-    }, 30); // Speed of typewriter
+    }, textSpeed); // Dynamic speed from settings
 
     return () => clearInterval(timer);
-  }, [currentDialogIndex, currentSceneIndex]);
+  }, [currentDialogIndex, currentSceneIndex, textSpeed]);
 
   return (
     <div className="h-screen bg-bg text-text-primary flex flex-col overflow-hidden relative">
@@ -788,7 +812,7 @@ export default function StoryModePage() {
 
         {/* Story Area - Visual Novel Mode */}
         {showChapterBridge ? (
-          <div className="flex-1 w-full flex items-center justify-center z-30 p-8 cursor-pointer" onClick={() => setShowChapterBridge(false)}>
+          <div className="flex-1 w-full flex items-center justify-center z-30 p-8 cursor-pointer bg-black/80 backdrop-blur-sm" onClick={() => setShowChapterBridge(false)}>
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -841,27 +865,96 @@ export default function StoryModePage() {
           </div>
         ) : (
           <div className="w-full flex-1 flex flex-col justify-end z-20 overflow-hidden min-h-0">
-            {/* Siggy Sprite - Centered */}
+            {/* Top Right Options Menu */}
+            <div className="absolute top-6 right-6 z-50 flex flex-col items-end gap-2">
+               <button 
+                  onClick={() => setShowSettings(!showSettings)}
+                  className="p-3 bg-surface/80 border border-border hover:border-accent/50 rounded-xl backdrop-blur-md transition-all text-text-secondary hover:text-accent shadow-lg"
+                  aria-label="Story Settings"
+               >
+                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                 </svg>
+               </button>
+
+               <AnimatePresence>
+                 {showSettings && (
+                   <motion.div
+                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                     animate={{ opacity: 1, scale: 1, y: 0 }}
+                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                     className="bg-surface/90 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl w-64 mt-2"
+                   >
+                     <h3 className="font-mono text-xs uppercase tracking-wider text-accent mb-4 border-b border-border pb-2">Options</h3>
+                     
+                     <div className="space-y-4">
+                       <div>
+                         <label className="text-xs text-text-secondary block mb-2 font-mono">Text Speed</label>
+                         <div className="grid grid-cols-3 gap-2">
+                           {[
+                             { label: 'Fast', value: 10 },
+                             { label: 'Norm', value: 30 },
+                             { label: 'Slow', value: 60 }
+                           ].map(speed => (
+                             <button
+                               key={speed.label}
+                               onClick={() => setTextSpeed(speed.value)}
+                               className={`py-1 px-2 text-xs rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-accent/50 text-accent' : 'border-border text-text-secondary hover:border-accent/30'}`}
+                             >
+                               {speed.label}
+                             </button>
+                           ))}
+                         </div>
+                       </div>
+
+                       <div>
+                         <label className="text-xs text-text-secondary block mb-2 font-mono">Text Size</label>
+                         <div className="grid grid-cols-3 gap-2">
+                           {(['sm', 'base', 'lg'] as const).map(size => (
+                             <button
+                               key={size}
+                               onClick={() => setTextSize(size)}
+                               className={`py-1 px-2 text-xs rounded uppercase transition-colors border ${textSize === size ? 'bg-accent/20 border-accent/50 text-accent' : 'border-border text-text-secondary hover:border-accent/30'}`}
+                             >
+                               {size}
+                             </button>
+                           ))}
+                         </div>
+                       </div>
+                       
+                       <div className="pt-2">
+                         <button 
+                           onClick={() => setTextSpeed(0)}
+                           className={`w-full py-1.5 px-2 text-xs rounded transition-colors border ${textSpeed === 0 ? 'bg-accent/20 border-accent/50 text-accent' : 'border-border text-text-secondary hover:border-accent/30'}`}
+                         >
+                           Instant Skip
+                         </button>
+                       </div>
+                     </div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
+            </div>
+
+            {/* Siggy Sprite - Centered AND Snapped to bottom edge of chatbox */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-500"
-              style={{ bottom: '300px' }}
+              style={{ bottom: '260px' }} 
             >
-              <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                className="transition-all duration-500 origin-bottom"
-              >
-                <Image
-                  src={getSpriteForStory(currentScene)}
-                  alt="Siggy"
-                  width={500}
-                  height={700}
-                  className="object-contain drop-shadow-[0_0_50px_rgba(139,92,246,0.5)]"
-                  priority
+              <div className="relative">
+                {/* Glow effect matching mood */}
+                <div 
+                  className={`absolute inset-0 blur-[100px] opacity-20 rounded-full bg-gradient-to-t ${moodAccents[currentScene.mood] || moodAccents.DEFAULT}`} 
                 />
-              </motion.div>
+                <img 
+                  src={getSpriteForStory(currentScene)} 
+                  alt={`Siggy - ${currentScene.mood}`}
+                  className="relative z-10 max-h-[60vh] md:max-h-[70vh] w-auto object-contain drop-shadow-2xl transition-all duration-300"
+                />
+              </div>
             </motion.div>
 
             {/* Choices floating in the background area */}
@@ -936,8 +1029,11 @@ export default function StoryModePage() {
                 {/* Dialog Text */}
                 <div className="min-h-[140px] max-h-[250px] overflow-y-auto mb-2 pr-4 signature-scroll flex items-start">
                   <div className="relative flex flex-col items-start mt-2">
-                    <p className="text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary">
-                      {typewriterText}
+                    <p className={`leading-relaxed font-mono whitespace-pre-wrap text-text-primary ${
+                      textSize === 'sm' ? 'text-sm' :
+                      textSize === 'lg' ? 'text-lg' : 'text-base'
+                    }`}>
+                      {parseText(typewriterText)}
                       {typewriterText.length < currentText.length && (
                         <motion.span
                           animate={{ opacity: [0, 1, 0] }}
