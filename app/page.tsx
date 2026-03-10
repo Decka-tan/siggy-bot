@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ChevronDown, ArrowRight } from 'lucide-react';
+import { ChevronDown, ArrowRight, MessageSquare, BookOpen } from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
 
 export default function LandingPage() {
@@ -35,11 +35,18 @@ export default function LandingPage() {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-lg mx-auto"
           >
-            <Link href="/chat">
-              <button className="group w-full sm:w-auto bg-accent text-black hover:bg-accent/90 font-mono text-sm uppercase tracking-wider px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-3">
-                Start Chatting
+            <Link href="/story" className="flex-1">
+              <button className="group w-full bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-3">
+                <BookOpen className="w-4 h-4" />
+                Story Mode
+              </button>
+            </Link>
+            <Link href="/chat" className="flex-1">
+              <button className="group w-full bg-accent text-black hover:bg-accent/90 font-mono text-sm uppercase tracking-wider px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-3">
+                <MessageSquare className="w-4 h-4" />
+                Chat Mode
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
             </Link>
@@ -63,8 +70,106 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* About Section */}
+      {/* Two Modes Section */}
       <section className="py-24 px-6 border-t border-border bg-surface">
+        <div className="max-w-6xl mx-auto">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
+          >
+            Two Ways to Experience Siggy
+          </motion.h2>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            {/* Story Mode Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+            >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-accent/10 group-hover:bg-accent/20 transition-all">
+                <BookOpen className="w-8 h-8 text-accent" />
+              </div>
+              <h3 className="font-display text-2xl mb-3">Story Mode</h3>
+              <p className="text-text-secondary leading-relaxed mb-6">
+                Experience Siggy&apos;s origin story through a visual novel journey. Four chapters of pre-written narrative,
+                meaningful choices, and cinematic moments. Discover how Siggy was born from the Ritual Forge.
+              </p>
+              <ul className="space-y-2 text-sm text-text-secondary mb-6">
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  4 Chapters: Awakening, Connection, Chaos, Soul
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Visual novel style with mood-based visuals
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Your choices shape the experience
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Click to advance, no typing needed
+                </li>
+              </ul>
+              <Link href="/story">
+                <button className="w-full px-6 py-3 bg-surface border border-border hover:border-accent hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all">
+                  Start Story
+                </button>
+              </Link>
+            </motion.div>
+
+            {/* Chat Mode Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+            >
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-accent/10 group-hover:bg-accent/20 transition-all">
+                <MessageSquare className="w-8 h-8 text-accent" />
+              </div>
+              <h3 className="font-display text-2xl mb-3">Chat Mode</h3>
+              <p className="text-text-secondary leading-relaxed mb-6">
+                Free-form conversation with Siggy. Ask anything, trigger moods, discover easter eggs.
+                The more you chat, the more Siggy&apos;s personality evolves based on your interactions.
+              </p>
+              <ul className="space-y-2 text-sm text-text-secondary mb-6">
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Unlimited free-form conversations
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Dynamic mood system (4 states)
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Hidden easter eggs to discover
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-accent">✓</span>
+                  Type anything, get cosmic responses
+                </li>
+              </ul>
+              <Link href="/chat">
+                <button className="w-full px-6 py-3 bg-accent text-black hover:bg-accent/90 font-mono text-sm uppercase tracking-wider rounded-lg transition-all">
+                  Start Chatting
+                </button>
+              </Link>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="py-24 px-6 bg-bg">
         <div className="max-w-6xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -110,7 +215,7 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-6 bg-bg">
+      <section className="py-24 px-6 border-t border-border bg-surface">
         <div className="max-w-6xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -175,7 +280,7 @@ export default function LandingPage() {
       </section>
 
       {/* Try These Section */}
-      <section className="py-24 px-6 border-t border-border bg-surface">
+      <section className="py-24 px-6 bg-bg">
         <div className="max-w-6xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -226,7 +331,7 @@ export default function LandingPage() {
       <Bio />
 
       {/* Footer Credits */}
-      <section className="py-12 px-6 border-t border-border bg-bg">
+      <section className="py-12 px-6 border-t border-border bg-surface">
         <div className="max-w-6xl mx-auto text-center">
           <p className="text-xs text-text-secondary font-mono uppercase tracking-widest">
             Siggy Soul Forge Quest Entry
@@ -237,7 +342,7 @@ export default function LandingPage() {
           <div className="flex justify-center gap-4 text-xs text-text-secondary mt-4">
             <span>Built with Next.js + Vercel</span>
             <span>•</span>
-            <span>Ready for Discord Integration</span>
+            <span>Story Mode + Chat Mode</span>
           </div>
         </div>
       </section>

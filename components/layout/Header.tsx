@@ -23,6 +23,7 @@ export function Header() {
 
       {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-widest text-text-primary">
+        <Link href="/story" className="hover:text-accent transition-colors">Story</Link>
         <Link href="/chat" className="hover:text-accent transition-colors">Chat</Link>
         <a href="https://github.com/Decka-tan/siggy-bot" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">GitHub</a>
 
@@ -80,6 +81,13 @@ export function Header() {
           <div className="absolute right-6 top-20 w-64 bg-surface border border-border rounded-2xl z-50 md:hidden shadow-2xl">
             {/* Navigation Links */}
             <nav className="p-4 space-y-2">
+              <Link
+                href="/story"
+                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Story
+              </Link>
               <Link
                 href="/chat"
                 className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"

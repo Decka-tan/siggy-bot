@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Send } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen } from 'lucide-react';
 
 type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
 
@@ -110,14 +110,22 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text-primary flex flex-col pt-24">
-      {/* Back Button */}
+      {/* Back Button + Mode Switch */}
       <div className="px-6 pb-6">
-        <Link href="/">
-          <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors font-mono text-xs uppercase tracking-wider">
-            <ArrowLeft className="w-4 h-4" />
-            Back
-          </button>
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/">
+            <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors font-mono text-xs uppercase tracking-wider">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+          </Link>
+          <Link href="/story">
+            <button className="flex items-center gap-2 text-text-secondary hover:text-accent transition-colors font-mono text-xs uppercase tracking-wider">
+              <BookOpen className="w-4 h-4" />
+              Story Mode
+            </button>
+          </Link>
+        </div>
       </div>
 
       {/* Chat Area */}
