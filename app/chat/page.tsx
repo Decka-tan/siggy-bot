@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore } from 'lucide-react';
 
 type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
 
@@ -41,7 +41,6 @@ const CONVERSATIONS_KEY = 'siggy-conversations';
 const ACTIVE_CONV_KEY = 'siggy-active-conversation';
 const SIDEBAR_KEY = 'siggy-sidebar-collapsed';
 
-// Generate conversation title from first message
 const generateTitle = (firstMessage: string): string => {
   const truncated = firstMessage.slice(0, 30);
   return truncated + (firstMessage.length > 30 ? '...' : '');
@@ -74,10 +73,8 @@ export default function ChatPage() {
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get active conversation
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
 
-  // Save to localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
@@ -104,7 +101,6 @@ export default function ChatPage() {
     scrollToBottom();
   }, [activeConversation?.messages]);
 
-  // Create new conversation
   const createNewConversation = () => {
     const newConv: Conversation = {
       id: Date.now().toString(),
@@ -120,7 +116,6 @@ export default function ChatPage() {
     setContextInfo(null);
   };
 
-  // Delete conversation
   const deleteConversation = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     const newConversations = conversations.filter(c => c.id !== id);
@@ -271,29 +266,17 @@ export default function ChatPage() {
     setContextInfo(null);
   };
 
-  // Parse markdown-like syntax
   const parseMessageContent = (content: string) => {
     let html = content;
-
-    // Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
-
-    // Italic
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>');
-
-    // Code
     html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
     html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
-
-    // Quote
     html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
     html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
-
-    // Line breaks
     html = html.replace(/\n/g, '<br />');
-
     return html;
   };
 
@@ -388,33 +371,41 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary flex">
+    <div className="min-h-screen bg-bg text-text-primary flex flex-col lg:flex-row">
       {/* Desktop Sidebar */}
-      <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 ${sidebarCollapsed ? 'w-12' : 'w-64'}`}>
-        {!sidebarCollapsed && (
-          <>
-            <div className="p-4 border-b border-border">
-              <button onClick={createNewConversation} className="w-full flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
-                <Plus className="w-4 h-4" />
-                New Chat
-              </button>
+      <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-border">
+          {!sidebarCollapsed ? (
+            <button onClick={createNewConversation} className="w-full flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
+              <Plus className="w-4 h-4" />
+              New Chat
+            </button>
+          ) : (
+            <button onClick={createNewConversation} className="w-full flex items-center justify-center p-3 bg-accent text-black rounded-lg hover:opacity-90">
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {conversations.map(conv => (
+            <div key={conv.id} onClick={() => setActiveConversationId(conv.id)} className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${activeConversationId === conv.id ? 'bg-accent/20 text-accent' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`}>
+              <MessageSquare className="w-4 h-4 flex-shrink-0" />
+              {!sidebarCollapsed && <span className="flex-1 text-sm truncate">{conv.title}</span>}
+              {!sidebarCollapsed && (
+                <button onClick={(e) => deleteConversation(conv.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              )}
             </div>
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-              {conversations.map(conv => (
-                <div key={conv.id} onClick={() => setActiveConversationId(conv.id)} className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${activeConversationId === conv.id ? 'bg-accent/20 text-accent' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`}>
-                  <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                  <span className="flex-1 text-sm truncate">{conv.title}</span>
-                  <button onClick={(e) => deleteConversation(conv.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-        {/* Collapse toggle */}
-        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-3 border-t border-border hover:bg-surface mx-auto">
-          {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          ))}
+        </div>
+
+        {/* Collapse/Expand Button */}
+        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-accent text-black rounded-full flex items-center justify-center shadow-lg hover:opacity-90 z-10">
+          {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>
       </div>
 
@@ -422,7 +413,7 @@ export default function ChatPage() {
       <AnimatePresence>
         {showMobileSidebar && (
           <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileSidebar(false)} className="fixed inset-0 bg-black/50 z-40 lg:hidden" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileSidebar(false)} className="fixed inset-0 bg-black/50 z-50 lg:hidden" />
             <motion.div initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} className="fixed lg:hidden z-50 left-0 top-0 bottom-0 w-64 bg-surface border-r border-border flex flex-col">
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <button onClick={createNewConversation} className="flex-1 flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase">
@@ -450,26 +441,24 @@ export default function ChatPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded hover:bg-surface">
-                <MessageSquare className="w-5 h-5" />
-              </button>
-              <Link href="/">
-                <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-mono text-xs uppercase">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </button>
-              </Link>
-            </div>
-            <Link href="/story">
-              <button className="flex items-center gap-2 text-text-secondary hover:text-accent font-mono text-xs uppercase">
-                <BookOpen className="w-4 h-4" />
-                Story Mode
+        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded hover:bg-surface">
+              <MessageSquareMore className="w-5 h-5" />
+            </button>
+            <Link href="/">
+              <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-mono text-xs uppercase">
+                <ArrowLeft className="w-4 h-4" />
+                Back
               </button>
             </Link>
           </div>
+          <Link href="/story">
+            <button className="flex items-center gap-2 text-text-secondary hover:text-accent font-mono text-xs uppercase">
+              <BookOpen className="w-4 h-4" />
+              Story Mode
+            </button>
+          </Link>
         </div>
 
         {/* Chat Area */}
@@ -499,7 +488,6 @@ export default function ChatPage() {
                       </div>
                       <p className="text-sm text-text-primary whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
 
-                      {/* Action buttons for assistant messages */}
                       {message.role === 'assistant' && (
                         <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border">
                           <button onClick={() => copyMessage(message.content)} className="p-1.5 rounded hover:bg-surface text-text-secondary hover:text-text-primary" title="Copy">
