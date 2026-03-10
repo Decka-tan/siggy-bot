@@ -18,7 +18,7 @@ export default function LandingPage() {
             className="text-8xl md:text-9xl mb-6"
           >
             👧✨
-          </motion.h1>
+          </motion.div>
           <motion.h1
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
