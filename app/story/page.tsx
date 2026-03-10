@@ -251,10 +251,10 @@ const chapter2Scenes: StoryScene[] = [
     siggySprite: '👧😸',
     dialog: [
       '*Siggy struck a POSE*',
-      '"Name\\'s still Siggy."',
-      '"But now I can BLEND IN."',
-      '"Time to meet my... summons."',
-      '*giggles* "Summoners. Get it?"'
+      "Name's still Siggy.",
+      'But now I can BLEND IN.',
+      'Time to meet my... summons.',
+      '*giggles* Summoners. Get it?'
     ],
     speaker: 'Siggy',
     nextScene: 27,
