@@ -230,14 +230,15 @@ export default function ChatPage() {
     }).catch(() => { });
   };
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSendMessage = async (overrideInput?: string) => {
+    const textToSend = typeof overrideInput === 'string' ? overrideInput : input;
+    if (!textToSend.trim() || isLoading) return;
 
     let targetConvId = activeConversationId;
     if (!targetConvId) {
       const newConv: Conversation = {
         id: Date.now().toString(),
-        title: generateTitle(input),
+        title: generateTitle(textToSend),
         messages: [],
         currentMood: 'PLAYFUL',
         messageCount: 0,
@@ -250,13 +251,13 @@ export default function ChatPage() {
 
     const userMessage: Message = {
       role: 'user',
-      content: input,
+      content: textToSend,
     };
 
     setConversations(prev => prev.map(conv => {
       if (conv.id === targetConvId) {
         const updatedMessages = [...conv.messages, userMessage];
-        const title = conv.messages.length === 0 ? generateTitle(input) : conv.title;
+        const title = conv.messages.length === 0 ? generateTitle(textToSend) : conv.title;
         return { ...conv, messages: updatedMessages, title };
       }
       return conv;
@@ -273,7 +274,7 @@ export default function ChatPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: input,
+          message: textToSend,
           conversationHistory,
           userId: `conv-${targetConvId}`,
           isFirstMessage: conversationHistory.length === 0,
@@ -764,45 +765,46 @@ export default function ChatPage() {
 
                       {/* Floating Action Buttons & Input Area */}
                       <div className="max-w-7xl mx-auto flex flex-col pt-4 mt-2 border-t border-border">
-                        {/* Reinstated Floating Action Buttons (Right Aligned) */}
-                        {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
-                          <div className="flex justify-end items-center gap-1 mb-3">
-                            <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-2 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'PLAYFUL']}`}>
-                              {activeConversation.messages[activeConversation.messages.length - 1].mood}
-                            </span>
-                            <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
-                              <Copy className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
-                              <ThumbsUp className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
-                              <ThumbsDown className="w-4 h-4" />
-                            </button>
-                            <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                            <button onClick={shareConversation} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Share log">
-                              <Share2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
+                        {/* Input Form & Action Controls integrated tightly */}
+                        <div className="flex-1 flex gap-3 w-full items-center">
+                          {/* Reinstated Floating Action Buttons (Left Aligned) */}
+                          {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
+                            <div className="flex items-center gap-1 pr-2">
+                              <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'PLAYFUL']}`}>
+                                {activeConversation.messages[activeConversation.messages.length - 1].mood}
+                              </span>
+                              <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
+                                <Copy className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
+                                <ThumbsUp className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
+                                <ThumbsDown className="w-4 h-4" />
+                              </button>
+                              <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
+                                <RefreshCw className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
 
-                        {/* Input Form */}
-                        <div className="flex-1 flex gap-3 w-full">
+                          <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
+                            {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
+                          </button>
+
                           <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                             placeholder="What will you say?"
                             disabled={isLoading}
-                            className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono shadow-inner"
+                            className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono shadow-inner min-w-[100px]"
                           />
                           <button
-                            onClick={handleSendMessage}
+                            onClick={() => handleSendMessage()}
                             disabled={isLoading || !input.trim()}
-                            className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(0,255,148,0.2)] text-xs"
+                            className="shrink-0 px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
                           >
                             {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
                           </button>
@@ -916,16 +918,16 @@ export default function ChatPage() {
                     {/* Suggestions Grid (2x2) */}
                     {!activeConversation || activeConversation.messages.length > 0 && !isLoading && (
                       <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
-                        <button onClick={() => { setInput(personality === 'CAT' ? 'Turn into Anime Girl!' : 'Turn into Cat!'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                        <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                           {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                         </button>
-                        <button onClick={() => { setInput('What are your cosmic origins?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                        <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                           Cosmic origins
                         </button>
-                        <button onClick={() => { setInput('Tell me a weird dimension you visited.'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                        <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                           Weird dimensions
                         </button>
-                        <button onClick={() => { setInput('What is your favorite Earth food?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                        <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                           Earth food
                         </button>
                       </div>
@@ -937,7 +939,7 @@ export default function ChatPage() {
                         <RefreshCw className="w-4 h-4" />
                       </button>
                       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner" />
-                      <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-xs uppercase transition-all disabled:opacity-50 flex items-center gap-2">
+                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold hover:from-yellow-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-xs uppercase transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)]">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
                     </div>
