@@ -11,6 +11,10 @@ import {
   checkEasterEggs,
   type Message,
 } from '@/lib/siggy-personality';
+import {
+  contextManager,
+  buildContextualPrompt,
+} from '@/lib/context-manager';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -43,13 +47,23 @@ export async function POST(req: NextRequest) {
     // Get or create mood system for this user
     const moodSystem = getMoodSystem(userId);
 
-    // Build prompt
-    const prompt = buildSiggyPrompt(
-      message,
+    // Manage context - summarize old messages if needed
+    const managedContext = await contextManager.manageContext(
+      userId,
       conversationHistory,
+      moodSystem.getCurrentMood()
+    );
+
+    // Build base prompt
+    let prompt = buildSiggyPrompt(
+      message,
+      managedContext.recentMessages,
       moodSystem,
       isFirstMessage
     );
+
+    // Enhance prompt with context summaries and key facts
+    prompt = buildContextualPrompt(prompt, managedContext, userId, message);
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
@@ -71,12 +85,31 @@ export async function POST(req: NextRequest) {
       response: siggyResponse,
       currentMood: moodSystem.getCurrentMood(),
       messageCount: moodSystem.getMessageCount(),
+      contextInfo: {
+        totalMessages: managedContext.totalMessages,
+        estimatedTokens: managedContext.estimatedTokens,
+        hasSummary: !!managedContext.summary,
+      },
     });
 
   } catch (error) {
     console.error('Error in chat API:', error);
+
+    // Check for context window error specifically
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    if (errorMessage.includes('context') || errorMessage.includes('token')) {
+      return NextResponse.json(
+        {
+          error: 'Conversation too long',
+          details: 'The conversation has exceeded the context window. Please start a new conversation.',
+          suggestion: 'reset'
+        },
+        { status: 413 } // 413 Payload Too Large
+      );
+    }
+
     return NextResponse.json(
-      { error: 'Failed to generate response', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to generate response', details: errorMessage },
       { status: 500 }
     );
   }
@@ -89,4 +122,31 @@ export async function GET() {
     message: 'Siggy API is operational',
     timestamp: new Date().toISOString(),
   });
+}
+
+// DELETE endpoint to reset conversation context
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { userId = 'default' } = body;
+
+    // Reset mood system
+    const moodSystem = getMoodSystem(userId);
+    moodSystem.reset();
+
+    // Reset context manager memory
+    contextManager.resetMemory(userId);
+
+    return NextResponse.json({
+      status: 'reset',
+      message: 'Conversation context cleared',
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('Error resetting conversation:', error);
+    return NextResponse.json(
+      { error: 'Failed to reset conversation' },
+      { status: 500 }
+    );
+  }
 }

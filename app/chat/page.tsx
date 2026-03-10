@@ -13,6 +13,12 @@ interface Message {
   mood?: MoodState;
 }
 
+interface ContextInfo {
+  totalMessages: number;
+  estimatedTokens: number;
+  hasSummary: boolean;
+}
+
 const moodColors: Record<MoodState, string> = {
   PLAYFUL: 'bg-pink-500/20 border-pink-500/30 text-pink-400',
   MYSTERIOUS: 'bg-purple-500/20 border-purple-500/30 text-purple-400',
@@ -28,6 +34,7 @@ export default function ChatPage() {
   const [messageCount, setMessageCount] = useState(0);
   const [apiKey, setApiKey] = useState('');
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -86,6 +93,7 @@ export default function ChatPage() {
       setMessages(prev => [...prev, siggyMessage]);
       setCurrentMood(data.currentMood);
       setMessageCount(data.messageCount);
+      setContextInfo(data.contextInfo || null);
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [
@@ -108,11 +116,23 @@ export default function ChatPage() {
     }
   };
 
-  const resetConversation = () => {
+  const resetConversation = async () => {
+    // Also reset server-side context
+    try {
+      await fetch('/api/chat', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 'web-user' }),
+      });
+    } catch (error) {
+      console.error('Failed to reset server context:', error);
+    }
+
     setMessages([]);
     setCurrentMood('PLAYFUL');
     setMessageCount(0);
     setInput('');
+    setContextInfo(null);
   };
 
   const clearApiKey = () => {
@@ -239,10 +259,24 @@ export default function ChatPage() {
               <span className="font-mono text-xs text-text-secondary">
                 Messages: {messageCount}
               </span>
+              {contextInfo && (
+                <span
+                  className={`font-mono text-xs ${
+                    contextInfo.estimatedTokens > 80000
+                      ? 'text-red-400'
+                      : contextInfo.estimatedTokens > 50000
+                      ? 'text-amber-400'
+                      : 'text-text-secondary'
+                  }`}
+                  title={`Estimated: ${contextInfo.estimatedTokens.toLocaleString()} tokens`}
+                >
+                  {contextInfo.hasSummary ? '📝' : '💾'} {Math.round(contextInfo.estimatedTokens / 1000)}k tokens
+                </span>
+              )}
               <button
                 onClick={resetConversation}
                 className="p-2 rounded hover:bg-surface transition-colors text-text-secondary hover:text-text-primary"
-                title="Reset"
+                title="Reset conversation"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
