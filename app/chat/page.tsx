@@ -621,17 +621,9 @@ export default function ChatPage() {
             {/* VN Mode Toggle */}
             <button
               onClick={() => setVnMode(!vnMode)}
-              className="px-3 py-1.5 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:border-accent font-mono text-[10px] uppercase tracking-wider shadow-lg transition-colors"
+              className="px-4 py-2 mt-2 rounded-lg bg-gradient-to-r from-accent to-emerald-400 text-black font-mono text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-emerald-400 hover:to-accent transition-all"
             >
-              {vnMode ? 'Summary' : 'Visual Novel'}
-            </button>
-            {/* Transform Button */}
-            <button
-              onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')}
-              disabled={isLoading}
-              className="px-3 py-1.5 rounded-full bg-accent/10 backdrop-blur-sm border border-accent/30 hover:bg-accent/20 font-mono text-[10px] uppercase tracking-wider text-accent shadow-lg transition-colors disabled:opacity-50"
-            >
-              {personality === 'CAT' ? 'Siggy Turn into Anime Girl!' : 'Siggy Turn into Cat!'}
+              {vnMode ? 'Story Chat' : 'Visual Novel'}
             </button>
           </div>
 
@@ -703,16 +695,11 @@ export default function ChatPage() {
                     </motion.div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface/90 backdrop-blur-xl border-none px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.1)] transition-all">
+                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
                     <div className="max-w-7xl mx-auto">
-                      {/* Box Header: Name + Mode Info */}
+                      {/* Box Header: Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-4 flex items-center justify-between pb-3">
-                          <div className="px-6 py-1.5 rounded-lg border-none bg-accent/10 shadow-inner">
-                            <span className="font-display tracking-wider text-sm md:text-lg text-accent uppercase">
-                              {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? '► You' : '► Siggy'}
-                            </span>
-                          </div>
+                        <div className="mb-2 flex items-center justify-end border-b border-border/30 pb-2">
                           <div className="flex items-center gap-3">
                             <div className="flex gap-1">
                               <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-white/20'}`} />
@@ -742,7 +729,11 @@ export default function ChatPage() {
                                 *Siggy is thinking...*
                               </div>
                             ) : (
-                              <div className="relative">
+                              <div className="relative flex flex-col items-start">
+                                {/* Inline Name Bar aligned with text */}
+                                <span className={`font-display uppercase tracking-wider text-lg mb-1 ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-blue-400' : 'text-accent'}`}>
+                                  {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
+                                </span>
                                 <p
                                   className={`text-sm md:text-base leading-relaxed font-mono ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
                                     ? 'italic text-text-secondary'
@@ -829,8 +820,13 @@ export default function ChatPage() {
                       </div>
                     ) : (
                       activeConversation.messages.map((message, index) => (
-                        <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className="max-w-[80%] rounded-xl px-4 py-3 bg-surface border-none shadow-sm">
+                        <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}>
+                          {message.role === 'assistant' && (
+                            <div className="shrink-0 mb-3">
+                              <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border/50 object-cover" />
+                            </div>
+                          )}
+                          <div className={`max-w-[80%] rounded-xl px-4 py-3 bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'}`}>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[10px] font-mono font-semibold text-text-primary">{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
                               {message.mood && <span className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
@@ -864,8 +860,11 @@ export default function ChatPage() {
                     )}
 
                     {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-surface border-none shadow-sm rounded-2xl px-6 py-4">
+                      <div className="flex justify-start gap-3 items-end">
+                        <div className="shrink-0 mb-3">
+                          <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border/50 object-cover" />
+                        </div>
+                        <div className="bg-surface border border-border shadow-sm rounded-2xl rounded-bl-none px-6 py-4">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs font-mono font-semibold">SIGGY</span>
                             <span className="text-xs text-text-secondary">*tapping on phone*</span>
@@ -895,9 +894,29 @@ export default function ChatPage() {
                         </button>
                       </div>
                     </div>
+                    {/* Suggestions Grid (2x2) */}
+                    {!activeConversation || activeConversation.messages.length > 0 && !isLoading && (
+                      <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
+                        <button onClick={() => { setInput(personality === 'CAT' ? 'Turn into Anime Girl!' : 'Turn into Cat!'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-emerald-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-emerald-400 hover:to-accent rounded-lg transition-all text-left">
+                          {personality === 'CAT' ? '✨ Turn into Anime Form!' : '🐱 Turn into Cat Form!'}
+                        </button>
+                        <button onClick={() => { setInput('What are your cosmic origins?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-accent/30 text-accent hover:border-accent rounded-lg transition-all text-left">
+                          🌌 Cosmic origins
+                        </button>
+                        <button onClick={() => { setInput('Tell me a weird dimension you visited.'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-accent/30 text-accent hover:border-accent rounded-lg transition-all text-left">
+                          🌀 Weird dimensions
+                        </button>
+                        <button onClick={() => { setInput('What is your favorite Earth food?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-accent/30 text-accent hover:border-accent rounded-lg transition-all text-left">
+                          🍔 Earth food
+                        </button>
+                      </div>
+                    )}
 
                     {/* Input */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 pt-2 items-center">
+                      <button onClick={resetCurrentConversation} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors hidden sm:block" title="Refresh Chat">
+                        <RefreshCw className="w-4 h-4" />
+                      </button>
                       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner" />
                       <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-xs uppercase transition-all disabled:opacity-50 flex items-center gap-2">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
