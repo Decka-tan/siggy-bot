@@ -699,7 +699,7 @@ export default function ChatPage() {
                     <div className="max-w-7xl mx-auto">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-2 flex items-center justify-between border-b border-border/30 pb-3">
+                        <div className="mb-2 flex items-center justify-between border-b border-border pb-3">
                           <div className="flex items-center gap-3">
                             <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-blue-400' : 'text-accent'}`}>
                               {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
@@ -752,10 +752,10 @@ export default function ChatPage() {
                       </div>
 
                       {/* Action Buttons & Input Area integrated into Dialogue Box */}
-                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center pt-3 mt-1 border-t border-border/30">
+                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center pt-3 mt-1 border-t border-border">
                         {/* Action Buttons (Left) */}
                         {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
-                          <div className="flex items-center gap-1 md:pr-4 md:border-r border-border/40">
+                          <div className="flex items-center gap-1 md:pr-4 md:border-r border-border">
                             <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-2 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'PLAYFUL']}`}>
                               {activeConversation.messages[activeConversation.messages.length - 1].mood}
                             </span>
@@ -824,7 +824,7 @@ export default function ChatPage() {
                         <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}>
                           {message.role === 'assistant' && (
                             <div className="shrink-0 mb-3">
-                              <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border/50 object-cover" />
+                              <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
                             </div>
                           )}
                           <div className={`max-w-[80%] rounded-xl px-4 py-3 bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'}`}>
@@ -835,7 +835,7 @@ export default function ChatPage() {
                             <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
 
                             {message.role === 'assistant' && (
-                              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20">
+                              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
                                 <button onClick={() => copyMessage(message.content)} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Copy">
                                   <Copy className="w-3.5 h-3.5" />
                                 </button>
@@ -863,7 +863,7 @@ export default function ChatPage() {
                     {isLoading && (
                       <div className="flex justify-start gap-3 items-end">
                         <div className="shrink-0 mb-3">
-                          <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border/50 object-cover" />
+                          <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
                         <div className="bg-surface border border-border shadow-sm rounded-2xl rounded-bl-none px-6 py-4">
                           <div className="flex items-center gap-2 mb-2">

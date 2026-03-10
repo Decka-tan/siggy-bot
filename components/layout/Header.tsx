@@ -26,16 +26,6 @@ export function Header() {
         <Link href="/story" className="hover:text-accent transition-colors">Story</Link>
         <Link href="/chat" className="hover:text-accent transition-colors">Chat</Link>
         <a href="https://github.com/Decka-tan/siggy-bot" target="_blank" rel="noopener noreferrer" className="hover:text-accent transition-colors">GitHub</a>
-
-        {mounted && (
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="hover:text-accent transition-colors font-semibold"
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            {theme === 'dark' ? 'DARK' : 'LIGHT'}
-          </button>
-        )}
       </nav>
 
       {/* Mobile Menu Button */}
@@ -103,18 +93,6 @@ export function Header() {
               >
                 GitHub
               </a>
-
-              {/* Theme Toggle */}
-              {mounted && (
-                <div className="pt-2 border-t border-border">
-                  <button
-                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                    className="w-full font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface text-left"
-                  >
-                    {theme === 'dark' ? '☀️ Light Mode' : '🌙 Dark Mode'}
-                  </button>
-                </div>
-              )}
             </nav>
           </div>
         </>
