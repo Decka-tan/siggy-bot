@@ -717,7 +717,7 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      <div className="min-h-[100px] max-h-[100px] overflow-y-auto mb-3 pr-4 signature-scroll flex items-start">
+                      <div className="min-h-[140px] max-h-[180px] overflow-y-auto mb-5 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
                           <div className="text-center">
                             <h2 className="text-xl font-display uppercase mb-2 text-accent">
@@ -735,15 +735,16 @@ export default function ChatPage() {
                               </div>
                             ) : (
                               <div className="relative flex flex-col items-start mt-2">
-                                <p
-                                  className={`text-sm md:text-base leading-relaxed font-mono ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
-                                    ? 'italic text-text-secondary'
-                                    : 'text-text-primary'
-                                    }`}
-                                  dangerouslySetInnerHTML={{
-                                    __html: parseMessageContent(activeConversation.messages[activeConversation.messages.length - 1].content)
-                                  }}
-                                />
+                                {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
+                                  <p
+                                    className="text-sm md:text-base leading-relaxed font-mono italic text-text-secondary"
+                                    dangerouslySetInnerHTML={{
+                                      __html: parseMessageContent(activeConversation.messages[activeConversation.messages.length - 1].content)
+                                    }}
+                                  />
+                                ) : (
+                                  <TypewriterText text={activeConversation.messages[activeConversation.messages.length - 1].content} isLatest={true} />
+                                )}
                                 {/* Action buttons moved down below the chat scroll area */}
                               </div>
                             )}
@@ -752,7 +753,7 @@ export default function ChatPage() {
                       </div>
 
                       {/* Action Buttons & Input Area integrated into Dialogue Box */}
-                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center pt-3 mt-1 border-t border-border">
+                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center pt-5 mt-2 border-t border-border">
                         {/* Action Buttons (Left) */}
                         {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                           <div className="flex items-center gap-1 md:pr-4 md:border-r border-border">
