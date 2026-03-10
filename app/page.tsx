@@ -14,8 +14,8 @@ export default function LandingPage() {
         {/* Animated background gradient */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-accent/5 to-emerald-400/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-accent/5 to-yellow-400/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center justify-center">
@@ -69,7 +69,7 @@ export default function LandingPage() {
               </button>
             </Link>
             <Link href="/chat" className="flex-1">
-              <button className="group w-full bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent font-mono text-sm uppercase tracking-wider px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:scale-105">
+              <button className="group w-full bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-sm uppercase tracking-wider px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:scale-105">
                 <MessageSquare className="w-4 h-4" />
                 Chat Mode
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -134,7 +134,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-emerald-400/20 group-hover:from-accent/30 group-hover:to-emerald-400/30 transition-all">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:from-accent/30 group-hover:to-yellow-400/30 transition-all">
                 <BookOpen className="w-8 h-8 text-accent" />
               </div>
               <h3 className="font-display text-2xl mb-3">Story Mode</h3>
@@ -174,7 +174,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-emerald-400/20 group-hover:from-accent/30 group-hover:to-emerald-400/30 transition-all">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:from-accent/30 group-hover:to-yellow-400/30 transition-all">
                 <MessageSquare className="w-8 h-8 text-accent" />
               </div>
               <h3 className="font-display text-2xl mb-3">Chat Mode</h3>
@@ -201,7 +201,7 @@ export default function LandingPage() {
                 </li>
               </ul>
               <Link href="/chat">
-                <button className="w-full px-6 py-3 bg-gradient-to-r from-accent to-emerald-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg hover:from-emerald-400 hover:to-accent transition-all">
+                <button className="w-full px-6 py-3 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg hover:from-yellow-400 hover:to-accent transition-all">
                   Start Chatting
                 </button>
               </Link>
@@ -279,7 +279,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-emerald-400/20">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl">D</span>
               </div>
               <h3 className="font-display text-lg mb-2">Dynamic Moods</h3>
@@ -295,7 +295,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-emerald-400/20">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl">E</span>
               </div>
               <h3 className="font-display text-lg mb-2">Easter Eggs</h3>
@@ -311,7 +311,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-emerald-400/20">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl">A</span>
               </div>
               <h3 className="font-display text-lg mb-2">Anime Girl</h3>
@@ -389,7 +389,7 @@ export default function LandingPage() {
               </button>
             </Link>
             <Link href="/chat">
-              <button className="px-8 py-4 bg-gradient-to-r from-accent to-emerald-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg transition-all hover:from-emerald-400 hover:to-accent flex items-center gap-3">
+              <button className="px-8 py-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg transition-all hover:from-yellow-400 hover:to-accent flex items-center gap-3">
                 <MessageSquare className="w-5 h-5" />
                 Start Chat
               </button>
