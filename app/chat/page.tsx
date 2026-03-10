@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload } from 'lucide-react';
 
 type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
 
@@ -42,6 +42,7 @@ const CONVERSATIONS_KEY = 'siggy-conversations';
 const ACTIVE_CONV_KEY = 'siggy-active-conversation';
 const SIDEBAR_KEY = 'siggy-sidebar-collapsed';
 const VN_MODE_KEY = 'siggy-vn-mode';
+const USER_AVATAR_KEY = 'siggy-user-avatar';
 
 // VN Mode backgrounds (rotate every 10s)
 const VN_BACKGROUNDS = [
@@ -144,6 +145,12 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
+  const [userAvatar, setUserAvatar] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(USER_AVATAR_KEY);
+  });
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [vnMode, setVnMode] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(VN_MODE_KEY) === 'true';
@@ -177,6 +184,32 @@ export default function ChatPage() {
       localStorage.setItem(VN_MODE_KEY, vnMode.toString());
     }
   }, [vnMode]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (userAvatar) {
+        localStorage.setItem(USER_AVATAR_KEY, userAvatar);
+      } else {
+        localStorage.removeItem(USER_AVATAR_KEY);
+      }
+    }
+  }, [userAvatar]);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('File is too large. Please upload an image under 5MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUserAvatar(reader.result as string);
+        setShowAvatarModal(false);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -553,15 +586,20 @@ export default function ChatPage() {
         {!vnMode && (
           <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative z-10 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
           {/* Sidebar Header */}
-          <div className="h-16 px-4 border-b border-border flex items-center shrink-0">
+          <div className="h-16 px-4 border-b border-border flex items-center shrink-0 gap-2">
             {!sidebarCollapsed ? (
-              <button onClick={createNewConversation} className="w-full flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
+              <button onClick={createNewConversation} className="flex-1 flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
                 <Plus className="w-4 h-4" />
                 New Chat
               </button>
             ) : (
-              <button onClick={createNewConversation} className="w-full flex items-center justify-center p-2 bg-accent text-black rounded-lg hover:opacity-90">
+              <button onClick={createNewConversation} className="flex-1 flex items-center justify-center p-2 bg-accent text-black rounded-lg hover:opacity-90">
                 <Plus className="w-4 h-4" />
+              </button>
+            )}
+            {!sidebarCollapsed && (
+              <button onClick={() => setShowAvatarModal(true)} className="p-2 bg-surface border border-border text-text-secondary hover:text-accent rounded-lg transition-colors shrink-0" title="Set Avatar">
+                <User className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -595,12 +633,15 @@ export default function ChatPage() {
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileSidebar(false)} className="fixed inset-0 bg-black/50 z-50 lg:hidden" />
               <motion.div initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} className="fixed lg:hidden z-50 left-0 top-0 bottom-0 w-64 bg-surface border-r border-border flex flex-col">
-                <div className="p-4 border-b border-border flex items-center justify-between">
+                <div className="p-4 border-b border-border flex items-center justify-between gap-2">
                   <button onClick={createNewConversation} className="flex-1 flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase">
                     <Plus className="w-4 h-4" />
                     New Chat
                   </button>
-                  <button onClick={() => setShowMobileSidebar(false)} className="ml-2 p-2"><X className="w-4 h-4" /></button>
+                  <button onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }} className="p-3 bg-surface border border-border text-text-secondary hover:text-accent rounded-lg transition-colors shrink-0" title="Set Avatar">
+                    <User className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setShowMobileSidebar(false)} className="p-2 ml-1 shrink-0"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                   {conversations.map(conv => (
@@ -688,22 +729,45 @@ export default function ChatPage() {
                    ========================================================= */
                 <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
 
-                  {/* Sprite placed cleanly on top of dialogue box */}
-                  <div className="w-full max-w-7xl mx-auto px-4 md:px-12 relative z-10 flex">
-                    <motion.div
-                      initial={{ opacity: 0, y: 50 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
-                    >
-                      <Image
-                        src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
-                        alt="Siggy"
-                        width={260}
-                        height={360}
-                        className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.2)]"
-                        priority
-                      />
-                    </motion.div>
+                  {/* Sprites placed cleanly on top of dialogue box */}
+                  <div className="w-full max-w-7xl mx-auto px-4 md:px-12 relative z-10 flex justify-between items-end">
+                    {/* User Sprite (Left Side) */}
+                    <div className="flex-1 flex justify-start">
+                      <AnimatePresence>
+                        {activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' && userAvatar && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 50, x: -20 }}
+                            animate={{ opacity: 1, y: 0, x: 0 }}
+                            exit={{ opacity: 0, y: 50, x: -20 }}
+                            className="origin-bottom mr-8 mb-4 max-w-[200px] md:max-w-[260px]"
+                          >
+                            <img
+                              src={userAvatar}
+                              alt="You"
+                              className="object-contain drop-shadow-[0_0_30px_rgba(96,165,250,0.4)] max-h-[250px] md:max-h-[360px] w-auto rounded-3xl border-2 border-blue-400/30"
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Siggy Sprite (Right Side) */}
+                    <div className="flex-1 flex justify-end">
+                      <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
+                      >
+                        <Image
+                          src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
+                          alt="Siggy"
+                          width={260}
+                          height={360}
+                          className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.2)]"
+                          priority
+                        />
+                      </motion.div>
+                    </div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
                   <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
@@ -876,6 +940,17 @@ export default function ChatPage() {
                               </div>
                             )}
                           </div>
+                          {message.role === 'user' && (
+                            <div className="shrink-0 mb-3 ml-2">
+                              {userAvatar ? (
+                                <img src={userAvatar} alt="User" className="w-8 h-8 rounded-full bg-black/50 border-2 border-blue-400/50 object-cover" />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-text-secondary">
+                                  <User className="w-4 h-4" />
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </motion.div>
                       ))
                     )}
@@ -950,6 +1025,69 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {/* User Avatar Upload Modal */}
+      <AnimatePresence>
+        {showAvatarModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAvatarModal(false)} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-surface border border-border rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden z-10 flex flex-col p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-display text-xl uppercase tracking-wider text-text-primary flex items-center gap-2">
+                  <User className="w-5 h-5 text-accent" />
+                  Your Profile
+                </h3>
+                <button onClick={() => setShowAvatarModal(false)} className="p-2 hover:bg-bg rounded-lg text-text-secondary hover:text-text-primary transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center gap-6">
+                {/* Current Avatar Preview */}
+                <div className="relative group">
+                  <div className="w-32 h-32 rounded-full border-4 border-bg overflow-hidden bg-bg flex items-center justify-center shadow-[0_0_30px_rgba(96,165,250,0.2)]">
+                    {userAvatar ? (
+                      <img src={userAvatar} alt="Your Custom Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-12 h-12 text-text-secondary/50" />
+                    )}
+                  </div>
+                </div>
+
+                {/* Upload Button */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  ref={fileInputRef}
+                  className="hidden"
+                />
+                
+                <div className="flex flex-col gap-2 w-full">
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold uppercase tracking-wider font-mono text-sm rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,148,0.2)]"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Upload Image
+                  </button>
+                  {userAvatar && (
+                    <button 
+                      onClick={() => { setUserAvatar(null); setShowAvatarModal(false); }}
+                      className="w-full py-3 px-4 bg-bg border border-border text-text-secondary font-mono uppercase tracking-wider text-xs rounded-xl hover:text-red-400 hover:border-red-400/30 transition-colors"
+                    >
+                      Remove Avatar
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-text-secondary font-mono text-center opacity-70">
+                  Images are saved locally on your browser. Over 5MB will be rejected.
+                </p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
