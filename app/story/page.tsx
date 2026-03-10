@@ -6,13 +6,24 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, MessageSquare, Sparkles, RefreshCw, Sun, Moon } from 'lucide-react';
 
-// Background system for Story Mode
-const STORY_BACKGROUNDS = [
-  '/vn-bg-1.png',
-  '/vn-bg-2.png'
+// VN Mode backgrounds (rotate every 10s)
+const VN_BACKGROUNDS = [
+  '/vn-bg/1.jpg',
+  '/vn-bg/2.jpg',
+  '/vn-bg/3.jpg',
+  '/vn-bg/4.jpg',
 ];
 
-type ThemeMode = 'dark' | 'light';
+// Decorative floating bubbles for VN mode
+const VN_BUBBLES = [
+  { text: 'The sky is cool, right?', top: '12%', left: '8%', size: 90, delay: 0 },
+  { text: 'siggy look!', top: '25%', left: '78%', size: 80, delay: 2 },
+  { text: 'meow~', top: '45%', left: '5%', size: 60, delay: 4 },
+  { text: 'so dark...', top: '15%', left: '55%', size: 50, delay: 1 },
+  { text: 'so pretty...', top: '55%', left: '85%', size: 75, delay: 3 },
+  { text: 'i am infinite.', top: '35%', left: '30%', size: 45, delay: 5 },
+  { text: 'I can see everything~', top: '8%', left: '38%', size: 85, delay: 6 },
+];
 
 // Story data type
 type StoryChoice = {
@@ -698,12 +709,19 @@ export default function StoryModePage() {
   const [currentDialogIndex, setCurrentDialogIndex] = useState(0);
   const [showChoices, setShowChoices] = useState(false);
   const [completedChapters, setCompletedChapters] = useState<number[]>([]);
-  const [storyBackground, setStoryBackground] = useState(() => {
-    return STORY_BACKGROUNDS[Math.floor(Math.random() * STORY_BACKGROUNDS.length)];
-  });
-  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [vnBgIndex, setVnBgIndex] = useState(0);
   const [typewriterText, setTypewriterText] = useState('');
   const [showSummary, setShowSummary] = useState(false);
+  const [showChapterBridge, setShowChapterBridge] = useState(false);
+  const [nextBridgeChapter, setNextBridgeChapter] = useState(1);
+
+  // Background rotation effect
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVnBgIndex((prev) => (prev + 1) % VN_BACKGROUNDS.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const currentScene = allScenes[currentSceneIndex];
 
@@ -713,9 +731,15 @@ export default function StoryModePage() {
   }, [currentSceneIndex]);
 
   const handleClick = () => {
-    if (showChoices) return;
+    if (showChoices || showChapterBridge) return;
 
     const currentSceneObj = allScenes[currentSceneIndex];
+
+    // If typewriter is still typing, finish it immediately
+    if (typewriterText.length < currentText.length) {
+      setTypewriterText(currentText);
+      return;
+    }
 
     if (currentDialogIndex < currentSceneObj.dialog.length - 1) {
       setCurrentDialogIndex(currentDialogIndex + 1);
@@ -728,6 +752,12 @@ export default function StoryModePage() {
     } else if (currentSceneObj.nextScene) {
       const nextSceneIdx = allScenes.findIndex(s => s.id === currentSceneObj.nextScene);
       if (nextSceneIdx !== -1) {
+        // Check if next scene is a different chapter
+        const nextSceneObj = allScenes[nextSceneIdx];
+        if (nextSceneObj.chapter > currentSceneObj.chapter) {
+          setNextBridgeChapter(nextSceneObj.chapter);
+          setShowChapterBridge(true);
+        }
         setCurrentSceneIndex(nextSceneIdx);
       }
     }
@@ -761,44 +791,63 @@ export default function StoryModePage() {
   }, [currentDialogIndex, currentSceneIndex]);
 
   return (
-    <div className={`h-screen flex flex-col overflow-hidden relative ${theme === 'dark' ? 'bg-bg text-text-primary' : 'bg-gray-100 text-gray-900'}`}>
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${storyBackground})` }} />
-        <div className={`absolute inset-0 ${theme === 'dark' ? 'bg-black/60' : 'bg-white/70'}`} />
+    <div className="h-screen bg-bg text-text-primary flex flex-col overflow-hidden relative">
+      {/* Decorative Transparent Right-side Graphic */}
+      <div className="fixed bottom-0 right-0 z-0 opacity-30 pointer-events-none max-w-[40%] h-[56vh] flex items-end">
+        <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex flex-1 flex flex-col">
-        {/* Header */}
-        <div className={`h-16 px-6 flex items-center justify-between shrink-0 backdrop-blur-sm ${
-          theme === 'dark'
-            ? 'bg-gradient-to-r from-black/50 via-black/30 to-transparent'
-            : 'bg-gradient-to-r from-purple-100/80 via-pink-100/60 to-transparent'
-        }`}>
-          <div className="flex items-center gap-4">
-            <Link href="/" className="bg-transparent hover:bg-transparent border-0">
-              <button className={`flex items-center gap-2 font-mono text-xs uppercase bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-text-secondary hover:text-text-primary' : 'text-gray-600 hover:text-gray-900'}`}>
-                <ArrowLeft className="w-4 h-4" />
-                Back
-              </button>
-            </Link>
+      {/* VN Mode Rotating Background */}
+      <div className="fixed inset-0 z-0">
+        {VN_BACKGROUNDS.map((bg, i) => (
+          <img
+            key={bg}
+            src={bg}
+            alt={`VN Background ${i + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ${i === vnBgIndex ? 'opacity-100' : 'opacity-0'}`}
+          />
+        ))}
+        <div className="absolute inset-0 bg-black/30" />
+      </div>
+
+      {/* Decorative floating bubbles */}
+      {VN_BUBBLES.map((bubble, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 0.6, scale: 1, y: [0, -6, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: bubble.delay }}
+          className="absolute z-10 pointer-events-none"
+          style={{ top: bubble.top, left: bubble.left }}
+        >
+          <div
+            className="rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+            style={{ width: bubble.size, height: bubble.size }}
+          >
+            <span className="text-white/70 text-[9px] font-mono text-center px-2 leading-tight">{bubble.text}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-text-secondary hover:text-text-primary' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              {theme === 'dark' ? <><Sun className="w-4 h-4" />Light</> : <><Moon className="w-4 h-4" />Dark</>}
+        </motion.div>
+      ))}
+
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col pt-6">
+        {/* Header - Minimalist back button */}
+        <div className="px-8 shrink-0 flex items-center justify-between pointer-events-auto z-50">
+          <Link href="/" className="inline-block">
+            <button className="flex items-center gap-2 font-mono text-xs uppercase bg-black/40 hover:bg-black/60 text-white border border-white/10 hover:border-accent px-4 py-2 rounded-xl backdrop-blur-md transition-all">
+              <ArrowLeft className="w-4 h-4" />
+              Back
             </button>
+          </Link>
+          <div className="flex items-center gap-3 bg-black/40 border border-white/10 backdrop-blur-md rounded-xl p-1">
             <Link href="/chat">
-              <button className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-text-secondary hover:text-accent' : 'text-gray-600 hover:text-purple-600'}`}>
+              <button className="flex items-center gap-2 font-mono text-xs uppercase px-4 py-1.5 rounded-lg text-text-secondary hover:text-accent hover:bg-white/5 transition-all">
                 <MessageSquare className="w-4 h-4" />Chat
               </button>
             </Link>
             <button
-              onClick={() => setStoryBackground(STORY_BACKGROUNDS[(STORY_BACKGROUNDS.indexOf(storyBackground) + 1) % STORY_BACKGROUNDS.length])}
-              className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-purple-400 hover:text-purple-300' : 'text-purple-600 hover:text-purple-700'}`}
+              onClick={() => setVnBgIndex((prev) => (prev + 1) % VN_BACKGROUNDS.length)}
+              className="flex items-center gap-2 font-mono text-xs uppercase px-4 py-1.5 rounded-lg text-text-secondary hover:text-accent hover:bg-white/5 transition-all"
             >
               <RefreshCw className="w-4 h-4" />BG
             </button>
@@ -806,9 +855,60 @@ export default function StoryModePage() {
         </div>
 
         {/* Story Area - Visual Novel Mode */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
-          {/* VN Mode Sprites */}
-          <>
+        {showChapterBridge ? (
+          <div className="flex-1 w-full flex items-center justify-center z-30 p-8 cursor-pointer" onClick={() => setShowChapterBridge(false)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="max-w-4xl w-full"
+            >
+              <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div className="space-y-6">
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <h2 className="text-sm font-mono tracking-[0.3em] text-accent uppercase mb-4">
+                      Chapter {nextBridgeChapter}
+                    </h2>
+                    <h1 className="text-4xl md:text-6xl font-display uppercase tracking-widest leading-none bg-gradient-to-br from-white to-white/60 text-transparent bg-clip-text">
+                      {allScenes.find(s => s.chapter === nextBridgeChapter)?.chapterTitle || 'Next Chapter'}
+                    </h1>
+                  </motion.div>
+                  
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                    className="flex flex-col gap-4"
+                  >
+                    <div className="h-1 w-24 bg-gradient-to-r from-accent to-transparent rounded-full" />
+                    <p className="text-lg text-text-secondary leading-relaxed max-w-md">
+                      {nextBridgeChapter === 2 && "The descent begins. Earth awaits her cosmic arrival."}
+                      {nextBridgeChapter === 3 && "First contact in the digital realm. The summoner is found."}
+                      {nextBridgeChapter === 4 && "From pretense to reality. The search for a soul."}
+                    </p>
+                    <p className="text-xs font-mono uppercase tracking-[0.2em] text-accent/60 mt-8 animate-pulse">
+                      Click anywhere to begin ▼
+                    </p>
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.3, type: "spring" }}
+                  className="relative hidden md:block"
+                >
+                  <div className="absolute inset-0 bg-accent/20 blur-[100px] rounded-full" />
+                  <img src="/siggy-transparent.png" alt="Siggy Transition" className="relative z-10 w-full h-auto drop-shadow-[0_0_50px_rgba(0,255,148,0.3)]" />
+                </motion.div>
+              </div>
+            </motion.div>
+          </div>
+        ) : (
+          <div className="w-full flex-1 flex flex-col justify-end z-20 overflow-hidden min-h-0">
             {/* Siggy Sprite - Centered */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -831,7 +931,6 @@ export default function StoryModePage() {
                 />
               </motion.div>
             </motion.div>
-           </>
 
             {/* Choices floating in the background area */}
             {showChoices && currentScene.choices && (
@@ -858,144 +957,97 @@ export default function StoryModePage() {
               </div>
             )}
 
-          {/* VN Mode Layout */}
-          <div className="absolute bottom-0 w-full flex flex-col z-20">
-
-            {/* Name Tag */}
-            <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
-              <div className={`px-8 py-2 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border ${
-                theme === 'dark'
-                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 border-white/20'
-                  : 'bg-gradient-to-r from-purple-500 to-blue-500 border-gray-300'
-              }`}>
-                <span className={`font-sans tracking-wider font-bold text-base md:text-xl drop-shadow-sm ${theme === 'dark' ? 'text-white' : 'text-white'}`}>
-                  {currentScene.speaker}
-                </span>
-              </div>
-            </div>
-
-            {/* Main Dialogue Box */}
-            <div
-              onClick={handleClick}
-              className={`w-full backdrop-blur-xl border-t px-4 py-8 md:px-16 md:py-10 cursor-pointer transition-all ${
-                theme === 'dark'
-                  ? 'bg-black/40 hover:bg-black/45 border-purple-500/30 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]'
-                  : 'bg-white/60 hover:bg-white/70 border-purple-300/30 shadow-[0_-10px_30px_rgba(139,92,246,0.2)]'
-              }`}
-            >
-              <div className="max-w-7xl mx-auto">
-                {/* Summary Toggle */}
-                <div className="mb-3">
-                  <button
-                    onClick={() => setShowSummary(!showSummary)}
-                    className={`text-xs font-mono uppercase tracking-wider hover:underline ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}
-                  >
-                    {showSummary ? '▼ Hide Summary' : '▶ Show Summary'}
-                  </button>
-                </div>
-
-                {/* Summary Content */}
-                {showSummary && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className={`mb-4 p-4 rounded-lg ${theme === 'dark' ? 'bg-black/30' : 'bg-white/50'}`}
-                  >
-                    <p className={`text-sm font-sans leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
-                      <strong className={theme === 'dark' ? 'text-accent' : 'text-purple-600'}>Chapter {currentScene.chapter} Summary:</strong> This is {currentScene.chapterTitle.toLowerCase()}, where {currentScene.speaker === 'Narrator' ? 'the story begins to unfold' : currentScene.speaker === 'Siggy' ? 'Siggy shares her perspective' : 'you interact with the story'}. Current mood: {currentScene.mood.toLowerCase()}.
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* Chapter Info */}
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4].map((ch) => (
-                      <div
-                        key={ch}
-                        className={`h-1 w-8 rounded-full transition-all ${
-                          completedChapters.includes(ch)
-                            ? 'bg-accent'
-                            : currentScene.chapter === ch
-                              ? 'bg-accent animate-pulse'
-                              : 'bg-white/20'
-                        }`}
-                      />
-                    ))}
+            {/* VN Mode Layout */}
+            <div className="w-full bg-surface backdrop-blur-xl border-t border-border shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all cursor-pointer pointer-events-auto" onClick={handleClick}>
+              <div className="max-w-7xl mx-auto px-8 py-8 relative">
+                
+                {/* Box Header: Name + Mode Info */}
+                <div className="mb-2 flex items-center justify-between border-b border-border pb-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${currentScene.speaker === 'Siggy' ? 'text-accent' : 'text-text-secondary'}`}>
+                      {currentScene.speaker}
+                    </span>
+                    
+                    {/* Mood Badge */}
+                    <span className={`text-[10px] md:text-xs font-mono px-2 py-0.5 rounded ml-2 ${
+                      currentScene.mood === 'DEFAULT' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' :
+                      currentScene.mood === 'HAPPY' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                      currentScene.mood === 'SAD' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' :
+                      currentScene.mood === 'SHOCK' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' :
+                      currentScene.mood === 'SHY' ? 'bg-pink-500/20 text-pink-400 border border-pink-500/30' :
+                      'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}>
+                      {currentScene.mood}
+                    </span>
                   </div>
-                  <span className="font-mono text-xs uppercase tracking-widest text-white/60">
-                    Chapter {currentScene.chapter}: {currentScene.chapterTitle}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4].map((ch) => (
+                        <div
+                          key={ch}
+                          className={`h-1 w-6 rounded-full transition-all ${
+                            completedChapters.includes(ch)
+                              ? 'bg-accent/50'
+                              : currentScene.chapter === ch
+                                ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]'
+                                : 'bg-surface border border-border'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
+                      Chapter {currentScene.chapter}: {currentScene.chapterTitle}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Dialog Text */}
-                <div className="min-h-[120px] max-h-[200px] overflow-y-auto mb-4 pr-4">
-                  <motion.p
-                    key={currentText}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className={`text-lg md:text-xl leading-relaxed font-sans ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}
-                  >
-                    {typewriterText}
-                    {typewriterText.length < currentText.length && (
-                      <motion.span
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
-                        className="inline-block w-0.5 h-5 ml-1 bg-current align-middle"
-                      />
-                    )}
-                  </motion.p>
+                <div className="min-h-[140px] max-h-[250px] overflow-y-auto mb-2 pr-4 signature-scroll flex items-start">
+                  <div className="relative flex flex-col items-start mt-2">
+                    <p className="text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary">
+                      {typewriterText}
+                      {typewriterText.length < currentText.length && (
+                        <motion.span
+                          animate={{ opacity: [0, 1, 0] }}
+                          transition={{ duration: 0.8, repeat: Infinity }}
+                          className="inline-block w-2 h-4 ml-1 bg-accent align-middle"
+                        />
+                      )}
+                    </p>
+                  </div>
                 </div>
-
-                {/* Mood Badge */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className={`text-xs font-mono px-3 py-1.5 rounded-full ${
-                    currentScene.mood === 'DEFAULT' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
-                    currentScene.mood === 'HAPPY' ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' :
-                    currentScene.mood === 'SAD' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' :
-                    currentScene.mood === 'SHOCK' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
-                    currentScene.mood === 'SHY' ? 'bg-pink-500/20 border-pink-500/30 text-pink-400' :
-                    'bg-red-500/20 border-red-500/30 text-red-400'
-                  }`}>
-                    {currentScene.mood}
-                  </span>
-                </div>
-
-
 
                 {/* Click to Continue / End of Chapter */}
-                <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
-                  <div className="text-white/40 text-xs font-mono">
+                <div className="flex items-center justify-between border-t border-border pt-4 mt-2 h-8">
+                  <div className="text-text-secondary text-xs font-mono">
                     {!showChoices && !currentScene.isEnd && (
-                      <motion.span
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        Click to continue ▼
+                      <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 2, repeat: Infinity }}>
+                        Click anywhere to continue ▼
                       </motion.span>
                     )}
                   </div>
 
                   {/* End of Chapter Navigation */}
                   {currentScene.isEnd && (
-                    <div className="flex gap-2">
-                      <Link
-                        href="/"
-                        className="px-6 py-2 bg-gradient-to-r from-accent to-purple-500 text-black font-mono text-xs uppercase tracking-wider rounded-lg hover:from-purple-500 hover:to-accent transition-all"
-                      >
-                        Back to Home
+                    <div className="flex gap-3">
+                      <Link href="/">
+                        <button className="px-4 py-2 bg-surface hover:bg-surface/80 border border-border text-text-primary font-mono text-xs uppercase tracking-wider rounded-lg transition-all">
+                          Back to Home
+                        </button>
                       </Link>
                       {currentScene.chapter < 4 && (
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             const nextChapter = currentScene.chapter + 1;
                             const nextSceneIdx = allScenes.findIndex(s => s.chapter === nextChapter);
                             if (nextSceneIdx !== -1) {
+                              setNextBridgeChapter(nextChapter);
+                              setShowChapterBridge(true);
                               setCurrentSceneIndex(nextSceneIdx);
                             }
                           }}
-                          className="px-6 py-2 bg-white/10 text-white font-mono text-xs uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all"
+                          className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold font-mono text-xs uppercase tracking-wider rounded-lg hover:from-yellow-400 hover:to-accent transition-all shadow-[0_0_15px_rgba(0,255,148,0.2)]"
                         >
                           Next Chapter →
                         </button>
@@ -1006,7 +1058,7 @@ export default function StoryModePage() {
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
