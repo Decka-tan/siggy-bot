@@ -703,18 +703,34 @@ export default function ChatPage() {
                     </motion.div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-5 md:px-12 md:py-6 shadow-[0_-10px_30px_rgba(0,255,148,0.1)]">
+                  <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
+                    {/* Name Tag */}
+                    {activeConversation && activeConversation.messages.length > 0 && (
+                      <div className="px-8 py-2 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b border bg-gradient-to-r from-purple-600 to-blue-600 border-white/20">
+                        <span className="font-sans tracking-wider font-bold text-base md:text-xl drop-shadow-sm text-white uppercase">
+                          {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
+                            ? 'You'
+                            : 'Siggy'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="w-full backdrop-blur-xl border-t px-4 py-8 md:px-16 md:py-10 transition-all bg-black/40 hover:bg-black/45 border-purple-500/30 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]">
                     <div className="max-w-7xl mx-auto">
-                      {/* Name Tag inside dialogue box */}
+                      {/* Mode / Chapter Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-2">
-                          <span className="font-display text-accent text-sm md:text-base uppercase tracking-wider">
-                            {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
-                              ? '► YOU'
-                              : '► SIGGY'}
+                        <div className="mb-4 flex items-center justify-between">
+                          <div className="flex gap-1">
+                            <div className={`h-1 w-8 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent' : 'bg-white/20'}`} />
+                            <div className={`h-1 w-8 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent' : 'bg-white/20'}`} />
+                          </div>
+                          <span className="font-mono text-xs uppercase tracking-widest text-white/60">
+                            Current Mode: {personality === 'CAT' ? 'Cat Form' : 'Anime Girl Form'}
                           </span>
                         </div>
                       )}
+
                       <div className="min-h-[100px] max-h-[100px] overflow-y-auto mb-3 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
                           <div className="text-center">
@@ -820,10 +836,7 @@ export default function ChatPage() {
                     ) : (
                       activeConversation.messages.map((message, index) => (
                         <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] rounded-xl px-4 py-3 border border-border ${message.role === 'user'
-                            ? 'bg-surface'
-                            : 'bg-surface/80'
-                            }`}>
+                          <div className="max-w-[80%] rounded-xl px-4 py-3 border border-border bg-surface">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[10px] font-mono font-semibold text-text-primary">{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
                               {message.mood && <span className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
