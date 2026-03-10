@@ -577,7 +577,8 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen text-text-primary flex flex-col lg:flex-row pt-20 relative" style={{ backgroundImage: "url('/bg-night-sky.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+    <div className="min-h-screen text-text-primary flex flex-col lg:flex-row relative" style={{ backgroundImage: "url('/bg-night-sky.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+      <div className="pt-20 w-full">
       {vnMode && (
         <style dangerouslySetInnerHTML={{ __html: `footer { display: none !important; }` }} />
       )}
@@ -1092,6 +1093,7 @@ export default function ChatPage() {
           </div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 }
