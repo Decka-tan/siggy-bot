@@ -372,17 +372,17 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text-primary flex flex-col lg:flex-row">
-      {/* Desktop Sidebar */}
+      {/* Sidebar Area (full height on desktop) */}
       <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-border">
+        {/* Sidebar Header - aligned with main header */}
+        <div className="h-16 px-4 border-b border-border flex items-center">
           {!sidebarCollapsed ? (
-            <button onClick={createNewConversation} className="w-full flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
+            <button onClick={createNewConversation} className="w-full flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
               <Plus className="w-4 h-4" />
               New Chat
             </button>
           ) : (
-            <button onClick={createNewConversation} className="w-full flex items-center justify-center p-3 bg-accent text-black rounded-lg hover:opacity-90">
+            <button onClick={createNewConversation} className="w-full flex items-center justify-center p-2 bg-accent text-black rounded-lg hover:opacity-90">
               <Plus className="w-4 h-4" />
             </button>
           )}
@@ -404,7 +404,7 @@ export default function ChatPage() {
         </div>
 
         {/* Collapse/Expand Button */}
-        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-accent text-black rounded-full flex items-center justify-center shadow-lg hover:opacity-90 z-10">
+        <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="absolute -right-3 top-20 w-6 h-6 bg-accent text-black rounded-full flex items-center justify-center shadow-lg hover:opacity-90 z-20">
           {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
         </button>
       </div>
