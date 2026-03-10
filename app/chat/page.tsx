@@ -597,11 +597,9 @@ export default function ChatPage() {
                 <Plus className="w-4 h-4" />
               </button>
             )}
-            {!sidebarCollapsed && (
-              <button onClick={() => setShowAvatarModal(true)} className="p-2 bg-surface border border-border text-text-secondary hover:text-accent rounded-lg transition-colors shrink-0" title="Set Avatar">
-                <User className="w-4 h-4" />
-              </button>
-            )}
+            <button onClick={() => setShowAvatarModal(true)} className={`${sidebarCollapsed ? 'hidden' : 'flex'} p-2 bg-surface border border-border text-text-secondary hover:text-accent rounded-lg transition-colors shrink-0`} title="Set Avatar">
+              <User className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Conversations List */}
@@ -881,9 +879,15 @@ export default function ChatPage() {
                 /* =========================================================
                    STANDARD CHAT LAYOUT
                    ========================================================= */
-                <div className="max-w-3xl mx-auto h-full flex flex-col min-h-0 w-full">
+                <div className="max-w-3xl mx-auto h-full flex flex-col min-h-0 w-full relative">
+                  
+                  {/* Decorative Transparent Right-side Graphic */}
+                  <div className="absolute bottom-0 right-0 z-0 opacity-30 pointer-events-none translate-x-12 sm:translate-x-24 md:translate-x-32 max-w-[50%] h-[70vh] flex items-end">
+                    <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
+                  </div>
+
                   {/* Messages - scrollable */}
-                  <div className="flex-1 overflow-y-auto space-y-3 py-3 min-h-0">
+                  <div className="flex-1 overflow-y-auto space-y-3 py-3 min-h-0 relative z-10">
                     {!activeConversation || activeConversation.messages.length === 0 ? (
                       <div className="text-center py-16">
                         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 flex justify-center">
@@ -1009,12 +1013,12 @@ export default function ChatPage() {
                     )}
 
                     {/* Input */}
-                    <div className="flex gap-2 pt-2 items-center">
+                    <div className="flex gap-2 pt-2 items-center relative z-20">
                       <button onClick={resetCurrentConversation} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors hidden sm:block" title="Refresh Chat">
                         <RefreshCw className="w-4 h-4" />
                       </button>
                       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner" />
-                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold hover:from-yellow-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-xs uppercase transition-all disabled:opacity-50 flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)]">
+                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold hover:from-yellow-400 hover:to-accent disabled:from-surface disabled:to-surface disabled:border disabled:border-border disabled:text-text-secondary/50 rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
                     </div>
