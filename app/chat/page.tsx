@@ -703,12 +703,12 @@ export default function ChatPage() {
                     </motion.div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.1)] transition-all">
+                  <div className="w-full bg-surface/90 backdrop-blur-xl border-none px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.1)] transition-all">
                     <div className="max-w-7xl mx-auto">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-4 flex items-center justify-between border-b border-border/30 pb-3">
-                          <div className="px-6 py-1.5 rounded-lg border border-accent/30 bg-accent/10 shadow-inner">
+                        <div className="mb-4 flex items-center justify-between pb-3">
+                          <div className="px-6 py-1.5 rounded-lg border-none bg-accent/10 shadow-inner">
                             <span className="font-display tracking-wider text-sm md:text-lg text-accent uppercase">
                               {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? '► You' : '► Siggy'}
                             </span>
@@ -830,7 +830,7 @@ export default function ChatPage() {
                     ) : (
                       activeConversation.messages.map((message, index) => (
                         <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className="max-w-[80%] rounded-xl px-4 py-3 border border-border bg-surface">
+                          <div className="max-w-[80%] rounded-xl px-4 py-3 bg-surface border-none shadow-sm">
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[10px] font-mono font-semibold text-text-primary">{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
                               {message.mood && <span className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
@@ -865,7 +865,7 @@ export default function ChatPage() {
 
                     {isLoading && (
                       <div className="flex justify-start">
-                        <div className="bg-surface border border-border rounded-2xl px-6 py-4">
+                        <div className="bg-surface border-none shadow-sm rounded-2xl px-6 py-4">
                           <div className="flex items-center gap-2 mb-2">
                             <span className="text-xs font-mono font-semibold">SIGGY</span>
                             <span className="text-xs text-text-secondary">*tapping on phone*</span>
