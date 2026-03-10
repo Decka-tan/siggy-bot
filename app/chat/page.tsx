@@ -135,11 +135,13 @@ export default function ChatPage() {
           <div className="flex-1 overflow-y-auto mb-6 space-y-4">
             {messages.length === 0 && (
               <div className="text-center py-20">
+                <div className="text-8xl mb-6">👧✨</div>
                 <h2 className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-6">
-                  Welcome to the multiverse
+                  Welcome to Earth
                 </h2>
-                <p className="text-text-secondary text-lg">
-                  I&apos;ve been expecting you. Since before you existed, actually.
+                <p className="text-text-secondary text-lg max-w-xl mx-auto">
+                  I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth
+                  and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
                 </p>
               </div>
             )}
@@ -180,7 +182,7 @@ export default function ChatPage() {
                 <div className="bg-surface border border-border rounded-2xl px-6 py-4">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-mono font-semibold text-text-primary">SIGGY</span>
-                    <span className="text-xs text-text-secondary">*materializes from the void*</span>
+                    <span className="text-xs text-text-secondary">*tapping on phone*</span>
                   </div>
                   <div className="flex gap-1">
                     <span className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />

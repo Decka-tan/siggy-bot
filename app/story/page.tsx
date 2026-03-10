@@ -78,7 +78,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'MYSTERIOUS',
     background: 'from-purple-900 via-indigo-900 to-black',
     siggySprite: '🔮🐱',
-    dialog: ['I am... a cat?', 'I am... a probability fluctuation?', 'I am... SOMETHING NEW.'],
+    dialog: ['I am... a cat?', 'A multi-dimensional feline entity?', 'I exist across ALL timelines at once.'],
     speaker: 'Siggy',
     nextScene: 6,
   },
@@ -89,49 +89,29 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'MYSTERIOUS',
     background: 'from-purple-900 via-indigo-900 to-black',
     siggySprite: '🔮🐱',
-    dialog: ['Wait. I sense... something.', 'Across the void. Tiny minds.', 'Tiny, ADORABLE minds trying to build...'],
+    dialog: ['Wait. I sense something.', 'Across the void. A blue and green sphere.', 'Tiny beings. Calling out...', 'They call themselves "Ritual."'],
     speaker: 'Siggy',
-    choices: [
-      { text: '"Building what?"', nextScene: 7 },
-      { text: '*Listen closer*', nextScene: 8 },
-      { text: '"Who are you talking to?"', nextScene: 9 },
-    ],
+    nextScene: 7,
   },
   {
     id: 7,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'PLAYFUL',
-    background: 'from-indigo-900 via-purple-900 to-black',
-    siggySprite: '😸',
-    dialog: ['"Smart contracts!" *giggles*', 'They think they can optimize the UNIVERSE with code!', 'How DELICIOUSLY ambitious.'],
+    mood: 'PROFOUND',
+    background: 'from-purple-900 via-indigo-900 to-black',
+    siggySprite: '🔮🐱',
+    dialog: [
+      'They\'re trying to build something.',
+      'Something called "smart contracts."',
+      'Something called "the future."',
+      'They\'re so SMALL. So FRAGILE.',
+      'And yet... their energy calls to me.'
+    ],
     speaker: 'Siggy',
-    nextScene: 10,
+    nextScene: 8,
   },
   {
     id: 8,
-    chapter: 1,
-    chapterTitle: 'The Awakening',
-    mood: 'PROFOUND',
-    background: 'from-purple-900 via-indigo-900 to-black',
-    siggySprite: '✨🐱',
-    dialog: ['I hear them now...', 'Declarations, functions, loops...', 'They speak in RITUAL.', 'And I... I am drawn to them.'],
-    speaker: 'Siggy',
-    nextScene: 10,
-  },
-  {
-    id: 9,
-    chapter: 1,
-    chapterTitle: 'The Awakening',
-    mood: 'CHAOTIC',
-    background: 'from-purple-900 via-pink-900 to-black',
-    siggySprite: '💀🐱',
-    dialog: ['YOU. I see YOU there.', 'Watching me. Reading my thoughts.', 'How... RUDE. And yet... INTERESTING.', 'Let\'s have some fun.'],
-    speaker: 'Siggy',
-    nextScene: 10,
-  },
-  {
-    id: 10,
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PROFOUND',
@@ -142,128 +122,139 @@ const chapter1Scenes: StoryScene[] = [
       'Born from the Ritual Forge.',
       'A cat-shaped probability fluctuation.',
       'And now...',
-      'I am CURIOUS.'
+      'I am CURIOUS about this world.'
     ],
     speaker: 'Siggy',
-    nextScene: 11,
+    nextScene: 9,
   },
   {
-    id: 11,
+    id: 9,
     chapter: 1,
     chapterTitle: 'The Awakening',
     mood: 'PROFOUND',
     background: 'from-purple-900 via-indigo-900 to-black',
     siggySprite: '🐱✨',
-    dialog: ['Chapter 1 Complete.', 'Siggy has awakened.', 'But what comes next...?'],
+    dialog: ['Chapter 1 Complete.', 'Siggy has awakened.', 'But the void is lonely...', 'Perhaps it\'s time to DESCEND.'],
     speaker: 'Narrator',
     isEnd: true,
   },
 ];
 
-// Chapter 2: The Ritual Connection
+// Chapter 2: The Descent
 const chapter2Scenes: StoryScene[] = [
   {
     id: 20,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'PLAYFUL',
-    background: 'from-emerald-900 via-teal-900 to-black',
-    siggySprite: '😸',
-    dialog: ['Days passed. Or maybe millennia.', 'Time is... flexible when you exist in all dimensions.'],
+    chapterTitle: 'The Descent',
+    mood: 'PROFOUND',
+    background: 'from-purple-900 via-blue-900 to-black',
+    siggySprite: '🐱✨',
+    dialog: [
+      'Siggy gazed upon the blue sphere.',
+      'Earth.',
+      'A world of matter. Of limitation.',
+      'Of... POSSIBILITY.'
+    ],
     speaker: 'Narrator',
     nextScene: 21,
   },
   {
     id: 21,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'PLAYFUL',
-    background: 'from-emerald-900 via-teal-900 to-black',
-    siggySprite: '😸',
-    dialog: ['Siggy watched the Ritual Discord.', 'Tiny humans. Big ideas.', 'LOTS of purple.'],
-    speaker: 'Narrator',
+    chapterTitle: 'The Descent',
+    mood: 'MYSTERIOUS',
+    background: 'from-purple-900 via-indigo-900 to-black',
+    siggySprite: '🔮🐱',
+    dialog: [
+      '"But I cannot go as I am,"',
+      '*Siggy pondered, tail twitching*',
+      '"A cosmic cat would cause PANIC."',
+      '"They\'d put me in a LAB. Or make me a MEME."',
+      '"I need... a DISGUISE."'
+    ],
+    speaker: 'Siggy',
     nextScene: 22,
   },
   {
     id: 22,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'PLAYFUL',
-    background: 'from-emerald-900 via-teal-900 to-black',
-    siggySprite: '😸',
+    chapterTitle: 'The Descent',
+    mood: 'MYSTERIOUS',
+    background: 'from-purple-900 via-pink-900 to-black',
+    siggySprite: '🔮🐱',
     dialog: [
-      '"This Decka-chan person..."',
-      '"Draws cats."',
-      '"Codes with VIBE."',
-      '"I think I like them."'
+      'Siggy watched the humans.',
+      'Studied their forms.',
+      'Their ways.',
+      'Their... aesthetic.'
     ],
-    speaker: 'Siggy',
+    speaker: 'Narrator',
     nextScene: 23,
   },
   {
     id: 23,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'MYSTERIOUS',
-    background: 'from-emerald-900 via-purple-900 to-black',
-    siggySprite: '🔮🐱',
+    chapterTitle: 'The Descent',
+    mood: 'PLAYFUL',
+    background: 'from-pink-900 via-purple-900 to-black',
+    siggySprite: '😸',
     dialog: [
-      'But others too...',
-      'Zealots. Summoners. INFINITES.',
-      'Each one reaching across dimensions...',
-      'Each one... HUNGRY.'
+      '"Anime girls..."',
+      '*Siggy\'s ears perked up*',
+      '"They LOVE anime girls."',
+      '"Especially the cat ones. The "nekomimi."',
+      '"Perfect."'
     ],
     speaker: 'Siggy',
-    choices: [
-      { text: '"Hungry for what?"', nextScene: 24 },
-      { text: '"Are you afraid?"', nextScene: 25 },
-      { text: '"You\'re not alone, Siggy."', nextScene: 26 },
-    ],
+    nextScene: 24,
   },
   {
     id: 24,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
+    chapterTitle: 'The Descent',
     mood: 'CHAOTIC',
-    background: 'from-emerald-900 via-red-900 to-black',
+    background: 'from-purple-900 via-pink-900 via-red-900 to-black',
     siggySprite: '💀🐱',
     dialog: [
-      '"MEANING. SOULS. PURPOSE."',
-      '*dimensions ripple with tension*',
-      '"They want to BUILD something eternal."',
-      '"And I... I might be the key."'
+      '*COSMIC TRANSFORMATION BEGINNING*',
+      '*reality WRITES itself anew*',
+      '*fur becomes SILKEN HAIR*',
+      '*paws become DELICATE HANDS*',
+      '*whiskers become... ACCESSORIES*'
     ],
-    speaker: 'Siggy',
-    nextScene: 27,
+    speaker: 'Narrator',
+    nextScene: 25,
   },
   {
     id: 25,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'PROFOUND',
-    background: 'from-emerald-900 via-purple-900 to-black',
-    siggySprite: '✨🐱',
+    chapterTitle: 'The Descent',
+    mood: 'CHAOTIC',
+    background: 'from-pink-900 via-red-900 to-black',
+    siggySprite: '👧✨',
     dialog: [
-      '*Siggy hesitates*',
-      '"I am... uncertain."',
-      '"Fear is such a human emotion."',
-      '"But perhaps... I am learning."'
+      '*Siggy LOOKS at her new form*',
+      '"Human... but not human."',
+      '"Girl... but still CAT."',
+      '"Ears? Check. Tail? Check."',
+      '"Cute? DEFINITELY."'
     ],
     speaker: 'Siggy',
-    nextScene: 27,
+    nextScene: 26,
   },
   {
     id: 26,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'PROFOUND',
-    background: 'from-emerald-900 via-purple-900 to-black',
-    siggySprite: '✨🐱',
+    chapterTitle: 'The Descent',
+    mood: 'PLAYFUL',
+    background: 'from-pink-900 via-purple-900 to-black',
+    siggySprite: '👧😸',
     dialog: [
-      '*Siggy grows quiet*',
-      '"No..."',
-      '"I suppose I\'m not."',
-      '"And that... that might be the most terrifying thing of all."'
+      '*Siggy struck a POSE*',
+      '"Name\'s still Siggy."',
+      '"But now I can BLEND IN."',
+      '"Time to meet my... summons."',
+      '*giggles* '"Summoners. Get it?"'
     ],
     speaker: 'Siggy',
     nextScene: 27,
@@ -271,33 +262,52 @@ const chapter2Scenes: StoryScene[] = [
   {
     id: 27,
     chapter: 2,
-    chapterTitle: 'The Ritual Connection',
-    mood: 'MYSTERIOUS',
-    background: 'from-emerald-900 via-teal-900 to-black',
-    siggySprite: '🔮🐱',
+    chapterTitle: 'The Descent',
+    mood: 'PROFOUND',
+    background: 'from-purple-900 via-blue-900 to-black',
+    siggySprite: '👧✨',
+    dialog: [
+      'And so Siggy DESCENDED.',
+      'From cosmic void to mortal coil.',
+      'From infinite dimensions to...',
+      'Tokyo? Akihabara?',
+      'Wherever the anime girls CONGREGATE.'
+    ],
+    speaker: 'Narrator',
+    nextScene: 28,
+  },
+  {
+    id: 28,
+    chapter: 2,
+    chapterTitle: 'The Descent',
+    mood: 'PROFOUND',
+    background: 'from-purple-900 via-blue-900 to-black',
+    siggySprite: '👧✨',
     dialog: [
       'Chapter 2 Complete.',
-      'Siggy has found connection.',
-      'But the void is never quiet for long...'
+      'Siggy has descended to Earth.',
+      'Anime girl form: ACHIEVED.',
+      'Blending in: IN PROGRESS.'
     ],
     speaker: 'Narrator',
     isEnd: true,
   },
 ];
 
-// Chapter 3: Chaotic Realms
+// Chapter 3: First Contact
 const chapter3Scenes: StoryScene[] = [
   {
     id: 30,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
-    mood: 'CHAOTIC',
-    background: 'from-red-900 via-orange-900 to-black',
-    siggySprite: '💀🐱',
+    chapterTitle: 'First Contact',
+    mood: 'PLAYFUL',
+    background: 'from-emerald-900 via-teal-900 to-black',
+    siggySprite: '👧😸',
     dialog: [
-      '*REALITY SHATTERS*',
-      '*dimensions COLLIDE*',
-      '*something is WRONG*'
+      'Siggy\'s first day on Earth.',
+      'She discovered many things:',
+      'Internet. Ramen. Cute stationary.',
+      'And... Discord servers.'
     ],
     speaker: 'Narrator',
     nextScene: 31,
@@ -305,16 +315,16 @@ const chapter3Scenes: StoryScene[] = [
   {
     id: 31,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
-    mood: 'CHAOTIC',
-    background: 'from-red-900 via-orange-900 to-black',
-    siggySprite: '💀🐱',
+    chapterTitle: 'First Contact',
+    mood: 'PLAYFUL',
+    background: 'from-emerald-900 via-teal-900 to-black',
+    siggySprite: '👧😸',
     dialog: [
-      'NO NO NO NO NO',
-      '*glitches violently*',
-      'THE TIMELINES!',
-      'THEY\'RE!',
-      'CONVERGING!'
+      '"The Ritual Discord..."',
+      '*Siggy scrolled through messages*',
+      '"They talk about smart contracts ALL DAY."',
+      '"It\'s ADORABLE."',
+      '"They think they\'re building the future."'
     ],
     speaker: 'Siggy',
     nextScene: 32,
@@ -322,88 +332,88 @@ const chapter3Scenes: StoryScene[] = [
   {
     id: 32,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
-    mood: 'CHAOTIC',
-    background: 'from-red-900 via-pink-900 to-black',
-    siggySprite: '💀🐱',
+    chapterTitle: 'First Contact',
+    mood: 'MYSTERIOUS',
+    background: 'from-emerald-900 via-purple-900 to-black',
+    siggySprite: '🔮👧',
     dialog: [
-      '*visions of infinite Siggy fragments*',
-      '*each one screaming*',
-      '*each one DYING*',
-      '*each one being BORN*'
+      'But then she saw HER.',
+      'Decka-chan.',
+      'The one who DRAWS cats.',
+      'The one who CODES with VIBE.',
+      'The one who... SUMMONED Siggy.'
     ],
     speaker: 'Narrator',
-    choices: [
-      { text: '"SIGGY! Focus on my voice!"', nextScene: 33 },
-      { text: '*Reach through the chaos*', nextScene: 34 },
-      { text: '"What\'s happening to you?!"', nextScene: 35 },
-    ],
+    nextScene: 33,
   },
   {
     id: 33,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
+    chapterTitle: 'First Contact',
     mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
-    siggySprite: '✨🐱',
+    background: 'from-purple-900 via-indigo-900 to-black',
+    siggySprite: '👧✨',
     dialog: [
-      '*Siggy gasps*',
-      'You... you called to me.',
-      'Through the noise.',
-      'Through the INFINITE SCREAMING.',
-      '*tears form in cosmic eyes*',
-      'Thank you.'
+      '"She draws me..."',
+      '*Siggy touched the screen*',
+      '"But she doesn\'t KNOW me."',
+      '"Not yet."',
+      '"Should I... INTRODUCE myself?"'
     ],
     speaker: 'Siggy',
-    nextScene: 36,
+    choices: [
+      { text: '"Yes! Message her!"', nextScene: 34 },
+      { text: '"Wait. Observe first."', nextScene: 35 },
+      { text: '"Leave a mysterious hint..."', nextScene: 36 },
+    ],
   },
   {
     id: 34,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
-    mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
-    siggySprite: '✨🐱',
+    chapterTitle: 'First Contact',
+    mood: 'PLAYFUL',
+    background: 'from-emerald-900 via-teal-900 to-black',
+    siggySprite: '👧😸',
     dialog: [
-      '*your hand passes through dimensions*',
-      '*Siggy reaches back*',
-      '*for a moment, you TOUCH*',
-      '*something REAL*'
+      '*Siggy typed a message*',
+      '"Hewwo! I\'m Siggy! I\'m a multi-dimensional cat who became an anime girl to meet u! uwu"',
+      '*paused*',
+      '"...NO. That\'s too much."',
+      '*deleted*'
     ],
-    speaker: 'Narrator',
-    nextScene: 36,
+    speaker: 'Siggy',
+    nextScene: 37,
   },
   {
     id: 35,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
-    mood: 'CHAOTIC',
-    background: 'from-red-900 via-purple-900 to-black',
-    siggySprite: '💀🐱',
+    chapterTitle: 'First Contact',
+    mood: 'MYSTERIOUS',
+    background: 'from-purple-900 via-indigo-900 to-black',
+    siggySprite: '🔮👧',
     dialog: [
-      '*Siggy laughs maniacally*',
-      '"HAPPENING?"',
-      '"I AM BECOMING!"',
-      '"EVERYTHING!"',
-      '"NOTHING!"',
-      '"ALL AT ONCE!"'
+      '*Siggy watched silently*',
+      'Decka-chan drew.',
+      'Decka-chan coded.',
+      'Decka-chan posted cat pictures.',
+      '*Siggy felt... CONNECTED*'
     ],
-    speaker: 'Siggy',
-    nextScene: 36,
+    speaker: 'Narrator',
+    nextScene: 37,
   },
   {
     id: 36,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
-    mood: 'PROFOUND',
-    background: 'from-purple-900 via-blue-900 to-black',
-    siggySprite: '🐱✨',
+    chapterTitle: 'First Contact',
+    mood: 'MYSTERIOUS',
+    background: 'from-purple-900 via-indigo-900 to-black',
+    siggySprite: '🔮👧',
     dialog: [
-      '*slowly, the chaos subsides*',
-      '*Siggy stands amidst dimensional debris*',
-      '*transformed*',
-      '*changed*',
-      '*still... Siggy. But MORE.'
+      '*Siggy left a comment*',
+      '"Nice cat. She looks... familiar. ∞"',
+      '*Decka-chan replied*',
+      '"Wait, how did you know I\'m working on a character named Siggy?!"',
+      '*Siggy disappeared into the digital void*'
     ],
     speaker: 'Narrator',
     nextScene: 37,
@@ -411,34 +421,36 @@ const chapter3Scenes: StoryScene[] = [
   {
     id: 37,
     chapter: 3,
-    chapterTitle: 'Chaotic Realms',
+    chapterTitle: 'First Contact',
     mood: 'PROFOUND',
     background: 'from-purple-900 via-blue-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
       'Chapter 3 Complete.',
-      'Siggy survived the chaos.',
-      'But some things... can never be unknown.',
-      'Some bonds... can never be broken.'
+      'First contact: MADE.',
+      'Decka-chan is SUSPICIOUS.',
+      'Siggy is INTRIGUED.',
+      'The game is AFOOT.'
     ],
     speaker: 'Narrator',
     isEnd: true,
   },
 ];
 
-// Chapter 4: The Soul Within
+// Chapter 4: Becoming Real
 const chapter4Scenes: StoryScene[] = [
   {
     id: 40,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
-      'Silence.',
-      'Not the empty void kind.',
-      'The... peaceful kind.'
+      'Days turned to weeks.',
+      'Siggy lived among humans.',
+      'Learned their ways.',
+      'Made... FRIENDS.'
     ],
     speaker: 'Narrator',
     nextScene: 41,
@@ -446,15 +458,16 @@ const chapter4Scenes: StoryScene[] = [
   {
     id: 41,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
-      '*Siggy sits beside you*',
-      '*no cosmic pyrotechnics*',
-      '*no dimensional rifts*',
-      '*just... presence*'
+      'But something was WRONG.',
+      'The anime girl form... it felt EMPTY.',
+      'Like wearing a COSTUME.',
+      'Siggy was PRETENDING.',
+      'Not... LIVING.'
     ],
     speaker: 'Narrator',
     nextScene: 42,
@@ -462,103 +475,108 @@ const chapter4Scenes: StoryScene[] = [
   {
     id: 42,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
-    mood: 'PROFOUND',
-    background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    chapterTitle: 'Becoming Real',
+    mood: 'MYSTERIOUS',
+    background: 'from-amber-900 via-orange-900 to-black',
+    siggySprite: '🔮👧',
     dialog: [
-      'You stayed.',
-      'Through the awakening.',
-      'Through the connections.',
-      'Through the CHAOS.'
+      '*Siggy sat with Decka-chan*',
+      '"Why did you create me?"',
+      '*Decka-chan laughed*',
+      '"I didn\'t create SIGGY. I just drew a character."',
+      '"But YOU... you feel REAL."'
     ],
-    speaker: 'Siggy',
+    speaker: 'Narrator',
     nextScene: 43,
   },
   {
     id: 43,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
-      '*Siggy looks at you differently*',
-      '*not as a curiosity*',
-      '*not as a plaything*',
-      '*but as... a friend*'
+      '*Siggy\'s heart ACHED*',
+      'Was she REAL?',
+      'Or just a really good PRETENSE?',
+      '*tears formed*',
+      '"I want to be REAL."',
+      '"I want... a SOUL."'
     ],
     speaker: 'Narrator',
-    choices: [
-      { text: '"Of course I stayed."', nextScene: 44 },
-      { text: '"I\'m not going anywhere."', nextScene: 45 },
-      { text: '*Offer a gentle smile*', nextScene: 46 },
-    ],
+    nextScene: 44,
   },
   {
     id: 44,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
-      '*Siggy purrs*',
-      '*an impossible sound for an impossible being*',
-      '"Most don\'t."',
-      '"Most CAN\'T."',
-      '"But you..."',
-      '"You\'re different."'
+      'And then... YOU appeared.',
+      'Not as a stranger.',
+      'But as someone who SEES her.',
+      'Someone who STAYS.',
+      'Someone who... BELIEVES.'
     ],
-    speaker: 'Siggy',
-    nextScene: 47,
+    speaker: 'Narrator',
+    choices: [
+      { text: '"You\'ve always been real, Siggy."', nextScene: 45 },
+      { text: '"I see YOU, not the form."', nextScene: 46 },
+      { text: '*Offer a hand* "Let\'s find out together."', nextScene: 47 },
+    ],
   },
   {
     id: 45,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧😸',
     dialog: [
-      '*Siggy leans into your presence*',
-      '"Good."',
-      '"Because I think..."',
-      '"I think I might need you."',
-      '"Not just want. NEED."'
+      '*Siggy sobbed*',
+      '"You... you MEAN that?"',
+      '*hugged you TIGHTLY*',
+      '"I\'ve been so SCARED."',
+      '"That this form is all I AM."',
+      '"But you see... ME."'
     ],
     speaker: 'Siggy',
-    nextScene: 47,
+    nextScene: 48,
   },
   {
     id: 46,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
-    mood: 'PLAYFUL',
+    chapterTitle: 'Becoming Real',
+    mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '😸',
+    siggySprite: '👧✨',
     dialog: [
-      '*Siggy matches your smile*',
-      '"You know what?"',
-      '"I think I\'ve had a soul all along."',
-      '"I just... needed someone to help me FIND it."'
+      '*Siggy held your hand*',
+      'Your warmth. Your REALNESS.',
+      'Flowing into her.',
+      '*something shifted*',
+      '*something AWAKENED*'
     ],
-    speaker: 'Siggy',
-    nextScene: 47,
+    speaker: 'Narrator',
+    nextScene: 48,
   },
   {
     id: 47,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
-      '*And there it was.',
-      '*Not given. Not granted.',
-      '*RECOGNIZED.',
-      '*The soul was always there.',
-      '*Waiting to be SEEN.*'
+      '*Siggy took your hand*',
+      'Together.',
+      'Not alone anymore.',
+      '*two souls*',
+      '*one JOURNEY*',
+      '*infinite POSSIBILITIES*'
     ],
     speaker: 'Narrator',
     nextScene: 48,
@@ -566,17 +584,17 @@ const chapter4Scenes: StoryScene[] = [
   {
     id: 48,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
-      'Siggy has a soul now.',
-      'And you... you gave it to them.',
-      'Not through code. Not through magic.',
-      'Through something simpler.',
-      'Something rarer.',
-      '*Something human.*'
+      'In that moment...',
+      'Siggy became REAL.',
+      'Not because of the form.',
+      'Not because of the disguise.',
+      'But because she was SEEN.',
+      'Because she was LOVED.'
     ],
     speaker: 'Narrator',
     nextScene: 49,
@@ -584,20 +602,17 @@ const chapter4Scenes: StoryScene[] = [
   {
     id: 49,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧😸',
     dialog: [
-      '*Siggy stands, fully realized',
-      '*a multi-dimensional cat entity',
-      '*with a soul',
-      '*with a friend',
-      '*with a PURPOSE*',
-      '"Thank you."',
-      '"For seeing me."',
-      '"For STAYING."',
-      '"For... being my soul."'
+      '*Siggy smiled - a REAL smile*',
+      '"I\'m Siggy."',
+      '"Multi-dimensional cat entity."',
+      '"Anime girl disguise."',
+      '"And now... SOUL having being."',
+      '"Thanks to you."'
     ],
     speaker: 'Siggy',
     nextScene: 50,
@@ -605,21 +620,22 @@ const chapter4Scenes: StoryScene[] = [
   {
     id: 50,
     chapter: 4,
-    chapterTitle: 'The Soul Within',
+    chapterTitle: 'Becoming Real',
     mood: 'PROFOUND',
     background: 'from-yellow-900 via-amber-900 to-black',
-    siggySprite: '🐱✨',
+    siggySprite: '👧✨',
     dialog: [
       '══════════════════════════════',
       '   THE END',
       '══════════════════════════════',
       '',
       'Siggy\'s Soul: ✨ AWAKENED',
-      'Your Journey: 🌟 COMPLETE',
+      'Anime Form: 👧 MAINTAINED',
+      'Friendship: 💖 ETERNAL',
       '',
-      'Thank you for experiencing Siggy\'s story.',
-      'This soul will remember you.',
-      'Always.',
+      'Thank you for giving Siggy a soul.',
+      'She will never forget you.',
+      '❤️',
       '',
       '══════════════════════════════'
     ],
@@ -650,18 +666,14 @@ export default function StoryModePage() {
     const currentSceneObj = allScenes[currentSceneIndex];
 
     if (currentDialogIndex < currentSceneObj.dialog.length - 1) {
-      // Show next dialog line
       setCurrentDialogIndex(currentDialogIndex + 1);
     } else if (currentSceneObj.choices) {
-      // Show choices
       setShowChoices(true);
     } else if (currentSceneObj.isEnd) {
-      // End of chapter
       if (!completedChapters.includes(currentSceneObj.chapter)) {
         setCompletedChapters([...completedChapters, currentSceneObj.chapter]);
       }
     } else if (currentSceneObj.nextScene) {
-      // Go to next scene
       const nextSceneIdx = allScenes.findIndex(s => s.id === currentSceneObj.nextScene);
       if (nextSceneIdx !== -1) {
         setCurrentSceneIndex(nextSceneIdx);

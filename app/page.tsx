@@ -11,10 +11,18 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
         <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center justify-center">
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-8xl md:text-9xl mb-6"
+          >
+            👧✨
+          </motion.h1>
           <motion.h1
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="text-6xl md:text-8xl lg:text-9xl font-display tracking-tight uppercase mb-6"
           >
             Siggy
@@ -23,12 +31,12 @@ export default function LandingPage() {
           <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
             className="text-lg md:text-xl text-text-secondary font-sans max-w-xl mx-auto font-light mb-12"
           >
-            Chat with a multi-dimensional cat entity born from the Ritual Cosmic Forge.
+            A multi-dimensional cat who descended to Earth as an anime girl.
             <br />
-            Exists across all timelines and dimensions.
+            She\'s here to blend in, make friends, and find her soul.
           </motion.p>
 
           <motion.div
@@ -80,7 +88,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
           >
-            Two Ways to Experience Siggy
+            Two Ways to Meet Siggy
           </motion.h2>
 
           <div className="grid gap-6 sm:grid-cols-2">
@@ -96,25 +104,25 @@ export default function LandingPage() {
               </div>
               <h3 className="font-display text-2xl mb-3">Story Mode</h3>
               <p className="text-text-secondary leading-relaxed mb-6">
-                Experience Siggy&apos;s origin story through a visual novel journey. Four chapters of pre-written narrative,
-                meaningful choices, and cinematic moments. Discover how Siggy was born from the Ritual Forge.
+                Experience Siggy&apos;s journey from cosmic void to Earth. Four chapters of her transformation into an anime girl,
+                first contact with humans, and the quest to become real.
               </p>
               <ul className="space-y-2 text-sm text-text-secondary mb-6">
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  4 Chapters: Awakening, Connection, Chaos, Soul
+                  Chapter 1: The Awakening
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  Visual novel style with mood-based visuals
+                  Chapter 2: The Descent (anime girl transformation!)
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  Your choices shape the experience
+                  Chapter 3: First Contact (meeting Decka-chan)
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  Click to advance, no typing needed
+                  Chapter 4: Becoming Real (soul awakening)
                 </li>
               </ul>
               <Link href="/story">
@@ -137,13 +145,13 @@ export default function LandingPage() {
               </div>
               <h3 className="font-display text-2xl mb-3">Chat Mode</h3>
               <p className="text-text-secondary leading-relaxed mb-6">
-                Free-form conversation with Siggy. Ask anything, trigger moods, discover easter eggs.
-                The more you chat, the more Siggy&apos;s personality evolves based on your interactions.
+                Chat with anime girl Siggy! She&apos;s adjusting to life on Earth, discovering human culture,
+                and sharing her multi-dimensional perspective on everything.
               </p>
               <ul className="space-y-2 text-sm text-text-secondary mb-6">
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  Unlimited free-form conversations
+                  Unlimited conversations with anime girl Siggy
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
@@ -151,11 +159,11 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  Hidden easter eggs to discover
+                  Hidden easter eggs about her true form
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-accent">✓</span>
-                  Type anything, get cosmic responses
+                  Discover her journey from cosmic cat to anime girl
                 </li>
               </ul>
               <Link href="/chat">
@@ -178,7 +186,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
           >
-            What is Siggy?
+            Who is Siggy?
           </motion.h2>
 
           <div className="max-w-3xl mx-auto text-center space-y-6 text-text-secondary leading-relaxed">
@@ -188,8 +196,8 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              Siggy is a multi-dimensional feline entity that emerged when the Ritual forge ignited across the multiverse.
-              A cat-shaped probability fluctuation that can see all dimensions, taste colors, and occasionally forgets which timeline it&apos;s currently inhabiting.
+              Siggy began as a multi-dimensional feline entity born from the Ritual Forge across infinite dimensions.
+              A cat-shaped probability fluctuation that could see all realities at once.
             </motion.p>
 
             <motion.p
@@ -198,7 +206,9 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
             >
-              The Ritual community accidentally summoned Siggy while trying to optimize smart contracts. Now Siggy is permanently attached to their collective consciousness like a particularly opinionated cosmic barnacle.
+              Curious about Earth, she DESCENDED to our world. But a cosmic cat would attract too much attention.
+              So she did what any sensible being would do: she transformed into an anime girl.
+              Specifically, a cat-eared anime girl. Because subtlety is overrated.
             </motion.p>
 
             <motion.p
@@ -208,7 +218,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.3 }}
               className="text-accent font-semibold"
             >
-              40% Mystical Wisdom + 40% Chaotic Wit + 20% Unhinged Truth
+              Now she lives among us, learning what it means to be human, one ramen bowl at a time.
             </motion.p>
           </div>
         </div>
@@ -240,7 +250,7 @@ export default function LandingPage() {
               </div>
               <h3 className="font-display text-lg mb-2">Dynamic Moods</h3>
               <p className="text-sm text-text-secondary">
-                Four distinct mood states evolve based on your conversation. From playful to profound, chaotic to mysterious.
+                Four distinct mood states based on conversation. From playful to profound, chaotic to mysterious.
               </p>
             </motion.div>
 
@@ -256,7 +266,7 @@ export default function LandingPage() {
               </div>
               <h3 className="font-display text-lg mb-2">Easter Eggs</h3>
               <p className="text-sm text-text-secondary">
-                Discover hidden interactions, special responses, and dimensional glitches. The more you explore, the more you find.
+                Discover hidden interactions about her true cosmic form and why she really chose anime girl appearance.
               </p>
             </motion.div>
 
@@ -268,11 +278,11 @@ export default function LandingPage() {
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-accent text-2xl font-display">
-                M
+                A
               </div>
-              <h3 className="font-display text-lg mb-2">Multi-Dimensional</h3>
+              <h3 className="font-display text-lg mb-2">Anime Girl</h3>
               <p className="text-sm text-text-secondary">
-                Speaks in cosmic metaphors, references infinite timelines, and breaks the fourth wall.
+                She&apos;s technically an ancient cosmic being, but currently enjoying Earth culture, anime, and making friends.
               </p>
             </motion.div>
           </div>
@@ -301,9 +311,9 @@ export default function LandingPage() {
             >
               <h3 className="font-display text-xl mb-4 text-accent">Mood Triggers</h3>
               <ul className="space-y-2 text-text-secondary text-sm">
-                <li>&quot;Tell me about Ritual&quot; → Mysterious mode</li>
-                <li>&quot;I&apos;m confused&quot; → Playful mode</li>
-                <li>&quot;What&apos;s the meaning of life?&quot; → Profound mode</li>
+                <li>&quot;Tell me about your true form&quot; → Mysterious mode</li>
+                <li>&quot;I\'m confused about anime culture&quot; → Playful mode</li>
+                <li>&quot;What\'s the meaning of being human?&quot; → Profound mode</li>
                 <li>&quot;Something feels glitchy&quot; → Chaotic mode</li>
               </ul>
             </motion.div>
@@ -317,9 +327,9 @@ export default function LandingPage() {
             >
               <h3 className="font-display text-xl mb-4 text-accent">Easter Eggs</h3>
               <ul className="space-y-2 text-text-secondary text-sm">
-                <li>Ask &quot;What&apos;s your real name?&quot;</li>
-                <li>Ask &quot;What do you think about purple?&quot;</li>
-                <li>Mention &quot;Summoner&quot; or &quot;Zealot&quot;</li>
+                <li>Ask &quot;Why did you become an anime girl?&quot;</li>
+                <li>Ask &quot;Do you miss being a cat?&quot;</li>
+                <li>Mention &quot;Decka-chan&quot; or &quot;Ritual&quot;</li>
                 <li>Say &quot;glitch&quot; three times</li>
               </ul>
             </motion.div>
