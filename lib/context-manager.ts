@@ -278,12 +278,13 @@ export function buildContextualPrompt(
 
   // Add relevant knowledge based on user input
   if (currentUserMessage) {
-    const relevantKnowledge = getRelevantKnowledge(currentUserMessage, 2);
+    const relevantKnowledge = getRelevantKnowledge(currentUserMessage, 5);
     if (relevantKnowledge.length > 0) {
+      // Insert knowledge BEFORE the guidelines so it takes priority
       enhancedPrompt = enhancedPrompt.replace(
         '## IMPORTANT GUIDELINES:',
-        `## RELEVANT KNOWLEDGE:
-${relevantKnowledge.map(k => `- ${k.content}`).join('\n')}
+        `## RITUAL KNOWLEDGE (USE THIS TO ANSWER):
+${relevantKnowledge.map(k => `- ${k.content}`).join('\n\n')}
 
 ## IMPORTANT GUIDELINES:`
       );
