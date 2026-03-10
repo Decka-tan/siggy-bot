@@ -703,13 +703,13 @@ export default function ChatPage() {
                     </motion.div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full backdrop-blur-xl border-t px-4 py-8 md:px-16 md:py-10 transition-all bg-black/40 hover:bg-black/45 border-purple-500/30 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]">
+                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.1)] transition-all">
                     <div className="max-w-7xl mx-auto">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
-                          <div className="px-6 py-1.5 rounded-lg shadow-inner bg-gradient-to-r from-purple-600 to-blue-600 border border-white/20">
-                            <span className="font-sans tracking-wider font-bold text-sm md:text-lg drop-shadow-sm text-white uppercase">
+                        <div className="mb-4 flex items-center justify-between border-b border-border/30 pb-3">
+                          <div className="px-6 py-1.5 rounded-lg border border-accent/30 bg-accent/10 shadow-inner">
+                            <span className="font-display tracking-wider text-sm md:text-lg text-accent uppercase">
                               {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? '► You' : '► Siggy'}
                             </span>
                           </div>
