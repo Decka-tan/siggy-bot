@@ -371,7 +371,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20">
+    <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden">
       {/* Sidebar Area */}
       <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
         {/* Sidebar Header */}
@@ -439,9 +439,9 @@ export default function ChatPage() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+        <div className="h-16 px-6 border-b border-border flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded hover:bg-surface">
               <MessageSquareMore className="w-5 h-5" />
@@ -461,11 +461,11 @@ export default function ChatPage() {
           </Link>
         </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 overflow-hidden px-6 pb-8">
-          <div className="max-w-4xl mx-auto h-full flex flex-col">
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto mb-6 space-y-4 py-4">
+        {/* Chat Area - fills remaining height */}
+        <div className="flex-1 overflow-hidden px-6 pb-6 flex flex-col min-h-0">
+          <div className="max-w-4xl mx-auto h-full flex flex-col min-h-0">
+            {/* Messages - scrollable */}
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 min-h-0">
               {!activeConversation || activeConversation.messages.length === 0 ? (
                 <div className="text-center py-20">
                   <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="text-8xl mb-6">
@@ -532,26 +532,28 @@ export default function ChatPage() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
-              <div className="font-mono text-xs text-text-secondary">
-                Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.PLAYFUL}`}>{activeConversation?.currentMood || 'PLAYFUL'}</span>
+            {/* Controls - fixed at bottom */}
+            <div className="shrink-0 space-y-4">
+              <div className="flex items-center justify-between pb-4 border-b border-border">
+                <div className="font-mono text-xs text-text-secondary">
+                  Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.PLAYFUL}`}>{activeConversation?.currentMood || 'PLAYFUL'}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
+                  {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? '📝' : '💾'} {Math.round(contextInfo.estimatedTokens / 1000)}k</span>}
+                  <button onClick={resetCurrentConversation} className="p-2 rounded hover:bg-surface">
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
-                {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? '📝' : '💾'} {Math.round(contextInfo.estimatedTokens / 1000)}k</span>}
-                <button onClick={resetCurrentConversation} className="p-2 rounded hover:bg-surface">
-                  <RefreshCw className="w-4 h-4" />
+
+              {/* Input */}
+              <div className="flex gap-3">
+                <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-4 py-3 bg-surface border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-sm" />
+                <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-6 py-3 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-sm uppercase transition-all disabled:opacity-50 flex items-center gap-2">
+                  {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                 </button>
               </div>
-            </div>
-
-            {/* Input */}
-            <div className="flex gap-3">
-              <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-4 py-3 bg-surface border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-sm" />
-              <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-6 py-3 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-sm uppercase transition-all disabled:opacity-50 flex items-center gap-2">
-                {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
-              </button>
             </div>
           </div>
         </div>
