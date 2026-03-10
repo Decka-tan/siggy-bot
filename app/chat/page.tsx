@@ -703,31 +703,25 @@ export default function ChatPage() {
                     </motion.div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
-                    {/* Name Tag */}
-                    {activeConversation && activeConversation.messages.length > 0 && (
-                      <div className="px-8 py-2 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b border bg-gradient-to-r from-purple-600 to-blue-600 border-white/20">
-                        <span className="font-sans tracking-wider font-bold text-base md:text-xl drop-shadow-sm text-white uppercase">
-                          {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
-                            ? 'You'
-                            : 'Siggy'}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
                   <div className="w-full backdrop-blur-xl border-t px-4 py-8 md:px-16 md:py-10 transition-all bg-black/40 hover:bg-black/45 border-purple-500/30 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]">
                     <div className="max-w-7xl mx-auto">
-                      {/* Mode / Chapter Info */}
+                      {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-4 flex items-center justify-between">
-                          <div className="flex gap-1">
-                            <div className={`h-1 w-8 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent' : 'bg-white/20'}`} />
-                            <div className={`h-1 w-8 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent' : 'bg-white/20'}`} />
+                        <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+                          <div className="px-6 py-1.5 rounded-lg shadow-inner bg-gradient-to-r from-purple-600 to-blue-600 border border-white/20">
+                            <span className="font-sans tracking-wider font-bold text-sm md:text-lg drop-shadow-sm text-white uppercase">
+                              {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? '► You' : '► Siggy'}
+                            </span>
                           </div>
-                          <span className="font-mono text-xs uppercase tracking-widest text-white/60">
-                            Current Mode: {personality === 'CAT' ? 'Cat Form' : 'Anime Girl Form'}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-1">
+                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-white/20'}`} />
+                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-white/20'}`} />
+                            </div>
+                            <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-white/60 hidden sm:inline-block">
+                              Mode: {personality === 'CAT' ? 'Cat Form' : 'Anime Girl Form'}
+                            </span>
+                          </div>
                         </div>
                       )}
 
