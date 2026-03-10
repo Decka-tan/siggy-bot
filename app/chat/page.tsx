@@ -190,9 +190,16 @@ export default function ChatPage() {
 
       const data = await response.json();
 
+      // Post-process response to add line breaks after actions
+      let processedResponse = data.response;
+      // Add line break after *actions* at the start or middle of text
+      processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
+      // Remove extra whitespace after line breaks
+      processedResponse = processedResponse.replace(/\n\s+/g, '\n');
+
       const siggyMessage: Message = {
         role: 'assistant',
-        content: data.response,
+        content: processedResponse,
         mood: data.currentMood,
       };
 
@@ -364,11 +371,16 @@ export default function ChatPage() {
 
       const data = await response.json();
 
+      // Post-process response to add line breaks after actions
+      let processedResponse = data.response;
+      processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
+      processedResponse = processedResponse.replace(/\n\s+/g, '\n');
+
       setConversations(prev => prev.map(conv => {
         if (conv.id === activeConversationId) {
           return {
             ...conv,
-            messages: [...messagesWithoutLast, { role: 'assistant', content: data.response, mood: data.currentMood }],
+            messages: [...messagesWithoutLast, { role: 'assistant', content: processedResponse, mood: data.currentMood }],
             currentMood: data.currentMood,
             messageCount: data.messageCount,
           };
