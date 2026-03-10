@@ -288,11 +288,54 @@ export default function ChatPage() {
 
   return (
     <div className="min-h-screen bg-bg text-text-primary flex">
-      {/* Sidebar */}
+      {/* Sidebar - Always visible on desktop */}
+      <div className="hidden lg:flex w-64 flex-col bg-surface border-r border-border">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-border">
+          <button
+            onClick={createNewConversation}
+            className="w-full flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90 transition-opacity"
+          >
+            <Plus className="w-4 h-4" />
+            New Chat
+          </button>
+        </div>
+
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {conversations.map(conv => (
+            <div
+              key={conv.id}
+              onClick={() => setActiveConversationId(conv.id)}
+              className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                activeConversationId === conv.id
+                  ? 'bg-accent/20 text-accent'
+                  : 'hover:bg-surface text-text-secondary hover:text-text-primary'
+              }`}
+            >
+              <MessageSquare className="w-4 h-4 flex-shrink-0" />
+              <span className="flex-1 text-sm truncate">{conv.title}</span>
+              <button
+                onClick={(e) => deleteConversation(conv.id, e)}
+                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
+          ))}
+
+          {conversations.length === 0 && (
+            <div className="text-center py-8 text-text-secondary text-sm">
+              No chats yet.<br />Start a new one!
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {showSidebar && (
           <>
-            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -300,30 +343,27 @@ export default function ChatPage() {
               onClick={() => setShowSidebar(false)}
               className="fixed inset-0 bg-black/50 z-40 lg:hidden"
             />
-
-            {/* Sidebar */}
             <motion.div
-              initial={{ x: -300 }}
+              initial={{ x: -280 }}
               animate={{ x: 0 }}
-              exit={{ x: -300 }}
-              transition={{ type: 'spring', damping: 25 }}
-              className="fixed lg:relative z-50 w-72 h-full bg-surface border-r border-border flex flex-col"
+              exit={{ x: -280 }}
+              className="fixed lg:hidden z-50 left-0 top-0 bottom-0 w-64 bg-surface border-r border-border flex flex-col"
             >
-              {/* Sidebar Header */}
-              <div className="p-4 border-b border-border">
+              <div className="p-4 border-b border-border flex items-center justify-between">
                 <button
                   onClick={createNewConversation}
-                  className="w-full flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90 transition-opacity"
+                  className="flex-1 flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90 transition-opacity"
                 >
                   <Plus className="w-4 h-4" />
                   New Chat
                 </button>
+                <button onClick={() => setShowSidebar(false)} className="ml-2 p-2">
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-
-              {/* Conversations List */}
               <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {conversations.map(conv => (
-                  <motion.div
+                  <div
                     key={conv.id}
                     onClick={() => {
                       setActiveConversationId(conv.id);
@@ -343,14 +383,8 @@ export default function ChatPage() {
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
-                  </motion.div>
-                ))}
-
-                {conversations.length === 0 && (
-                  <div className="text-center py-8 text-text-secondary text-sm">
-                    No chats yet.<br />Start a new one!
                   </div>
-                )}
+                ))}
               </div>
             </motion.div>
           </>
