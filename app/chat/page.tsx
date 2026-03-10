@@ -50,6 +50,58 @@ const VN_BACKGROUNDS = [
   '/vn-bg-lake.jpg',
 ];
 
+const parseMessageContent = (content: string) => {
+  let html = content;
+
+  // First, preserve paragraph breaks (double newlines)
+  html = html.replace(/\n\n/g, '</p><p class="mt-2">');
+
+  // Bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
+
+  // Italic (but not when part of ** already) - muted color for actions
+  html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic">$1</em>');
+  html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary not-italic">$1</em>');
+
+  // Code
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
+  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
+
+  // Quote
+  html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
+  html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
+
+  // Single line breaks (but not in code/quote)
+  html = html.replace(/\n/g, '<br />');
+
+  return '<p class="whitespace-pre-wrap">' + html + '</p>';
+};
+
+// Typewriter Text Component
+const TypewriterText = ({ text, isLatest }: { text: string; isLatest: boolean }) => {
+  const [displayedText, setDisplayedText] = useState(isLatest ? '' : text);
+
+  useEffect(() => {
+    if (!isLatest) {
+      setDisplayedText(text);
+      return;
+    }
+
+    setDisplayedText('');
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(text.substring(0, i + 1));
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, 20); // 20ms per char for anime VN feel
+
+    return () => clearInterval(interval);
+  }, [text, isLatest]);
+
+  return <p className="text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
+};
+
 // Decorative floating bubbles for VN mode
 const VN_BUBBLES = [
   { text: 'The sky is cool, right?', top: '12%', left: '8%', size: 90, delay: 0 },
@@ -314,33 +366,7 @@ export default function ChatPage() {
     setContextInfo(null);
   };
 
-  const parseMessageContent = (content: string) => {
-    let html = content;
-
-    // First, preserve paragraph breaks (double newlines)
-    html = html.replace(/\n\n/g, '</p><p class="mt-2">');
-
-    // Bold
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
-
-    // Italic (but not when part of ** already) - muted color for actions
-    html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic">$1</em>');
-    html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary not-italic">$1</em>');
-
-    // Code
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
-    html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
-
-    // Quote
-    html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
-    html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
-
-    // Single line breaks (but not in code/quote)
-    html = html.replace(/\n/g, '<br />');
-
-    return '<p class="whitespace-pre-wrap">' + html + '</p>';
-  };
+  // Removed duplicate parseMessageContent from here
 
   const copyMessage = (content: string) => {
     navigator.clipboard.writeText(content);
@@ -519,7 +545,7 @@ export default function ChatPage() {
     <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* Sidebar Area */}
-        <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+        <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative z-10 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
           {/* Sidebar Header */}
           <div className="h-16 px-4 border-b border-border flex items-center shrink-0">
             {!sidebarCollapsed ? (
@@ -651,41 +677,31 @@ export default function ChatPage() {
               </>
             )}
 
-            {/* VN Mode Sprites */}
-            {vnMode && (
-              <>
-                {/* Siggy Sprite - directly above dialogue */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="absolute left-8 z-10 pointer-events-none"
-                  style={{ bottom: '180px' }}
-                >
-                  <motion.div
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-                    className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
-                  >
-                    <Image
-                      src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
-                      alt="Siggy"
-                      width={280}
-                      height={400}
-                      className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.2)]"
-                      priority
-                    />
-                  </motion.div>
-                </motion.div>
-              </>
-            )}
-
             {/* Chat Content (with VN-aware styling) */}
             <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 pb-4'}`}>
               {vnMode ? (
                 /* =========================================================
                    VN MODE LAYOUT
                    ========================================================= */
-                <div className="absolute bottom-0 w-full flex flex-col z-20">
+                <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
+
+                  {/* Sprite placed cleanly on top of dialogue box */}
+                  <div className="w-full max-w-7xl mx-auto px-4 md:px-12 relative z-10 flex">
+                    <motion.div
+                      initial={{ opacity: 0, y: 50 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
+                    >
+                      <Image
+                        src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
+                        alt="Siggy"
+                        width={260}
+                        height={360}
+                        className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.2)]"
+                        priority
+                      />
+                    </motion.div>
+                  </div>
                   {/* Main Dialogue Box (Full Width) */}
                   <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-5 md:px-12 md:py-6 shadow-[0_-10px_30px_rgba(0,255,148,0.1)]">
                     <div className="max-w-7xl mx-auto">
@@ -734,7 +750,7 @@ export default function ChatPage() {
                       </div>
 
                       {/* Action Buttons & Input Area integrated into Dialogue Box */}
-                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center border-t border-border/30 pt-3 mt-1">
+                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center pt-3 mt-1 border-t border-white/5">
                         {/* Action Buttons (Left) */}
                         {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                           <div className="flex items-center gap-1 md:pr-4 md:border-r border-white/10">
@@ -768,7 +784,7 @@ export default function ChatPage() {
                             onKeyPress={handleKeyPress}
                             placeholder="What will you say?"
                             disabled={isLoading}
-                            className="flex-1 px-3 py-2 bg-bg/30 border border-border/30 rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono"
+                            className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono shadow-inner"
                           />
                           <button
                             onClick={handleSendMessage}
@@ -875,7 +891,7 @@ export default function ChatPage() {
 
                     {/* Input */}
                     <div className="flex gap-2">
-                      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface border-border text-text-primary placeholder:text-text-secondary" />
+                      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner" />
                       <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-xs uppercase transition-all disabled:opacity-50 flex items-center gap-2">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
