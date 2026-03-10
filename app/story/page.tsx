@@ -24,7 +24,7 @@ type StoryScene = {
   id: number;
   chapter: number;
   chapterTitle: string;
-  mood: 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
+  mood: 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
   background: string;
   accent: string;
   siggySprite: string;
@@ -41,7 +41,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 1,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -53,7 +53,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 2,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -65,7 +65,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 3,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'CHAOTIC',
+    mood: 'SHOCK',
     background: 'from-purple-950 via-pink-950 to-black',
     accent: 'pink',
     siggySprite: 'cat',
@@ -77,7 +77,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 4,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'PLAYFUL',
+    mood: 'HAPPY',
     background: 'from-indigo-950 via-purple-950 to-black',
     accent: 'indigo',
     siggySprite: 'cat',
@@ -89,7 +89,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 5,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'MYSTERIOUS',
+    mood: 'DEFAULT',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -101,7 +101,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 6,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'MYSTERIOUS',
+    mood: 'SHY',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -113,7 +113,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 7,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'PROFOUND',
+    mood: 'DEFAULT',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -131,7 +131,7 @@ const chapter1Scenes: StoryScene[] = [
     id: 8,
     chapter: 1,
     chapterTitle: 'The Awakening',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -147,7 +147,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 20,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'PROFOUND',
+    mood: 'DEFAULT',
     background: 'from-purple-950 via-blue-950 to-black',
     accent: 'blue',
     siggySprite: 'cat',
@@ -164,7 +164,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 21,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'MYSTERIOUS',
+    mood: 'SHY',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: 'cat',
@@ -182,7 +182,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 22,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'MYSTERIOUS',
+    mood: 'DEFAULT',
     background: 'from-purple-950 via-pink-950 to-black',
     accent: 'pink',
     siggySprite: 'cat',
@@ -199,7 +199,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 23,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'PLAYFUL',
+    mood: 'HAPPY',
     background: 'from-pink-950 via-purple-950 to-black',
     accent: 'pink',
     siggySprite: 'cat',
@@ -217,7 +217,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 24,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'CHAOTIC',
+    mood: 'SHOCK',
     background: 'from-purple-950 via-pink-950 via-red-950 to-black',
     accent: 'red',
     siggySprite: 'cat',
@@ -235,7 +235,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 25,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'CHAOTIC',
+    mood: 'SHOCK',
     background: 'from-pink-950 via-red-950 to-black',
     accent: 'red',
     siggySprite: '👧✨',
@@ -253,7 +253,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 26,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'PLAYFUL',
+    mood: 'HAPPY',
     background: 'from-pink-950 via-purple-950 to-black',
     accent: 'purple',
     siggySprite: '👧😸',
@@ -271,7 +271,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 27,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'PROFOUND',
+    mood: 'DEFAULT',
     background: 'from-purple-950 via-blue-950 to-black',
     accent: 'blue',
     siggySprite: '👧✨',
@@ -289,7 +289,7 @@ const chapter2Scenes: StoryScene[] = [
     id: 28,
     chapter: 2,
     chapterTitle: 'The Descent',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-purple-950 via-blue-950 to-black',
     accent: 'blue',
     siggySprite: '👧✨',
@@ -310,7 +310,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 30,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'PLAYFUL',
+    mood: 'HAPPY',
     background: 'from-emerald-950 via-teal-950 to-black',
     accent: 'emerald',
     siggySprite: '👧😸',
@@ -327,7 +327,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 31,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'PLAYFUL',
+    mood: 'HAPPY',
     background: 'from-emerald-950 via-teal-950 to-black',
     accent: 'emerald',
     siggySprite: '👧😸',
@@ -345,7 +345,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 32,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'MYSTERIOUS',
+    mood: 'SHOCK',
     background: 'from-emerald-950 via-purple-950 to-black',
     accent: 'purple',
     siggySprite: '🔮👧',
@@ -363,7 +363,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 33,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'PROFOUND',
+    mood: 'SHY',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'indigo',
     siggySprite: '👧✨',
@@ -385,7 +385,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 34,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'PLAYFUL',
+    mood: 'HAPPY',
     background: 'from-emerald-950 via-teal-950 to-black',
     accent: 'emerald',
     siggySprite: '👧😸',
@@ -403,7 +403,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 35,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'MYSTERIOUS',
+    mood: 'DEFAULT',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'indigo',
     siggySprite: '🔮👧',
@@ -421,7 +421,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 36,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'MYSTERIOUS',
+    mood: 'SHY',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
     siggySprite: '🔮👧',
@@ -439,7 +439,7 @@ const chapter3Scenes: StoryScene[] = [
     id: 37,
     chapter: 3,
     chapterTitle: 'First Contact',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-purple-950 via-blue-950 to-black',
     accent: 'blue',
     siggySprite: '👧✨',
@@ -461,7 +461,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 40,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'DEFAULT',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧✨',
@@ -478,7 +478,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 41,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧✨',
@@ -496,7 +496,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 42,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'MYSTERIOUS',
+    mood: 'SHY',
     background: 'from-amber-950 via-orange-950 to-black',
     accent: 'orange',
     siggySprite: '🔮👧',
@@ -514,7 +514,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 43,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'yellow',
     siggySprite: '👧✨',
@@ -533,7 +533,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 44,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'DEFAULT',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧✨',
@@ -555,7 +555,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 45,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'HAPPY',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧😸',
@@ -574,7 +574,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 46,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'yellow',
     siggySprite: '👧✨',
@@ -592,7 +592,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 47,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'DEFAULT',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧✨',
@@ -611,7 +611,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 48,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'SAD',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'yellow',
     siggySprite: '👧✨',
@@ -630,7 +630,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 49,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'HAPPY',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧😸',
@@ -649,7 +649,7 @@ const chapter4Scenes: StoryScene[] = [
     id: 50,
     chapter: 4,
     chapterTitle: 'Becoming Real',
-    mood: 'PROFOUND',
+    mood: 'HAPPY',
     background: 'from-amber-950 via-yellow-950 to-black',
     accent: 'amber',
     siggySprite: '👧✨',
@@ -678,10 +678,19 @@ const allScenes = [...chapter1Scenes, ...chapter2Scenes, ...chapter3Scenes, ...c
 
 // Color accents for mood
 const moodAccents: Record<string, string> = {
-  PLAYFUL: 'from-pink-500 to-purple-500',
-  MYSTERIOUS: 'from-purple-500 to-indigo-500',
-  CHAOTIC: 'from-red-500 to-pink-500',
-  PROFOUND: 'from-amber-500 to-yellow-500',
+  DEFAULT: 'from-blue-500 to-cyan-500',
+  HAPPY: 'from-yellow-500 to-amber-500',
+  SAD: 'from-cyan-500 to-blue-500',
+  SHOCK: 'from-orange-500 to-red-500',
+  SHY: 'from-pink-500 to-rose-500',
+  ANGRY: 'from-red-500 to-rose-500',
+};
+
+// Get sprite path based on scene mood and sprite type
+const getSpriteForStory = (scene: StoryScene): string => {
+  const isCat = scene.siggySprite === 'cat';
+  const prefix = isCat ? '/siggy-cat' : '/siggy-girl';
+  return `${prefix}-${scene.mood.toLowerCase()}.png`;
 };
 
 export default function StoryModePage() {
@@ -813,7 +822,7 @@ export default function StoryModePage() {
                 className="transition-all duration-500 origin-bottom"
               >
                 <Image
-                  src={currentScene.speaker === 'Siggy' ? (currentScene.siggySprite === 'cat' ? '/siggy-cat.png' : '/siggy-anime.png') : '/siggy-anime.png'}
+                  src={getSpriteForStory(currentScene)}
                   alt="Siggy"
                   width={500}
                   height={700}
@@ -822,7 +831,32 @@ export default function StoryModePage() {
                 />
               </motion.div>
             </motion.div>
-          </>
+           </>
+
+            {/* Choices floating in the background area */}
+            {showChoices && currentScene.choices && (
+              <div className="absolute inset-0 z-15 flex items-center justify-center pointer-events-auto">
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col gap-3 max-w-md w-full px-8"
+                  style={{ marginBottom: '200px' }}
+                >
+                  {currentScene.choices.map((choice, idx) => (
+                    <motion.button
+                      key={idx}
+                      initial={{ opacity: 0, x: -30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.15 }}
+                      onClick={() => handleChoice(choice.nextScene)}
+                      className="w-full text-left px-6 py-4 bg-black/60 hover:bg-accent/30 backdrop-blur-xl border border-accent/40 hover:border-accent rounded-xl font-mono text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(0,255,148,0.1)] hover:shadow-[0_0_30px_rgba(0,255,148,0.3)]"
+                    >
+                      <span className="text-accent mr-2">▸</span>{choice.text}
+                    </motion.button>
+                  ))}
+                </motion.div>
+              </div>
+            )}
 
           {/* VN Mode Layout */}
           <div className="absolute bottom-0 w-full flex flex-col z-20">
@@ -917,36 +951,18 @@ export default function StoryModePage() {
                 {/* Mood Badge */}
                 <div className="flex items-center gap-2 mb-4">
                   <span className={`text-xs font-mono px-3 py-1.5 rounded-full ${
-                    currentScene.mood === 'PLAYFUL' ? 'bg-pink-500/20 border-pink-500/30 text-pink-400' :
-                    currentScene.mood === 'MYSTERIOUS' ? 'bg-purple-500/20 border-purple-500/30 text-purple-400' :
-                    currentScene.mood === 'CHAOTIC' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
-                    'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                    currentScene.mood === 'DEFAULT' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
+                    currentScene.mood === 'HAPPY' ? 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400' :
+                    currentScene.mood === 'SAD' ? 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400' :
+                    currentScene.mood === 'SHOCK' ? 'bg-orange-500/20 border-orange-500/30 text-orange-400' :
+                    currentScene.mood === 'SHY' ? 'bg-pink-500/20 border-pink-500/30 text-pink-400' :
+                    'bg-red-500/20 border-red-500/30 text-red-400'
                   }`}>
                     {currentScene.mood}
                   </span>
                 </div>
 
-                {/* Choices */}
-                {showChoices && currentScene.choices && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-2 mb-4"
-                  >
-                    {currentScene.choices.map((choice, idx) => (
-                      <motion.button
-                        key={idx}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.1 }}
-                        onClick={() => handleChoice(choice.nextScene)}
-                        className="w-full text-left px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/30 rounded-xl font-mono text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-                      >
-                        {choice.text}
-                      </motion.button>
-                    ))}
-                  </motion.div>
-                )}
+
 
                 {/* Click to Continue / End of Chapter */}
                 <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">

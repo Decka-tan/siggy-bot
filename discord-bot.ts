@@ -18,6 +18,7 @@ import {
   SiggyMoodSystem,
   buildSiggyPrompt,
   checkEasterEggs,
+  extractMoodFromResponse,
   CORE_IDENTITY,
   type Message,
   type MoodState,
@@ -135,13 +136,17 @@ async function generateSiggyResponse(
       presence_penalty: 0.3,
     });
 
-    const siggyResponse = completion.choices[0]?.message?.content ||
+    const rawResponse = completion.choices[0]?.message?.content ||
       '*dimensional glitch* ERROR: The void swallowed my response...';
+
+    // Extract mood from [MOOD:X] tag
+    const { mood, cleanedResponse } = extractMoodFromResponse(rawResponse);
+    state.moodSystem.setMood(mood);
 
     // Add to history
     state.conversationHistory.push({
       role: 'assistant',
-      content: siggyResponse,
+      content: cleanedResponse,
       timestamp: Date.now(),
     });
 
@@ -149,8 +154,8 @@ async function generateSiggyResponse(
     state.isFirstMessage = false;
 
     return {
-      response: siggyResponse,
-      mood: state.moodSystem.getCurrentMood(),
+      response: cleanedResponse,
+      mood: mood,
     };
   } catch (error) {
     console.error('OpenAI API error:', error);
@@ -197,10 +202,12 @@ function handleCommand(message: DiscordMessage): string | null {
     const state = getChannelState(message.channelId);
     const mood = state.moodSystem.getCurrentMood();
     const moodEmojis: Record<MoodState, string> = {
-      PLAYFUL: '😸',
-      MYSTERIOUS: '🔮',
-      CHAOTIC: '⚡',
-      PROFOUND: '✨',
+      DEFAULT: '😺',
+      HAPPY: '😸',
+      SAD: '😿',
+      SHOCK: '🙀',
+      SHY: '🫣',
+      ANGRY: '😾',
     };
     return `${moodEmojis[mood]} Current mood: **${mood}** | Messages: ${state.moodSystem.getMessageCount()}`;
   }

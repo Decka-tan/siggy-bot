@@ -146,8 +146,8 @@ export default function LandingPage() {
       </section>
 
       {/* Two Modes Section */}
-      <section className="py-24 px-6 border-t border-border bg-surface">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-8 border-t border-border bg-surface">
+        <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -243,8 +243,8 @@ export default function LandingPage() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="py-24 px-6 bg-bg">
-        <div className="max-w-6xl mx-auto">
+      <section id="about" className="py-24 px-8 bg-bg">
+        <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -262,15 +262,23 @@ export default function LandingPage() {
               <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-4">Cat Form</p>
               <div className="relative w-48 h-48">
                 <style jsx>{`
-                  @keyframes catExpression {
-                    0%, 33% { opacity: 1; }
-                    33.01%, 100% { opacity: 0; }
+                  @keyframes expr6 {
+                    0%, 16.66% { opacity: 1; }
+                    16.67%, 100% { opacity: 0; }
                   }
-                  .cat-anim-1 { animation: catExpression 6s infinite; }
-                  .cat-anim-2 { animation: catExpression 6s infinite 2s; }
+                  .cat-e-1 { animation: expr6 12s infinite 0s; }
+                  .cat-e-2 { animation: expr6 12s infinite 2s; }
+                  .cat-e-3 { animation: expr6 12s infinite 4s; }
+                  .cat-e-4 { animation: expr6 12s infinite 6s; }
+                  .cat-e-5 { animation: expr6 12s infinite 8s; }
+                  .cat-e-6 { animation: expr6 12s infinite 10s; }
                 `}</style>
-                <img src="/Siggy_01/Face/CAT/Cat_Happy.png" alt="Cat Happy" className="cat-anim-1 absolute inset-0 w-full h-full object-contain" />
-                <img src="/Siggy_01/Face/CAT/Cat_Default.png" alt="Cat Default" className="cat-anim-2 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-cat-default.png" alt="Cat Default" className="cat-e-1 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-cat-happy.png" alt="Cat Happy" className="cat-e-2 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-cat-sad.png" alt="Cat Sad" className="cat-e-3 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-cat-shock.png" alt="Cat Shock" className="cat-e-4 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-cat-shy.png" alt="Cat Shy" className="cat-e-5 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-cat-angry.png" alt="Cat Angry" className="cat-e-6 absolute inset-0 w-full h-full object-contain" />
               </div>
             </div>
 
@@ -279,15 +287,19 @@ export default function LandingPage() {
               <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-4">Anime Girl Form</p>
               <div className="relative w-48 h-48">
                 <style jsx>{`
-                  @keyframes girlExpression {
-                    0%, 33% { opacity: 1; }
-                    33.01%, 100% { opacity: 0; }
-                  }
-                  .girl-anim-1 { animation: girlExpression 6s infinite; }
-                  .girl-anim-2 { animation: girlExpression 6s infinite 2s; }
+                  .girl-e-1 { animation: expr6 12s infinite 0s; }
+                  .girl-e-2 { animation: expr6 12s infinite 2s; }
+                  .girl-e-3 { animation: expr6 12s infinite 4s; }
+                  .girl-e-4 { animation: expr6 12s infinite 6s; }
+                  .girl-e-5 { animation: expr6 12s infinite 8s; }
+                  .girl-e-6 { animation: expr6 12s infinite 10s; }
                 `}</style>
-                <img src="/Siggy_01/Face/Girl/Girl_Default.png" alt="Girl Default" className="girl-anim-1 absolute inset-0 w-full h-full object-contain" />
-                <img src="/Siggy_01/Face/Girl/Girl_Happy.png" alt="Girl Happy" className="girl-anim-2 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-girl-default.png" alt="Girl Default" className="girl-e-1 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-girl-happy.png" alt="Girl Happy" className="girl-e-2 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-girl-sad.png" alt="Girl Sad" className="girl-e-3 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-girl-shock.png" alt="Girl Shock" className="girl-e-4 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-girl-shy.png" alt="Girl Shy" className="girl-e-5 absolute inset-0 w-full h-full object-contain" />
+                <img src="/siggy-girl-angry.png" alt="Girl Angry" className="girl-e-6 absolute inset-0 w-full h-full object-contain" />
               </div>
             </div>
           </div>
@@ -328,8 +340,8 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-6 border-t border-border bg-surface">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-8 border-t border-border bg-surface">
+        <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -393,8 +405,8 @@ export default function LandingPage() {
       </section>
 
       {/* Try These Section */}
-      <section className="py-24 px-6 bg-bg">
-        <div className="max-w-6xl mx-auto">
+      <section className="py-24 px-8 bg-bg">
+        <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -446,8 +458,8 @@ export default function LandingPage() {
       </div>
 
       {/* Footer CTA */}
-      <section className="py-16 px-6 border-t border-border bg-surface text-center">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <section className="py-16 px-8 border-t border-border bg-surface text-center">
+        <div className="max-w-7xl mx-auto space-y-6">
           <h2 className="text-3xl font-display tracking-wider uppercase mb-4">Ready to Meet Siggy?</h2>
           <p className="text-text-secondary">
             Begin your journey through the cosmos and anime culture.

@@ -6,7 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload } from 'lucide-react';
 
-type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
+type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -32,10 +32,18 @@ interface ContextInfo {
 }
 
 const moodColors: Record<MoodState, string> = {
-  PLAYFUL: 'bg-pink-500/20 border-pink-500/30 text-pink-400',
-  MYSTERIOUS: 'bg-purple-500/20 border-purple-500/30 text-purple-400',
-  CHAOTIC: 'bg-red-500/20 border-red-500/30 text-red-400',
-  PROFOUND: 'bg-amber-500/20 border-amber-500/30 text-amber-400',
+  DEFAULT: 'bg-blue-500/20 border-blue-500/30 text-blue-400',
+  HAPPY: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-400',
+  SAD: 'bg-cyan-500/20 border-cyan-500/30 text-cyan-400',
+  SHOCK: 'bg-orange-500/20 border-orange-500/30 text-orange-400',
+  SHY: 'bg-pink-500/20 border-pink-500/30 text-pink-400',
+  ANGRY: 'bg-red-500/20 border-red-500/30 text-red-400',
+};
+
+// Sprite mapping based on personality + mood
+const getSpriteForMood = (personality: string, mood: MoodState): string => {
+  const prefix = personality === 'CAT' ? '/siggy-cat' : '/siggy-girl';
+  return `${prefix}-${mood.toLowerCase()}.png`;
 };
 
 const CONVERSATIONS_KEY = 'siggy-conversations';
@@ -43,6 +51,7 @@ const ACTIVE_CONV_KEY = 'siggy-active-conversation';
 const SIDEBAR_KEY = 'siggy-sidebar-collapsed';
 const VN_MODE_KEY = 'siggy-vn-mode';
 const USER_AVATAR_KEY = 'siggy-user-avatar';
+const USER_NAME_KEY = 'siggy-user-name';
 
 // VN Mode backgrounds (rotate every 10s)
 const VN_BACKGROUNDS = [
@@ -81,11 +90,14 @@ const parseMessageContent = (content: string) => {
 };
 
 // Typewriter Text Component
-const TypewriterText = ({ text, isLatest }: { text: string; isLatest: boolean }) => {
-  const [displayedText, setDisplayedText] = useState(isLatest ? '' : text);
+const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void }) => {
+  const [displayedText, setDisplayedText] = useState(() => {
+    if (!isLatest || alreadyAnimated) return text;
+    return '';
+  });
 
   useEffect(() => {
-    if (!isLatest) {
+    if (!isLatest || alreadyAnimated) {
       setDisplayedText(text);
       return;
     }
@@ -95,13 +107,16 @@ const TypewriterText = ({ text, isLatest }: { text: string; isLatest: boolean })
     const interval = setInterval(() => {
       setDisplayedText(text.substring(0, i + 1));
       i++;
-      if (i >= text.length) clearInterval(interval);
-    }, 20); // 20ms per char for anime VN feel
+      if (i >= text.length) {
+        clearInterval(interval);
+        onAnimationComplete?.();
+      }
+    }, 20);
 
     return () => clearInterval(interval);
-  }, [text, isLatest]);
+  }, [text, isLatest, alreadyAnimated, onAnimationComplete]);
 
-  return <p className="text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
+  return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
 };
 
 // Decorative floating bubbles for VN mode
@@ -149,8 +164,14 @@ export default function ChatPage() {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(USER_AVATAR_KEY);
   });
+  const [userName, setUserName] = useState(() => {
+    if (typeof window === 'undefined') return 'Ritualist';
+    return localStorage.getItem(USER_NAME_KEY) || 'Ritualist';
+  });
+  const [editingName, setEditingName] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const animatedMessages = useRef<Set<string>>(new Set());
   const [vnMode, setVnMode] = useState(() => {
     if (typeof window === 'undefined') return false;
     return localStorage.getItem(VN_MODE_KEY) === 'true';
@@ -215,7 +236,13 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const isInitialRender = useRef(true);
+
   useEffect(() => {
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
     scrollToBottom();
   }, [activeConversation?.messages]);
 
@@ -228,12 +255,27 @@ export default function ChatPage() {
     return () => clearInterval(interval);
   }, [vnMode]);
 
+  // Listen for VN mode toggle from header
+  useEffect(() => {
+    const handleVNModeToggle = ((e: CustomEvent) => {
+      setVnMode(e.detail);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(VN_MODE_KEY, String(e.detail));
+      }
+    }) as EventListener;
+
+    window.addEventListener('vnModeToggle', handleVNModeToggle);
+    return () => {
+      window.removeEventListener('vnModeToggle', handleVNModeToggle);
+    };
+  }, []);
+
   const createNewConversation = () => {
     const newConv: Conversation = {
       id: Date.now().toString(),
       title: 'New Chat',
       messages: [],
-      currentMood: 'PLAYFUL',
+      currentMood: 'DEFAULT' as MoodState,
       messageCount: 0,
       timestamp: Date.now(),
     };
@@ -273,7 +315,7 @@ export default function ChatPage() {
         id: Date.now().toString(),
         title: generateTitle(textToSend),
         messages: [],
-        currentMood: 'PLAYFUL',
+        currentMood: 'DEFAULT' as MoodState,
         messageCount: 0,
         timestamp: Date.now(),
       };
@@ -311,6 +353,7 @@ export default function ChatPage() {
           conversationHistory,
           userId: `conv-${targetConvId}`,
           isFirstMessage: conversationHistory.length === 0,
+          userName,
         }),
       });
 
@@ -355,7 +398,7 @@ export default function ChatPage() {
               {
                 role: 'assistant',
                 content: '*dimensional glitch* ERROR: The void rejects your message. Please check your connection and try again.',
-                mood: 'CHAOTIC',
+                mood: 'SHOCK' as MoodState,
               },
             ],
           };
@@ -392,7 +435,7 @@ export default function ChatPage() {
 
     setConversations(prev => prev.map(conv => {
       if (conv.id === activeConversationId) {
-        return { ...conv, messages: [], currentMood: 'PLAYFUL', messageCount: 0 };
+        return { ...conv, messages: [], currentMood: 'DEFAULT' as MoodState, messageCount: 0 };
       }
       return conv;
     }));
@@ -466,6 +509,7 @@ export default function ChatPage() {
           conversationHistory: messagesWithoutLast.slice(0, -1),
           userId: `conv-${activeConversationId}`,
           isFirstMessage: false,
+          userName,
         }),
       });
 
@@ -517,7 +561,7 @@ export default function ChatPage() {
         id: Date.now().toString(),
         title: generateTitle(transformMsg),
         messages: [],
-        currentMood: 'PLAYFUL',
+        currentMood: 'DEFAULT' as MoodState,
         messageCount: 0,
         timestamp: Date.now(),
       };
@@ -551,6 +595,7 @@ export default function ChatPage() {
           conversationHistory,
           userId: `conv-${targetConvId}`,
           isFirstMessage: conversationHistory.length === 0,
+          userName,
         }),
       });
 
@@ -577,7 +622,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
+    <div className="h-screen bg-bg text-text-primary flex flex-col overflow-hidden relative">
       {vnMode && (
         <style dangerouslySetInnerHTML={{ __html: `footer { display: none !important; }` }} />
       )}
@@ -585,24 +630,49 @@ export default function ChatPage() {
       <div className="fixed bottom-0 right-0 z-0 opacity-30 pointer-events-none max-w-[40%] h-[56vh] flex items-end pointer-events-none">
         <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
       </div>
-      <div className="flex flex-1 flex-col lg:flex-row">
-        {/* Sidebar Area */}
-        {!vnMode && (
-          <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative z-10 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
-          {/* Sidebar Header */}
-          <div className="h-16 px-4 border-b border-border flex items-center shrink-0 gap-2">
-            {!sidebarCollapsed ? (
-              <button onClick={createNewConversation} className="flex-1 flex items-center gap-2 px-4 py-2 bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90">
-                <Plus className="w-4 h-4" />
-                New Chat
-              </button>
-            ) : (
-              <button onClick={createNewConversation} className="flex-1 flex items-center justify-center p-2 bg-accent text-black rounded-lg hover:opacity-90">
-                <Plus className="w-4 h-4" />
-              </button>
+
+      {/* Desktop Sidebar - Full height, fixed position */}
+      {!vnMode && (
+        <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 fixed left-0 top-0 bottom-0 z-[60] ${sidebarCollapsed ? 'w-14' : 'w-56'}`}>
+          {/* Profile Section */}
+          <div className={`border-b border-border shrink-0 ${sidebarCollapsed ? 'py-4 flex flex-col items-center gap-2' : 'p-4 pt-6'}`}>
+            {/* Avatar */}
+            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-accent transition-colors shrink-0 ${sidebarCollapsed ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
+              {userAvatar ? (
+                <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-bg flex items-center justify-center">
+                  <User className={`${sidebarCollapsed ? 'w-4 h-4' : 'w-8 h-8'} text-text-secondary/50`} />
+                </div>
+              )}
+            </button>
+            {/* Username */}
+            {!sidebarCollapsed && (
+              <div className="mt-3 text-center">
+                {editingName ? (
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    onBlur={() => { setEditingName(false); localStorage.setItem(USER_NAME_KEY, userName); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem(USER_NAME_KEY, userName); } }}
+                    autoFocus
+                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                  />
+                ) : (
+                  <button onClick={() => setEditingName(true)} className="text-sm font-mono font-semibold text-text-primary hover:text-accent transition-colors" title="Click to edit name">
+                    {userName}
+                  </button>
+                )}
+              </div>
             )}
-            <button onClick={() => setShowAvatarModal(true)} className={`${sidebarCollapsed ? 'hidden' : 'flex'} p-2 bg-surface border border-border text-text-secondary hover:text-accent rounded-lg transition-colors shrink-0`} title="Set Avatar">
-              <User className="w-4 h-4" />
+          </div>
+
+          {/* New Chat Button */}
+          <div className={`shrink-0 ${sidebarCollapsed ? 'p-1' : 'p-3'}`}>
+            <button onClick={createNewConversation} className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90`}>
+              <Plus className="w-4 h-4" />
+              {!sidebarCollapsed && 'New Chat'}
             </button>
           </div>
 
@@ -626,7 +696,10 @@ export default function ChatPage() {
             {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
           </button>
         </div>
-        )}
+      )}
+
+      {/* Main content wrapper */}
+      <div className={`flex flex-1 flex-col pt-20 overflow-hidden min-h-0 ${!vnMode ? (sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-56') : ''} transition-all duration-300`}>
 
         {/* Mobile Sidebar */}
         {!vnMode && (
@@ -662,24 +735,17 @@ export default function ChatPage() {
         </AnimatePresence>
         )}
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 bg-bg">
-          {/* Floating Action Buttons (below header) */}
-          <div className="fixed top-24 right-4 z-40 flex flex-col gap-2">
+        {/* Floating Action Buttons (below header) */}
+        <div className="fixed top-24 left-0 right-0 z-40 flex justify-end px-8">
+          <div className="max-w-7xl mx-auto flex flex-col gap-2">
             {/* Mobile sidebar toggle */}
             {!vnMode && (
               <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg">
                 <MessageSquareMore className="w-4 h-4" />
               </button>
             )}
-            {/* VN Mode Toggle */}
-            <button
-              onClick={() => setVnMode(!vnMode)}
-              className="px-4 py-2 mt-2 rounded-lg bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent transition-all"
-            >
-              {vnMode ? 'Story Chat' : 'Visual Novel'}
-            </button>
           </div>
+        </div>
 
           {/* Chat Area - fills remaining height */}
           <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
@@ -724,7 +790,7 @@ export default function ChatPage() {
             )}
 
             {/* Chat Content (with VN-aware styling) */}
-            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 pb-4'}`}>
+            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-8 pb-4'}`}>
               {vnMode ? (
                 /* =========================================================
                    VN MODE LAYOUT
@@ -732,7 +798,7 @@ export default function ChatPage() {
                 <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
 
                   {/* Sprites placed cleanly on top of dialogue box */}
-                  <div className="w-full max-w-7xl mx-auto px-4 md:px-12 relative z-10 flex justify-between items-end">
+                  <div className="w-full max-w-7xl mx-auto px-8 relative z-10 flex justify-between items-end">
                     {/* Siggy Sprite (Left Side) */}
                     <div className="flex-1 flex justify-start">
                       <motion.div
@@ -741,7 +807,7 @@ export default function ChatPage() {
                         className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
                       >
                         <Image
-                          src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
+                          src={getSpriteForMood(personality, activeConversation?.messages[activeConversation.messages.length - 1]?.mood || activeConversation?.currentMood || 'DEFAULT')}
                           alt="Siggy"
                           width={260}
                           height={360}
@@ -772,8 +838,8 @@ export default function ChatPage() {
                     </div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
-                    <div className="max-w-7xl mx-auto">
+                  <div className="w-full bg-surface backdrop-blur-xl border-t border-border shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
+                    <div className="max-w-7xl mx-auto px-8 py-8">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
                         <div className="mb-2 flex items-center justify-between border-b border-border pb-3">
@@ -820,7 +886,7 @@ export default function ChatPage() {
                                     }}
                                   />
                                 ) : (
-                                  <TypewriterText key={activeConversation.messages.length} text={activeConversation.messages[activeConversation.messages.length - 1].content} isLatest={true} />
+                                  <TypewriterText text={activeConversation.messages[activeConversation.messages.length - 1].content} isLatest={true} alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`)} />
                                 )}
                                 {/* Action buttons moved down below the chat scroll area */}
                               </div>
@@ -836,7 +902,7 @@ export default function ChatPage() {
                           {/* Reinstated Floating Action Buttons (Left Aligned) */}
                           {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                             <div className="flex items-center gap-1 pr-2">
-                              <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'PLAYFUL']}`}>
+                              <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'DEFAULT']}`}>
                                 {activeConversation.messages[activeConversation.messages.length - 1].mood}
                               </span>
                               <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
@@ -883,14 +949,14 @@ export default function ChatPage() {
                 /* =========================================================
                    STANDARD CHAT LAYOUT
                    ========================================================= */
-                <div className="max-w-3xl mx-auto h-full flex flex-col min-h-0 w-full relative">
+                <div className="max-w-7xl mx-auto h-full flex flex-col min-h-0 w-full relative">
                   {/* Messages - scrollable */}
-                  <div className="flex-1 overflow-y-auto space-y-3 py-3 min-h-0 relative z-10">
+                  <div className="flex-1 overflow-y-auto space-y-3 py-3 px-4 min-h-0 relative z-10">
                     {!activeConversation || activeConversation.messages.length === 0 ? (
                       <div className="text-center py-16">
                         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 flex justify-center">
                           <Image
-                            src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
+                            src={getSpriteForMood(personality, 'HAPPY')}
                             alt="Siggy Avatar"
                             width={96}
                             height={96}
@@ -898,19 +964,57 @@ export default function ChatPage() {
                             priority
                           />
                         </motion.div>
-                        <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-4 text-accent">
-                          Welcome to Earth
-                        </h2>
-                        <p className="text-sm max-w-xl mx-auto text-text-secondary">
-                          I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
-                        </p>
+                        {conversations.filter(c => c.messages.length > 0).length > 0 ? (
+                          <>
+                            <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-2 text-accent">
+                              Welcome back, {userName}!
+                            </h2>
+                            <p className="text-sm text-text-secondary mb-6">
+                              Let&apos;s see where you left off~
+                            </p>
+                            <div className="max-w-md mx-auto space-y-2 mb-8">
+                              {conversations.filter(c => c.messages.length > 0).slice(0, 4).map(conv => (
+                                <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className="w-full text-left px-4 py-3 bg-surface border border-border rounded-lg hover:border-accent hover:text-accent transition-all flex items-center gap-3">
+                                  <MessageSquare className="w-4 h-4 text-text-secondary shrink-0" />
+                                  <span className="text-sm font-mono truncate">{conv.title}</span>
+                                  <span className="text-xs text-text-secondary ml-auto shrink-0">{conv.messages.length} msgs</span>
+                                </button>
+                              ))}
+                            </div>
+                            <p className="text-xs text-text-secondary mb-4">Or start something new:</p>
+                          </>
+                        ) : (
+                          <>
+                            <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-4 text-accent">
+                              Welcome to Earth, {userName}!
+                            </h2>
+                            <p className="text-sm max-w-xl mx-auto text-text-secondary">
+                              I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
+                            </p>
+                          </>
+                        )}
+                        {/* Starting Topic Buttons */}
+                        <div className="grid grid-cols-2 gap-3 mt-8 max-w-lg mx-auto">
+                          <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                            {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                          </button>
+                          <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                            Cosmic origins
+                          </button>
+                          <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                            Weird dimensions
+                          </button>
+                          <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                            Earth food
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       activeConversation.messages.map((message, index) => (
                         <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}>
                           {message.role === 'assistant' && (
                             <div className="shrink-0 mb-3">
-                              <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
+                              <Image src={getSpriteForMood(personality, message.mood || 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                             </div>
                           )}
                           <div className={`max-w-[80%] rounded-xl px-4 py-3 bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'}`}>
@@ -918,7 +1022,11 @@ export default function ChatPage() {
                               <span className="text-[10px] font-mono font-semibold text-text-primary">{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
                               {message.mood && <span className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
-                            <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
+                            {message.role === 'assistant' ? (
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} />
+                            ) : (
+                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
+                            )}
 
                             {message.role === 'assistant' && (
                               <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
@@ -960,7 +1068,7 @@ export default function ChatPage() {
                     {isLoading && (
                       <div className="flex justify-start gap-3 items-end">
                         <div className="shrink-0 mb-3">
-                          <Image src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
+                          <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
                         <div className="bg-surface border border-border shadow-sm rounded-2xl rounded-bl-none px-6 py-4">
                           <div className="flex items-center gap-2 mb-2">
@@ -982,7 +1090,7 @@ export default function ChatPage() {
                   <div className="shrink-0 space-y-3">
                     <div className="flex items-center justify-between pb-2">
                       <div className="font-mono text-[10px] text-text-secondary">
-                        Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.PLAYFUL}`}>{activeConversation?.currentMood || 'PLAYFUL'}</span>
+                        Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
@@ -993,7 +1101,7 @@ export default function ChatPage() {
                       </div>
                     </div>
                     {/* Suggestions Grid (2x2) */}
-                    {!activeConversation || activeConversation.messages.length > 0 && !isLoading && (
+                    {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
                       <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
                         <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                           {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
@@ -1016,7 +1124,7 @@ export default function ChatPage() {
                         <RefreshCw className="w-4 h-4" />
                       </button>
                       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner" />
-                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:bg-surface disabled:border disabled:border-border disabled:text-text-secondary/50 rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none">
+                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
                     </div>
@@ -1026,7 +1134,6 @@ export default function ChatPage() {
             </div>
           </div>
         </div>
-      </div>
 
       {/* User Avatar Upload Modal */}
       <AnimatePresence>

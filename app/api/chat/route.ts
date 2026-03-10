@@ -9,6 +9,7 @@ import {
   SiggyMoodSystem,
   buildSiggyPrompt,
   checkEasterEggs,
+  extractMoodFromResponse,
   type Message,
 } from '@/lib/siggy-personality';
 import {
@@ -34,7 +35,7 @@ function getMoodSystem(userId: string): SiggyMoodSystem {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { message, conversationHistory = [], userId = 'default', isFirstMessage = false } = body;
+    const { message, conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist' } = body;
 
     // Validate input
     if (!message || typeof message !== 'string') {
@@ -59,7 +60,8 @@ export async function POST(req: NextRequest) {
       message,
       managedContext.recentMessages,
       moodSystem,
-      isFirstMessage
+      isFirstMessage,
+      userName
     );
 
     // Enhance prompt with context summaries and key facts
@@ -78,12 +80,16 @@ export async function POST(req: NextRequest) {
       presence_penalty: 0.3,
     });
 
-    const siggyResponse = completion.choices[0]?.message?.content || '*dimensional glitch* ERROR: No response generated';
+    const rawResponse = completion.choices[0]?.message?.content || '*dimensional glitch* ERROR: No response generated';
 
-    // Return response with current mood
+    // Extract mood from [MOOD:X] tag and clean response
+    const { mood, cleanedResponse } = extractMoodFromResponse(rawResponse);
+    moodSystem.setMood(mood);
+
+    // Return response with extracted mood
     return NextResponse.json({
-      response: siggyResponse,
-      currentMood: moodSystem.getCurrentMood(),
+      response: cleanedResponse,
+      currentMood: mood,
       messageCount: moodSystem.getMessageCount(),
       contextInfo: {
         totalMessages: managedContext.totalMessages,
