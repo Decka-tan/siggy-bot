@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MessageSquare } from 'lucide-react';
 
 // Story data type
 type StoryChoice = {
@@ -677,51 +677,32 @@ export default function StoryModePage() {
     }
   };
 
-  const getMoodGradient = (mood: string) => {
-    const gradients: Record<string, string> = {
-      PLAYFUL: 'from-indigo-900 via-purple-900 to-black',
-      MYSTERIOUS: 'from-purple-900 via-indigo-900 to-black',
-      CHAOTIC: 'from-red-900 via-pink-900 to-black',
-      PROFOUND: 'from-amber-900 via-yellow-900 to-black',
-    };
-    return gradients[mood] || gradients.PROFOUND;
-  };
-
-  const getMoodEmoji = (mood: string) => {
-    const emojis: Record<string, string> = {
-      PLAYFUL: '😸',
-      MYSTERIOUS: '🔮',
-      CHAOTIC: '💀',
-      PROFOUND: '✨',
-    };
-    return emojis[mood] || '✨';
-  };
-
   const currentText = currentScene.dialog[currentDialogIndex] || '';
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${currentScene.background} text-white`}>
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      {/* Header - MATCHING CHAT MODE STYLE */}
+      <div className="px-6 pb-6 pt-24">
+        <div className="flex items-center justify-between max-w-4xl mx-auto">
           <Link href="/">
-            <button className="flex items-center gap-2 text-white/60 hover:text-white transition-colors">
+            <button className="flex items-center gap-2 text-white/60 hover:text-white transition-colors font-mono text-xs uppercase tracking-wider">
               <ArrowLeft className="w-4 h-4" />
-              <span className="font-mono text-sm uppercase tracking-wider">Back</span>
+              Back
             </button>
           </Link>
           <Link href="/chat">
-            <button className="px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur rounded-lg font-mono text-xs uppercase tracking-wider transition-all">
+            <button className="flex items-center gap-2 text-white/60 hover:text-accent transition-colors font-mono text-xs uppercase tracking-wider">
+              <MessageSquare className="w-4 h-4" />
               Chat Mode
             </button>
           </Link>
         </div>
-      </header>
+      </div>
 
       {/* Main Story Area */}
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-20">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 pb-20">
         {/* Chapter Indicator */}
-        <div className="absolute top-20 left-0 right-0 text-center">
+        <div className="text-center mb-8">
           <motion.div
             key={currentScene.chapter}
             initial={{ opacity: 0, y: -20 }}
@@ -735,8 +716,8 @@ export default function StoryModePage() {
         </div>
 
         {/* Chapter Progress */}
-        <div className="absolute top-28 left-0 right-0 px-6">
-          <div className="max-w-md mx-auto flex gap-1">
+        <div className="w-full max-w-md mb-8">
+          <div className="flex gap-1">
             {[1, 2, 3, 4].map((ch) => (
               <div
                 key={ch}
@@ -766,7 +747,7 @@ export default function StoryModePage() {
         {/* Mood Indicator */}
         <div className="mb-6">
           <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur text-xs font-mono uppercase tracking-wider flex items-center gap-2">
-            {getMoodEmoji(currentScene.mood)} {currentScene.mood}
+            {currentScene.mood}
           </span>
         </div>
 
