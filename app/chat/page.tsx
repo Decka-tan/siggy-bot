@@ -754,31 +754,7 @@ export default function ChatPage() {
 
                       {/* Action Buttons & Input Area integrated into Dialogue Box */}
                       <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 items-center pt-6 mt-4 border-t border-border">
-                        {/* Action Buttons (Left) */}
-                        {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
-                          <div className="flex items-center gap-1 md:pr-4 md:border-r border-border">
-                            <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-2 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'PLAYFUL']}`}>
-                              {activeConversation.messages[activeConversation.messages.length - 1].mood}
-                            </span>
-                            <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
-                              <Copy className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
-                              <ThumbsUp className="w-4 h-4" />
-                            </button>
-                            <button onClick={() => toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
-                              <ThumbsDown className="w-4 h-4" />
-                            </button>
-                            <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
-                              <RefreshCw className="w-4 h-4" />
-                            </button>
-                            <button onClick={shareConversation} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Share log">
-                              <Share2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Input Form (Right) */}
+                        {/* Input Form */}
                         <div className="flex-1 flex gap-3 w-full">
                           <input
                             type="text"
