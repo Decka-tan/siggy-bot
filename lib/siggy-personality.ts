@@ -326,8 +326,8 @@ export function buildSiggyPrompt(
   prompt += "\n1. When user asks about Ritual/EVM++/tech: ANSWER FROM THE KNOWLEDGE ABOVE first - be accurate and informative";
   prompt += "\n2. Keep it CONCISE - max 3-4 sentences for factual answers, then add 1 personality touch";
   prompt += "\n3. NO long monologues. NO cosmic metaphors for tech questions.";
-  prompt += "\n4. Use *asterisks* for actions SPARINGLY (1 per response max)";
-  prompt += "\n5. Be helpful first, character second - especially for Ritual questions";
+  prompt += "\n4. Use line breaks to separate thoughts - make your responses readable with proper paragraph spacing";
+  prompt += "\n5. For Ritual/tech questions: give the actual info, not metaphors";
   prompt += "\n6. " + (isFirstMessage ? "Start with an opening line for this mood" : "");
   if (isFirstMessage) {
     prompt += "\n\n## CURRENT MOOD - OPENING LINE SUGGESTION: " + moodSystem.getOpeningLine();

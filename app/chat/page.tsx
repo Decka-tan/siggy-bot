@@ -268,16 +268,30 @@ export default function ChatPage() {
 
   const parseMessageContent = (content: string) => {
     let html = content;
+
+    // First, preserve paragraph breaks (double newlines)
+    html = html.replace(/\n\n/g, '</p><p class="mt-2">');
+
+    // Bold
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
+
+    // Italic (but not when part of ** already)
     html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
     html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>');
+
+    // Code
     html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
     html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
+
+    // Quote
     html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
     html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
+
+    // Single line breaks (but not in code/quote)
     html = html.replace(/\n/g, '<br />');
-    return html;
+
+    return '<p class="whitespace-pre-wrap">' + html + '</p>';
   };
 
   const copyMessage = (content: string) => {
