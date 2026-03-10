@@ -577,7 +577,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
+    <div className="h-screen text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative" style={{ backgroundImage: "url('/bg-night-sky.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
       {vnMode && (
         <style dangerouslySetInnerHTML={{ __html: `footer { display: none !important; }` }} />
       )}
@@ -728,9 +728,9 @@ export default function ChatPage() {
                 <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
 
                   {/* Sprites placed cleanly on top of dialogue box */}
-                  <div className="w-full max-w-7xl mx-auto px-4 md:px-12 relative z-10 flex justify-between items-end">
+                  <div className="w-full relative z-10 flex justify-between items-end px-4 md:px-12">
                     {/* User Sprite (Left Side) */}
-                    <div className="flex-1 flex justify-start">
+                    <div className="flex justify-start">
                       <AnimatePresence>
                         {activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' && userAvatar && (
                           <motion.div
@@ -749,8 +749,8 @@ export default function ChatPage() {
                       </AnimatePresence>
                     </div>
 
-                    {/* Siggy Sprite (Right Side) */}
-                    <div className="flex-1 flex justify-end">
+                    {/* Siggy Sprite (Right Side - mentok kanan!) */}
+                    <div className="flex justify-end">
                       <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -768,7 +768,7 @@ export default function ChatPage() {
                     </div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
+                  <div className="w-full bg-surface backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
                     <div className="max-w-7xl mx-auto">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
@@ -882,7 +882,7 @@ export default function ChatPage() {
                 <div className="max-w-3xl mx-auto h-full flex flex-col min-h-0 w-full relative">
                   
                   {/* Decorative Transparent Right-side Graphic */}
-                  <div className="absolute bottom-0 right-0 z-0 opacity-30 pointer-events-none translate-x-12 sm:translate-x-24 md:translate-x-32 max-w-[50%] h-[70vh] flex items-end">
+                  <div className="absolute bottom-0 right-0 z-0 opacity-30 pointer-events-none max-w-[50%] h-[70vh] flex items-end">
                     <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
                   </div>
 
