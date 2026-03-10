@@ -71,7 +71,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6 }}
                 className="text-6xl md:text-8xl lg:text-9xl font-display leading-[0.85] tracking-tight mb-6 text-accent"
               >
-                LET'S<br />BE FUN
+                MULTI-VERSE<br />CAT GIRL
               </motion.h1>
 
               <motion.p
