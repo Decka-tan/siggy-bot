@@ -105,11 +105,11 @@ const TypewriterText = ({ text, isLatest }: { text: string; isLatest: boolean })
 // Decorative floating bubbles for VN mode
 const VN_BUBBLES = [
   { text: 'The sky is cool, right?', top: '12%', left: '8%', size: 90, delay: 0 },
-  { text: 'siggy look! ✨', top: '25%', left: '78%', size: 80, delay: 2 },
+  { text: 'siggy look!', top: '25%', left: '78%', size: 80, delay: 2 },
   { text: 'meow~', top: '45%', left: '5%', size: 60, delay: 4 },
-  { text: '🌙', top: '15%', left: '55%', size: 50, delay: 1 },
+  { text: 'so dark...', top: '15%', left: '55%', size: 50, delay: 1 },
   { text: 'so pretty...', top: '55%', left: '85%', size: 75, delay: 3 },
-  { text: '✨', top: '35%', left: '30%', size: 45, delay: 5 },
+  { text: 'i am infinite.', top: '35%', left: '30%', size: 45, delay: 5 },
   { text: 'I can see everything~', top: '8%', left: '38%', size: 85, delay: 6 },
 ];
 
@@ -717,7 +717,7 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      <div className="min-h-[140px] max-h-[180px] overflow-y-auto mb-5 pr-4 signature-scroll flex items-start">
+                      <div className="min-h-[180px] max-h-[250px] overflow-y-auto mb-6 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
                           <div className="text-center">
                             <h2 className="text-xl font-display uppercase mb-2 text-accent">
@@ -743,7 +743,7 @@ export default function ChatPage() {
                                     }}
                                   />
                                 ) : (
-                                  <TypewriterText text={activeConversation.messages[activeConversation.messages.length - 1].content} isLatest={true} />
+                                  <TypewriterText key={activeConversation.messages.length} text={activeConversation.messages[activeConversation.messages.length - 1].content} isLatest={true} />
                                 )}
                                 {/* Action buttons moved down below the chat scroll area */}
                               </div>
@@ -753,7 +753,7 @@ export default function ChatPage() {
                       </div>
 
                       {/* Action Buttons & Input Area integrated into Dialogue Box */}
-                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center pt-5 mt-2 border-t border-border">
+                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 items-center pt-6 mt-4 border-t border-border">
                         {/* Action Buttons (Left) */}
                         {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                           <div className="flex items-center gap-1 md:pr-4 md:border-r border-border">
@@ -810,8 +810,15 @@ export default function ChatPage() {
                   <div className="flex-1 overflow-y-auto space-y-3 py-3 min-h-0">
                     {!activeConversation || activeConversation.messages.length === 0 ? (
                       <div className="text-center py-16">
-                        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="text-8xl mb-6">
-                          👧✨
+                        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 flex justify-center">
+                          <Image
+                            src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
+                            alt="Siggy Avatar"
+                            width={96}
+                            height={96}
+                            className="rounded-full bg-black/50 border border-border object-cover shadow-2xl"
+                            priority
+                          />
                         </motion.div>
                         <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-4 text-accent">
                           Welcome to Earth
@@ -890,7 +897,7 @@ export default function ChatPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
-                        {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? '📝' : '💾'} {Math.round(contextInfo.estimatedTokens / 1000)}k</span>}
+                        {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? 'Summary: ' : 'Memory: '} {Math.round(contextInfo.estimatedTokens / 1000)}k keys</span>}
                         <button onClick={resetCurrentConversation} className="p-2 rounded hover:bg-surface">
                           <RefreshCw className="w-4 h-4" />
                         </button>
@@ -900,16 +907,16 @@ export default function ChatPage() {
                     {!activeConversation || activeConversation.messages.length > 0 && !isLoading && (
                       <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
                         <button onClick={() => { setInput(personality === 'CAT' ? 'Turn into Anime Girl!' : 'Turn into Cat!'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-emerald-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-emerald-400 hover:to-accent rounded-lg transition-all text-left">
-                          {personality === 'CAT' ? '✨ Turn into Anime Form!' : '🐱 Turn into Cat Form!'}
+                          {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                         </button>
-                        <button onClick={() => { setInput('What are your cosmic origins?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-accent/30 text-accent hover:border-accent rounded-lg transition-all text-left">
-                          🌌 Cosmic origins
+                        <button onClick={() => { setInput('What are your cosmic origins?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                          Cosmic origins
                         </button>
-                        <button onClick={() => { setInput('Tell me a weird dimension you visited.'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-accent/30 text-accent hover:border-accent rounded-lg transition-all text-left">
-                          🌀 Weird dimensions
+                        <button onClick={() => { setInput('Tell me a weird dimension you visited.'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                          Weird dimensions
                         </button>
-                        <button onClick={() => { setInput('What is your favorite Earth food?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-accent/30 text-accent hover:border-accent rounded-lg transition-all text-left">
-                          🍔 Earth food
+                        <button onClick={() => { setInput('What is your favorite Earth food?'); handleSendMessage(); }} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                          Earth food
                         </button>
                       </div>
                     )}
