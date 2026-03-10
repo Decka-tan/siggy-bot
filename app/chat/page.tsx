@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Trash2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen } from 'lucide-react';
 
 type MoodState = 'PLAYFUL' | 'MYSTERIOUS' | 'CHAOTIC' | 'PROFOUND';
 
@@ -32,8 +32,6 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [currentMood, setCurrentMood] = useState<MoodState>('PLAYFUL');
   const [messageCount, setMessageCount] = useState(0);
-  const [apiKey, setApiKey] = useState('');
-  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -47,12 +45,6 @@ export default function ChatPage() {
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
-
-    const effectiveApiKey = apiKey || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
-    if (!effectiveApiKey) {
-      setShowApiKeyInput(true);
-      return;
-    }
 
     const userMessage: Message = {
       role: 'user',
@@ -68,7 +60,6 @@ export default function ChatPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${effectiveApiKey}`,
         },
         body: JSON.stringify({
           message: input,
@@ -133,11 +124,6 @@ export default function ChatPage() {
     setMessageCount(0);
     setInput('');
     setContextInfo(null);
-  };
-
-  const clearApiKey = () => {
-    setApiKey('');
-    setShowApiKeyInput(false);
   };
 
   return (
@@ -285,43 +271,6 @@ export default function ChatPage() {
 
           {/* Input Area */}
           <div>
-            {showApiKeyInput && !apiKey && (
-              <div className="mb-4 p-4 bg-surface border border-border rounded-2xl">
-                <p className="text-sm text-text-secondary mb-3 font-mono">
-                  OpenAI API Key Required
-                </p>
-                <input
-                  type="password"
-                  placeholder="sk-..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full px-4 py-3 bg-bg border border-border rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent font-mono text-sm"
-                />
-                <div className="flex items-center justify-between mt-3">
-                  <p className="text-xs text-text-secondary">
-                    Get your key from{' '}
-                    <a
-                      href="https://platform.openai.com/api-keys"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-accent hover:underline"
-                    >
-                      platform.openai.com
-                    </a>
-                  </p>
-                  {apiKey && (
-                    <button
-                      onClick={clearApiKey}
-                      className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-mono uppercase tracking-wider transition-all flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Clear
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
             <div className="flex gap-3">
               <input
                 type="text"
