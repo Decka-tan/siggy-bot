@@ -697,15 +697,20 @@ export default function ChatPage() {
                   {/* Main Dialogue Box (Full Width) */}
                   <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
                     <div className="max-w-7xl mx-auto">
-                      {/* Box Header: Mode Info */}
+                      {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-2 flex items-center justify-end border-b border-border/30 pb-2">
+                        <div className="mb-2 flex items-center justify-between border-b border-border/30 pb-3">
+                          <div className="flex items-center gap-3">
+                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-blue-400' : 'text-accent'}`}>
+                              {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-3">
                             <div className="flex gap-1">
-                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-white/20'}`} />
-                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-white/20'}`} />
+                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-surface border border-border'}`} />
+                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-surface border border-border'}`} />
                             </div>
-                            <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-white/60 hidden sm:inline-block">
+                            <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
                               Mode: {personality === 'CAT' ? 'Cat Form' : 'Anime Girl Form'}
                             </span>
                           </div>
@@ -729,11 +734,7 @@ export default function ChatPage() {
                                 *Siggy is thinking...*
                               </div>
                             ) : (
-                              <div className="relative flex flex-col items-start">
-                                {/* Inline Name Bar aligned with text */}
-                                <span className={`font-display uppercase tracking-wider text-lg mb-1 ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-blue-400' : 'text-accent'}`}>
-                                  {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
-                                </span>
+                              <div className="relative flex flex-col items-start mt-2">
                                 <p
                                   className={`text-sm md:text-base leading-relaxed font-mono ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
                                     ? 'italic text-text-secondary'
