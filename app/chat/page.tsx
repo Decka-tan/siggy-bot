@@ -43,8 +43,23 @@ const ACTIVE_CONV_KEY = 'siggy-active-conversation';
 const SIDEBAR_KEY = 'siggy-sidebar-collapsed';
 const VN_MODE_KEY = 'siggy-vn-mode';
 
-// Local background for Visual Novel Mode
-const VN_BACKGROUND_URL = '/vn-bg-1.png';
+// VN Mode backgrounds (rotate every 10s)
+const VN_BACKGROUNDS = [
+  '/vn-bg-sunset.jpg',
+  '/vn-bg-stars.jpg',
+  '/vn-bg-lake.jpg',
+];
+
+// Decorative floating bubbles for VN mode
+const VN_BUBBLES = [
+  { text: 'The sky is cool, right?', top: '12%', left: '8%', size: 90, delay: 0 },
+  { text: 'siggy look! ✨', top: '25%', left: '78%', size: 80, delay: 2 },
+  { text: 'meow~', top: '45%', left: '5%', size: 60, delay: 4 },
+  { text: '🌙', top: '15%', left: '55%', size: 50, delay: 1 },
+  { text: 'so pretty...', top: '55%', left: '85%', size: 75, delay: 3 },
+  { text: '✨', top: '35%', left: '30%', size: 45, delay: 5 },
+  { text: 'I can see everything~', top: '8%', left: '38%', size: 85, delay: 6 },
+];
 
 const generateTitle = (firstMessage: string): string => {
   const truncated = firstMessage.slice(0, 30);
@@ -81,6 +96,7 @@ export default function ChatPage() {
     return localStorage.getItem(VN_MODE_KEY) === 'true';
   });
   const [personality, setPersonality] = useState<'CAT' | 'ANIME'>('ANIME');
+  const [vnBgIndex, setVnBgIndex] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
@@ -116,6 +132,15 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom();
   }, [activeConversation?.messages]);
+
+  // Rotate VN backgrounds every 10s
+  useEffect(() => {
+    if (!vnMode) return;
+    const interval = setInterval(() => {
+      setVnBgIndex(prev => (prev + 1) % VN_BACKGROUNDS.length);
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [vnMode]);
 
   const createNewConversation = () => {
     const newConv: Conversation = {
@@ -412,6 +437,84 @@ export default function ChatPage() {
     }
   };
 
+  const handleTransform = async (newForm: 'CAT' | 'ANIME') => {
+    setPersonality(newForm);
+    const transformMsg = newForm === 'CAT'
+      ? '*snaps fingers* Siggy, turn into a cat!'
+      : '*snaps fingers* Siggy, turn into an anime girl!';
+
+    // Auto-send the transform message
+    setInput(transformMsg);
+    setTimeout(() => {
+      const fakeEvent = { key: 'Enter', shiftKey: false, preventDefault: () => { } } as React.KeyboardEvent;
+      // We'll just set input and trigger send
+    }, 0);
+
+    let targetConvId = activeConversationId;
+    if (!targetConvId) {
+      const newConv: Conversation = {
+        id: Date.now().toString(),
+        title: generateTitle(transformMsg),
+        messages: [],
+        currentMood: 'PLAYFUL',
+        messageCount: 0,
+        timestamp: Date.now(),
+      };
+      setConversations(prev => [newConv, ...prev]);
+      targetConvId = newConv.id;
+      setActiveConversationId(newConv.id);
+    }
+
+    const userMessage: Message = { role: 'user', content: transformMsg };
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === targetConvId) {
+        const updatedMessages = [...conv.messages, userMessage];
+        const title = conv.messages.length === 0 ? generateTitle(transformMsg) : conv.title;
+        return { ...conv, messages: updatedMessages, title };
+      }
+      return conv;
+    }));
+
+    const currentConv = conversations.find(c => c.id === targetConvId);
+    const conversationHistory = currentConv?.messages || [];
+
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: transformMsg,
+          conversationHistory,
+          userId: `conv-${targetConvId}`,
+          isFirstMessage: conversationHistory.length === 0,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get response');
+      const data = await response.json();
+
+      let processedResponse = data.response;
+      processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
+      processedResponse = processedResponse.replace(/\n\s+/g, '\n');
+
+      const siggyMessage: Message = { role: 'assistant', content: processedResponse, mood: data.currentMood };
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === targetConvId) {
+          return { ...conv, messages: [...conv.messages, siggyMessage], currentMood: data.currentMood, messageCount: data.messageCount };
+        }
+        return conv;
+      }));
+      setContextInfo(data.contextInfo || null);
+    } catch (error) {
+      console.error('Transform failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
       <div className="flex flex-1 flex-col lg:flex-row">
@@ -483,84 +586,88 @@ export default function ChatPage() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <div className="h-16 px-6 border-b border-border flex items-center justify-between shrink-0 relative z-50">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded hover:bg-surface">
-                <MessageSquareMore className="w-5 h-5" />
-              </button>
-              <Link href="/">
-                <button className="flex items-center gap-2 text-text-secondary hover:text-text-primary font-mono text-xs uppercase">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </button>
-              </Link>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setPersonality(personality === 'CAT' ? 'ANIME' : 'CAT')}
-                className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${personality === 'CAT'
-                  ? 'text-purple-400 hover:text-purple-300'
-                  : 'text-pink-400 hover:text-pink-300'
-                  }`}
-              >
-                {personality === 'CAT' ? (
-                  <><span className="text-base">🐱</span>Cat Mode</>
-                ) : (
-                  <><span className="text-base">👧</span>Anime Mode</>
-                )}
-              </button>
-              <button
-                onClick={() => setVnMode(!vnMode)}
-                className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${vnMode
-                  ? 'text-accent hover:text-accent/80'
-                  : 'text-text-secondary hover:text-accent'
-                  }`}
-              >
-                {vnMode ? (
-                  <><MessageCircle className="w-4 h-4" />Chat Mode</>
-                ) : (
-                  <><Sparkles className="w-4 h-4" />Visual Novel Mode</>
-                )}
-              </button>
-            </div>
+          {/* Floating Action Buttons (replace header) */}
+          <div className="absolute top-2 right-4 z-50 flex flex-col gap-2">
+            {/* Mobile sidebar toggle */}
+            <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg">
+              <MessageSquareMore className="w-4 h-4" />
+            </button>
+            {/* VN Mode Toggle */}
+            <button
+              onClick={() => setVnMode(!vnMode)}
+              className="px-3 py-1.5 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:border-accent font-mono text-[10px] uppercase tracking-wider shadow-lg transition-colors"
+            >
+              {vnMode ? 'Summary' : 'Visual Novel'}
+            </button>
+            {/* Transform Button */}
+            <button
+              onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')}
+              disabled={isLoading}
+              className="px-3 py-1.5 rounded-full bg-accent/10 backdrop-blur-sm border border-accent/30 hover:bg-accent/20 font-mono text-[10px] uppercase tracking-wider text-accent shadow-lg transition-colors disabled:opacity-50"
+            >
+              {personality === 'CAT' ? 'Siggy Turn into Anime Girl!' : 'Siggy Turn into Cat!'}
+            </button>
           </div>
 
           {/* Chat Area - fills remaining height */}
           <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
-            {/* VN Mode Background */}
+            {/* VN Mode Background with rotation */}
             {vnMode && (
-              <div className="absolute inset-0 z-0">
-                <img
-                  src={VN_BACKGROUND_URL}
-                  alt="Visual Novel Background"
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/20" />
-              </div>
+              <>
+                <div className="absolute inset-0 z-0">
+                  {VN_BACKGROUNDS.map((bg, i) => (
+                    <img
+                      key={bg}
+                      src={bg}
+                      alt={`VN Background ${i + 1}`}
+                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ${i === vnBgIndex ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                  ))}
+                  <div className="absolute inset-0 bg-black/30" />
+                </div>
+
+                {/* Decorative floating bubbles */}
+                {VN_BUBBLES.map((bubble, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 0.6, scale: 1, y: [0, -6, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: bubble.delay }}
+                    className="absolute z-10 pointer-events-none"
+                    style={{ top: bubble.top, left: bubble.left }}
+                  >
+                    <div
+                      className="rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+                      style={{ width: bubble.size, height: bubble.size }}
+                    >
+                      <span className="text-white/70 text-[9px] font-mono text-center px-2 leading-tight">{bubble.text}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </>
             )}
 
             {/* VN Mode Sprites */}
             {vnMode && (
               <>
-                {/* Siggy Sprite - Centered */}
+                {/* Siggy Sprite - directly above dialogue */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-500"
-                  style={{ bottom: '300px' }}
+                  className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+                  style={{ bottom: '180px' }}
                 >
                   <motion.div
-                    animate={{ y: [0, -8, 0] }}
+                    animate={{ y: [0, -5, 0] }}
                     transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                     className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
                   >
                     <Image
                       src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
                       alt="Siggy"
-                      width={500}
-                      height={700}
-                      className="object-contain drop-shadow-[0_0_50px_rgba(0,255,148,0.3)]"
+                      width={280}
+                      height={400}
+                      className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.2)]"
                       priority
                     />
                   </motion.div>
@@ -569,7 +676,7 @@ export default function ChatPage() {
             )}
 
             {/* Chat Content (with VN-aware styling) */}
-            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-6 pb-6'}`}>
+            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 pb-4'}`}>
               {vnMode ? (
                 /* =========================================================
                    VN MODE LAYOUT
@@ -577,9 +684,9 @@ export default function ChatPage() {
                 <div className="absolute bottom-0 w-full flex flex-col z-20">
                   {/* Name Tag (if there are messages) */}
                   {activeConversation && activeConversation.messages.length > 0 && (
-                    <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
-                      <div className="px-8 py-2 bg-accent rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border border-accent/30">
-                        <span className="font-mono tracking-wider text-black font-bold text-base md:text-xl">
+                    <div className="flex justify-start max-w-7xl mx-auto w-full px-6 relative z-30">
+                      <div className="px-6 py-1.5 bg-accent rounded-t-lg border-b-0 border border-accent/30">
+                        <span className="font-mono tracking-wider text-black font-bold text-xs md:text-sm">
                           {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
                             ? 'YOU'
                             : 'SIGGY'}
@@ -589,28 +696,28 @@ export default function ChatPage() {
                   )}
 
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-8 md:px-16 md:py-10 shadow-[0_-10px_30px_rgba(0,255,148,0.1)]">
+                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-5 md:px-12 md:py-6 shadow-[0_-10px_30px_rgba(0,255,148,0.1)]">
                     <div className="max-w-7xl mx-auto">
-                      <div className="min-h-[140px] max-h-[140px] overflow-y-auto mb-4 pr-4 signature-scroll flex items-start">
+                      <div className="min-h-[100px] max-h-[100px] overflow-y-auto mb-3 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
                           <div className="text-center">
-                            <h2 className="text-3xl font-display uppercase mb-2 text-accent">
+                            <h2 className="text-xl font-display uppercase mb-2 text-accent">
                               Welcome to Earth
                             </h2>
-                            <p className="text-text-secondary text-lg">
+                            <p className="text-text-secondary text-sm">
                               I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
                             </p>
                           </div>
                         ) : (
                           <div className="relative">
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
-                              <div className="flex items-center gap-2 text-lg text-gray-400 italic font-mono">
+                              <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
                                 *Siggy is thinking...*
                               </div>
                             ) : (
                               <div className="relative">
                                 <p
-                                  className={`text-lg md:text-xl leading-relaxed font-mono ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
+                                  className={`text-sm md:text-base leading-relaxed font-mono ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
                                     ? 'italic text-text-secondary'
                                     : 'text-text-primary'
                                     }`}
@@ -626,7 +733,7 @@ export default function ChatPage() {
                       </div>
 
                       {/* Action Buttons & Input Area integrated into Dialogue Box */}
-                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-4 items-center border-t border-white/10 pt-4 mt-2">
+                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-3 items-center border-t border-border/30 pt-3 mt-1">
                         {/* Action Buttons (Left) */}
                         {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                           <div className="flex items-center gap-1 md:pr-4 md:border-r border-white/10">
@@ -660,12 +767,12 @@ export default function ChatPage() {
                             onKeyPress={handleKeyPress}
                             placeholder="What will you say?"
                             disabled={isLoading}
-                            className="flex-1 px-4 py-2.5 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-base transition-all font-mono"
+                            className="flex-1 px-3 py-2 bg-bg/30 border border-border/30 rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono"
                           />
                           <button
                             onClick={handleSendMessage}
                             disabled={isLoading || !input.trim()}
-                            className="px-6 py-2.5 bg-gradient-to-r from-accent to-emerald-400 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(0,255,148,0.2)] text-sm"
+                            className="px-4 py-2 bg-gradient-to-r from-accent to-emerald-400 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(0,255,148,0.2)] text-xs"
                           >
                             {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
                           </button>
@@ -678,38 +785,36 @@ export default function ChatPage() {
                 /* =========================================================
                    STANDARD CHAT LAYOUT
                    ========================================================= */
-                <div className="max-w-4xl mx-auto h-full flex flex-col min-h-0 w-full">
+                <div className="max-w-3xl mx-auto h-full flex flex-col min-h-0 w-full">
                   {/* Messages - scrollable */}
-                  <div className="flex-1 overflow-y-auto space-y-4 py-4 min-h-0">
+                  <div className="flex-1 overflow-y-auto space-y-3 py-3 min-h-0">
                     {!activeConversation || activeConversation.messages.length === 0 ? (
-                      <div className={`text-center py-20 ${vnMode ? 'bg-black/50 dark:bg-black/60 backdrop-blur-md rounded-2xl p-8' : ''}`}>
+                      <div className="text-center py-16">
                         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="text-8xl mb-6">
                           👧✨
                         </motion.div>
-                        <h2 className={`text-4xl md:text-6xl font-display tracking-wide uppercase mb-4 text-accent`}>
+                        <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-4 text-accent">
                           Welcome to Earth
                         </h2>
-                        <p className={`text-lg max-w-xl mx-auto text-text-secondary`}>
+                        <p className="text-sm max-w-xl mx-auto text-text-secondary">
                           I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
                         </p>
                       </div>
                     ) : (
                       activeConversation.messages.map((message, index) => (
                         <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[85%] rounded-2xl px-6 py-4 border ${vnMode
-                            ? message.role === 'user'
-                              ? 'bg-blue-950/80 dark:bg-blue-950/80 border-blue-500/30 backdrop-blur-md'
-                              : 'bg-purple-950/80 dark:bg-purple-950/80 border-purple-500/30 backdrop-blur-md'
-                            : 'bg-surface border-border'
+                          <div className={`max-w-[80%] rounded-xl px-4 py-3 border backdrop-blur-sm ${message.role === 'user'
+                              ? 'bg-black/20 dark:bg-black/20 border-border/30'
+                              : 'bg-black/10 dark:bg-black/10 border-border/30'
                             }`}>
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className={`text-xs font-mono font-semibold ${vnMode ? 'text-white' : 'text-text-primary'}`}>{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-[10px] font-mono font-semibold text-text-primary">{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
                               {message.mood && <span className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
-                            <p className={`text-sm font-mono whitespace-pre-wrap leading-relaxed text-text-primary`} dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
+                            <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
 
                             {message.role === 'assistant' && (
-                              <div className={`flex items-center gap-1 mt-3 pt-3 border-t ${vnMode ? 'border-white/10' : 'border-border'}`}>
+                              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border/20">
                                 <button onClick={() => copyMessage(message.content)} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Copy">
                                   <Copy className="w-3.5 h-3.5" />
                                 </button>
@@ -753,9 +858,9 @@ export default function ChatPage() {
                   </div>
 
                   {/* Controls - fixed at bottom */}
-                  <div className="shrink-0 space-y-4">
-                    <div className="flex items-center justify-between pb-4 border-b border-border">
-                      <div className="font-mono text-xs text-text-secondary">
+                  <div className="shrink-0 space-y-3">
+                    <div className="flex items-center justify-between pb-2">
+                      <div className="font-mono text-[10px] text-text-secondary">
                         Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.PLAYFUL}`}>{activeConversation?.currentMood || 'PLAYFUL'}</span>
                       </div>
                       <div className="flex items-center gap-4">
@@ -768,9 +873,9 @@ export default function ChatPage() {
                     </div>
 
                     {/* Input */}
-                    <div className="flex gap-3">
-                      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-sm bg-surface border-border text-text-primary placeholder:text-text-secondary" />
-                      <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-6 py-3 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-sm uppercase transition-all disabled:opacity-50 flex items-center gap-2">
+                    <div className="flex gap-2">
+                      <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface border-border text-text-primary placeholder:text-text-secondary" />
+                      <button onClick={handleSendMessage} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-emerald-400 text-black hover:from-emerald-400 hover:to-accent disabled:bg-border disabled:text-text-secondary rounded-lg font-mono text-xs uppercase transition-all disabled:opacity-50 flex items-center gap-2">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
                     </div>
