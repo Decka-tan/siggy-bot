@@ -577,10 +577,14 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative" style={{ backgroundImage: "url('/bg-night-sky.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
+    <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
       {vnMode && (
         <style dangerouslySetInnerHTML={{ __html: `footer { display: none !important; }` }} />
       )}
+      {/* Decorative Transparent Right-side Graphic - Fixed to viewport */}
+      <div className="fixed bottom-0 right-0 z-0 opacity-30 pointer-events-none max-w-[40%] h-[56vh] flex items-end pointer-events-none">
+        <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
+      </div>
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* Sidebar Area */}
         {!vnMode && (
@@ -659,7 +663,7 @@ export default function ChatPage() {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 bg-bg">
           {/* Floating Action Buttons (below header) */}
           <div className="fixed top-24 right-4 z-40 flex flex-col gap-2">
             {/* Mobile sidebar toggle */}
@@ -728,29 +732,9 @@ export default function ChatPage() {
                 <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
 
                   {/* Sprites placed cleanly on top of dialogue box */}
-                  <div className="w-full relative z-10 flex justify-between items-end px-4 md:px-12">
-                    {/* User Sprite (Left Side) */}
-                    <div className="flex justify-start">
-                      <AnimatePresence>
-                        {activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' && userAvatar && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 50, x: -20 }}
-                            animate={{ opacity: 1, y: 0, x: 0 }}
-                            exit={{ opacity: 0, y: 50, x: -20 }}
-                            className="origin-bottom mr-8 mb-4 max-w-[200px] md:max-w-[260px]"
-                          >
-                            <img
-                              src={userAvatar}
-                              alt="You"
-                              className="object-contain drop-shadow-[0_0_30px_rgba(96,165,250,0.4)] max-h-[250px] md:max-h-[360px] w-auto rounded-3xl border-2 border-blue-400/30"
-                            />
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Siggy Sprite (Right Side - mentok kanan!) */}
-                    <div className="flex justify-end">
+                  <div className="w-full max-w-7xl mx-auto px-4 md:px-12 relative z-10 flex justify-between items-end">
+                    {/* Siggy Sprite (Left Side) */}
+                    <div className="flex-1 flex justify-start">
                       <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -766,6 +750,26 @@ export default function ChatPage() {
                         />
                       </motion.div>
                     </div>
+
+                    {/* User Sprite (Right Side) */}
+                    <div className="flex-1 flex justify-end">
+                      <AnimatePresence>
+                        {activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' && userAvatar && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 50, x: 20 }}
+                            animate={{ opacity: 1, y: 0, x: 0 }}
+                            exit={{ opacity: 0, y: 50, x: 20 }}
+                            className="origin-bottom ml-8 mb-4 max-w-[200px] md:max-w-[260px]"
+                          >
+                            <img
+                              src={userAvatar}
+                              alt="You"
+                              className="object-contain drop-shadow-[0_0_30px_rgba(96,165,250,0.4)] max-h-[250px] md:max-h-[360px] w-auto rounded-3xl border-2 border-blue-400/30"
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
                   <div className="w-full bg-surface backdrop-blur-xl border-t border-border px-4 py-5 md:px-16 md:py-8 shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
@@ -774,7 +778,7 @@ export default function ChatPage() {
                       {activeConversation && activeConversation.messages.length > 0 && (
                         <div className="mb-2 flex items-center justify-between border-b border-border pb-3">
                           <div className="flex items-center gap-3">
-                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-blue-400' : 'text-accent'}`}>
+                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
                               {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
                             </span>
                           </div>
@@ -866,7 +870,7 @@ export default function ChatPage() {
                           <button
                             onClick={() => handleSendMessage()}
                             disabled={isLoading || !input.trim()}
-                            className="shrink-0 px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
+                            className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
                           >
                             {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
                           </button>
@@ -880,12 +884,6 @@ export default function ChatPage() {
                    STANDARD CHAT LAYOUT
                    ========================================================= */
                 <div className="max-w-3xl mx-auto h-full flex flex-col min-h-0 w-full relative">
-                  
-                  {/* Decorative Transparent Right-side Graphic */}
-                  <div className="absolute bottom-0 right-0 z-0 opacity-30 pointer-events-none max-w-[50%] h-[70vh] flex items-end">
-                    <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
-                  </div>
-
                   {/* Messages - scrollable */}
                   <div className="flex-1 overflow-y-auto space-y-3 py-3 min-h-0 relative z-10">
                     {!activeConversation || activeConversation.messages.length === 0 ? (
@@ -1018,7 +1016,7 @@ export default function ChatPage() {
                         <RefreshCw className="w-4 h-4" />
                       </button>
                       <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress} placeholder="Type your message..." disabled={isLoading} className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner" />
-                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold hover:from-yellow-400 hover:to-accent disabled:from-surface disabled:to-surface disabled:border disabled:border-border disabled:text-text-secondary/50 rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none">
+                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:bg-surface disabled:border disabled:border-border disabled:text-text-secondary/50 rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none">
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
                     </div>

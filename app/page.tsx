@@ -3,114 +3,146 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, ArrowRight, MessageSquare, BookOpen, Sparkles, Github } from 'lucide-react';
+import { ChevronDown, ArrowRight, MessageSquare, BookOpen, Sparkles } from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
 
 export default function LandingPage() {
+  const scrollToBio = () => {
+    document.getElementById('bio-section')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-bg text-text-primary">
       {/* Hero Section */}
-      <section className="h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-400/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-accent/5 to-yellow-400/5 rounded-full blur-3xl" />
+      <section className="min-h-screen relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 z-0">
+          {/* Desktop Background */}
+          <div className="hidden md:block absolute inset-0">
+            {/* Dark Left Side */}
+            <div className="absolute inset-0 bg-bg z-10" style={{ clipPath: 'polygon(0 0, 65% 0, 45% 100%, 0 100%)' }}></div>
+
+            {/* Yellow Diagonal Lines */}
+            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(64% 0, 68% 0, 48% 100%, 44% 100%)' }}></div>
+            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(69% 0, 70% 0, 50% 100%, 49% 100%)' }}></div>
+
+            {/* Right Side Grid Pattern */}
+            <div className="absolute inset-0 bg-[#333333] z-[-1]" style={{ clipPath: 'polygon(65% 0, 100% 0, 100% 100%, 45% 100%)' }}>
+              <div className="absolute inset-0 opacity-90" style={{
+                backgroundColor: '#333333',
+                backgroundImage: `linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555),
+                                  linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)`,
+                backgroundSize: `100px 100px`,
+                backgroundPosition: `0 0, 50px 50px`
+              }}></div>
+            </div>
+          </div>
+
+          {/* Mobile Background */}
+          <div className="block md:hidden absolute inset-0">
+            {/* Dark Top Side */}
+            <div className="absolute inset-0 bg-bg z-10" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 55%, 0 65%)' }}></div>
+
+            {/* Yellow Diagonal Lines */}
+            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(0 64%, 100% 54%, 100% 56%, 0 66%)' }}></div>
+            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(0 67%, 100% 57%, 100% 59%, 0 69%)' }}></div>
+
+            {/* Bottom Side Grid Pattern */}
+            <div className="absolute inset-0 bg-[#333333] z-[-1]" style={{ clipPath: 'polygon(0 55%, 100% 45%, 100% 100%, 0 100%)' }}>
+              <div className="absolute inset-0 opacity-90" style={{
+                backgroundColor: '#333333',
+                backgroundImage: `linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555),
+                                  linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)`,
+                backgroundSize: `60px 60px`,
+                backgroundPosition: `0 0, 30px 30px`
+              }}></div>
+            </div>
+          </div>
         </div>
 
-        <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center justify-center">
-          {/* Floating sprite with animation */}
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="mb-6"
-          >
-            <Image
-              src="/siggy-anime.png"
-              alt="Siggy"
-              width={300}
-              height={400}
-              className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.3)]"
-              priority
-            />
-          </motion.div>
+        {/* Hero Content */}
+        <div className="relative z-10 h-screen w-full">
+          {/* Left Content */}
+          <div className="max-w-7xl mx-auto px-8 pt-20 h-full flex flex-col md:flex-row items-center">
+            <div className="w-full md:w-1/2 flex flex-col items-start justify-center z-10">
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-6xl md:text-8xl lg:text-9xl font-display leading-[0.85] tracking-tight mb-6 text-accent"
+              >
+                LET'S<br />BE FUN
+              </motion.h1>
 
-          <motion.h1
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl md:text-8xl lg:text-9xl font-display tracking-tight uppercase mb-4 text-accent"
-          >
-            Siggy
-          </motion.h1>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-text-secondary max-w-md mb-10 text-sm md:text-base leading-relaxed"
+              >
+                A multi-dimensional cat who descended to Earth as an anime girl. She&apos;s here to blend in, make friends, and find her soul.
+              </motion.p>
 
-          <motion.p
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="text-lg md:text-xl text-text-secondary font-sans max-w-xl mx-auto font-light mb-8"
-          >
-            A multi-dimensional cat who descended to Earth as an anime girl.
-            <br />
-            <span className="text-accent">She&apos;s here to blend in, make friends, and find her soul.</span>
-          </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-col sm:flex-row gap-4 w-full max-w-lg"
+              >
+                <Link href="/story" className="flex-1 min-w-[160px]">
+                  <button className="w-full bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-accent/20 whitespace-nowrap">
+                    <BookOpen className="w-4 h-4" />
+                    Story Mode
+                  </button>
+                </Link>
+                <Link href="/chat" className="flex-1 min-w-[160px]">
+                  <button className="w-full bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-sm uppercase tracking-wider px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:scale-105 whitespace-nowrap">
+                    <MessageSquare className="w-4 h-4" />
+                    Chat Mode
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </Link>
+              </motion.div>
 
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row gap-4 justify-center w-full max-w-lg mx-auto"
-          >
-            <Link href="/story" className="flex-1">
-              <button className="group w-full bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:shadow-accent/20">
-                <BookOpen className="w-4 h-4" />
-                Story Mode
-              </button>
-            </Link>
-            <Link href="/chat" className="flex-1">
-              <button className="group w-full bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-sm uppercase tracking-wider px-6 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:scale-105">
-                <MessageSquare className="w-4 h-4" />
-                Chat Mode
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-          </motion.div>
+              {/* Feature badges */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="flex flex-wrap gap-3 mt-6 text-xs font-mono uppercase tracking-wider text-text-secondary"
+              >
+                <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-accent" /> 4 Chapters
+                </span>
+                <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-accent" /> Dynamic Moods
+                </span>
+                <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-accent" /> Easter Eggs
+                </span>
+              </motion.div>
+            </div>
+          </div>
 
-          {/* Feature badges */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-wrap gap-3 justify-center mt-6 text-xs font-mono uppercase tracking-wider text-text-secondary"
-          >
-            <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-accent" /> 4 Chapters
-            </span>
-            <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-accent" /> Dynamic Moods
-            </span>
-            <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
-              <Sparkles className="w-3 h-3 text-accent" /> Easter Eggs
-            </span>
-          </motion.div>
+          {/* Right Content - Character Image (mentok kanan bawah!) */}
+          <div className="absolute bottom-0 right-0 pointer-events-none flex items-end justify-end" style={{ right: '-50px', bottom: '-20px' }}>
+            <motion.div
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            >
+              <Image
+                src="/character.png"
+                alt="Anime Character"
+                width={800}
+                height={1000}
+                className="object-contain object-bottom drop-shadow-2xl"
+                priority
+                style={{ height: '100vh', width: 'auto', maxHeight: '100vh', maxWidth: '55vw' }}
+              />
+            </motion.div>
+          </div>
         </div>
-
-        {/* Scroll Indicator */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 1, ease: "easeOut" }}
-          className="absolute bottom-8 left-0 right-0 flex flex-col items-center text-text-secondary z-10"
-        >
-          <span className="text-xs uppercase tracking-[0.2em] mb-2 font-mono">Scroll for more</span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <ChevronDown className="w-5 h-5 opacity-50" />
-          </motion.div>
-        </motion.div>
       </section>
 
       {/* Two Modes Section */}
@@ -211,7 +243,7 @@ export default function LandingPage() {
       </section>
 
       {/* About Section */}
-      <section className="py-24 px-6 bg-bg">
+      <section id="about" className="py-24 px-6 bg-bg">
         <div className="max-w-6xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
@@ -222,6 +254,43 @@ export default function LandingPage() {
           >
             Who is Siggy?
           </motion.h2>
+
+          {/* Expression Animation */}
+          <div className="flex justify-center gap-8 mb-12">
+            {/* Cat Expressions */}
+            <div className="flex flex-col items-center">
+              <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-4">Cat Form</p>
+              <div className="relative w-48 h-48">
+                <style jsx>{`
+                  @keyframes catExpression {
+                    0%, 33% { opacity: 1; }
+                    33.01%, 100% { opacity: 0; }
+                  }
+                  .cat-anim-1 { animation: catExpression 6s infinite; }
+                  .cat-anim-2 { animation: catExpression 6s infinite 2s; }
+                `}</style>
+                <img src="/Siggy_01/Face/CAT/Cat_Happy.png" alt="Cat Happy" className="cat-anim-1 absolute inset-0 w-full h-full object-contain" />
+                <img src="/Siggy_01/Face/CAT/Cat_Default.png" alt="Cat Default" className="cat-anim-2 absolute inset-0 w-full h-full object-contain" />
+              </div>
+            </div>
+
+            {/* Anime Girl Expressions */}
+            <div className="flex flex-col items-center">
+              <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-4">Anime Girl Form</p>
+              <div className="relative w-48 h-48">
+                <style jsx>{`
+                  @keyframes girlExpression {
+                    0%, 33% { opacity: 1; }
+                    33.01%, 100% { opacity: 0; }
+                  }
+                  .girl-anim-1 { animation: girlExpression 6s infinite; }
+                  .girl-anim-2 { animation: girlExpression 6s infinite 2s; }
+                `}</style>
+                <img src="/Siggy_01/Face/Girl/Girl_Default.png" alt="Girl Default" className="girl-anim-1 absolute inset-0 w-full h-full object-contain" />
+                <img src="/Siggy_01/Face/Girl/Girl_Happy.png" alt="Girl Happy" className="girl-anim-2 absolute inset-0 w-full h-full object-contain" />
+              </div>
+            </div>
+          </div>
 
           <div className="max-w-3xl mx-auto text-center space-y-6 text-text-secondary leading-relaxed">
             <motion.p
@@ -372,7 +441,9 @@ export default function LandingPage() {
       </section>
 
       {/* Bio Section */}
-      <Bio />
+      <div id="bio-section">
+        <Bio />
+      </div>
 
       {/* Footer CTA */}
       <section className="py-16 px-6 border-t border-border bg-surface text-center">
