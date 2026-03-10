@@ -577,11 +577,19 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="min-h-screen text-text-primary flex flex-col lg:flex-row relative" style={{ backgroundImage: "url('/bg-night-sky.jpg')", backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }}>
-      <div className="pt-20 w-full">
+    <>
       {vnMode && (
         <style dangerouslySetInnerHTML={{ __html: `footer { display: none !important; }` }} />
       )}
+      <style dangerouslySetInnerHTML={{ __html: `
+        body {
+          background-image: url('/bg-night-sky.jpg') !important;
+          background-size: cover !important;
+          background-position: center !important;
+          background-attachment: fixed !important;
+        }
+      `}} />
+      <div className="min-h-screen text-text-primary flex flex-col lg:flex-row relative pt-20">
       <div className="flex flex-1 flex-col lg:flex-row">
         {/* Sidebar Area */}
         {!vnMode && (
@@ -1093,7 +1101,7 @@ export default function ChatPage() {
           </div>
         )}
       </AnimatePresence>
-      </div>
     </div>
+    </>
   );
 }
