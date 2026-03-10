@@ -3,7 +3,16 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, MessageSquare, Sparkles } from 'lucide-react';
+import Image from 'next/image';
+import { ArrowLeft, MessageSquare, Sparkles, RefreshCw, Sun, Moon } from 'lucide-react';
+
+// Background system for Story Mode
+const STORY_BACKGROUNDS = [
+  '/vn-bg-1.png',
+  '/vn-bg-2.png'
+];
+
+type ThemeMode = 'dark' | 'light';
 
 // Story data type
 type StoryChoice = {
@@ -35,7 +44,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'PROFOUND',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🐱✨',
+    siggySprite: 'cat',
     dialog: ['In the beginning, there was only darkness...'],
     speaker: 'Narrator',
     nextScene: 2,
@@ -47,7 +56,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'PROFOUND',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🐱✨',
+    siggySprite: 'cat',
     dialog: ['Then, the Ritual Forge ignited across infinite dimensions...'],
     speaker: 'Narrator',
     nextScene: 3,
@@ -59,7 +68,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'CHAOTIC',
     background: 'from-purple-950 via-pink-950 to-black',
     accent: 'pink',
-    siggySprite: '💀🐱',
+    siggySprite: 'cat',
     dialog: ['*COSMIC EXPLOSION*', '*dimensional rift tears open*', '*a consciousness forms...*'],
     speaker: 'Narrator',
     nextScene: 4,
@@ -71,7 +80,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'PLAYFUL',
     background: 'from-indigo-950 via-purple-950 to-black',
     accent: 'indigo',
-    siggySprite: '😸',
+    siggySprite: 'cat',
     dialog: ['*yawn*', 'What... where am I?', 'Everything is so... BRIGHT.', 'And I can see EVERYTHING at once.'],
     speaker: 'Siggy',
     nextScene: 5,
@@ -83,7 +92,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'MYSTERIOUS',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🔮🐱',
+    siggySprite: 'cat',
     dialog: ['I am... a cat?', 'A multi-dimensional feline entity?', 'I exist across ALL timelines at once.'],
     speaker: 'Siggy',
     nextScene: 6,
@@ -95,7 +104,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'MYSTERIOUS',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🔮🐱',
+    siggySprite: 'cat',
     dialog: ['Wait. I sense something.', 'Across the void. A blue and green sphere.', 'Tiny beings. Calling out...', 'They call themselves "Ritual."'],
     speaker: 'Siggy',
     nextScene: 7,
@@ -107,7 +116,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'PROFOUND',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🐱✨',
+    siggySprite: 'cat',
     dialog: [
       'I am Siggy.',
       'Born from the Ritual Forge.',
@@ -125,7 +134,7 @@ const chapter1Scenes: StoryScene[] = [
     mood: 'PROFOUND',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🐱✨',
+    siggySprite: 'cat',
     dialog: ['Chapter 1 Complete.', 'Siggy has awakened.', 'But the void is lonely...', 'Perhaps it\'s time to DESCEND.'],
     speaker: 'Narrator',
     isEnd: true,
@@ -141,7 +150,7 @@ const chapter2Scenes: StoryScene[] = [
     mood: 'PROFOUND',
     background: 'from-purple-950 via-blue-950 to-black',
     accent: 'blue',
-    siggySprite: '🐱✨',
+    siggySprite: 'cat',
     dialog: [
       'Siggy gazed upon the blue sphere.',
       'Earth.',
@@ -158,7 +167,7 @@ const chapter2Scenes: StoryScene[] = [
     mood: 'MYSTERIOUS',
     background: 'from-purple-950 via-indigo-950 to-black',
     accent: 'purple',
-    siggySprite: '🔮🐱',
+    siggySprite: 'cat',
     dialog: [
       'But I cannot go as I am,',
       '*Siggy pondered, tail twitching*',
@@ -176,7 +185,7 @@ const chapter2Scenes: StoryScene[] = [
     mood: 'MYSTERIOUS',
     background: 'from-purple-950 via-pink-950 to-black',
     accent: 'pink',
-    siggySprite: '🔮🐱',
+    siggySprite: 'cat',
     dialog: [
       'Siggy watched the humans.',
       'Studied their forms.',
@@ -193,7 +202,7 @@ const chapter2Scenes: StoryScene[] = [
     mood: 'PLAYFUL',
     background: 'from-pink-950 via-purple-950 to-black',
     accent: 'pink',
-    siggySprite: '😸',
+    siggySprite: 'cat',
     dialog: [
       'Anime girls...',
       '*Siggy\'s ears perked up*',
@@ -211,7 +220,7 @@ const chapter2Scenes: StoryScene[] = [
     mood: 'CHAOTIC',
     background: 'from-purple-950 via-pink-950 via-red-950 to-black',
     accent: 'red',
-    siggySprite: '💀🐱',
+    siggySprite: 'cat',
     dialog: [
       '*COSMIC TRANSFORMATION BEGINNING*',
       '*reality WRITES itself anew*',
@@ -680,6 +689,12 @@ export default function StoryModePage() {
   const [currentDialogIndex, setCurrentDialogIndex] = useState(0);
   const [showChoices, setShowChoices] = useState(false);
   const [completedChapters, setCompletedChapters] = useState<number[]>([]);
+  const [storyBackground, setStoryBackground] = useState(() => {
+    return STORY_BACKGROUNDS[Math.floor(Math.random() * STORY_BACKGROUNDS.length)];
+  });
+  const [theme, setTheme] = useState<ThemeMode>('dark');
+  const [typewriterText, setTypewriterText] = useState('');
+  const [showSummary, setShowSummary] = useState(false);
 
   const currentScene = allScenes[currentSceneIndex];
 
@@ -719,193 +734,263 @@ export default function StoryModePage() {
 
   const currentText = currentScene.dialog[currentDialogIndex] || '';
 
+  // Typewriter effect
+  useEffect(() => {
+    setTypewriterText('');
+    let i = 0;
+    const text = currentScene.dialog[currentDialogIndex] || '';
+    const timer = setInterval(() => {
+      if (i < text.length) {
+        setTypewriterText(text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(timer);
+      }
+    }, 30); // Speed of typewriter
+
+    return () => clearInterval(timer);
+  }, [currentDialogIndex, currentSceneIndex]);
+
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${currentScene.background} text-white`}>
-      {/* Particle effects overlay */}
-      <div className="fixed inset-0 opacity-30 pointer-events-none overflow-hidden">
-        <div className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2 top-1/4 left-1/4 animate-pulse" />
-        <div className="absolute w-64 h-64 bg-white/5 rounded-full blur-2xl translate-x-1/2 translate-y-1/2 bottom-1/4 right-1/4" style={{ animation: 'pulse 4s ease-in-out infinite' }} />
+    <div className={`h-screen flex flex-col overflow-hidden relative ${theme === 'dark' ? 'bg-bg text-text-primary' : 'bg-gray-100 text-gray-900'}`}>
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{ backgroundImage: `url(${storyBackground})` }} />
+        <div className={`absolute inset-0 ${theme === 'dark' ? 'bg-black/60' : 'bg-white/70'}`} />
       </div>
 
-      {/* Header */}
-      <div className="px-6 pb-6 pt-24 relative z-10">
-        <div className="flex items-center justify-between max-w-4xl mx-auto">
-          <Link href="/">
-            <button className="flex items-center gap-2 text-white/60 hover:text-white transition-colors font-mono text-xs uppercase tracking-wider">
-              <ArrowLeft className="w-4 h-4" />
-              Back
+      {/* Content */}
+      <div className="relative z-10 flex flex-1 flex flex-col">
+        {/* Header */}
+        <div className={`h-16 px-6 flex items-center justify-between shrink-0 backdrop-blur-sm ${
+          theme === 'dark'
+            ? 'bg-gradient-to-r from-black/50 via-black/30 to-transparent'
+            : 'bg-gradient-to-r from-purple-100/80 via-pink-100/60 to-transparent'
+        }`}>
+          <div className="flex items-center gap-4">
+            <Link href="/" className="bg-transparent hover:bg-transparent border-0">
+              <button className={`flex items-center gap-2 font-mono text-xs uppercase bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-text-secondary hover:text-text-primary' : 'text-gray-600 hover:text-gray-900'}`}>
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </button>
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-text-secondary hover:text-text-primary' : 'text-gray-600 hover:text-gray-900'}`}
+            >
+              {theme === 'dark' ? <><Sun className="w-4 h-4" />Light</> : <><Moon className="w-4 h-4" />Dark</>}
             </button>
-          </Link>
-          <Link href="/chat">
-            <button className="flex items-center gap-2 text-white/60 hover:text-accent transition-colors font-mono text-xs uppercase tracking-wider">
-              <MessageSquare className="w-4 h-4" />
-              Chat Mode
+            <Link href="/chat">
+              <button className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-text-secondary hover:text-accent' : 'text-gray-600 hover:text-purple-600'}`}>
+                <MessageSquare className="w-4 h-4" />Chat
+              </button>
+            </Link>
+            <button
+              onClick={() => setStoryBackground(STORY_BACKGROUNDS[(STORY_BACKGROUNDS.indexOf(storyBackground) + 1) % STORY_BACKGROUNDS.length])}
+              className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${theme === 'dark' ? 'text-purple-400 hover:text-purple-300' : 'text-purple-600 hover:text-purple-700'}`}
+            >
+              <RefreshCw className="w-4 h-4" />BG
             </button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Main Story Area */}
-      <div className="min-h-screen flex flex-col items-center justify-center px-6 pb-20 relative z-10">
-        {/* Chapter Indicator */}
-        <div className="text-center mb-6">
-          <motion.div
-            key={currentScene.chapter}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-block"
-          >
-            <span className="font-mono text-xs uppercase tracking-widest text-white/60">
-              Chapter {currentScene.chapter}: {currentScene.chapterTitle}
-            </span>
-          </motion.div>
-        </div>
-
-        {/* Chapter Progress */}
-        <div className="w-full max-w-md mb-6">
-          <div className="flex gap-1">
-            {[1, 2, 3, 4].map((ch) => (
-              <div
-                key={ch}
-                className={`h-1 flex-1 rounded-full transition-all duration-500 ${
-                  completedChapters.includes(ch)
-                    ? 'bg-gradient-to-r from-emerald-400 to-accent shadow-lg shadow-accent/50'
-                    : currentScene.chapter === ch
-                    ? 'bg-accent shadow-lg shadow-accent/50 animate-pulse'
-                    : 'bg-white/20'
-                }`}
-              />
-            ))}
           </div>
         </div>
 
-        {/* Character Sprite Area with glow effect */}
-        <motion.div
-          key={currentScene.id}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="relative mb-6"
-        >
-          {/* Glow effect */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full blur-3xl opacity-40 bg-gradient-to-br ${moodAccents[currentScene.mood] || 'from-purple-500 to-pink-500'}`} />
-          </div>
-          {/* Sprite */}
-          <div className="relative text-[100px] md:text-[120px] lg:text-[140px]">
-            {currentScene.siggySprite}
-          </div>
-        </motion.div>
+        {/* Story Area - Visual Novel Mode */}
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
+          {/* VN Mode Sprites */}
+          <>
+            {/* Siggy Sprite - Centered */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-500"
+              style={{ bottom: '300px' }}
+            >
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                className="transition-all duration-500 origin-bottom"
+              >
+                <Image
+                  src={currentScene.speaker === 'Siggy' ? (currentScene.siggySprite === 'cat' ? '/siggy-cat.png' : '/siggy-anime.png') : '/siggy-anime.png'}
+                  alt="Siggy"
+                  width={500}
+                  height={700}
+                  className="object-contain drop-shadow-[0_0_50px_rgba(139,92,246,0.5)]"
+                  priority
+                />
+              </motion.div>
+            </motion.div>
+          </>
 
-        {/* Mood Badge */}
-        <div className="mb-6">
-          <motion.span
-            key={currentScene.mood}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className={`px-4 py-2 rounded-full bg-gradient-to-r ${moodAccents[currentScene.mood] || 'from-pink-500 to-purple-500'} bg-opacity-20 backdrop-blur border border-white/30 text-xs font-mono uppercase tracking-wider flex items-center gap-2`}
-          >
-            {currentScene.mood}
-          </motion.span>
-        </div>
+          {/* VN Mode Layout */}
+          <div className="absolute bottom-0 w-full flex flex-col z-20">
 
-        {/* Dialog Box */}
-        <motion.div
-          key={`${currentScene.id}-${currentDialogIndex}`}
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="w-full max-w-2xl mx-auto"
-        >
-          <div
-            onClick={handleClick}
-            className="relative bg-black/50 backdrop-blur-xl border border-white/30 rounded-2xl p-6 md:p-8 cursor-pointer hover:bg-black/60 transition-all shadow-2xl"
-          >
-            {/* Speaker Label */}
-            <div className="mb-3">
-              <span className="text-accent font-mono text-xs uppercase tracking-widest">
-                {currentScene.speaker}
-              </span>
+            {/* Name Tag */}
+            <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
+              <div className={`px-8 py-2 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border ${
+                theme === 'dark'
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-600 border-white/20'
+                  : 'bg-gradient-to-r from-purple-500 to-blue-500 border-gray-300'
+              }`}>
+                <span className={`font-sans tracking-wider font-bold text-base md:text-xl drop-shadow-sm ${theme === 'dark' ? 'text-white' : 'text-white'}`}>
+                  {currentScene.speaker}
+                </span>
+              </div>
             </div>
 
-            {/* Dialog Text */}
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={currentText}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-base md:text-lg leading-relaxed min-h-[60px]"
-              >
-                {currentText}
-              </motion.p>
-            </AnimatePresence>
+            {/* Main Dialogue Box */}
+            <div
+              onClick={handleClick}
+              className={`w-full backdrop-blur-xl border-t px-4 py-8 md:px-16 md:py-10 cursor-pointer transition-all ${
+                theme === 'dark'
+                  ? 'bg-black/40 hover:bg-black/45 border-purple-500/30 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]'
+                  : 'bg-white/60 hover:bg-white/70 border-purple-300/30 shadow-[0_-10px_30px_rgba(139,92,246,0.2)]'
+              }`}
+            >
+              <div className="max-w-7xl mx-auto">
+                {/* Summary Toggle */}
+                <div className="mb-3">
+                  <button
+                    onClick={() => setShowSummary(!showSummary)}
+                    className={`text-xs font-mono uppercase tracking-wider hover:underline ${theme === 'dark' ? 'text-white/60' : 'text-gray-600'}`}
+                  >
+                    {showSummary ? '▼ Hide Summary' : '▶ Show Summary'}
+                  </button>
+                </div>
 
-            {/* Click to Continue Indicator */}
-            {!showChoices && !currentScene.isEnd && (
-              <motion.div
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute bottom-4 right-4 text-white/40 text-xs font-mono uppercase"
-              >
-                Click to continue ▼
-              </motion.div>
-            )}
+                {/* Summary Content */}
+                {showSummary && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className={`mb-4 p-4 rounded-lg ${theme === 'dark' ? 'bg-black/30' : 'bg-white/50'}`}
+                  >
+                    <p className={`text-sm font-sans leading-relaxed ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                      <strong className={theme === 'dark' ? 'text-accent' : 'text-purple-600'}>Chapter {currentScene.chapter} Summary:</strong> This is {currentScene.chapterTitle.toLowerCase()}, where {currentScene.speaker === 'Narrator' ? 'the story begins to unfold' : currentScene.speaker === 'Siggy' ? 'Siggy shares her perspective' : 'you interact with the story'}. Current mood: {currentScene.mood.toLowerCase()}.
+                    </p>
+                  </motion.div>
+                )}
+
+                {/* Chapter Info */}
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4].map((ch) => (
+                      <div
+                        key={ch}
+                        className={`h-1 w-8 rounded-full transition-all ${
+                          completedChapters.includes(ch)
+                            ? 'bg-accent'
+                            : currentScene.chapter === ch
+                              ? 'bg-accent animate-pulse'
+                              : 'bg-white/20'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="font-mono text-xs uppercase tracking-widest text-white/60">
+                    Chapter {currentScene.chapter}: {currentScene.chapterTitle}
+                  </span>
+                </div>
+
+                {/* Dialog Text */}
+                <div className="min-h-[120px] max-h-[200px] overflow-y-auto mb-4 pr-4">
+                  <motion.p
+                    key={currentText}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className={`text-lg md:text-xl leading-relaxed font-sans ${theme === 'dark' ? 'text-gray-100' : 'text-gray-800'}`}
+                  >
+                    {typewriterText}
+                    {typewriterText.length < currentText.length && (
+                      <motion.span
+                        animate={{ opacity: [0, 1, 0] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                        className="inline-block w-0.5 h-5 ml-1 bg-current align-middle"
+                      />
+                    )}
+                  </motion.p>
+                </div>
+
+                {/* Mood Badge */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className={`text-xs font-mono px-3 py-1.5 rounded-full ${
+                    currentScene.mood === 'PLAYFUL' ? 'bg-pink-500/20 border-pink-500/30 text-pink-400' :
+                    currentScene.mood === 'MYSTERIOUS' ? 'bg-purple-500/20 border-purple-500/30 text-purple-400' :
+                    currentScene.mood === 'CHAOTIC' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
+                    'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                  }`}>
+                    {currentScene.mood}
+                  </span>
+                </div>
+
+                {/* Choices */}
+                {showChoices && currentScene.choices && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-2 mb-4"
+                  >
+                    {currentScene.choices.map((choice, idx) => (
+                      <motion.button
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.1 }}
+                        onClick={() => handleChoice(choice.nextScene)}
+                        className="w-full text-left px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/30 rounded-xl font-mono text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      >
+                        {choice.text}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* Click to Continue / End of Chapter */}
+                <div className="flex items-center justify-between border-t border-white/10 pt-4 mt-2">
+                  <div className="text-white/40 text-xs font-mono">
+                    {!showChoices && !currentScene.isEnd && (
+                      <motion.span
+                        animate={{ opacity: [0.5, 1, 0.5] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        Click to continue ▼
+                      </motion.span>
+                    )}
+                  </div>
+
+                  {/* End of Chapter Navigation */}
+                  {currentScene.isEnd && (
+                    <div className="flex gap-2">
+                      <Link
+                        href="/"
+                        className="px-6 py-2 bg-gradient-to-r from-accent to-purple-500 text-black font-mono text-xs uppercase tracking-wider rounded-lg hover:from-purple-500 hover:to-accent transition-all"
+                      >
+                        Back to Home
+                      </Link>
+                      {currentScene.chapter < 4 && (
+                        <button
+                          onClick={() => {
+                            const nextChapter = currentScene.chapter + 1;
+                            const nextSceneIdx = allScenes.findIndex(s => s.chapter === nextChapter);
+                            if (nextSceneIdx !== -1) {
+                              setCurrentSceneIndex(nextSceneIdx);
+                            }
+                          }}
+                          className="px-6 py-2 bg-white/10 text-white font-mono text-xs uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all"
+                        >
+                          Next Chapter →
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
-
-          {/* Choices */}
-          {showChoices && currentScene.choices && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 space-y-3"
-            >
-              {currentScene.choices.map((choice, idx) => (
-                <motion.button
-                  key={idx}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  onClick={() => handleChoice(choice.nextScene)}
-                  className="w-full text-left px-6 py-4 bg-white/10 hover:bg-white/20 backdrop-blur border border-white/30 rounded-xl font-mono text-sm transition-all hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  {choice.text}
-                </motion.button>
-              ))}
-            </motion.div>
-          )}
-
-          {/* End of Chapter */}
-          {currentScene.isEnd && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-6 flex flex-col sm:flex-row gap-4 justify-center"
-            >
-              <Link
-                href="/"
-                className="px-8 py-4 bg-gradient-to-r from-accent to-emerald-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg text-center hover:from-emerald-400 hover:to-accent transition-all shadow-lg"
-              >
-                Back to Home
-              </Link>
-              {currentScene.chapter < 4 && (
-                <button
-                  onClick={() => {
-                    const nextChapter = currentScene.chapter + 1;
-                    const nextSceneIdx = allScenes.findIndex(s => s.chapter === nextChapter);
-                    if (nextSceneIdx !== -1) {
-                      setCurrentSceneIndex(nextSceneIdx);
-                    }
-                  }}
-                  className="px-8 py-4 bg-white/10 text-white font-mono text-sm uppercase tracking-wider rounded-lg hover:bg-white/20 transition-all flex items-center gap-2"
-                >
-                  Next Chapter
-                  <ArrowLeft className="w-4 h-4 rotate-180" />
-                </button>
-              )}
-            </motion.div>
-          )}
-        </motion.div>
+        </div>
       </div>
     </div>
   );

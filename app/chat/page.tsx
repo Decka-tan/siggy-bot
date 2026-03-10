@@ -412,7 +412,15 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden">
+    <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/bg-night-sky.jpg)' }} />
+        <div className="absolute inset-0 bg-black/60" />
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-1 flex flex-col lg:flex-row">
       {/* Sidebar Area */}
       <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
         {/* Sidebar Header */}
@@ -482,7 +490,7 @@ export default function ChatPage() {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <div className="h-16 px-6 border-b border-border flex items-center justify-between shrink-0">
+        <div className="h-16 px-6 border-b border-border flex items-center justify-between shrink-0 relative z-50">
           <div className="flex items-center gap-4">
             <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded hover:bg-surface">
               <MessageSquareMore className="w-5 h-5" />
@@ -494,13 +502,27 @@ export default function ChatPage() {
               </button>
             </Link>
           </div>
-          <button
-            onClick={() => setVnMode(!vnMode)}
-            className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors ${vnMode
-              ? 'text-accent hover:text-accent/80'
-              : 'text-text-secondary hover:text-accent'
-              }`}
-          >
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPersonality(personality === 'CAT' ? 'ANIME' : 'CAT')}
+              className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${personality === 'CAT'
+                ? 'text-purple-400 hover:text-purple-300'
+                : 'text-pink-400 hover:text-pink-300'
+                }`}
+            >
+              {personality === 'CAT' ? (
+                <><span className="text-base">🐱</span>Cat Mode</>
+              ) : (
+                <><span className="text-base">👧</span>Anime Mode</>
+              )}
+            </button>
+            <button
+              onClick={() => setVnMode(!vnMode)}
+              className={`flex items-center gap-2 font-mono text-xs uppercase transition-colors bg-transparent hover:bg-transparent border-0 cursor-pointer ${vnMode
+                ? 'text-accent hover:text-accent/80'
+                : 'text-text-secondary hover:text-accent'
+                }`}
+            >
             {vnMode ? (
               <><MessageCircle className="w-4 h-4" />Chat Mode</>
             ) : (
@@ -526,12 +548,12 @@ export default function ChatPage() {
           {/* VN Mode Sprites */}
           {vnMode && (
             <>
-              {/* Siggy Sprite - Left */}
+              {/* Siggy Sprite - Centered */}
               <motion.div
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                className={`absolute left-0 md:left-10 z-10 pointer-events-none hidden lg:block transition-all duration-500`}
-                style={{ bottom: '240px' }} // Adjusted to sit right on top of the taller dialogue box
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-500"
+                style={{ bottom: '300px' }}
               >
                 <motion.div
                   animate={{ y: [0, -8, 0] }}
@@ -539,19 +561,17 @@ export default function ChatPage() {
                   className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
                 >
                   <Image
-                    src="/siggy-sprite-2.png"
+                    src={personality === 'CAT' ? '/siggy-cat.png' : '/siggy-anime.png'}
                     alt="Siggy"
-                    width={320}
-                    height={480}
-                    className="object-contain drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+                    width={500}
+                    height={700}
+                    className="object-contain drop-shadow-[0_0_50px_rgba(139,92,246,0.5)]"
                     priority
                   />
                 </motion.div>
               </motion.div>
-
-              {/* User Sprite - Right */}
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
+            </>
+          )}
                 animate={{ opacity: 1, x: 0 }}
                 className={`absolute right-0 md:right-10 z-10 pointer-events-none hidden lg:block transition-all duration-500`}
                 style={{ bottom: '240px' }} // Adjusted to sit right on top of the taller dialogue box
@@ -584,8 +604,8 @@ export default function ChatPage() {
                 {/* Name Tag (if there are messages) */}
                 {activeConversation && activeConversation.messages.length > 0 && (
                   <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
-                    <div className="px-8 py-2 bg-gradient-to-r from-accent to-purple-500 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border border-white/20">
-                      <span className="font-display tracking-widest text-black font-extrabold text-base md:text-xl uppercase drop-shadow-sm">
+                    <div className="px-8 py-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border border-white/20">
+                      <span className="font-sans tracking-wider text-white font-bold text-base md:text-xl drop-shadow-sm">
                         {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
                           ? 'YOU'
                           : 'SIGGY'}
@@ -595,7 +615,7 @@ export default function ChatPage() {
                 )}
 
                 {/* Main Dialogue Box (Full Width) */}
-                <div className="w-full bg-black/85 backdrop-blur-xl border-t border-white/20 px-4 py-8 md:px-16 md:py-10 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+                <div className="w-full bg-black/40 backdrop-blur-xl border-t border-purple-500/30 px-4 py-8 md:px-16 md:py-10 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]">
                   <div className="max-w-7xl mx-auto">
                     <div className="min-h-[140px] max-h-[140px] overflow-y-auto mb-4 pr-4 signature-scroll flex items-start">
                       {!activeConversation || activeConversation.messages.length === 0 ? (

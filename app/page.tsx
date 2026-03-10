@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronDown, ArrowRight, MessageSquare, BookOpen, Sparkles, Github } from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
 
@@ -18,14 +19,21 @@ export default function LandingPage() {
         </div>
 
         <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center justify-center">
-          {/* Floating emoji with animation */}
+          {/* Floating sprite with animation */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-7xl md:text-9xl mb-6"
+            className="mb-6"
           >
-            👧✨
+            <Image
+              src="/siggy-anime.png"
+              alt="Siggy"
+              width={300}
+              height={400}
+              className="object-contain drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+              priority
+            />
           </motion.div>
 
           <motion.h1

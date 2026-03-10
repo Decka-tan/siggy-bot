@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 export function Bio() {
   return (
-    <section className="py-24 px-6 border-t border-border">
+    <section className="py-24 px-6 border-t border-border bg-surface">
       <div className="max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-12">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
