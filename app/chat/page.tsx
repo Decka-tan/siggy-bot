@@ -586,8 +586,8 @@ export default function ChatPage() {
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Floating Action Buttons (replace header) */}
-          <div className="absolute top-2 right-4 z-50 flex flex-col gap-2">
+          {/* Floating Action Buttons (below header) */}
+          <div className="fixed top-24 right-4 z-40 flex flex-col gap-2">
             {/* Mobile sidebar toggle */}
             <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg">
               <MessageSquareMore className="w-4 h-4" />
@@ -614,7 +614,7 @@ export default function ChatPage() {
             {/* VN Mode Background with rotation */}
             {vnMode && (
               <>
-                <div className="absolute inset-0 z-0">
+                <div className="fixed inset-0 z-0">
                   {VN_BACKGROUNDS.map((bg, i) => (
                     <img
                       key={bg}
@@ -633,11 +633,15 @@ export default function ChatPage() {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 0.6, scale: 1, y: [0, -6, 0] }}
                     transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: bubble.delay }}
-                    className="absolute z-10 pointer-events-none"
+                    className="absolute z-10 cursor-pointer hover:opacity-100 transition-opacity"
                     style={{ top: bubble.top, left: bubble.left }}
+                    onClick={() => {
+                      setInput(bubble.text);
+                      setTimeout(() => handleSendMessage(), 100);
+                    }}
                   >
                     <div
-                      className="rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
+                      className="rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors"
                       style={{ width: bubble.size, height: bubble.size }}
                     >
                       <span className="text-white/70 text-[9px] font-mono text-center px-2 leading-tight">{bubble.text}</span>
@@ -654,7 +658,7 @@ export default function ChatPage() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+                  className="absolute left-8 z-10 pointer-events-none"
                   style={{ bottom: '180px' }}
                 >
                   <motion.div
@@ -682,22 +686,19 @@ export default function ChatPage() {
                    VN MODE LAYOUT
                    ========================================================= */
                 <div className="absolute bottom-0 w-full flex flex-col z-20">
-                  {/* Name Tag (if there are messages) */}
-                  {activeConversation && activeConversation.messages.length > 0 && (
-                    <div className="flex justify-start max-w-7xl mx-auto w-full px-6 relative z-30">
-                      <div className="px-6 py-1.5 bg-accent rounded-t-lg border-b-0 border border-accent/30">
-                        <span className="font-mono tracking-wider text-black font-bold text-xs md:text-sm">
-                          {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
-                            ? 'YOU'
-                            : 'SIGGY'}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Main Dialogue Box (Full Width) */}
                   <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-5 md:px-12 md:py-6 shadow-[0_-10px_30px_rgba(0,255,148,0.1)]">
                     <div className="max-w-7xl mx-auto">
+                      {/* Name Tag inside dialogue box */}
+                      {activeConversation && activeConversation.messages.length > 0 && (
+                        <div className="mb-2">
+                          <span className="font-display text-accent text-sm md:text-base uppercase tracking-wider">
+                            {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
+                              ? '► YOU'
+                              : '► SIGGY'}
+                          </span>
+                        </div>
+                      )}
                       <div className="min-h-[100px] max-h-[100px] overflow-y-auto mb-3 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
                           <div className="text-center">
@@ -803,9 +804,9 @@ export default function ChatPage() {
                     ) : (
                       activeConversation.messages.map((message, index) => (
                         <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] rounded-xl px-4 py-3 border backdrop-blur-sm ${message.role === 'user'
-                              ? 'bg-black/20 dark:bg-black/20 border-border/30'
-                              : 'bg-black/10 dark:bg-black/10 border-border/30'
+                          <div className={`max-w-[80%] rounded-xl px-4 py-3 border border-border ${message.role === 'user'
+                            ? 'bg-surface'
+                            : 'bg-surface/80'
                             }`}>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-[10px] font-mono font-semibold text-text-primary">{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
