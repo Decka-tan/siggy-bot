@@ -299,9 +299,9 @@ export default function ChatPage() {
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
 
-    // Italic (but not when part of ** already)
-    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em>$1</em>');
+    // Italic (but not when part of ** already) - muted color for actions
+    html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic">$1</em>');
+    html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary not-italic">$1</em>');
 
     // Code
     html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
@@ -414,14 +414,7 @@ export default function ChatPage() {
 
   return (
     <div className="h-screen bg-bg text-text-primary flex flex-col lg:flex-row pt-20 overflow-hidden relative">
-      {/* Background Image */}
-      <div className="absolute inset-0 z-0">
-        <div className="w-full h-full bg-cover bg-center bg-no-repeat" style={{ backgroundImage: 'url(/bg-night-sky.jpg)' }} />
-        <div className="absolute inset-0 bg-black/60" />
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 flex flex-1 flex flex-col lg:flex-row">
+      <div className="flex flex-1 flex-col lg:flex-row">
         {/* Sidebar Area */}
         <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 relative ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
           {/* Sidebar Header */}
@@ -567,7 +560,7 @@ export default function ChatPage() {
                       alt="Siggy"
                       width={500}
                       height={700}
-                      className="object-contain drop-shadow-[0_0_50px_rgba(139,92,246,0.5)]"
+                      className="object-contain drop-shadow-[0_0_50px_rgba(0,255,148,0.3)]"
                       priority
                     />
                   </motion.div>
@@ -585,8 +578,8 @@ export default function ChatPage() {
                   {/* Name Tag (if there are messages) */}
                   {activeConversation && activeConversation.messages.length > 0 && (
                     <div className="flex justify-start max-w-7xl mx-auto w-full px-8 relative z-30">
-                      <div className="px-8 py-2 bg-gradient-to-r from-purple-600 to-blue-600 rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border border-white/20">
-                        <span className="font-sans tracking-wider text-white font-bold text-base md:text-xl drop-shadow-sm">
+                      <div className="px-8 py-2 bg-accent rounded-t-xl shadow-[0_-5px_15px_rgba(0,0,0,0.3)] border-b-0 border border-accent/30">
+                        <span className="font-mono tracking-wider text-black font-bold text-base md:text-xl">
                           {activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
                             ? 'YOU'
                             : 'SIGGY'}
@@ -596,15 +589,15 @@ export default function ChatPage() {
                   )}
 
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-black/40 backdrop-blur-xl border-t border-purple-500/30 px-4 py-8 md:px-16 md:py-10 shadow-[0_-10px_30px_rgba(139,92,246,0.3)]">
+                  <div className="w-full bg-surface/90 backdrop-blur-xl border-t border-accent/20 px-4 py-8 md:px-16 md:py-10 shadow-[0_-10px_30px_rgba(0,255,148,0.1)]">
                     <div className="max-w-7xl mx-auto">
                       <div className="min-h-[140px] max-h-[140px] overflow-y-auto mb-4 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
                           <div className="text-center">
-                            <h2 className="text-3xl font-display uppercase mb-2 bg-gradient-to-r from-purple-400 to-accent bg-clip-text text-transparent">
+                            <h2 className="text-3xl font-display uppercase mb-2 text-accent">
                               Welcome to Earth
                             </h2>
-                            <p className="text-gray-200 text-lg">
+                            <p className="text-text-secondary text-lg">
                               I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
                             </p>
                           </div>
@@ -617,9 +610,9 @@ export default function ChatPage() {
                             ) : (
                               <div className="relative">
                                 <p
-                                  className={`text-lg md:text-xl leading-relaxed font-sans ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
-                                    ? 'italic text-blue-200'
-                                    : 'text-gray-100'
+                                  className={`text-lg md:text-xl leading-relaxed font-mono ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user'
+                                    ? 'italic text-text-secondary'
+                                    : 'text-text-primary'
                                     }`}
                                   dangerouslySetInnerHTML={{
                                     __html: parseMessageContent(activeConversation.messages[activeConversation.messages.length - 1].content)
@@ -672,7 +665,7 @@ export default function ChatPage() {
                           <button
                             onClick={handleSendMessage}
                             disabled={isLoading || !input.trim()}
-                            className="px-6 py-2.5 bg-gradient-to-r from-accent to-purple-500 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(139,92,246,0.3)] text-sm"
+                            className="px-6 py-2.5 bg-gradient-to-r from-accent to-emerald-400 text-black font-bold rounded-lg uppercase tracking-wider hover:opacity-90 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(0,255,148,0.2)] text-sm"
                           >
                             {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
                           </button>
@@ -693,10 +686,10 @@ export default function ChatPage() {
                         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="text-8xl mb-6">
                           👧✨
                         </motion.div>
-                        <h2 className={`text-4xl md:text-6xl font-display tracking-wide uppercase mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-accent bg-clip-text text-transparent`}>
+                        <h2 className={`text-4xl md:text-6xl font-display tracking-wide uppercase mb-4 text-accent`}>
                           Welcome to Earth
                         </h2>
-                        <p className={`text-lg max-w-xl mx-auto ${vnMode ? 'text-gray-200' : 'text-text-secondary'}`}>
+                        <p className={`text-lg max-w-xl mx-auto text-text-secondary`}>
                           I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
                         </p>
                       </div>
@@ -713,7 +706,7 @@ export default function ChatPage() {
                               <span className={`text-xs font-mono font-semibold ${vnMode ? 'text-white' : 'text-text-primary'}`}>{message.role === 'user' ? 'YOU' : 'SIGGY'}</span>
                               {message.mood && <span className={`text-xs font-mono px-2 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
-                            <p className={`text-sm whitespace-pre-wrap leading-relaxed ${vnMode ? 'text-gray-100' : 'text-text-primary'}`} dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
+                            <p className={`text-sm font-mono whitespace-pre-wrap leading-relaxed text-text-primary`} dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
 
                             {message.role === 'assistant' && (
                               <div className={`flex items-center gap-1 mt-3 pt-3 border-t ${vnMode ? 'border-white/10' : 'border-border'}`}>

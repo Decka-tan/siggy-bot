@@ -13,9 +13,9 @@ export default function LandingPage() {
       <section className="h-screen flex flex-col items-center justify-center relative px-6 overflow-hidden">
         {/* Animated background gradient */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-purple-500/5 to-accent/5 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-400/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-accent/5 to-emerald-400/5 rounded-full blur-3xl" />
         </div>
 
         <div className="relative z-10 text-center max-w-4xl mx-auto flex flex-col items-center justify-center">
@@ -31,7 +31,7 @@ export default function LandingPage() {
               alt="Siggy"
               width={300}
               height={400}
-              className="object-contain drop-shadow-[0_0_30px_rgba(139,92,246,0.4)]"
+              className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.3)]"
               priority
             />
           </motion.div>
@@ -40,7 +40,7 @@ export default function LandingPage() {
             initial={{ y: 40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-6xl md:text-8xl lg:text-9xl font-display tracking-tight uppercase mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-accent bg-clip-text text-transparent"
+            className="text-6xl md:text-8xl lg:text-9xl font-display tracking-tight uppercase mb-4 text-accent"
           >
             Siggy
           </motion.h1>
@@ -134,8 +134,8 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-purple-500/20 to-pink-500/20 group-hover:from-purple-500/30 group-hover:to-pink-500/30 transition-all">
-                <BookOpen className="w-8 h-8 text-purple-400" />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-emerald-400/20 group-hover:from-accent/30 group-hover:to-emerald-400/30 transition-all">
+                <BookOpen className="w-8 h-8 text-accent" />
               </div>
               <h3 className="font-display text-2xl mb-3">Story Mode</h3>
               <p className="text-text-secondary leading-relaxed mb-6">
@@ -230,7 +230,7 @@ export default function LandingPage() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
-              Siggy began as a <span className="text-purple-400">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions.
+              Siggy began as a <span className="text-accent">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions.
               A cat-shaped probability fluctuation that could see all realities at once.
             </motion.p>
 
@@ -241,7 +241,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               Curious about Earth, she <span className="text-accent">DESCENDED</span> to our world. But a cosmic cat would attract too much attention.
-              So she did what any sensible being would do: she transformed into an <span className="text-pink-400">anime girl with cat ears</span>.
+              So she did what any sensible being would do: she transformed into an <span className="text-accent">anime girl with cat ears</span>.
               Because subtlety is overrated.
             </motion.p>
 
@@ -279,7 +279,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-purple-500/20 to-pink-500/20">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-emerald-400/20">
                 <span className="text-2xl">D</span>
               </div>
               <h3 className="font-display text-lg mb-2">Dynamic Moods</h3>
@@ -311,7 +311,7 @@ export default function LandingPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-pink-500/20 to-purple-500/20">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-emerald-400/20">
                 <span className="text-2xl">A</span>
               </div>
               <h3 className="font-display text-lg mb-2">Anime Girl</h3>
