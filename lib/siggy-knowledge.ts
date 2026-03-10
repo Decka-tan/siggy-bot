@@ -4,12 +4,15 @@
  * Can be selectively retrieved based on conversation context
  */
 
+import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
+
 export interface KnowledgeEntry {
   id: string;
   category: string;
   keywords: string[];
   content: string;
   priority: number; // Higher = more important
+  source?: string; // Optional source URL for web knowledge
 }
 
 export const SIGGY_KNOWLEDGE: KnowledgeEntry[] = [
@@ -98,8 +101,11 @@ export const SIGGY_KNOWLEDGE: KnowledgeEntry[] = [
 export function getRelevantKnowledge(userInput: string, maxEntries: number = 3): KnowledgeEntry[] {
   const inputLower = userInput.toLowerCase();
 
+  // Combine both Siggy's knowledge and Ritual web knowledge
+  const allKnowledge = [...SIGGY_KNOWLEDGE, ...RITUAL_WEB_KNOWLEDGE];
+
   // Score each entry based on keyword matches
-  const scored = SIGGY_KNOWLEDGE.map(entry => {
+  const scored = allKnowledge.map(entry => {
     let score = 0;
     for (const keyword of entry.keywords) {
       if (inputLower.includes(keyword)) {
