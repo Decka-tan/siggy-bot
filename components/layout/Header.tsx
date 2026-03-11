@@ -236,6 +236,7 @@ export function Header() {
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
               className="relative bg-black/90 backdrop-blur-2xl border border-white/20 p-6 rounded-2xl shadow-2xl w-full max-w-sm text-white max-h-[85vh] overflow-y-auto signature-scroll pointer-events-auto"
             >
             <h3 className="font-display text-xl tracking-wider text-accent mb-6 border-b border-white/20 pb-3 text-left">Settings</h3>

@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown } from 'lucide-react';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
@@ -90,7 +91,7 @@ const parseMessageContent = (content: string) => {
 };
 
 // Typewriter Text Component
-const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void }) => {
+const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME' }) => {
   const [displayedText, setDisplayedText] = useState(() => {
     if (!isLatest || alreadyAnimated) return text;
     return '';
@@ -113,7 +114,9 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
         return;
       }
 
+      if (i === 0 && playVoiceLine && personality) playVoiceLine(personality);
       setDisplayedText(text.substring(0, i + 1));
+      if (i % 3 === 0 && playTyping) playTyping();
       i++;
       if (i >= text.length) {
         clearInterval(interval);
@@ -178,6 +181,7 @@ export default function ChatPage() {
   });
   const [editingName, setEditingName] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const { playClick, playTyping, playVoiceLine } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const animatedMessages = useRef<Set<string>>(new Set());
   const [vnMode, setVnMode] = useState(() => {
@@ -309,6 +313,7 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async (overrideInput?: string) => {
+    playClick();
     const textToSend = typeof overrideInput === 'string' ? overrideInput : input;
     if (!textToSend.trim() || isLoading) return;
 
@@ -546,6 +551,7 @@ export default function ChatPage() {
   };
 
   const handleTransform = async (newForm: 'CAT' | 'ANIME') => {
+    playClick();
     setPersonality(newForm);
     const transformMsg = newForm === 'CAT'
       ? '*snaps fingers* Siggy, turn into a cat!'
@@ -1078,7 +1084,7 @@ export default function ChatPage() {
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
                             {message.role === 'assistant' ? (
-                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} />
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} />
                             ) : (
                               <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
                             )}

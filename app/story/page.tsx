@@ -662,7 +662,7 @@ export default function StoryModePage() {
   const [showChapterBridge, setShowChapterBridge] = useState(false);
   const [showChapterSelect, setShowChapterSelect] = useState(false);
   const [nextBridgeChapter, setNextBridgeChapter] = useState(1);
-  const { textSpeed } = useSettings();
+  const { textSpeed, playClick, playTyping, playVoiceLine } = useSettings();
   const [textSize, setTextSize] = useState<'sm' | 'base' | 'lg'>('base');
   const isSkipping = useRef(false);
 
@@ -683,6 +683,7 @@ export default function StoryModePage() {
   }, [currentSceneIndex]);
 
   const handleClick = () => {
+    playClick();
     if (showChoices || showChapterBridge) return;
 
     const currentSceneObj = allScenes[currentSceneIndex];
@@ -720,6 +721,7 @@ export default function StoryModePage() {
   };
 
   const handleChoice = (nextScene: number) => {
+    playClick();
     const nextSceneIdx = allScenes.findIndex(s => s.id === nextScene);
     if (nextSceneIdx !== -1) {
       setCurrentSceneIndex(nextSceneIdx);
@@ -728,6 +730,7 @@ export default function StoryModePage() {
   };
 
   const jumpToChapter = (chapterNum: number) => {
+    playClick();
     const sceneIdx = allScenes.findIndex(s => s.chapter === chapterNum);
     if (sceneIdx !== -1) {
       setCurrentSceneIndex(sceneIdx);
@@ -774,7 +777,9 @@ export default function StoryModePage() {
       }
       
       if (i < text.length) {
+        if (i === 0) playVoiceLine(currentScene.siggySprite === 'cat' ? 'CAT' : 'ANIME');
         setTypewriterText(text.slice(0, i + 1));
+        if (i % 3 === 0) playTyping();
         i++;
       } else {
         clearInterval(timer);
