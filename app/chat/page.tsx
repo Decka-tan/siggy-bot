@@ -92,14 +92,19 @@ const parseMessageContent = (content: string) => {
 
 // Typewriter Text Component
 const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME' }) => {
+  const hasAnimatedRef = useRef(alreadyAnimated);
   const [displayedText, setDisplayedText] = useState(() => {
     if (!isLatest || alreadyAnimated) return text;
     return '';
   });
 
   useEffect(() => {
-    if (!isLatest || alreadyAnimated) {
+    if (!isLatest || hasAnimatedRef.current || alreadyAnimated) {
       setDisplayedText(text);
+      if (!hasAnimatedRef.current) {
+        hasAnimatedRef.current = true;
+        onAnimationComplete?.();
+      }
       return;
     }
 
@@ -120,26 +125,17 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
       i++;
       if (i >= text.length) {
         clearInterval(interval);
+        hasAnimatedRef.current = true;
         onAnimationComplete?.();
       }
     }, 20);
 
     return () => clearInterval(interval);
-  }, [text, isLatest, alreadyAnimated, onAnimationComplete]);
+  }, [text, isLatest, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality]);
 
   return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
 };
 
-// Decorative floating bubbles for VN mode
-const VN_BUBBLES = [
-  { text: 'The sky is cool, right?', top: '12%', left: '8%', size: 90, delay: 0 },
-  { text: 'siggy look!', top: '25%', left: '78%', size: 80, delay: 2 },
-  { text: 'meow~', top: '45%', left: '5%', size: 60, delay: 4 },
-  { text: 'so dark...', top: '15%', left: '55%', size: 50, delay: 1 },
-  { text: 'so pretty...', top: '55%', left: '85%', size: 75, delay: 3 },
-  { text: 'i am infinite.', top: '35%', left: '30%', size: 45, delay: 5 },
-  { text: 'I can see everything~', top: '8%', left: '38%', size: 85, delay: 6 },
-];
 
 const generateTitle = (firstMessage: string): string => {
   const truncated = firstMessage.slice(0, 30);
@@ -181,7 +177,7 @@ export default function ChatPage() {
   });
   const [editingName, setEditingName] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const { playClick, playTyping, playVoiceLine } = useSettings();
+  const { playClick, playHeavyClick, playTyping, playVoiceLine } = useSettings();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const animatedMessages = useRef<Set<string>>(new Set());
   const [vnMode, setVnMode] = useState(() => {
@@ -194,6 +190,18 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
+
+  // Initialize animatedMessages with all existing messages on load so they don't re-animate
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      conversations.forEach(conv => {
+        conv.messages.forEach((_, idx) => {
+          animatedMessages.current.add(`${conv.id}-${idx}`);
+        });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -313,7 +321,7 @@ export default function ChatPage() {
   };
 
   const handleSendMessage = async (overrideInput?: string) => {
-    playClick();
+    playHeavyClick();
     const textToSend = typeof overrideInput === 'string' ? overrideInput : input;
     if (!textToSend.trim() || isLoading) return;
 
@@ -362,6 +370,7 @@ export default function ChatPage() {
           userId: `conv-${targetConvId}`,
           isFirstMessage: conversationHistory.length === 0,
           userName,
+          currentForm: personality,
         }),
       });
 
@@ -551,7 +560,7 @@ export default function ChatPage() {
   };
 
   const handleTransform = async (newForm: 'CAT' | 'ANIME') => {
-    playClick();
+    playHeavyClick();
     setPersonality(newForm);
     const transformMsg = newForm === 'CAT'
       ? '*snaps fingers* Siggy, turn into a cat!'
@@ -794,29 +803,6 @@ export default function ChatPage() {
                   ))}
                   <div className="absolute inset-0 bg-black/30" />
                 </div>
-
-                {/* Decorative floating bubbles */}
-                {VN_BUBBLES.map((bubble, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 0.6, scale: 1, y: [0, -6, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: bubble.delay }}
-                    className="absolute z-10 cursor-pointer hover:opacity-100 transition-opacity"
-                    style={{ top: bubble.top, left: bubble.left }}
-                    onClick={() => {
-                      setInput(bubble.text);
-                      setTimeout(() => handleSendMessage(), 100);
-                    }}
-                  >
-                    <div
-                      className="rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center hover:bg-black/60 transition-colors"
-                      style={{ width: bubble.size, height: bubble.size }}
-                    >
-                      <span className="text-white/70 text-[9px] font-mono text-center px-2 leading-tight">{bubble.text}</span>
-                    </div>
-                  </motion.div>
-                ))}
               </>
             )}
 
@@ -902,22 +888,9 @@ export default function ChatPage() {
                             <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
                               I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
                             </p>
-                            
-                            {/* Starting Topic Buttons (VN Mode) */}
-                            <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto pb-4">
-                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                                {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                              </button>
-                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-black/40 border border-white/10 text-gray-300 hover:border-accent hover:text-white rounded-lg transition-all text-left">
-                                Cosmic origins
-                              </button>
-                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-black/40 border border-white/10 text-gray-300 hover:border-accent hover:text-white rounded-lg transition-all text-left">
-                                Weird dimensions
-                              </button>
-                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-black/40 border border-white/10 text-gray-300 hover:border-accent hover:text-white rounded-lg transition-all text-left">
-                                Earth food
-                              </button>
-                            </div>
+                            <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
+                              I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
+                            </p>
                           </div>
                         ) : (
                           <div className="relative">
@@ -1229,7 +1202,7 @@ export default function ChatPage() {
                 <div className="relative group">
                   <div className="w-32 h-32 rounded-full border-4 border-bg overflow-hidden bg-bg flex items-center justify-center shadow-[0_0_30px_rgba(96,165,250,0.2)]">
                     {userAvatar ? (
-                      <img src={userAvatar} alt="Your Custom Avatar" className="w-full h-full object-cover" />
+                      <img src={userAvatar!} alt="Your Custom Avatar" className="w-full h-full object-cover" />
                     ) : (
                       <User className="w-12 h-12 text-text-secondary/50" />
                     )}

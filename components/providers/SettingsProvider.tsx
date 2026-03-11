@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 
 interface SettingsContextType {
   sfxEnabled: boolean;
@@ -19,6 +20,7 @@ interface SettingsContextType {
   setShowTimestamps: (v: boolean) => void;
   playHover: () => void;
   playClick: () => void;
+  playHeavyClick: () => void;
   playTransition: () => void;
   playTyping: () => void;
   playVoiceLine: (type?: 'CAT' | 'ANIME') => void;
@@ -41,6 +43,7 @@ const defaultSettings: SettingsContextType = {
   setShowTimestamps: () => {},
   playHover: () => {},
   playClick: () => {},
+  playHeavyClick: () => {},
   playTransition: () => {},
   playTyping: () => {},
   playVoiceLine: () => {},
@@ -49,9 +52,10 @@ const defaultSettings: SettingsContextType = {
 const SettingsContext = createContext<SettingsContextType>(defaultSettings);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const [sfxEnabled, setSfxEnabled] = useState(true);
   const [sfxVolume, setSfxVolume] = useState(55);
-  const [typingSfxEnabled, setTypingSfxEnabled] = useState(true);
+  const [typingSfxEnabled, setTypingSfxEnabled] = useState(false);
   const [bgmEnabled, setBgmEnabled] = useState(true);
   const [bgmVolume, setBgmVolume] = useState(25);
   const [textSpeed, setTextSpeed] = useState(30);
@@ -60,6 +64,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [bgmAudio, setBgmAudio] = useState<HTMLAudioElement | null>(null);
   const [hoverAudio, setHoverAudio] = useState<HTMLAudioElement | null>(null);
   const [clickAudio, setClickAudio] = useState<HTMLAudioElement | null>(null);
+  const [heavyClickAudio, setHeavyClickAudio] = useState<HTMLAudioElement | null>(null);
   const [transitionAudio, setTransitionAudio] = useState<HTMLAudioElement | null>(null);
   const [typingAudio, setTypingAudio] = useState<HTMLAudioElement | null>(null);
   const [animeVoices, setAnimeVoices] = useState<HTMLAudioElement[]>([]);
@@ -68,36 +73,57 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Only run in the browser
     if (typeof window !== 'undefined') {
-      const bgm = new Audio('https://actions.google.com/sounds/v1/science_fiction/dark_space_drone.ogg');
+      const bgm = new Audio('/BGM_VN_STORY_MODE.mp3');
       bgm.loop = true;
       setBgmAudio(bgm);
       
       setHoverAudio(new Audio('https://raw.githubusercontent.com/KenneyNL/Audio-UI/master/Audio/rollover2.ogg'));
-      setClickAudio(new Audio('https://raw.githubusercontent.com/KenneyNL/Audio-UI/master/Audio/click1.ogg'));
+      setClickAudio(new Audio('/Click_Sound_Light.mp3'));
+      setHeavyClickAudio(new Audio('/Click_Sound_HEAVY.mp3'));
       setTransitionAudio(new Audio('https://raw.githubusercontent.com/KenneyNL/Audio-UI/master/Audio/switch2.ogg'));
       setTypingAudio(new Audio('https://raw.githubusercontent.com/KenneyNL/Audio-UI/master/Audio/click4.ogg'));
       
-      // External links for Anime Voices (Using generic CC0 chirps as placeholders since exact voice direct-links vary)
-      const voices = [
-        'https://raw.githubusercontent.com/KenneyNL/Audio-UI/master/Audio/maximize_004.ogg', 
-        'https://raw.githubusercontent.com/KenneyNL/Audio-UI/master/Audio/minimize_004.ogg'
-      ];
+      const voices = ['/Click_Sound_Light.mp3'];
       setAnimeVoices(voices.map(v => new Audio(v)));
-      // External link for cat meow placeholder
-      setCatVoice(new Audio('https://actions.google.com/sounds/v1/animals/cat_purr_close.ogg'));
+      setCatVoice(new Audio('/Click_Sound_Light.mp3'));
     }
   }, []);
 
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  useEffect(() => {
+    const handleInitialInteract = () => {
+      setHasInteracted(true);
+      if (bgmAudio && bgmEnabled && pathname !== '/') {
+         bgmAudio.play().catch(() => {});
+      }
+      document.removeEventListener('click', handleInitialInteract);
+      document.removeEventListener('keydown', handleInitialInteract);
+    };
+
+    document.addEventListener('click', handleInitialInteract);
+    document.addEventListener('keydown', handleInitialInteract);
+
+    return () => {
+      document.removeEventListener('click', handleInitialInteract);
+      document.removeEventListener('keydown', handleInitialInteract);
+    };
+  }, [bgmAudio, bgmEnabled, pathname]);
+
   useEffect(() => {
     if (bgmAudio) {
-      if (bgmEnabled) {
-        bgmAudio.play().catch(e => console.warn("Autoplay prevented:", e));
+      bgmAudio.volume = bgmVolume / 100;
+      bgmAudio.loop = true;
+
+      if (bgmEnabled && pathname !== '/') {
+        if (hasInteracted) {
+           bgmAudio.play().catch(() => {});
+        }
       } else {
         bgmAudio.pause();
       }
-      bgmAudio.volume = bgmVolume / 100;
     }
-  }, [bgmAudio, bgmEnabled, bgmVolume]);
+  }, [bgmAudio, bgmEnabled, bgmVolume, pathname, hasInteracted]);
 
   const playHover = () => {
     if (sfxEnabled && hoverAudio) {
@@ -112,6 +138,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       clickAudio.currentTime = 0;
       clickAudio.volume = sfxVolume / 100;
       clickAudio.play().catch(() => {});
+    }
+  };
+
+  const playHeavyClick = () => {
+    if (sfxEnabled && heavyClickAudio) {
+      heavyClickAudio.currentTime = 0;
+      heavyClickAudio.volume = sfxVolume / 100;
+      heavyClickAudio.play().catch(() => {});
     }
   };
 
@@ -158,7 +192,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         bgmVolume, setBgmVolume,
         textSpeed, setTextSpeed,
         showTimestamps, setShowTimestamps,
-        playHover, playClick, playTransition, playTyping, playVoiceLine
+        playHover, playClick, playHeavyClick, playTransition, playTyping, playVoiceLine
       }}
     >
       {children}

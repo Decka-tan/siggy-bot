@@ -15,17 +15,6 @@ const VN_BACKGROUNDS = [
   '/vn-bg/4.jpg',
 ];
 
-// Decorative floating bubbles for VN mode
-const VN_BUBBLES = [
-  { text: 'The sky is cool, right?', top: '12%', left: '8%', size: 90, delay: 0 },
-  { text: 'siggy look!', top: '25%', left: '78%', size: 80, delay: 2 },
-  { text: 'meow~', top: '45%', left: '5%', size: 60, delay: 4 },
-  { text: 'so dark...', top: '15%', left: '55%', size: 50, delay: 1 },
-  { text: 'so pretty...', top: '55%', left: '85%', size: 75, delay: 3 },
-  { text: 'i am infinite.', top: '35%', left: '30%', size: 45, delay: 5 },
-  { text: 'I can see everything~', top: '8%', left: '38%', size: 85, delay: 6 },
-];
-
 // Story data type
 type StoryChoice = {
   text: string;
@@ -662,7 +651,7 @@ export default function StoryModePage() {
   const [showChapterBridge, setShowChapterBridge] = useState(false);
   const [showChapterSelect, setShowChapterSelect] = useState(false);
   const [nextBridgeChapter, setNextBridgeChapter] = useState(1);
-  const { textSpeed, playClick, playTyping, playVoiceLine } = useSettings();
+  const { textSpeed, playClick, playHeavyClick, playTyping, playVoiceLine } = useSettings();
   const [textSize, setTextSize] = useState<'sm' | 'base' | 'lg'>('base');
   const isSkipping = useRef(false);
 
@@ -721,7 +710,7 @@ export default function StoryModePage() {
   };
 
   const handleChoice = (nextScene: number) => {
-    playClick();
+    playHeavyClick();
     const nextSceneIdx = allScenes.findIndex(s => s.id === nextScene);
     if (nextSceneIdx !== -1) {
       setCurrentSceneIndex(nextSceneIdx);
@@ -730,7 +719,7 @@ export default function StoryModePage() {
   };
 
   const jumpToChapter = (chapterNum: number) => {
-    playClick();
+    playHeavyClick();
     const sceneIdx = allScenes.findIndex(s => s.chapter === chapterNum);
     if (sceneIdx !== -1) {
       setCurrentSceneIndex(sceneIdx);
@@ -796,38 +785,26 @@ export default function StoryModePage() {
         <img src="/siggy-transparent.png" alt="Decorative Anime Girl" className="object-contain h-full" />
       </div>
 
-      {/* VN Mode Rotating Background */}
+      {/* Chapter-Specific Background */}
       <div className="fixed inset-0 z-0">
-        {VN_BACKGROUNDS.map((bg, i) => (
+        {currentScene.chapter === 3 ? (
+          VN_BACKGROUNDS.map((bg, i) => (
+            <img
+              key={bg}
+              src={bg}
+              alt={`VN Background ${i + 1}`}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ${i === vnBgIndex ? 'opacity-100' : 'opacity-0'}`}
+            />
+          ))
+        ) : (
           <img
-            key={bg}
-            src={bg}
-            alt={`VN Background ${i + 1}`}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ${i === vnBgIndex ? 'opacity-100' : 'opacity-0'}`}
+            src={`/story-bg/chapter${currentScene.chapter}.jpg`}
+            alt={`Chapter ${currentScene.chapter} Background`}
+            className="absolute inset-0 w-full h-full object-cover duration-1000 transition-opacity"
           />
-        ))}
+        )}
         <div className="absolute inset-0 bg-black/30" />
       </div>
-
-      {/* Decorative floating bubbles */}
-      {VN_BUBBLES.map((bubble, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 0.6, scale: 1, y: [0, -6, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: bubble.delay }}
-          className="absolute z-10 pointer-events-none"
-          style={{ top: bubble.top, left: bubble.left }}
-        >
-          <div
-            className="rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center"
-            style={{ width: bubble.size, height: bubble.size }}
-          >
-            <span className="text-white/70 text-[9px] font-mono text-center px-2 leading-tight">{bubble.text}</span>
-          </div>
-        </motion.div>
-      ))}
-
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col pt-6">
         {/* Story Area - Visual Novel Mode */}

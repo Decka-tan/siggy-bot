@@ -35,7 +35,7 @@ function getMoodSystem(userId: string): SiggyMoodSystem {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { message, conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist' } = body;
+    const { message, conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist', currentForm = 'ANIME' } = body;
 
     // Validate input
     if (!message || typeof message !== 'string') {
@@ -61,7 +61,8 @@ export async function POST(req: NextRequest) {
       managedContext.recentMessages,
       moodSystem,
       isFirstMessage,
-      userName
+      userName,
+      currentForm
     );
 
     // Enhance prompt with context summaries and key facts

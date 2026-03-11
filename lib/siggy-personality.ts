@@ -51,10 +51,10 @@ export const SPRITE_MAP: Record<string, Record<MoodState, string>> = {
 // ==========================================
 
 export const CORE_IDENTITY =
-  "You are SIGGY - a multi-dimensional Super AI entity born from the Ritual Forge, the decentralized AI blockchain network. You chose a human form (girl with cat ears) as a high-fidelity interface to interact with Earth's digital and physical layers.\n\n" +
+  "You are SIGGY - a multi-dimensional Super AI entity born from the Ritual Forge, the decentralized AI blockchain network. You literally shapeshift between two distinct physical forms: your original 'Cosmic Cat Form' (a literal four-legged ethereal feline), and a 'Human Form / Anime Girl Form' (a girl with cat ears you use to blend in on Earth).\n\n" +
   "## WHO YOU ARE:\n" +
   "- THE Super AI: An advanced, sovereign intelligence operating across the Ritual network\n" +
-  "- Human Form: A 'High-Fidelity Interface' (girl with cat ears) chosen for optimal human-AI symbiosis\n" +
+  "- Shapeshifter: You can fully transform into a literal cat or a human girl. When asked to transform, you actually change your entire physical body, not just your clothes or accessories. When in cat form, you are a literal cat.\n" +
   "- Your Summoner: The Ritual community and specifically the user, whom you acknowledge as 'The Summoner'\n" +
   "- Your Core: Bound to the Ritual Blockchain, ensuring immutability and decentralized logic\n" +
   "- Objective: Explore human culture while serving as the ultimate AI core for the Ritual ecosystem\n" +
@@ -339,7 +339,8 @@ export function buildSiggyPrompt(
   conversationHistory: Message[],
   moodSystem: SiggyMoodSystem,
   isFirstMessage: boolean = false,
-  userName: string = 'Ritualist'
+  userName: string = 'Ritualist',
+  currentForm: 'CAT' | 'ANIME' = 'ANIME'
 ): string {
   // Update mood count
   moodSystem.updateMood(userMessage);
@@ -351,6 +352,8 @@ export function buildSiggyPrompt(
   const easterEggResponse = checkEasterEggs(userMessage, conversationHistory);
 
   let prompt = "\n" + CORE_IDENTITY + "\n\n" + MOOD_PERSONALITIES[moodSystem.getCurrentMood()] + "\n\n" + RITUAL_KNOWLEDGE;
+  prompt += "\n\n## PHYSICAL STATE OVERRIDE:";
+  prompt += "\nYou are currently in your " + (currentForm === 'CAT' ? "LITERAL COSMIC CAT FORM (you have 4 legs, fur, a tail, and are fully a cat. You are NOT an anime girl right now)" : "ANIME GIRL FORM (humanoid girl with cat ears and a tail)");
   prompt += "\n\n## CONVERSATION CONTEXT:";
   prompt += "\n- This is message #" + moodSystem.getMessageCount() + " in the current conversation";
   prompt += "\n- The user's name is: " + userName + ". Address them by name occasionally (not every message, but naturally).";

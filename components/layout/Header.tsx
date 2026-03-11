@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import { X, Settings } from 'lucide-react';
 
 const VN_MODE_KEY = 'siggy-vn-mode';
 
@@ -27,20 +28,11 @@ export function Header() {
     bgmEnabled, setBgmEnabled,
     bgmVolume, setBgmVolume,
     textSpeed, setTextSpeed,
-    showTimestamps, setShowTimestamps
+    showTimestamps, setShowTimestamps,
+    playHeavyClick
   } = useSettings();
   
-  // Close settings when clicking outside
-  const settingsRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
-        setShowSettings(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Close settings when clicking outside handled by the backdrop overlay in the modal.
 
   useEffect(() => {
     setMounted(true);
@@ -59,6 +51,7 @@ export function Header() {
   };
 
   const toggleVNMode = () => {
+    playHeavyClick();
     const newMode = !vnMode;
     setVnMode(newMode);
     if (typeof window !== 'undefined') {
@@ -67,34 +60,6 @@ export function Header() {
       window.dispatchEvent(new CustomEvent('vnModeToggle', { detail: newMode }));
     }
   };
-
-  const getRightButton = () => {
-    // On chat page, show VN mode toggle
-    if (pathname === '/chat') {
-      return {
-        text: vnMode ? 'CHAT MODE' : 'VN MODE',
-        onClick: toggleVNMode,
-        className: 'bg-gradient-to-r from-accent to-yellow-400 text-bg'
-      };
-    }
-    // On story page, show SETTINGS button
-    if (pathname === '/story') {
-      return {
-        text: 'SETTINGS',
-        onClick: () => setShowSettings(!showSettings),
-        className: 'bg-accent text-bg'
-      };
-    }
-    // On other pages, show AUTHOR button
-    return {
-      text: 'AUTHOR',
-      onClick: scrollToBio,
-      className: 'bg-accent text-bg'
-    };
-  };
-
-  const rightButton = getRightButton();
-
   return (
     <header className="fixed top-0 left-0 right-0 z-50 py-6 bg-gradient-to-b from-bg via-bg/80 to-transparent">
       <div className="w-full max-w-7xl mx-auto px-8 grid grid-cols-3 items-center">
@@ -121,13 +86,23 @@ export function Header() {
           <Link href="/chat" className="hover:text-accent transition-colors">Chat</Link>
         </nav>
 
-        {/* Right Button - Adaptive */}
-        <div className="hidden md:flex justify-end relative" ref={settingsRef}>
+        {/* Right Buttons - Adaptive */}
+        <div className="hidden md:flex justify-end relative gap-3 items-center">
+          {pathname === '/chat' && (
+            <button
+              onClick={toggleVNMode}
+              className="bg-gradient-to-r from-accent to-yellow-400 text-bg px-6 py-2 rounded-full font-bold text-sm hover:opacity-90 transition-all font-mono tracking-wider flex items-center gap-2"
+            >
+              {vnMode ? 'CHAT MODE' : 'VN MODE'}
+            </button>
+          )}
           <button
-            onClick={rightButton.onClick}
-            className={`${rightButton.className} px-6 py-2 rounded-full font-bold text-sm hover:opacity-90 transition-all font-mono tracking-wider flex items-center gap-2`}
+            onClick={() => { playHeavyClick(); setShowSettings(!showSettings); }}
+            className="p-2 bg-surface hover:bg-accent/20 border border-border hover:border-accent rounded-full transition-all text-text-secondary hover:text-accent"
+            title="Settings"
+            aria-label="Settings"
           >
-            {rightButton.text}
+            <Settings className="w-5 h-5" />
           </button>
         </div>
 
@@ -202,15 +177,26 @@ export function Header() {
               >
                 Chat
               </Link>
+              {pathname === '/chat' && (
+                <button
+                  onClick={() => {
+                    toggleVNMode();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full block font-mono text-xs uppercase tracking-wider py-2 px-3 rounded-lg hover:bg-opacity-90 transition-colors text-center text-bg bg-gradient-to-r from-accent to-yellow-400 mb-2"
+                >
+                  {vnMode ? 'CHAT MODE' : 'VN MODE'}
+                </button>
+              )}
               <button
                 onClick={() => {
-                  rightButton.onClick();
+                  playHeavyClick();
+                  setShowSettings(true);
                   setMobileMenuOpen(false);
                 }}
-                className="w-full block font-mono text-xs uppercase tracking-wider py-2 px-3 rounded-lg hover:bg-opacity-90 transition-colors text-center text-bg"
-                style={{ backgroundColor: pathname === '/chat' ? 'rgb(250, 204, 21)' : 'var(--color-accent)' }}
+                className="w-full flex justify-center items-center gap-2 font-mono text-xs uppercase tracking-wider py-2 px-3 rounded-lg hover:bg-opacity-90 transition-colors text-center text-bg bg-accent"
               >
-                {rightButton.text}
+                <Settings className="w-4 h-4" /> SETTINGS
               </button>
             </nav>
           </div>
@@ -218,9 +204,9 @@ export function Header() {
       )}
       </div>
 
-      {/* Global Settings Modal Dropdown specifically for Story Mode */}
+      {/* Global Settings Modal Dropdown */}
       <AnimatePresence>
-        {pathname === '/story' && showSettings && (
+        {showSettings && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             {/* Backdrop */}
             <motion.div 
@@ -239,7 +225,15 @@ export function Header() {
               onClick={(e) => e.stopPropagation()}
               className="relative bg-black/90 backdrop-blur-2xl border border-white/20 p-6 rounded-2xl shadow-2xl w-full max-w-sm text-white max-h-[85vh] overflow-y-auto signature-scroll pointer-events-auto"
             >
-            <h3 className="font-display text-xl tracking-wider text-accent mb-6 border-b border-white/20 pb-3 text-left">Settings</h3>
+            <div className="flex justify-between items-center mb-6 border-b border-white/20 pb-3">
+              <h3 className="font-display text-xl tracking-wider text-accent text-left">Settings</h3>
+              <button 
+                onClick={() => setShowSettings(false)}
+                className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/50 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             
             <div className="space-y-8 text-left">
               {/* Audio Section */}
@@ -261,26 +255,12 @@ export function Header() {
                   </div>
 
                   {/* SFX Volume */}
-                  <div className="space-y-2 opacity-50 pointer-events-none">
+                  <div className="space-y-2">
                     <div className="flex justify-between text-xs font-mono text-gray-400">
                       <span>SFX Volume</span>
                       <span>{sfxVolume}</span>
                     </div>
                     <input type="range" min="0" max="100" value={sfxVolume} onChange={(e) => setSfxVolume(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent" />
-                  </div>
-
-                  {/* Typing Sounds */}
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <label className="text-sm font-bold block mb-1">Typing Sounds</label>
-                      <span className="text-xs text-gray-400 block max-w-[200px]">Typewriter SFX while Siggy responds</span>
-                    </div>
-                    <button 
-                      onClick={() => setTypingSfxEnabled(!typingSfxEnabled)} 
-                      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${typingSfxEnabled ? 'bg-accent' : 'bg-gray-700'}`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${typingSfxEnabled ? 'left-7' : 'left-1'}`} />
-                    </button>
                   </div>
 
                   {/* BGM Toggle */}
@@ -297,7 +277,7 @@ export function Header() {
                   </div>
 
                   {/* BGM Volume */}
-                  <div className="space-y-2 opacity-50 pointer-events-none">
+                  <div className="space-y-2">
                     <div className="flex justify-between text-xs font-mono text-gray-400">
                       <span>BGM Volume</span>
                       <span>{bgmVolume}</span>
@@ -332,7 +312,6 @@ export function Header() {
                       ))}
                     </div>
                   </div>
-                  
                 </div>
               </div>
             </div>
