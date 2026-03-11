@@ -904,9 +904,22 @@ export default function ChatPage() {
                             <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
                               I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
                             </p>
-                            <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
-                              I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
-                            </p>
+                            
+                            {/* Starting Topic Buttons for VN Mode */}
+                            <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                              </button>
+                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                Cosmic origins
+                              </button>
+                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                Weird dimensions
+                              </button>
+                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                Earth food
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="relative">
