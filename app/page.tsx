@@ -192,13 +192,13 @@ export default function LandingPage() {
                   <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
-                  <span><strong>Chapter 3:</strong> First Contact → Meeting Decka-chan</span>
+                  <span><strong>Chapter 3:</strong> First Contact → Meeting the Summoner</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
-                  <span><strong>Chapter 4:</strong> A New Era → Neural Symbiosis</span>
+                  <span><strong>Chapter 4:</strong> A New Era → Blockchain + AI</span>
                 </li>
               </ul>
               <Link href="/story">
