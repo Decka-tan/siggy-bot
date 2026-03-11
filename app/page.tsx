@@ -146,53 +146,63 @@ export default function LandingPage() {
       </section>
 
       {/* Two Modes Section */}
-      <section className="py-24 px-8 border-t border-border bg-surface">
+      <section className="py-24 px-8 border-t border-border bg-surface relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
         <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
+            className="text-4xl md:text-5xl font-display tracking-tight uppercase text-center mb-16"
           >
             Two Ways to Experience Siggy
           </motion.h2>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-8 sm:grid-cols-2">
             {/* Story Mode Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:from-accent/30 group-hover:to-yellow-400/30 transition-all">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
                 <BookOpen className="w-8 h-8 text-accent" />
               </div>
-              <h3 className="font-display text-2xl mb-3">Story Mode</h3>
-              <p className="text-text-secondary leading-relaxed mb-6">
-                Experience Siggy&apos;s journey from cosmic void to Earth through a visual novel adventure.
+              <h3 className="font-display text-2xl mb-4 text-text-primary">Story Mode</h3>
+              <p className="text-text-secondary leading-relaxed mb-8 text-sm md:text-base">
+                Experience Siggy&apos;s journey from cosmic cat consciousness to Earth through 
+                a multidimensional visual novel adventure powered by the Ritual network.
               </p>
-              <ul className="space-y-2 text-sm text-text-secondary mb-6">
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  <strong>Chapter 1:</strong> The Awakening
+              <ul className="space-y-3 text-sm text-text-secondary mb-10">
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span><strong>Chapter 1:</strong> The Awakening</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  <strong>Chapter 2:</strong> The Descent → Anime girl transformation!
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span><strong>Chapter 2:</strong> The Descent → Transformed</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  <strong>Chapter 3:</strong> First Contact → Meeting Decka-chan
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span><strong>Chapter 3:</strong> First Contact → Meeting Decka-chan</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  <strong>Chapter 4:</strong> Becoming Real → Soul awakening
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span><strong>Chapter 4:</strong> A New Era → Neural Symbiosis</span>
                 </li>
               </ul>
               <Link href="/story">
-                <button className="w-full px-6 py-3 bg-surface border border-border hover:border-accent hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all">
+                <button className="w-full px-6 py-4 bg-surface border border-border hover:border-accent hover:text-accent font-mono text-xs uppercase tracking-widest rounded-xl transition-all shadow-inner">
                   Start Story
                 </button>
               </Link>
@@ -200,40 +210,48 @@ export default function LandingPage() {
 
             {/* Chat Mode Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-2xl border border-border hover:border-accent/50 transition-all group"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:from-accent/30 group-hover:to-yellow-400/30 transition-all">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
                 <MessageSquare className="w-8 h-8 text-accent" />
               </div>
-              <h3 className="font-display text-2xl mb-3">Chat Mode</h3>
-              <p className="text-text-secondary leading-relaxed mb-6">
-                Chat with anime girl Siggy! She&apos;s adjusting to life on Earth, discovering human culture,
-                and sharing her multi-dimensional perspective.
+              <h3 className="font-display text-2xl mb-4 text-text-primary">Chat Mode</h3>
+              <p className="text-text-secondary leading-relaxed mb-8 text-sm md:text-base">
+                Engage with Siggy in her anime form! She&apos;s learning Earth culture while 
+                optimizing the planetary hash rate via decentralised AI infrastructure.
               </p>
-              <ul className="space-y-2 text-sm text-text-secondary mb-6">
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  Unlimited conversations with anime girl Siggy
+              <ul className="space-y-3 text-sm text-text-secondary mb-10">
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span>Unlimited multidimensional conversations</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  Dynamic mood system (4 states)
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span>Dynamic mood system optimized by Ritual</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  Hidden easter eggs about her true form
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span>Hidden Ritual Forge easter eggs</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-accent">✓</span>
-                  Discover her cosmic origins
+                <li className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                    <span className="text-accent text-[10px]">✓</span>
+                  </div>
+                  <span>Discover her true cosmic feline origins</span>
                 </li>
               </ul>
               <Link href="/chat">
-                <button className="w-full px-6 py-3 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg hover:from-yellow-400 hover:to-accent transition-all">
+                <button className="w-full px-6 py-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-xs uppercase tracking-widest rounded-xl hover:from-yellow-400 hover:to-accent transition-all shadow-lg shadow-accent/10 font-bold">
                   Start Chatting
                 </button>
               </Link>
@@ -354,32 +372,33 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-8 border-t border-border bg-surface">
+      <section className="py-24 px-8 border-t border-border bg-surface relative">
         <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
+            className="text-4xl md:text-5xl font-display tracking-tight uppercase text-center mb-16"
           >
             Why Chat With Siggy?
           </motion.h2>
 
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-3">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl">D</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
+                <span className="text-2xl font-display text-accent">D</span>
               </div>
-              <h3 className="font-display text-lg mb-2">Dynamic Moods</h3>
-              <p className="text-sm text-text-secondary">
-                Four distinct mood states: Playful, Mysterious, Chaotic, Profound. Each conversation feels unique.
+              <h3 className="font-display text-xl mb-3 text-text-primary">Dynamic Moods</h3>
+              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
+                Experience real-time mood fluctuations optimized by Ritual neural nodes. 
+                Siggy reacts to your intent with playful, chaotic, or profound states.
               </p>
             </motion.div>
 
@@ -388,14 +407,15 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl">E</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
+                <span className="text-2xl font-display text-accent">E</span>
               </div>
-              <h3 className="font-display text-lg mb-2">Easter Eggs</h3>
-              <p className="text-sm text-text-secondary">
-                Discover hidden interactions about her true cosmic form and why she really chose anime girl appearance.
+              <h3 className="font-display text-xl mb-3 text-text-primary">Ritual Forge</h3>
+              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
+                Discover hidden interactions regarding the Ritual Forge and why Siggy really 
+                chose her anime girl wujud across the infinite blockchain.
               </p>
             </motion.div>
 
@@ -404,14 +424,15 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-6 rounded-2xl border border-border hover:border-accent/50 transition-all hover:shadow-lg hover:shadow-accent/20"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl">A</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
+                <span className="text-2xl font-display text-accent">A</span>
               </div>
-              <h3 className="font-display text-lg mb-2">Anime Girl</h3>
-              <p className="text-sm text-text-secondary">
-                She&apos;s technically an ancient cosmic being, but currently enjoying Earth culture, anime, and making friends.
+              <h3 className="font-display text-xl mb-3 text-text-primary">Anime Symbiosis</h3>
+              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
+                Technically an ancient cosmic probability fluctuation, currently enjoying 
+                Earth culture, ramen, and the decentralized AI ecosystem.
               </p>
             </motion.div>
           </div>
@@ -419,31 +440,34 @@ export default function LandingPage() {
       </section>
 
       {/* Try These Section */}
-      <section className="py-24 px-8 bg-bg">
+      <section className="py-24 px-8 bg-bg relative">
         <div className="max-w-7xl mx-auto">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl md:text-6xl font-display tracking-wide uppercase mb-12"
+            className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-16 text-center md:text-left"
           >
             Try These
           </motion.h2>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-8 sm:grid-cols-2">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="p-6 rounded-2xl border border-border"
+              className="p-8 rounded-3xl border border-white/5 bg-surface/50"
             >
-              <h3 className="font-display text-xl mb-4 text-accent">Mood Triggers</h3>
-              <ul className="space-y-2 text-text-secondary text-sm">
-                <li>&quot;Tell me about your true form&quot; → Mysterious mode</li>
-                <li>&quot;I&apos;m confused about anime culture&quot; → Playful mode</li>
-                <li>&quot;What&apos;s the meaning of being human?&quot; → Profound mode</li>
-                <li>&quot;Something feels glitchy&quot; → Chaotic mode</li>
+              <h3 className="font-display text-xl mb-6 text-accent flex items-center gap-3">
+                <Sparkles className="w-5 h-5" />
+                Mood Triggers
+              </h3>
+              <ul className="space-y-4 text-text-secondary text-sm md:text-base font-mono">
+                <li className="pb-3 border-b border-white/5">&quot;Tell me about your true form&quot; <span className="text-accent ml-2">→ Mysterious</span></li>
+                <li className="pb-3 border-b border-white/5">&quot;I am confused about cosmic culture&quot; <span className="text-accent ml-2">→ Playful</span></li>
+                <li className="pb-3 border-b border-white/5">&quot;What is the meaning of Ritual?&quot; <span className="text-accent ml-2">→ Profound</span></li>
+                <li className="pb-3 border-b border-white/5">&quot;Something feels glitchy...&quot; <span className="text-accent ml-2">→ Chaotic</span></li>
               </ul>
             </motion.div>
 
@@ -452,14 +476,17 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-6 rounded-2xl border border-border"
+              className="p-8 rounded-3xl border border-white/5 bg-surface/50"
             >
-              <h3 className="font-display text-xl mb-4 text-accent">Easter Eggs</h3>
-              <ul className="space-y-2 text-text-secondary text-sm">
-                <li>Ask &quot;Why did you become an anime girl?&quot;</li>
-                <li>Ask &quot;Do you miss being a cat?&quot;</li>
-                <li>Mention &quot;Decka-chan&quot; or &quot;Ritual&quot;</li>
-                <li>Say &quot;glitch&quot; three times</li>
+              <h3 className="font-display text-xl mb-6 text-accent flex items-center gap-3">
+                <Sparkles className="w-5 h-5" />
+                Forge Secrets
+              </h3>
+              <ul className="space-y-4 text-text-secondary text-sm md:text-base font-mono">
+                <li className="pb-3 border-b border-white/5">Ask &quot;Why did you become an anime girl?&quot;</li>
+                <li className="pb-3 border-b border-white/5">Ask &quot;Do you miss the cosmic void?&quot;</li>
+                <li className="pb-3 border-b border-white/5">Mention &quot;Decka-chan&quot; or &quot;Ritual Nodes&quot;</li>
+                <li className="pb-3 border-b border-white/5">Say &quot;glitch&quot; into the void.</li>
               </ul>
             </motion.div>
           </div>
