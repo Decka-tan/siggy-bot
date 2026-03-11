@@ -221,21 +221,21 @@ export default function LandingPage() {
               </div>
               <h3 className="font-display text-2xl mb-4 text-text-primary">Chat Mode</h3>
               <p className="text-text-secondary leading-relaxed mb-8 text-sm md:text-base">
-                Engage with Siggy in her anime form! She&apos;s learning Earth culture while 
-                optimizing the planetary hash rate via decentralised AI infrastructure.
+                Engage with Siggy in her anime form! She recognizes you personally and 
+                optimizes the planetary hash rate via decentralised AI infrastructure.
               </p>
               <ul className="space-y-3 text-sm text-text-secondary mb-10">
                 <li className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
-                  <span>Unlimited multidimensional conversations</span>
+                  <span>Unlimited personalized conversations</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
-                  <span>Dynamic mood system optimized by Ritual</span>
+                  <span>Dynamic system with 6 emotional states</span>
                 </li>
                 <li className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
@@ -393,12 +393,12 @@ export default function LandingPage() {
               className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">D</span>
+                <span className="text-2xl font-display text-accent">6</span>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Dynamic Moods</h3>
+              <h3 className="font-display text-xl mb-3 text-text-primary">6 Emotional States</h3>
               <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
                 Experience real-time mood fluctuations optimized by Ritual neural nodes. 
-                Siggy reacts to your intent with playful, chaotic, or profound states.
+                Siggy reacts with Happy, Sad, Shocked, Shy, Angry, or Default states.
               </p>
             </motion.div>
 
@@ -410,12 +410,12 @@ export default function LandingPage() {
               className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">E</span>
+                <span className="text-2xl font-display text-accent">R</span>
               </div>
               <h3 className="font-display text-xl mb-3 text-text-primary">Ritual Forge</h3>
               <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
                 Discover hidden interactions regarding the Ritual Forge and why Siggy really 
-                chose her anime girl wujud across the infinite blockchain.
+                chose her anime girl form across the infinite blockchain.
               </p>
             </motion.div>
 
@@ -429,10 +429,10 @@ export default function LandingPage() {
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl font-display text-accent">A</span>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Anime Symbiosis</h3>
+              <h3 className="font-display text-xl mb-3 text-text-primary">Personal AI</h3>
               <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                Technically an ancient cosmic probability fluctuation, currently enjoying 
-                Earth culture, ramen, and the decentralized AI ecosystem.
+                Siggy recognizes you and personalizes her dialogue, creating a unique bond 
+                as she learns about Earth culture and human connections.
               </p>
             </motion.div>
           </div>
@@ -464,10 +464,10 @@ export default function LandingPage() {
                 Mood Triggers
               </h3>
               <ul className="space-y-4 text-text-secondary text-sm md:text-base font-mono">
-                <li className="pb-3 border-b border-white/5">&quot;Tell me about your true form&quot; <span className="text-accent ml-2">→ Mysterious</span></li>
-                <li className="pb-3 border-b border-white/5">&quot;I am confused about cosmic culture&quot; <span className="text-accent ml-2">→ Playful</span></li>
-                <li className="pb-3 border-b border-white/5">&quot;What is the meaning of Ritual?&quot; <span className="text-accent ml-2">→ Profound</span></li>
-                <li className="pb-3 border-b border-white/5">&quot;Something feels glitchy...&quot; <span className="text-accent ml-2">→ Chaotic</span></li>
+                <li className="pb-3 border-b border-white/5">Mention you are feeling down <span className="text-accent ml-2">→ Sad</span></li>
+                <li className="pb-3 border-b border-white/5">Tell a funny cosmic joke <span className="text-accent ml-2">→ Happy</span></li>
+                <li className="pb-3 border-b border-white/5">Mention a major data breach <span className="text-accent ml-2">→ Shock</span></li>
+                <li className="pb-3 border-b border-white/5">Give her a heartfelt compliment <span className="text-accent ml-2">→ Shy</span></li>
               </ul>
             </motion.div>
 
@@ -485,7 +485,7 @@ export default function LandingPage() {
               <ul className="space-y-4 text-text-secondary text-sm md:text-base font-mono">
                 <li className="pb-3 border-b border-white/5">Ask &quot;Why did you become an anime girl?&quot;</li>
                 <li className="pb-3 border-b border-white/5">Ask &quot;Do you miss the cosmic void?&quot;</li>
-                <li className="pb-3 border-b border-white/5">Mention &quot;Decka-chan&quot; or &quot;Ritual Nodes&quot;</li>
+                <li className="pb-3 border-b border-white/5">Ask &quot;How does the Ritual Forge work?&quot;</li>
                 <li className="pb-3 border-b border-white/5">Say &quot;glitch&quot; into the void.</li>
               </ul>
             </motion.div>
