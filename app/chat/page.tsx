@@ -1150,7 +1150,7 @@ export default function ChatPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden pt-4 border-t border-border/50"
+                          className="overflow-hidden pt-4"
                         >
                           <div className="flex items-center justify-between pb-3">
                             <div className="font-mono text-[10px] text-text-secondary">
