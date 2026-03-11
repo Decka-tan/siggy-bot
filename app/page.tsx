@@ -243,6 +243,7 @@ export default function LandingPage() {
       </section>
 
       {/* About Section */}
+      {/* About Section */}
       <section id="about" className="py-24 px-8 bg-bg">
         <div className="max-w-7xl mx-auto">
           <motion.h2
@@ -250,88 +251,101 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl md:text-6xl font-display tracking-wide uppercase text-center mb-12"
+            className="text-4xl md:text-5xl font-display tracking-wide uppercase text-center mb-16 text-accent"
           >
             Who is Siggy?
           </motion.h2>
 
-          {/* Expression Animation */}
-          <div className="flex justify-center gap-8 mb-12">
-            {/* Cat Expressions */}
-            <div className="flex flex-col items-center">
-              <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-4">Cat Form</p>
-              <div className="relative w-48 h-48">
-                <style jsx>{`
-                  @keyframes expr6 {
-                    0%, 16.66% { opacity: 1; }
-                    16.67%, 100% { opacity: 0; }
-                  }
-                  .cat-e-1 { animation: expr6 12s infinite 0s; }
-                  .cat-e-2 { animation: expr6 12s infinite 2s; }
-                  .cat-e-3 { animation: expr6 12s infinite 4s; }
-                  .cat-e-4 { animation: expr6 12s infinite 6s; }
-                  .cat-e-5 { animation: expr6 12s infinite 8s; }
-                  .cat-e-6 { animation: expr6 12s infinite 10s; }
-                `}</style>
-                <img src="/siggy-cat-default.png" alt="Cat Default" className="cat-e-1 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-cat-happy.png" alt="Cat Happy" className="cat-e-2 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-cat-sad.png" alt="Cat Sad" className="cat-e-3 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-cat-shock.png" alt="Cat Shock" className="cat-e-4 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-cat-shy.png" alt="Cat Shy" className="cat-e-5 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-cat-angry.png" alt="Cat Angry" className="cat-e-6 absolute inset-0 w-full h-full object-contain" />
+          {/* Form Showcase Galleries */}
+          <div className="flex flex-col gap-12 mb-16 max-w-5xl mx-auto">
+            {/* Cat Forms */}
+            <div>
+              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
+                Cat Form
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                {[
+                  { name: 'Default', img: '/siggy-cat-default.png' },
+                  { name: 'Happy', img: '/siggy-cat-happy.png' },
+                  { name: 'Sad', img: '/siggy-cat-sad.png' },
+                  { name: 'Shock', img: '/siggy-cat-shock.png' },
+                  { name: 'Shy', img: '/siggy-cat-shy.png' },
+                  { name: 'Angry', img: '/siggy-cat-angry.png' },
+                ].map((mood, i) => (
+                  <motion.div
+                    key={mood.name}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
+                  >
+                    <div className="w-24 h-24 relative mb-3">
+                      <Image src={mood.img} alt={`Cat ${mood.name}`} fill className="object-contain drop-shadow-md" />
+                    </div>
+                    <span className="text-[10px] font-mono text-text-secondary uppercase">Cat {mood.name}</span>
+                  </motion.div>
+                ))}
               </div>
             </div>
 
-            {/* Anime Girl Expressions */}
-            <div className="flex flex-col items-center">
-              <p className="text-xs font-mono uppercase tracking-wider text-text-secondary mb-4">Anime Girl Form</p>
-              <div className="relative w-48 h-48">
-                <style jsx>{`
-                  .girl-e-1 { animation: expr6 12s infinite 0s; }
-                  .girl-e-2 { animation: expr6 12s infinite 2s; }
-                  .girl-e-3 { animation: expr6 12s infinite 4s; }
-                  .girl-e-4 { animation: expr6 12s infinite 6s; }
-                  .girl-e-5 { animation: expr6 12s infinite 8s; }
-                  .girl-e-6 { animation: expr6 12s infinite 10s; }
-                `}</style>
-                <img src="/siggy-girl-default.png" alt="Girl Default" className="girl-e-1 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-girl-happy.png" alt="Girl Happy" className="girl-e-2 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-girl-sad.png" alt="Girl Sad" className="girl-e-3 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-girl-shock.png" alt="Girl Shock" className="girl-e-4 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-girl-shy.png" alt="Girl Shy" className="girl-e-5 absolute inset-0 w-full h-full object-contain" />
-                <img src="/siggy-girl-angry.png" alt="Girl Angry" className="girl-e-6 absolute inset-0 w-full h-full object-contain" />
+            {/* Anime Girl Forms */}
+            <div>
+              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
+                Anime Girl Form
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                {[
+                  { name: 'Default', img: '/siggy-girl-default.png' },
+                  { name: 'Happy', img: '/siggy-girl-happy.png' },
+                  { name: 'Sad', img: '/siggy-girl-sad.png' },
+                  { name: 'Shock', img: '/siggy-girl-shock.png' },
+                  { name: 'Shy', img: '/siggy-girl-shy.png' },
+                  { name: 'Angry', img: '/siggy-girl-angry.png' },
+                ].map((mood, i) => (
+                  <motion.div
+                    key={mood.name}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
+                  >
+                    <div className="w-24 h-24 relative mb-3">
+                      <Image src={mood.img} alt={`Girl ${mood.name}`} fill className="object-contain drop-shadow-md" />
+                    </div>
+                    <span className="text-[10px] font-mono text-text-secondary uppercase">Girl {mood.name}</span>
+                  </motion.div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="max-w-3xl mx-auto text-center space-y-6 text-text-secondary leading-relaxed">
+          {/* Lore Text */}
+          <div className="max-w-4xl mx-auto space-y-6 text-text-secondary leading-relaxed bg-surface/30 p-8 md:p-12 rounded-3xl border border-white/5">
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-lg md:text-xl"
             >
-              Siggy began as a <span className="text-accent">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions.
-              A cat-shaped probability fluctuation that could see all realities at once.
+              Siggy began as a <span className="text-accent font-bold">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions. A cat-shaped probability fluctuation that could see all realities at once.
             </motion.p>
-
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
+              transition={{ delay: 0.1 }}
+              className="text-lg md:text-xl"
             >
-              Curious about Earth, she <span className="text-accent">DESCENDED</span> to our world. But a cosmic cat would attract too much attention.
-              So she did what any sensible being would do: she transformed into an <span className="text-accent">anime girl with cat ears</span>.
-              Because subtlety is overrated.
+              Curious about Earth, she <span className="text-accent font-bold">DESCENDED</span> to our world. But a cosmic cat would attract too much attention. So she did what any sensible being would do: she transformed into an <span className="text-accent font-bold">anime girl with cat ears</span>. Because subtlety is overrated.
             </motion.p>
-
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-accent font-semibold text-lg"
+              transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl font-display tracking-wide text-accent text-center mt-8 pt-6 border-t border-white/10"
             >
               Now she lives among us, learning what it means to be human, one ramen bowl at a time. 🍜
             </motion.p>
@@ -458,21 +472,21 @@ export default function LandingPage() {
       </div>
 
       {/* Footer CTA */}
-      <section className="py-16 px-8 border-t border-border bg-surface text-center">
+      <section className="py-20 px-8 border-t border-border bg-surface text-left md:text-center">
         <div className="max-w-7xl mx-auto space-y-6">
-          <h2 className="text-3xl font-display tracking-wider uppercase mb-4">Ready to Meet Siggy?</h2>
-          <p className="text-text-secondary">
+          <h2 className="text-3xl md:text-4xl font-display tracking-wider uppercase mb-4 text-accent md:text-text-primary">Ready to Meet Siggy?</h2>
+          <p className="text-text-secondary max-w-xl md:mx-auto">
             Begin your journey through the cosmos and anime culture.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/story">
-              <button className="px-8 py-4 bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all flex items-center gap-3">
+          <div className="flex flex-col md:flex-row gap-4 justify-start md:justify-center pt-2">
+            <Link href="/story" className="w-full md:w-auto">
+              <button className="w-full px-8 py-4 bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-3">
                 <BookOpen className="w-5 h-5" />
                 Read Story
               </button>
             </Link>
-            <Link href="/chat">
-              <button className="px-8 py-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg transition-all hover:from-yellow-400 hover:to-accent flex items-center gap-3">
+            <Link href="/chat" className="w-full md:w-auto">
+              <button className="w-full px-8 py-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg transition-all hover:from-yellow-400 hover:to-accent flex items-center justify-center gap-3">
                 <MessageSquare className="w-5 h-5" />
                 Start Chat
               </button>

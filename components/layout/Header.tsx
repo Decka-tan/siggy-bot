@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 const VN_MODE_KEY = 'siggy-vn-mode';
 
@@ -15,6 +17,30 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [vnMode, setVnMode] = useState(false);
+
+  // Story Mode Settings State
+  const [showSettings, setShowSettings] = useState(false);
+  const {
+    sfxEnabled, setSfxEnabled,
+    sfxVolume, setSfxVolume,
+    typingSfxEnabled, setTypingSfxEnabled,
+    bgmEnabled, setBgmEnabled,
+    bgmVolume, setBgmVolume,
+    textSpeed, setTextSpeed,
+    showTimestamps, setShowTimestamps
+  } = useSettings();
+  
+  // Close settings when clicking outside
+  const settingsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setShowSettings(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -49,6 +75,14 @@ export function Header() {
         text: vnMode ? 'CHAT MODE' : 'VN MODE',
         onClick: toggleVNMode,
         className: 'bg-gradient-to-r from-accent to-yellow-400 text-bg'
+      };
+    }
+    // On story page, show SETTINGS button
+    if (pathname === '/story') {
+      return {
+        text: 'SETTINGS',
+        onClick: () => setShowSettings(!showSettings),
+        className: 'bg-accent text-bg'
       };
     }
     // On other pages, show AUTHOR button
@@ -88,13 +122,135 @@ export function Header() {
         </nav>
 
         {/* Right Button - Adaptive */}
-        <div className="hidden md:flex justify-end">
+        <div className="hidden md:flex justify-end relative" ref={settingsRef}>
           <button
             onClick={rightButton.onClick}
-            className={`${rightButton.className} px-6 py-2 rounded-full font-bold text-sm hover:opacity-90 transition-all`}
+            className={`${rightButton.className} px-6 py-2 rounded-full font-bold text-sm hover:opacity-90 transition-all font-mono tracking-wider flex items-center gap-2`}
           >
             {rightButton.text}
           </button>
+
+          {/* Settings Modal Dropdown specifically for Story Mode */}
+          <AnimatePresence>
+            {pathname === '/story' && showSettings && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className="absolute right-0 top-full mt-4 bg-black/90 backdrop-blur-2xl border border-white/20 p-6 rounded-2xl shadow-2xl w-[320px] md:w-[380px] text-white max-h-[75vh] overflow-y-auto signature-scroll"
+              >
+                <h3 className="font-display text-xl tracking-wider text-accent mb-6 border-b border-white/20 pb-3 text-left">Settings</h3>
+                
+                <div className="space-y-8 text-left">
+                  {/* Audio Section */}
+                  <div>
+                    <h4 className="font-mono text-sm uppercase text-gray-400 mb-4 tracking-widest pl-2 border-l-2 border-accent">Audio</h4>
+                    <div className="space-y-5 pl-2">
+                      {/* SFX Toggle */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <label className="text-sm font-bold block mb-1">Sound Effects</label>
+                          <span className="text-xs text-gray-400 block max-w-[200px]">Emotion transitions, UI sounds</span>
+                        </div>
+                        <button 
+                          onClick={() => setSfxEnabled(!sfxEnabled)} 
+                          className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${sfxEnabled ? 'bg-accent' : 'bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${sfxEnabled ? 'left-7' : 'left-1'}`} />
+                        </button>
+                      </div>
+
+                      {/* SFX Volume */}
+                      <div className="space-y-2 opacity-50 pointer-events-none">
+                        <div className="flex justify-between text-xs font-mono text-gray-400">
+                          <span>SFX Volume</span>
+                          <span>{sfxVolume}</span>
+                        </div>
+                        <input type="range" min="0" max="100" value={sfxVolume} onChange={(e) => setSfxVolume(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent" />
+                      </div>
+
+                      {/* Typing Sounds */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <label className="text-sm font-bold block mb-1">Typing Sounds</label>
+                          <span className="text-xs text-gray-400 block max-w-[200px]">Typewriter SFX while Siggy responds</span>
+                        </div>
+                        <button 
+                          onClick={() => setTypingSfxEnabled(!typingSfxEnabled)} 
+                          className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${typingSfxEnabled ? 'bg-accent' : 'bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${typingSfxEnabled ? 'left-7' : 'left-1'}`} />
+                        </button>
+                      </div>
+
+                      {/* BGM Toggle */}
+                      <div className="flex items-start justify-between pt-2 border-t border-white/10">
+                        <div>
+                          <label className="text-sm font-bold block mb-1">Background Music</label>
+                        </div>
+                        <button 
+                          onClick={() => setBgmEnabled(!bgmEnabled)} 
+                          className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${bgmEnabled ? 'bg-accent' : 'bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${bgmEnabled ? 'left-7' : 'left-1'}`} />
+                        </button>
+                      </div>
+
+                      {/* BGM Volume */}
+                      <div className="space-y-2 opacity-50 pointer-events-none">
+                        <div className="flex justify-between text-xs font-mono text-gray-400">
+                          <span>BGM Volume</span>
+                          <span>{bgmVolume}</span>
+                        </div>
+                        <input type="range" min="0" max="100" value={bgmVolume} onChange={(e) => setBgmVolume(parseInt(e.target.value))} className="w-full h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-accent" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Text & Display Section */}
+                  <div>
+                    <h4 className="font-mono text-sm uppercase text-gray-400 mb-4 tracking-widest pl-2 border-l-2 border-accent">Text & Display</h4>
+                    <div className="space-y-5 pl-2">
+                      {/* Text Speed */}
+                      <div>
+                        <label className="text-sm font-bold block mb-1">Text Speed</label>
+                        <span className="text-xs text-gray-400 block mb-3">How fast Siggy's text appears</span>
+                        <div className="grid grid-cols-4 gap-2">
+                          {[
+                            { label: 'Slow', value: 60 },
+                            { label: 'Normal', value: 30 },
+                            { label: 'Fast', value: 10 },
+                            { label: 'Instant', value: 0 }
+                          ].map(speed => (
+                            <button
+                              key={speed.label}
+                              onClick={() => setTextSpeed(speed.value)}
+                              className={`py-1.5 px-1 text-[10px] sm:text-xs font-mono rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-accent text-accent' : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'}`}
+                            >
+                              {speed.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Show Timestamps */}
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <label className="text-sm font-bold block mb-1">Show Timestamps</label>
+                        </div>
+                        <button 
+                          onClick={() => setShowTimestamps(!showTimestamps)} 
+                          className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${showTimestamps ? 'bg-accent' : 'bg-gray-700'}`}
+                        >
+                          <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${showTimestamps ? 'left-7' : 'left-1'}`} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Mobile Menu Button */}
@@ -174,7 +330,7 @@ export function Header() {
                   setMobileMenuOpen(false);
                 }}
                 className="w-full block font-mono text-xs uppercase tracking-wider py-2 px-3 rounded-lg hover:bg-opacity-90 transition-colors text-center text-bg"
-                style={{ backgroundColor: pathname === '/chat' ? 'rgb(250, 204, 21)' : 'rgb(0, 255, 148)' }}
+                style={{ backgroundColor: pathname === '/chat' ? 'rgb(250, 204, 21)' : 'var(--color-accent)' }}
               >
                 {rightButton.text}
               </button>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, MessageSquare, Sparkles, RefreshCw, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, MessageSquare, Sparkles, RefreshCw, Volume2, Image as ImageIcon } from 'lucide-react';
+import { useSettings } from '@/components/providers/SettingsProvider';
 
 // VN Mode backgrounds (rotate every 10s)
 const VN_BACKGROUNDS = [
@@ -659,10 +660,11 @@ export default function StoryModePage() {
   const [typewriterText, setTypewriterText] = useState('');
   const [showSummary, setShowSummary] = useState(false);
   const [showChapterBridge, setShowChapterBridge] = useState(false);
+  const [showChapterSelect, setShowChapterSelect] = useState(false);
   const [nextBridgeChapter, setNextBridgeChapter] = useState(1);
-  const [showSettings, setShowSettings] = useState(false);
-  const [textSpeed, setTextSpeed] = useState(30);
+  const { textSpeed } = useSettings();
   const [textSize, setTextSize] = useState<'sm' | 'base' | 'lg'>('base');
+  const isSkipping = useRef(false);
 
   // Background rotation effect
   useEffect(() => {
@@ -677,18 +679,23 @@ export default function StoryModePage() {
   useEffect(() => {
     setCurrentDialogIndex(0);
     setShowChoices(false);
+    isSkipping.current = false;
   }, [currentSceneIndex]);
 
   const handleClick = () => {
     if (showChoices || showChapterBridge) return;
 
     const currentSceneObj = allScenes[currentSceneIndex];
+    const textOfCurrent = currentSceneObj.dialog[currentDialogIndex] || '';
 
     // If typewriter is still typing, finish it immediately
-    if (typewriterText.length < currentText.length) {
-      setTypewriterText(currentText);
+    if (typewriterText.length < textOfCurrent.length) {
+      isSkipping.current = true;
+      setTypewriterText(textOfCurrent);
       return;
     }
+
+    isSkipping.current = false;
 
     if (currentDialogIndex < currentSceneObj.dialog.length - 1) {
       setCurrentDialogIndex(currentDialogIndex + 1);
@@ -720,6 +727,32 @@ export default function StoryModePage() {
     }
   };
 
+  const jumpToChapter = (chapterNum: number) => {
+    const sceneIdx = allScenes.findIndex(s => s.chapter === chapterNum);
+    if (sceneIdx !== -1) {
+      setCurrentSceneIndex(sceneIdx);
+      setShowChapterSelect(false);
+      // Let it play the bridge transition just for effect, or skip it. Let's just go straight to the chapter.
+    }
+  };
+
+  // Keyboard navigation (Space and Enter to skip/progress)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Prevent scrolling when pressing space
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        handleClick();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    showChoices, showChapterBridge, currentSceneIndex, currentDialogIndex, 
+    typewriterText, completedChapters
+  ]); // Dependencies ensure handleClick has fresh state
+
   const currentText = currentScene.dialog[currentDialogIndex] || '';
 
   // Typewriter effect
@@ -735,6 +768,11 @@ export default function StoryModePage() {
     }
 
     const timer = setInterval(() => {
+      if (isSkipping.current) {
+        clearInterval(timer);
+        return;
+      }
+      
       if (i < text.length) {
         setTypewriterText(text.slice(0, i + 1));
         i++;
@@ -787,29 +825,6 @@ export default function StoryModePage() {
 
       {/* Content */}
       <div className="relative z-10 flex-1 flex flex-col pt-6">
-        {/* Header - Minimalist back button */}
-        <div className="px-8 shrink-0 flex items-center justify-between pointer-events-auto z-50">
-          <Link href="/" className="inline-block">
-            <button className="flex items-center gap-2 font-mono text-xs uppercase bg-black/40 hover:bg-black/60 text-white border border-white/10 hover:border-accent px-4 py-2 rounded-xl backdrop-blur-md transition-all">
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </button>
-          </Link>
-          <div className="flex items-center gap-3 bg-black/40 border border-white/10 backdrop-blur-md rounded-xl p-1">
-            <Link href="/chat">
-              <button className="flex items-center gap-2 font-mono text-xs uppercase px-4 py-1.5 rounded-lg text-text-secondary hover:text-accent hover:bg-white/5 transition-all">
-                <MessageSquare className="w-4 h-4" />Chat
-              </button>
-            </Link>
-            <button
-              onClick={() => setVnBgIndex((prev) => (prev + 1) % VN_BACKGROUNDS.length)}
-              className="flex items-center gap-2 font-mono text-xs uppercase px-4 py-1.5 rounded-lg text-text-secondary hover:text-accent hover:bg-white/5 transition-all"
-            >
-              <RefreshCw className="w-4 h-4" />BG
-            </button>
-          </div>
-        </div>
-
         {/* Story Area - Visual Novel Mode */}
         {showChapterBridge ? (
           <div className="flex-1 w-full flex items-center justify-center z-30 p-8 cursor-pointer bg-black/80 backdrop-blur-sm" onClick={() => setShowChapterBridge(false)}>
@@ -858,90 +873,19 @@ export default function StoryModePage() {
                   className="relative hidden md:block"
                 >
                   <div className="absolute inset-0 bg-accent/20 blur-[100px] rounded-full" />
-                  <img src="/siggy-transparent.png" alt="Siggy Transition" className="relative z-10 w-full h-auto drop-shadow-[0_0_50px_rgba(0,255,148,0.3)]" />
+                  <img src="/siggy-transparent.png" alt="Siggy Transition" className="relative z-10 w-full h-auto drop-shadow-[0_0_50px_rgba(255,215,0,0.3)]" />
                 </motion.div>
               </div>
             </motion.div>
           </div>
         ) : (
-          <div className="w-full flex-1 flex flex-col justify-end z-20 overflow-hidden min-h-0">
-            {/* Top Right Options Menu */}
-            <div className="absolute top-6 right-6 z-50 flex flex-col items-end gap-2">
-               <button 
-                  onClick={() => setShowSettings(!showSettings)}
-                  className="p-3 bg-surface/80 border border-border hover:border-accent/50 rounded-xl backdrop-blur-md transition-all text-text-secondary hover:text-accent shadow-lg"
-                  aria-label="Story Settings"
-               >
-                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                 </svg>
-               </button>
-
-               <AnimatePresence>
-                 {showSettings && (
-                   <motion.div
-                     initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                     className="bg-surface/90 backdrop-blur-md border border-border p-4 rounded-xl shadow-2xl w-64 mt-2"
-                   >
-                     <h3 className="font-mono text-xs uppercase tracking-wider text-accent mb-4 border-b border-border pb-2">Options</h3>
-                     
-                     <div className="space-y-4">
-                       <div>
-                         <label className="text-xs text-text-secondary block mb-2 font-mono">Text Speed</label>
-                         <div className="grid grid-cols-3 gap-2">
-                           {[
-                             { label: 'Fast', value: 10 },
-                             { label: 'Norm', value: 30 },
-                             { label: 'Slow', value: 60 }
-                           ].map(speed => (
-                             <button
-                               key={speed.label}
-                               onClick={() => setTextSpeed(speed.value)}
-                               className={`py-1 px-2 text-xs rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-accent/50 text-accent' : 'border-border text-text-secondary hover:border-accent/30'}`}
-                             >
-                               {speed.label}
-                             </button>
-                           ))}
-                         </div>
-                       </div>
-
-                       <div>
-                         <label className="text-xs text-text-secondary block mb-2 font-mono">Text Size</label>
-                         <div className="grid grid-cols-3 gap-2">
-                           {(['sm', 'base', 'lg'] as const).map(size => (
-                             <button
-                               key={size}
-                               onClick={() => setTextSize(size)}
-                               className={`py-1 px-2 text-xs rounded uppercase transition-colors border ${textSize === size ? 'bg-accent/20 border-accent/50 text-accent' : 'border-border text-text-secondary hover:border-accent/30'}`}
-                             >
-                               {size}
-                             </button>
-                           ))}
-                         </div>
-                       </div>
-                       
-                       <div className="pt-2">
-                         <button 
-                           onClick={() => setTextSpeed(0)}
-                           className={`w-full py-1.5 px-2 text-xs rounded transition-colors border ${textSpeed === 0 ? 'bg-accent/20 border-accent/50 text-accent' : 'border-border text-text-secondary hover:border-accent/30'}`}
-                         >
-                           Instant Skip
-                         </button>
-                       </div>
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-            </div>
+           <div className="w-full flex-1 flex flex-col justify-end z-20 overflow-hidden min-h-0">
 
             {/* Siggy Sprite - Centered AND Snapped to bottom edge of chatbox */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-500"
+              className="absolute left-1/2 -translate-x-1/2 z-0 pointer-events-none transition-all duration-500"
               style={{ bottom: '260px' }} 
             >
               <div className="relative">
@@ -952,7 +896,7 @@ export default function StoryModePage() {
                 <img 
                   src={getSpriteForStory(currentScene)} 
                   alt={`Siggy - ${currentScene.mood}`}
-                  className="relative z-10 max-h-[60vh] md:max-h-[70vh] w-auto object-contain drop-shadow-2xl transition-all duration-300"
+                  className="relative z-10 max-h-[48vh] md:max-h-[56vh] w-auto object-contain drop-shadow-2xl transition-all duration-300"
                 />
               </div>
             </motion.div>
@@ -973,8 +917,9 @@ export default function StoryModePage() {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.15 }}
                       onClick={() => handleChoice(choice.nextScene)}
-                      className="w-full text-left px-6 py-4 bg-black/60 hover:bg-accent/30 backdrop-blur-xl border border-accent/40 hover:border-accent rounded-xl font-mono text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(0,255,148,0.1)] hover:shadow-[0_0_30px_rgba(0,255,148,0.3)]"
+                      className="w-full text-left px-6 py-4 bg-black/60 hover:bg-black/80 backdrop-blur-xl rounded-xl font-mono text-sm text-white transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,215,0,0.1)] hover:shadow-[0_0_30px_rgba(255,215,0,0.3)] relative overflow-hidden group"
                     >
+                      <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent/50 group-hover:via-accent to-transparent transition-all" />
                       <span className="text-accent mr-2">▸</span>{choice.text}
                     </motion.button>
                   ))}
@@ -982,12 +927,61 @@ export default function StoryModePage() {
               </div>
             )}
 
+            {/* Chapter Selection Modal */}
+            <AnimatePresence>
+              {showChapterSelect && (
+                <div className="absolute inset-0 z-[100] flex items-center justify-center p-8 pointer-events-auto">
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowChapterSelect(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                    className="relative bg-black/80 backdrop-blur-2xl border border-white/10 p-8 rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] max-w-sm w-full overflow-hidden"
+                  >
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-accent to-transparent" />
+                    <h3 className="font-display text-2xl tracking-wider text-accent mb-6 text-center">SELECT CHAPTER</h3>
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map((ch) => {
+                        const scene = allScenes.find(s => s.chapter === ch);
+                        if (!scene) return null;
+                        const isUnlocked = ch === 1 || completedChapters.includes(ch - 1) || completedChapters.includes(ch);
+                        
+                        return (
+                          <button
+                            key={ch}
+                            disabled={!isUnlocked}
+                            onClick={() => jumpToChapter(ch)}
+                            className={`w-full text-left px-5 py-4 rounded-xl font-mono text-sm transition-all ${
+                              isUnlocked 
+                                ? 'bg-surface/50 border border-white/5 hover:border-accent/40 text-text-primary hover:bg-accent/10 hover:shadow-[0_0_20px_rgba(255,215,0,0.1)] hover:scale-[1.02]' 
+                                : 'bg-black/20 border border-transparent text-text-secondary/30 cursor-not-allowed hidden'
+                            }`}
+                          >
+                            <span className={`mr-3 ${isUnlocked ? 'text-accent/70' : 'text-text-secondary/30'}`}>CH {ch}</span>
+                            {scene.chapterTitle}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button 
+                      onClick={() => setShowChapterSelect(false)}
+                      className="mt-6 w-full py-3 text-center text-xs font-mono text-text-secondary hover:text-text-primary hover:bg-white/5 rounded-lg transition-colors border border-transparent hover:border-white/10"
+                    >
+                      Close
+                    </button>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
             {/* VN Mode Layout */}
-            <div className="w-full bg-surface backdrop-blur-xl border-t border-border shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all cursor-pointer pointer-events-auto" onClick={handleClick}>
+            <div className="w-full relative z-20 bg-black/80 backdrop-blur-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transition-all cursor-pointer pointer-events-auto" onClick={handleClick}>
+              <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
               <div className="max-w-7xl mx-auto px-8 py-8 relative">
                 
                 {/* Box Header: Name + Mode Info */}
-                <div className="mb-2 flex items-center justify-between border-b border-border pb-3">
+                <div className="mb-2 flex items-center justify-between pb-3 relative">
+                  <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
                   <div className="flex items-center gap-3">
                     <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${currentScene.speaker === 'Siggy' ? 'text-accent' : 'text-text-secondary'}`}>
                       {currentScene.speaker}
@@ -1014,15 +1008,18 @@ export default function StoryModePage() {
                             completedChapters.includes(ch)
                               ? 'bg-accent/50'
                               : currentScene.chapter === ch
-                                ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]'
+                                ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]'
                                 : 'bg-surface border border-border'
                           }`}
                         />
                       ))}
                     </div>
-                    <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
-                      Chapter {currentScene.chapter}: {currentScene.chapterTitle}
-                    </span>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setShowChapterSelect(true); }}
+                      className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hover:text-accent transition-colors hidden sm:inline-block cursor-pointer px-2 py-1 rounded hover:bg-white/5"
+                    >
+                      Chapter {currentScene.chapter}: {currentScene.chapterTitle} ▾
+                    </button>
                   </div>
                 </div>
 

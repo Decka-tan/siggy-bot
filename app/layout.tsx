@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { SettingsProvider } from "@/components/providers/SettingsProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,11 +19,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="dark min-h-screen bg-bg text-text-primary selection:bg-accent selection:text-black">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
+          <SettingsProvider>
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </SettingsProvider>
         </ThemeProvider>
       </body>
     </html>

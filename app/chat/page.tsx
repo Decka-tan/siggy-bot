@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown } from 'lucide-react';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
@@ -178,6 +178,7 @@ export default function ChatPage() {
   });
   const [personality, setPersonality] = useState<'CAT' | 'ANIME'>('ANIME');
   const [vnBgIndex, setVnBgIndex] = useState(0);
+  const [showStats, setShowStats] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
@@ -708,15 +709,32 @@ export default function ChatPage() {
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileSidebar(false)} className="fixed inset-0 bg-black/50 z-50 lg:hidden" />
               <motion.div initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} className="fixed lg:hidden z-50 left-0 top-0 bottom-0 w-64 bg-surface border-r border-border flex flex-col">
-                <div className="p-4 border-b border-border flex items-center justify-between gap-2">
-                  <button onClick={createNewConversation} className="flex-1 flex items-center gap-2 px-4 py-3 bg-accent text-black rounded-lg font-mono text-sm uppercase">
-                    <Plus className="w-4 h-4" />
+                <div className="p-4 border-b border-border flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}>
+                      <div className="w-10 h-10 rounded-full border border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_15px_rgba(96,165,250,0.15)] group-hover:border-accent transition-colors">
+                        {userAvatar ? (
+                          <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-5 h-5 text-text-secondary/50" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-mono text-xs font-bold text-text-primary uppercase flex items-center gap-2">
+                          {userName}
+                          <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                        </h3>
+                        <p className="font-mono text-[10px] text-text-secondary">Earth Resident</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowMobileSidebar(false)} className="p-2 -mr-2 text-text-secondary hover:text-white transition-colors">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <button onClick={createNewConversation} className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-surface hover:bg-surface/80 border border-border hover:border-accent text-text-primary rounded-xl font-mono text-sm uppercase transition-all group">
+                    <Plus className="w-4 h-4 text-accent group-hover:scale-125 transition-transform" />
                     New Chat
                   </button>
-                  <button onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }} className="p-3 bg-surface border border-border text-text-secondary hover:text-accent rounded-lg transition-colors shrink-0" title="Set Avatar">
-                    <User className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => setShowMobileSidebar(false)} className="p-2 ml-1 shrink-0"><X className="w-4 h-4" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                   {conversations.map(conv => (
@@ -838,11 +856,13 @@ export default function ChatPage() {
                     </div>
                   </div>
                   {/* Main Dialogue Box (Full Width) */}
-                  <div className="w-full bg-surface backdrop-blur-xl border-t border-border shadow-[0_-10px_30px_rgba(0,255,148,0.05)] transition-all">
-                    <div className="max-w-7xl mx-auto px-8 py-8">
+                  <div className="w-full relative bg-black/80 backdrop-blur-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transition-all">
+                    <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+                    <div className="max-w-7xl mx-auto px-8 py-8 relative">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && activeConversation.messages.length > 0 && (
-                        <div className="mb-2 flex items-center justify-between border-b border-border pb-3">
+                        <div className="mb-2 flex items-center justify-between pb-3 relative">
+                          <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
                           <div className="flex items-center gap-3">
                             <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
                               {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
@@ -862,13 +882,29 @@ export default function ChatPage() {
 
                       <div className="min-h-[180px] max-h-[250px] overflow-y-auto mb-6 pr-4 signature-scroll flex items-start">
                         {!activeConversation || activeConversation.messages.length === 0 ? (
-                          <div className="text-center">
+                          <div className="text-center w-full">
                             <h2 className="text-xl font-display uppercase mb-2 text-accent">
                               Welcome to Earth
                             </h2>
-                            <p className="text-text-secondary text-sm">
+                            <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
                               I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
                             </p>
+                            
+                            {/* Starting Topic Buttons (VN Mode) */}
+                            <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto pb-4">
+                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                              </button>
+                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-black/40 border border-white/10 text-gray-300 hover:border-accent hover:text-white rounded-lg transition-all text-left">
+                                Cosmic origins
+                              </button>
+                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-black/40 border border-white/10 text-gray-300 hover:border-accent hover:text-white rounded-lg transition-all text-left">
+                                Weird dimensions
+                              </button>
+                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-3 py-2 font-mono text-xs uppercase tracking-wider bg-black/40 border border-white/10 text-gray-300 hover:border-accent hover:text-white rounded-lg transition-all text-left">
+                                Earth food
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <div className="relative">
@@ -898,48 +934,58 @@ export default function ChatPage() {
                       {/* Floating Action Buttons & Input Area */}
                       <div className="max-w-7xl mx-auto flex flex-col pt-4 mt-2 border-t border-border">
                         {/* Input Form & Action Controls integrated tightly */}
-                        <div className="flex-1 flex gap-3 w-full items-center">
-                          {/* Reinstated Floating Action Buttons (Left Aligned) */}
-                          {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
-                            <div className="flex items-center gap-1 pr-2">
-                              <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'DEFAULT']}`}>
-                                {activeConversation.messages[activeConversation.messages.length - 1].mood}
-                              </span>
-                              <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
-                                <Copy className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
-                                <ThumbsUp className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
-                                <ThumbsDown className="w-4 h-4" />
-                              </button>
-                              <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
+                        <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
+                          <div className="flex items-center justify-between w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar gap-2">
+                            {/* Reinstated Floating Action Buttons (Left Aligned) */}
+                            {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
+                              <div className="flex items-center gap-1 pr-2 shrink-0">
+                                <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'DEFAULT']}`}>
+                                  {activeConversation.messages[activeConversation.messages.length - 1].mood}
+                                </span>
+                                <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
+                                  <Copy className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
+                                  <ThumbsUp className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
+                                  <ThumbsDown className="w-4 h-4" />
+                                </button>
+                                <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
 
-                          <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
-                            {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
-                          </button>
+                            <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
+                              {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
+                            </button>
+                          </div>
 
-                          <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
-                            placeholder="What will you say?"
-                            disabled={isLoading}
-                            className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono shadow-inner min-w-[100px]"
-                          />
-                          <button
-                            onClick={() => handleSendMessage()}
-                            disabled={isLoading || !input.trim()}
-                            className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
-                          >
-                            {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
-                          </button>
+                          <div className="flex-1 w-full flex items-center gap-2">
+                            <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI">
+                              {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                            </button>
+                            <button onClick={resetCurrentConversation} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Refresh Chat">
+                              <RefreshCw className="w-4 h-4" />
+                            </button>
+                            <input
+                              type="text"
+                              value={input}
+                              onChange={(e) => setInput(e.target.value)}
+                              onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                              placeholder="What will you say?"
+                              disabled={isLoading}
+                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono shadow-inner min-w-[100px]"
+                            />
+                            <button
+                              onClick={() => handleSendMessage()}
+                              disabled={isLoading || !input.trim()}
+                              className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
+                            >
+                              {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1033,7 +1079,7 @@ export default function ChatPage() {
                                 <button onClick={() => copyMessage(message.content)} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Copy">
                                   <Copy className="w-3.5 h-3.5" />
                                 </button>
-                                <button onClick={() => toggleLike(index)} className={`p-1.5 rounded ${message.liked ? 'text-green-400' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Like">
+                                <button onClick={() => toggleLike(index)} className={`p-1.5 rounded ${message.liked ? 'text-accent' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Like">
                                   <ThumbsUp className="w-3.5 h-3.5" />
                                 </button>
                                 <button onClick={() => toggleDislike(index)} className={`p-1.5 rounded ${message.disliked ? 'text-red-400' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Dislike">
@@ -1051,12 +1097,12 @@ export default function ChatPage() {
                             )}
                           </div>
                           {message.role === 'user' && (
-                            <div className="shrink-0 mb-3 ml-2">
+                            <div className="shrink-0 mb-3 ml-3">
                               {userAvatar ? (
-                                <img src={userAvatar} alt="User" className="w-8 h-8 rounded-full bg-black/50 border-2 border-blue-400/50 object-cover" />
+                                <img src={userAvatar} alt="User" className="w-12 h-12 rounded-full bg-black/50 border-2 border-blue-400/50 object-cover" />
                               ) : (
-                                <div className="w-8 h-8 rounded-full bg-surface border border-border flex items-center justify-center text-text-secondary">
-                                  <User className="w-4 h-4" />
+                                <div className="w-12 h-12 rounded-full bg-surface border border-border flex items-center justify-center text-text-secondary">
+                                  <User className="w-6 h-6" />
                                 </div>
                               )}
                             </div>
@@ -1087,39 +1133,51 @@ export default function ChatPage() {
                   </div>
 
                   {/* Controls - fixed at bottom */}
-                  <div className="shrink-0 space-y-3">
-                    <div className="flex items-center justify-between pb-2">
-                      <div className="font-mono text-[10px] text-text-secondary">
-                        Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
-                        {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? 'Summary: ' : 'Memory: '} {Math.round(contextInfo.estimatedTokens / 1000)}k keys</span>}
-                        <button onClick={resetCurrentConversation} className="p-2 rounded hover:bg-surface">
-                          <RefreshCw className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    {/* Suggestions Grid (2x2) */}
-                    {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
-                      <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
-                        <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                          {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                        </button>
-                        <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                          Cosmic origins
-                        </button>
-                        <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                          Weird dimensions
-                        </button>
-                        <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                          Earth food
-                        </button>
-                      </div>
-                    )}
+                  <div className="shrink-0 space-y-3 relative">
+                    {/* Collapsible Stats and Suggestions */}
+                    <AnimatePresence>
+                      {showStats && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between pb-2">
+                            <div className="font-mono text-[10px] text-text-secondary">
+                              Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
+                              {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? 'Summary: ' : 'Memory: '} {Math.round(contextInfo.estimatedTokens / 1000)}k keys</span>}
+                            </div>
+                          </div>
+                          {/* Suggestions Grid (2x2) */}
+                          {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
+                            <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
+                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                              </button>
+                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                Cosmic origins
+                              </button>
+                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                Weird dimensions
+                              </button>
+                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                Earth food
+                              </button>
+                            </div>
+                          )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     {/* Input */}
                     <div className="flex gap-2 pt-2 items-center relative z-20">
+                      <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats">
+                        {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </button>
                       <button onClick={resetCurrentConversation} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors hidden sm:block" title="Refresh Chat">
                         <RefreshCw className="w-4 h-4" />
                       </button>
