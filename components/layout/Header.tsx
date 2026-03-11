@@ -83,7 +83,7 @@ export function Header() {
           <Link href="/" className="hover:text-accent transition-colors">Home</Link>
           <a href="#about" className="hover:text-accent transition-colors">About</a>
           <Link href="/story" className="hover:text-accent transition-colors">Story</Link>
-          <Link href="/chat" className="hover:text-accent transition-colors">Chat</Link>
+          <Link href="/chat?new=true" className="hover:text-accent transition-colors">Chat</Link>
         </nav>
 
         {/* Right Buttons - Adaptive */}

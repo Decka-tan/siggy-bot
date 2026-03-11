@@ -95,7 +95,7 @@ export default function LandingPage() {
                     Story Mode
                   </button>
                 </Link>
-                <Link href="/chat" className="flex-1 min-w-[160px]">
+                <Link href="/chat?new=true" className="flex-1 min-w-[160px]">
                   <button className="w-full bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-sm uppercase tracking-wider px-8 py-4 rounded-lg transition-all flex items-center justify-center gap-3 hover:shadow-lg hover:scale-105 whitespace-nowrap">
                     <MessageSquare className="w-4 h-4" />
                     Chat Mode

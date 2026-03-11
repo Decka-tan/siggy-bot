@@ -131,7 +131,8 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
     }, 20);
 
     return () => clearInterval(interval);
-  }, [text, isLatest, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [text, isLatest, alreadyAnimated]);
 
   return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
 };
@@ -155,8 +156,23 @@ export default function ChatPage() {
 
   const [activeConversationId, setActiveConversationId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('new') === 'true') {
+      return null;
+    }
     return localStorage.getItem(ACTIVE_CONV_KEY);
   });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('new') === 'true') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('new');
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+  }, []);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
