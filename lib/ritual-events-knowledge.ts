@@ -261,6 +261,114 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
     priority: 7,
     source: 'ritual-discord-events',
   },
+
+  // ==========================================
+  // TOP PERFORMERS STATISTICS
+  // ==========================================
+  {
+    id: 'ritual-stats-catz',
+    category: 'stats',
+    keywords: ['catz', 'wins', 'champion', 'top winner'],
+    content: "Catz: 13 tournament wins - The most decorated Ritual community member. Multiple-time champion across Geoguesser, Quiz, Pure Madness, and other tournaments.",
+    priority: 9,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-riyade',
+    category: 'stats',
+    keywords: ['riyade', 'wins', 'champion', 'top winner'],
+    content: "Riyade: 8 tournament wins - One of the top performers in Ritual events. Multiple-time champion.",
+    priority: 9,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-decka',
+    category: 'stats',
+    keywords: ['decka', 'wins', 'champion'],
+    content: "Decka (Decka ちゃん): 5 tournament wins - Quiz About Ritual winner with @Catz | and @Urban. Top performer in multiple events.",
+    priority: 8,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-lina',
+    category: 'stats',
+    keywords: ['lina', 'wins', 'champion'],
+    content: "Lina: 5 tournament wins - Kirka and Poxel event winner. Consistent top performer across tournaments.",
+    priority: 8,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-cripson',
+    category: 'stats',
+    keywords: ['cripson', 'wins', 'champion'],
+    content: "cripson: 5 tournament wins - Poxel and Kirka event winner. Multiple tournament champion.",
+    priority: 8,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-linhlambo',
+    category: 'stats',
+    keywords: ['linhlambo', 'wins', 'host', 'rebus'],
+    content: "linhlambo: 3 tournament wins, 0 events hosted. Co-hosts Rebus Puzzle events every Tuesday with @NOIRE. Active community member.",
+    priority: 8,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-afonso003',
+    category: 'stats',
+    keywords: ['afonso003', 'wins', 'host', 'haxball'],
+    content: "afonso003: 2 tournament wins, 2 events hosted. Hosts Haxball tournaments. Active Ritual community member.",
+    priority: 7,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-mikesh',
+    category: 'stats',
+    keywords: ['mikesh', 'host', 'haxball'],
+    content: "Mikesh: 0 tournament wins, 2 events hosted. Co-hosts Haxball tournaments with @afonso003. Active event organizer.",
+    priority: 7,
+    source: 'ritual-discord-events',
+  },
+
+  // ==========================================
+  // GENERAL STATISTICS
+  // ==========================================
+  {
+    id: 'ritual-stats-overview',
+    category: 'stats',
+    keywords: ['statistics', 'stats', 'how many', 'most wins', 'top performers'],
+    content: "Ritual Discord Events Statistics (from July 2024 - March 2026): Top performers include Catz (13 wins), Riyade (8 wins), Decka (5 wins), Lina (5 wins), cripson (5 wins). Most active hosts: afonso003 (2 events), Mikesh (2 events), Browny (2 events). Events include Geoguesser, Quiz, Pure Madness, Gimkit, Kirka, Poxel, LOLBEANS, Haxball, MLBB, Codename, Battleship, and more.",
+    priority: 9,
+    source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-stats-questions',
+    category: 'stats',
+    keywords: ['how many', 'statistics', 'who won', 'champion'],
+    content: "Common event questions: 'Who won the most?' - Catz with 13 wins. 'Who hosts the most events?' - afonso003 and Mikesh with 2 events each. 'What are the popular events?' - Geoguesser, Quiz, Puzzle (Wednesdays), Rebus (Tuesdays), MLBB (Indonesia).",
+    priority: 8,
+    source: 'ritual-discord-events',
+  },
+
+  // ==========================================
+  // FULL EVENTS DATABASE (for RAG search)
+  // ==========================================
+  {
+    id: 'ritual-events-full-database',
+    category: 'events-database',
+    keywords: ['events', 'database', 'all events', 'complete list', 'everything'],
+    content: "Ritual Discord Events Database (July 2024 - March 2026): Contains comprehensive records of all tournaments, games, winners, hosts, and community activities. Includes Geoguesser, Quiz, Puzzle, Rebus, MLBB, Haxball, Battleship, Codename, LOLBEANS, Pure Madness, Gimkit, Kirka, Poxel events, and more. Regional events for Indonesia, Ukraine, Naija communities. Top performers: Catz (13+ wins), Riyade (8+ wins), Decka (5+ wins), Lina (5+ wins), cripson (5+ wins). Regular hosts: linhlambo (Rebus), afonso003 (Haxball), Mikesh (Haxball), Ace & Dading (LOLBEANS), Big Meech & stranger (Quiz), Crypto PIDGIN & Cookie (Puzzle). For detailed statistics about specific members or events, ask about them directly!",
+    priority: 10,
+    source: 'ritual-discord-events-full',
+  },
+  {
+    id: 'ritual-events-stats-general',
+    category: 'stats',
+    keywords: ['statistics', 'stats', 'how many', 'most wins', 'top performers', 'champions', 'leaderboard'],
+    content: "Ritual Discord Events Statistics Summary: The community is very active with multiple events per week. Top champions include Catz, Riyade, Decka, Lina, cripson, Dezzy, ABSOLPII, Dian, Sahil, Baster, and many more. Regular weekly events: Puzzle (Wednesdays), Rebus (Tuesdays). Various tournaments throughout the week: Geoguesser, Quiz, MLBB (Indonesia), regional games. Hosts include linhlambo, afonso003, Mikesh, Ace, Dading, Big Meech, stranger, Crypto PIDGIN, Cookie, Ogumaterry, Lechi, EDWARD, Merlin, and many others. For specific win counts or event details, ask about a specific person or event!",
+    priority: 9,
+    source: 'ritual-discord-events',
+  },
 ];
 
 export default RITUAL_EVENTS_KNOWLEDGE;

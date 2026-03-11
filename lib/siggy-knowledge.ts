@@ -6,6 +6,7 @@
 
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_EVENTS_KNOWLEDGE } from './ritual-events-knowledge';
+import { RITUAL_EVENTS_COMPREHENSIVE } from './ritual-events-comprehensive';
 
 export interface KnowledgeEntry {
   id: string;
@@ -102,8 +103,8 @@ export const SIGGY_KNOWLEDGE: KnowledgeEntry[] = [
 export function getRelevantKnowledge(userInput: string, maxEntries: number = 3): KnowledgeEntry[] {
   const inputLower = userInput.toLowerCase();
 
-  // Combine Siggy's knowledge, Ritual web knowledge, and Ritual events knowledge
-  const allKnowledge = [...SIGGY_KNOWLEDGE, ...RITUAL_WEB_KNOWLEDGE, ...RITUAL_EVENTS_KNOWLEDGE];
+  // Combine ALL knowledge sources including comprehensive events
+  const allKnowledge = [...SIGGY_KNOWLEDGE, ...RITUAL_WEB_KNOWLEDGE, ...RITUAL_EVENTS_KNOWLEDGE, ...RITUAL_EVENTS_COMPREHENSIVE];
 
   // Score each entry based on keyword matches
   const scored = allKnowledge.map(entry => {
