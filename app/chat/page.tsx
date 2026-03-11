@@ -245,15 +245,9 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const isInitialRender = useRef(true);
-
   useEffect(() => {
-    if (isInitialRender.current) {
-      isInitialRender.current = false;
-      return;
-    }
     scrollToBottom();
-  }, [activeConversation?.messages]);
+  }, [activeConversation?.messages, activeConversationId]);
 
   // Rotate VN backgrounds every 10s
   useEffect(() => {
@@ -717,35 +711,37 @@ export default function ChatPage() {
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileSidebar(false)} className="fixed inset-0 bg-black/50 z-50 lg:hidden" />
               <motion.div initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }} className="fixed lg:hidden z-50 left-0 top-0 bottom-0 w-64 bg-surface border-r border-border flex flex-col shadow-2xl">
-                <div className="p-6 border-b border-border bg-surface/50">
-                  <div className="flex flex-col gap-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}>
-                        <div className="w-12 h-12 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(255,215,0,0.1)] group-hover:border-accent group-hover:shadow-[0_0_20px_rgba(255,215,0,0.2)] transition-all">
-                          {userAvatar ? (
-                            <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="w-6 h-6 text-text-secondary/50" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-display text-base font-bold text-accent uppercase tracking-wider flex items-center gap-2">
-                            {userName}
-                            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
-                          </h3>
-                          <p className="font-mono text-[10px] text-text-secondary uppercase tracking-widest">Earth Resident</p>
-                        </div>
-                      </div>
-                      <button onClick={() => setShowMobileSidebar(false)} className="p-2 -mr-2 text-text-secondary hover:text-white transition-colors">
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                    
-                    <button onClick={createNewConversation} className="w-full h-12 flex justify-center items-center gap-3 bg-gradient-to-r from-accent/20 to-transparent border border-accent/20 hover:border-accent text-accent rounded-xl font-mono text-xs uppercase tracking-widest transition-all group shadow-inner">
-                      <Plus className="w-4 h-4 text-accent group-hover:scale-125 transition-transform" />
-                      New Neural Link
+                <div className="p-8 border-b border-border bg-surface/30">
+                  <div className="flex flex-col items-center gap-4 relative">
+                    {/* Close button - top right of sidebar */}
+                    <button onClick={() => setShowMobileSidebar(false)} className="absolute -top-4 -right-4 p-2 text-text-secondary hover:text-white transition-colors">
+                      <X className="w-5 h-5" />
                     </button>
+
+                    <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}>
+                      <div className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] group-hover:border-accent transition-all">
+                        {userAvatar ? (
+                          <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-10 h-10 text-text-secondary/50" />
+                        )}
+                      </div>
+                      <div className="text-center">
+                        <h3 className="font-mono text-base font-bold text-text-primary uppercase flex items-center justify-center gap-2">
+                          {userName}
+                          <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                        </h3>
+                        <p className="font-mono text-[10px] text-text-secondary uppercase tracking-widest mt-1">Earth Resident</p>
+                      </div>
+                    </div>
                   </div>
+                </div>
+                    
+                <div className="p-4 border-b border-border">
+                  <button onClick={createNewConversation} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(0,255,148,0.2)] active:scale-95">
+                    <Plus className="w-4 h-4" />
+                    New Chat
+                  </button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                   {conversations.map(conv => (
@@ -1154,9 +1150,9 @@ export default function ChatPage() {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden"
+                          className="overflow-hidden pt-4 border-t border-border/50"
                         >
-                          <div className="flex items-center justify-between pb-2">
+                          <div className="flex items-center justify-between pb-3">
                             <div className="font-mono text-[10px] text-text-secondary">
                               Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
                             </div>
