@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     );
 
     // RETRIEVE RELEVANT KNOWLEDGE and add to prompt
-    const relevantKnowledge = getRelevantKnowledge(message, 3); // Limited to 3 to save tokens
+    const relevantKnowledge = getRelevantKnowledge(message, 5); // Optimized for contest - shows more knowledge
     if (relevantKnowledge.length > 0) {
       const knowledgeText = relevantKnowledge
         .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: prompt },
       ],
       temperature: 0.7,
-      max_tokens: 500, // Increased from 300 to allow longer, more detailed responses
+      max_tokens: 700, // Optimized for contest: Allows comprehensive, detailed answers to show off knowledge base
       top_p: 0.9,
       frequency_penalty: 0.3,
       presence_penalty: 0.3,
