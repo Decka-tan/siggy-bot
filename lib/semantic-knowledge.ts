@@ -7,13 +7,13 @@
 import { OpenAI } from 'openai';
 import {
   SIGGY_KNOWLEDGE,
-  RITUAL_WEB_KNOWLEDGE,
-  RITUAL_EVENTS_KNOWLEDGE,
-  RITUAL_EVENTS_COMPREHENSIVE,
-  RITUAL_COMMUNITY_KNOWLEDGE,
-  ritualEventsKnowledge,
   type KnowledgeEntry,
 } from './siggy-knowledge';
+import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
+import { RITUAL_EVENTS_KNOWLEDGE } from './ritual-events-knowledge';
+import { RITUAL_EVENTS_COMPREHENSIVE } from './ritual-events-comprehensive';
+import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
+import { ritualEventsKnowledge } from './ritual-events-complete-knowledge';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
