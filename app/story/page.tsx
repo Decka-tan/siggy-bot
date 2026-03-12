@@ -1054,7 +1054,7 @@ export default function StoryModePage() {
                               setCurrentSceneIndex(nextSceneIdx);
                             }
                           }}
-                          className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold font-mono text-xs uppercase tracking-wider rounded-lg hover:from-yellow-400 hover:to-accent transition-all shadow-[0_0_15px_rgba(0,255,148,0.2)]"
+                          className="px-4 py-2 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold font-mono text-xs uppercase tracking-wider rounded-lg hover:from-yellow-400 hover:to-accent transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)]"
                         >
                           Next Chapter →
                         </button>

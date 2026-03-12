@@ -111,7 +111,7 @@ export function Header() {
           {pathname === '/chat' && (
             <button
               onClick={toggleVNMode}
-              className="bg-gradient-to-r from-accent to-yellow-400 text-bg px-3 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider uppercase flex items-center justify-center transition-opacity shadow-[0_0_15px_rgba(0,255,148,0.2)] whitespace-nowrap"
+              className="bg-gradient-to-r from-accent to-yellow-400 text-bg px-3 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider uppercase flex items-center justify-center transition-opacity shadow-[0_0_15px_rgba(255,215,0,0.2)] whitespace-nowrap"
             >
               {vnMode ? 'CHAT' : 'VN'}
             </button>

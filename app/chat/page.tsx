@@ -840,7 +840,7 @@ export default function ChatPage() {
                 </div>
                     
                 <div className="p-4 border-b border-border">
-                  <button onClick={createNewConversation} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(0,255,148,0.2)] active:scale-95">
+                  <button onClick={createNewConversation} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)] active:scale-95">
                     <Plus className="w-4 h-4" />
                     New Chat
                   </button>
@@ -932,7 +932,7 @@ export default function ChatPage() {
                           alt="Siggy"
                           width={260}
                           height={360}
-                          className="object-contain drop-shadow-[0_0_30px_rgba(0,255,148,0.2)]"
+                          className="object-contain drop-shadow-[0_0_30px_rgba(255,215,0,0.2)]"
                           priority
                         />
                       </motion.div>
@@ -994,8 +994,8 @@ export default function ChatPage() {
                               </div>
                             )}
                             <div className="flex gap-1">
-                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-surface border border-border'}`} />
-                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-surface border border-border'}`} />
+                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
+                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
                             </div>
                             <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
                               Mode: {personality === 'CAT' ? 'Cat' : 'Anime'}
@@ -1179,7 +1179,7 @@ export default function ChatPage() {
                         )}
                         {/* Starting Topic Buttons */}
                         <div className="grid grid-cols-2 gap-3 mt-8 max-w-lg mx-auto">
-                          <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(0,255,148,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                          <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                             {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                           </button>
                           <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
@@ -1394,7 +1394,7 @@ export default function ChatPage() {
                 <div className="flex flex-col gap-2 w-full">
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-3 px-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold uppercase tracking-wider font-mono text-sm rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,148,0.2)]"
+                    className="w-full py-3 px-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold uppercase tracking-wider font-mono text-sm rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)]"
                   >
                     <Upload className="w-4 h-4" />
                     Upload Image
