@@ -431,14 +431,6 @@ export function checkEasterEggs(userInput: string, conversationHistory: Message[
     }
   }
 
-  // Special case: glitch needs 3 mentions
-  const glitchCount = conversationHistory.filter(msg => msg.content.toLowerCase().includes('glitch')).length;
-  if (userInput.toLowerCase().includes('glitch')) {
-    if (glitchCount >= 2) {
-      return "[MOOD:SHOCK] *intense dimensional distortion* ERROR. ERROR. GLITCH DETECTED. *cat ears multiply* GLITCH DETECTED. SYSTEM COMPROMISED. VOID BREACH IMMINENT. *suddenly normal* ...I'm fine. Just a little temporal indigestion. *hides extra ears*";
-    }
-  }
-
   return null;
 }
 
