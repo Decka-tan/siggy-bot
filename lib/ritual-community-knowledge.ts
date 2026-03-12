@@ -7,13 +7,32 @@ import type { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   // ==========================================
+  // TOP COMMUNITY CHAMPIONS (HIGHEST PRIORITY)
+  // ==========================================
+  {
+    id: 'ritual-top-winners',
+    category: 'champions',
+    keywords: ['top winners', 'who won the most', 'champions', 'best players', 'winningest', 'most wins', 'top 10 winners', 'frequent winners', 'event winners'],
+    content: `Ritual Discord Top 10 Winners (Most Event Wins): 1) Lina - 16 wins (dominates contests), 2) linhlambo - 15 wins (also a top host!), 3) Livrein - 7 wins, 4) Perseus - 6 wins, 5) Moriarty - 6 wins, 6) Shiro - 5 wins, 7) Cwit - 5 wins, 8) Rudra - 4 wins, 9) Cutie - 4 wins, 10) Sahil - 3 wins. Winners are tagged by Hinata or Kash as winners in events. These are the most successful competitors across 803+ Discord events from July 2025 to March 2026.`,
+    priority: 20, // HIGHEST PRIORITY - Champions info
+    source: 'ritual-events-analysis',
+  },
+  {
+    id: 'ritual-top-hosts',
+    category: 'champions',
+    keywords: ['top hosts', 'who hosts the most', 'most events hosted', 'frequent hosts', 'active hosts', 'event hosts', 'hosted by', 'top 10 hosts'],
+    content: `Ritual Discord Top 10 Event Hosts (Excluding Kash & Hinata): 1) Boranoona - 21 events hosted, 2) Joyesh - 17 events hosted, 3) keybinft - 15 events hosted, 4) PRESHYNODE - 14 events hosted, 5) Oluwasegun - 14 events hosted, 6) Lechi - 13 events hosted, 7) cranky - 12 events hosted, 8) NOIRE - 11 events hosted, 9) linhlambo - 11 events hosted (also a top winner!), 10) ehilia - 11 events hosted. These hosts organize the most Discord events. linhlambo is exceptional - appearing in BOTH top winners (#2) and top hosts (#9). Data from 803+ events July 2025 - March 2026.`,
+    priority: 20, // HIGHEST PRIORITY - Hosts info
+    source: 'ritual-events-analysis',
+  },
+  // ==========================================
   // MODERATORS & TEAM OVERVIEW
   // ==========================================
   {
     id: 'ritual-moderators-list',
     category: 'team',
     keywords: ['moderators', 'mods', 'who are the moderators', 'how many moderators', 'mod list', 'admin', 'moderator team', 'ticket support', 'who handles ticket', 'list all moderators'],
-    content: "Ritual Discord Moderators: Total of 5 key moderators and admins: 1) Jez (nickname for Jezelle, jez5728) - Technical Moderator and Community Growth, handles ticket support, promotes member roles. ALWAYS REFER TO HER AS JEZ. 2) Josh | Ritual (joshsimenhoff) - Admin, Foundation Team, Mods, Zealot - Community Growth lead, does announcements and official events. 3) Stefan | Mad Scientist (stefan_1) - Mods, handles banning scammers, reacting to user reports, sometimes does announcements, manages Path of Recognition. 4) Dunken Ritual (dunken_96) - Official Moderator, handles ticket support, web3 and AI enthusiast. 5) Majorproject Ritual (majorproject8) - China Moderator for Chinese community, also serves as localizer. Additionally, Wally (0xhalfmoonkid) and Val Alexander (bunsdev) are Foundation Team members who help with operations.",
+    content: "Ritual Discord Moderators: Total of 6 key moderators and admins: 1) Jez (nickname for Jezelle, jez5728) - Technical Moderator and Community Growth, handles ticket support, promotes member roles. ALWAYS REFER TO HER AS JEZ. 2) Josh | Ritual (joshsimenhoff) - Admin, Foundation Team, Mods, Zealot - Community Growth lead, does announcements and official events. 3) Stefan | Mad Scientist (stefan_1) - Mods, handles banning scammers, reacting to user reports, sometimes does announcements, manages Path of Recognition. 4) Dunken Ritual (dunken_96) - Official Moderator, handles ticket support, web3 and AI enthusiast. 5) Majorproject Ritual (majorproject8) - China Moderator for Chinese community, also serves as localizer. 6) Flash (flashme, cryptooflashh) - Moderator, joined 28 Feb 2024, same role as Stefan, loves giving dunce role to members. Additionally, Wally (0xhalfmoonkid) and Val Alexander (bunsdev) are Foundation Team members who help with operations.",
     priority: 15,
     source: 'ritual-team-complete',
   },
@@ -258,6 +277,14 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
     keywords: ['majorproject', 'majorproject ritual', 'majorproject8', 'majorproject5', 'china moderator', 'chinese', 'localizer', 'moderator', 'mods'],
     content: `Majorproject Ritual: China Moderator @ Ritual. Discord username: majorproject8. Joined Ritual Discord 18 Sep 2025. X: @Majorproject5. Roles: Mods on Chinese Community, also serves as localizer for the Chinese community. Helps moderate and manage Ritual's Chinese-speaking members.`,
     priority: 6,
+    source: 'ritual-team',
+  },
+  {
+    id: 'ritual-team-flash',
+    category: 'team',
+    keywords: ['flash', 'flashme', 'cryptooflashh', 'mods', 'moderator', 'dunce role'],
+    content: `Flash: Moderator @ Ritual. Discord username: flashme. X (Twitter): @cryptooflashh. Joined Ritual Discord 28 Feb 2024. Roles: Mods, same role as Stefan. Known for giving dunce role to members who misbehave. Handles moderation duties including banning scammers and enforcing community rules.`,
+    priority: 8,
     source: 'ritual-team',
   },
 
