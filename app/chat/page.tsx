@@ -868,7 +868,7 @@ export default function ChatPage() {
               <div className="flex-1 flex justify-center pointer-events-none">
                 <button 
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
-                  className="hidden lg:flex pointer-events-auto px-4 py-2 rounded-full bg-surface/80 backdrop-blur-sm border border-accent hover:bg-surface shadow-[0_0_15px_rgba(0,255,148,0.2)] items-center gap-2 text-xs font-mono tracking-wider uppercase text-accent hover:text-white transition-all shadow-lg backdrop-blur-md"
+                  className="hidden lg:flex pointer-events-auto px-4 py-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg items-center gap-2 text-xs font-mono tracking-wider uppercase text-text-primary hover:text-accent transition-colors"
                   title="Toggle Sidebar"
                 >
                   <MessageSquareMore className="w-4 h-4" />
