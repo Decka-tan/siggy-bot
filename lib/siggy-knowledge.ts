@@ -5,10 +5,7 @@
  */
 
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
-import { RITUAL_EVENTS_KNOWLEDGE } from './ritual-events-knowledge';
-import { RITUAL_EVENTS_COMPREHENSIVE } from './ritual-events-comprehensive';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
-import { ritualEventsKnowledge } from './ritual-events-complete-knowledge';
 
 export interface KnowledgeEntry {
   id: string;
@@ -199,14 +196,13 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
   const userIntent = detectUserIntent(userInput);
   const personName = extractPersonName(userInput);
 
-  // Combine ALL knowledge sources including comprehensive events and community info
+  // Combine ALL knowledge sources
+  // Note: Event knowledge files were deleted due to parsing errors
+  // Need to re-extract from C:\Codingers\ALL EVENT with proper parsing
   const allKnowledge = [
     ...SIGGY_KNOWLEDGE,
     ...RITUAL_WEB_KNOWLEDGE,
-    ...RITUAL_EVENTS_KNOWLEDGE,
-    ...RITUAL_EVENTS_COMPREHENSIVE,
     ...RITUAL_COMMUNITY_KNOWLEDGE,
-    ...ritualEventsKnowledge, // 803 complete events from July 2025 - March 2026
   ];
 
   // Score each entry based on intelligent word matching + INTENT AWARENESS
