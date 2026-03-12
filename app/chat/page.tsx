@@ -705,22 +705,22 @@ export default function ChatPage() {
       </div>
 
       {/* Desktop Sidebar - Full height, fixed position */}
-      {!vnMode && (
-        <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 fixed left-0 top-0 bottom-0 z-[60] ${sidebarCollapsed ? 'w-14' : 'w-56'}`}>
+      {(!vnMode || !sidebarCollapsed) && (
+        <div className={`hidden lg:flex flex-col bg-surface border-r border-border transition-all duration-300 fixed left-0 top-0 bottom-0 z-[60] ${vnMode ? 'w-56 shadow-[20px_0_50px_rgba(0,0,0,0.5)]' : (sidebarCollapsed ? 'w-14' : 'w-56')}`}>
           {/* Profile Section */}
-          <div className={`border-b border-border shrink-0 ${sidebarCollapsed ? 'py-4 flex flex-col items-center gap-2' : 'p-4 pt-6'}`}>
+          <div className={`border-b border-border shrink-0 ${(!vnMode && sidebarCollapsed) ? 'py-4 flex flex-col items-center gap-2' : 'p-4 pt-6'}`}>
             {/* Avatar */}
-            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-accent transition-colors shrink-0 ${sidebarCollapsed ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
+            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-accent transition-colors shrink-0 ${(!vnMode && sidebarCollapsed) ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
               {userAvatar ? (
                 <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-bg flex items-center justify-center">
-                  <User className={`${sidebarCollapsed ? 'w-4 h-4' : 'w-8 h-8'} text-text-secondary/50`} />
+                  <User className={`${(!vnMode && sidebarCollapsed) ? 'w-4 h-4' : 'w-8 h-8'} text-text-secondary/50`} />
                 </div>
               )}
             </button>
             {/* Username */}
-            {!sidebarCollapsed && (
+            {(!sidebarCollapsed || vnMode) && (
               <div className="mt-3 text-center w-full px-2">
                 {editingName ? (
                   <input
@@ -750,20 +750,20 @@ export default function ChatPage() {
           </div>
 
           {/* New Chat Button */}
-          <div className={`shrink-0 ${sidebarCollapsed ? 'p-1' : 'p-3'}`}>
-            <button onClick={createNewConversation} className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90`}>
+          <div className={`shrink-0 ${(!vnMode && sidebarCollapsed) ? 'p-1' : 'p-3'}`}>
+            <button onClick={() => { createNewConversation(); if (vnMode) setSidebarCollapsed(true); }} className={`w-full flex items-center ${(!vnMode && sidebarCollapsed) ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-accent text-black rounded-lg font-mono text-sm uppercase tracking-wider hover:opacity-90`}>
               <Plus className="w-4 h-4" />
-              {!sidebarCollapsed && 'New Chat'}
+              {(!sidebarCollapsed || vnMode) && 'New Chat'}
             </button>
           </div>
 
           {/* Conversations List */}
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {conversations.map(conv => (
-              <div key={conv.id} onClick={() => setActiveConversationId(conv.id)} className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${activeConversationId === conv.id ? 'bg-accent/20 text-accent' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`}>
+              <div key={conv.id} onClick={() => { setActiveConversationId(conv.id); if (vnMode) setSidebarCollapsed(true); }} className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${activeConversationId === conv.id ? 'bg-accent/20 text-accent' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`}>
                 <MessageSquare className="w-4 h-4 flex-shrink-0" />
-                {!sidebarCollapsed && <span className="flex-1 text-sm truncate">{conv.title}</span>}
-                {!sidebarCollapsed && (
+                {(!sidebarCollapsed || vnMode) && <span className="flex-1 text-sm truncate">{conv.title}</span>}
+                {(!sidebarCollapsed || vnMode) && (
                   <button onClick={(e) => deleteConversation(conv.id, e)} className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400">
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -773,9 +773,11 @@ export default function ChatPage() {
           </div>
 
           {/* Collapse/Expand Button */}
-          <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-accent text-black rounded-full flex items-center justify-center shadow-lg hover:opacity-90 z-20">
-            {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-          </button>
+          {!vnMode && (
+            <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-accent text-black rounded-full flex items-center justify-center shadow-lg hover:opacity-90 z-20">
+              {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+            </button>
+          )}
         </div>
       )}
 
@@ -862,15 +864,15 @@ export default function ChatPage() {
         <div className="fixed top-24 left-0 right-0 z-40 flex px-8 pointer-events-none">
           <div className="max-w-7xl w-full mx-auto flex justify-between items-start pointer-events-none">
             {/* Desktop Center-Top Sidebar Toggle */}
-            {!vnMode && (
+            {vnMode && (
               <div className="flex-1 flex justify-center pointer-events-none">
                 <button 
                   onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
-                  className="hidden lg:flex pointer-events-auto px-4 py-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg items-center gap-2 text-xs font-mono tracking-wider uppercase text-text-primary hover:text-accent transition-colors"
+                  className="hidden lg:flex pointer-events-auto px-4 py-2 rounded-full bg-surface/80 backdrop-blur-sm border border-accent hover:bg-surface shadow-[0_0_15px_rgba(0,255,148,0.2)] items-center gap-2 text-xs font-mono tracking-wider uppercase text-accent hover:text-white transition-all shadow-lg backdrop-blur-md"
                   title="Toggle Sidebar"
                 >
                   <MessageSquareMore className="w-4 h-4" />
-                  Sidebar
+                  {sidebarCollapsed ? 'Open Sidebar' : 'Close Sidebar'}
                 </button>
               </div>
             )}
