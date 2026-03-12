@@ -1032,23 +1032,23 @@ export default function ChatPage() {
                             </span>
                           </div>
 
-                          {/* History Status Pill (matches Bond Meter style) */}
-                          {activeConversation.messages.length > 1 && (
-                            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full mr-2 transition-all duration-300">
-                              <Clock className="w-3 h-3 text-accent animate-pulse" />
-                              <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
-                                HISTORY: {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
-                              </span>
-                              <button 
-                                onClick={() => setVnHistoryIndex(-1)}
-                                className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black' : 'text-accent/60 hover:text-accent'}`}
-                              >
-                                LATEST
-                              </button>
-                            </div>
-                          )}
-
                           <div className="flex items-center gap-3">
+                            {/* History Status Pill (Moved next to Bond) */}
+                            {activeConversation.messages.length > 1 && (
+                              <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full transition-all duration-300">
+                                <Clock className="w-3 h-3 text-accent animate-pulse" />
+                                <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
+                                  HISTORY: {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
+                                </span>
+                                <button 
+                                  onClick={() => setVnHistoryIndex(-1)}
+                                  className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black' : 'text-accent/60 hover:text-accent'}`}
+                                >
+                                  LATEST
+                                </button>
+                              </div>
+                            )}
+
                             {/* Bond Resonance Meter (RIGHT SIDE) */}
                             {activeConversation.relationshipLevel && (
                               <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
@@ -1081,7 +1081,7 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      {/* Side Navigation Arrows - Positioned absolutely at the very edges of the relative container */}
+                      {/* Side Navigation Arrows - Positioned at EXTREME edges of the SCREEN (-offset relative to center box) */}
                       {vnMode && activeConversation && activeConversation.messages.length > 1 && (
                         <>
                           <button 
@@ -1091,10 +1091,10 @@ export default function ChatPage() {
                               playClick();
                             }}
                             disabled={vnHistoryIndex === 0}
-                            className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-30 p-1 text-white/30 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                            className="fixed left-4 sm:left-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
                             title="Previous Message (Left Arrow)"
                           >
-                            <ChevronLeft className="w-12 h-12" />
+                            <ChevronLeft className="w-16 h-16 sm:w-20 sm:h-20" />
                           </button>
                           <button 
                             onClick={() => {
@@ -1107,10 +1107,10 @@ export default function ChatPage() {
                               }
                             }}
                             disabled={vnHistoryIndex === -1}
-                            className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 p-1 text-white/30 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                            className="fixed right-4 sm:right-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
                             title="Next Message (Right Arrow)"
                           >
-                            <ChevronRight className="w-12 h-12" />
+                            <ChevronRight className="w-16 h-16 sm:w-20 sm:h-20" />
                           </button>
                         </>
                       )}
