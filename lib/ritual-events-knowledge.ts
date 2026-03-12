@@ -415,9 +415,17 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-members-kash',
     category: 'community',
-    keywords: ['kash', 'kash 060', 'npc leader', 'chess host', 'grit'],
-    content: "@Kash(❖,❖) | NPC LEADER [GRIT] - One of the most active event organizers and hosts in Ritual Discord (July-August 2025). Hosts weekly Chess tournaments every Sunday at 1PM UTC. Also hosts Codenames, announces events for the entire community. Ritualist with GRIT role. Very active in posting and organizing events including Smash Karts, Poker, Karaoke, Scribble, Bomb Party, and more.",
+    keywords: ['kash', 'kash 060', 'npc leader', 'chess host', 'grit', 'tetris winner', 'event manager'],
+    content: "@Kash(❖,❖) | NPC LEADER [GRIT] - One of the most active event organizers and hosts in Ritual Discord (July-August 2025). Hosts weekly Chess tournaments every Sunday at 1PM UTC. Also hosts Codenames, announces events for the entire community. Ritualist with GRIT role. Very active in posting and organizing events including Smash Karts, Poker, Karaoke, Scribble, Bomb Party, and more. Won Tetris rounds himself (Round 4 & 5 with @rocariedk, Round 5 with @Griddy). Known as event manager who coordinates all tournament winners and XP distribution.",
     priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-internet-games',
+    category: 'events',
+    keywords: ['internet games', 'internet game night', 'browser games', 'afonso003', 'danny'],
+    content: "Internet Game Night - Simple online social games you can join instantly with just a link, no downloads needed! Fast typing, wrong answers, questionable drawings, 'that's totally what I meant to guess' excuses, eternal battle of skill vs sheer luck. Hosted by @afonso003 and @Danny. Expect chaotic mix of games where Wi-Fi is strong, snacks are ready, and someone's already blaming lag for losing. Winners include @Grimm, @afonso003, @kko.bop.",
+    priority: 7,
     source: 'ritual-discord-events-2025',
   },
 
