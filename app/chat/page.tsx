@@ -785,8 +785,7 @@ export default function ChatPage() {
       <div className={`flex flex-1 flex-col pt-20 overflow-hidden min-h-0 ${!vnMode ? (sidebarCollapsed ? 'lg:ml-14' : 'lg:ml-56') : ''} transition-all duration-300`}>
 
         {/* Mobile Sidebar */}
-        {!vnMode && (
-          <AnimatePresence>
+        <AnimatePresence>
           {showMobileSidebar && (
             <>
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileSidebar(false)} className="fixed inset-0 bg-black/50 z-50 lg:hidden" />
@@ -858,7 +857,6 @@ export default function ChatPage() {
             </>
           )}
         </AnimatePresence>
-        )}
 
         {/* Floating Action Buttons (below header) */}
         <div className="fixed top-24 left-0 right-0 z-40 flex px-8 pointer-events-none">
@@ -878,7 +876,7 @@ export default function ChatPage() {
             )}
 
             {/* Mobile sidebar toggle (Right Aligned) */}
-            <div className="flex flex-col gap-2 pointer-events-auto shrink-0 ml-auto">
+            <div className="flex flex-col gap-2 pointer-events-auto shrink-0 ml-auto z-[70] relative">
               <button 
                 onClick={() => setShowMobileSidebar(!showMobileSidebar)} 
                 className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg"

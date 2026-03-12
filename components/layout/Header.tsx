@@ -106,12 +106,21 @@ export function Header() {
           </button>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-text-primary p-2 col-start-3 justify-self-end"
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          aria-label="Toggle menu"
-        >
+        {/* Mobile Controls */}
+        <div className="md:hidden col-start-3 justify-self-end flex items-center gap-3">
+          {pathname === '/chat' && (
+            <button
+              onClick={toggleVNMode}
+              className="bg-gradient-to-r from-accent to-yellow-400 text-bg px-3 py-1.5 rounded-lg font-bold text-[10px] sm:text-xs tracking-wider uppercase flex items-center justify-center transition-opacity shadow-[0_0_15px_rgba(0,255,148,0.2)] whitespace-nowrap"
+            >
+              {vnMode ? 'CHAT' : 'VN'}
+            </button>
+          )}
+          <button
+            className="text-text-primary p-2"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+          >
           <svg
             className="w-6 h-6"
             fill="none"
@@ -135,6 +144,7 @@ export function Header() {
             )}
           </svg>
         </button>
+        </div>
 
       {/* Mobile Menu Sidebar */}
       {mobileMenuOpen && (
@@ -172,22 +182,11 @@ export function Header() {
               </Link>
               <Link
                 href="/chat"
-                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
+                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface mb-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Chat
               </Link>
-              {pathname === '/chat' && (
-                <button
-                  onClick={() => {
-                    toggleVNMode();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full block font-mono text-xs uppercase tracking-wider py-2 px-3 rounded-lg hover:bg-opacity-90 transition-colors text-center text-bg bg-gradient-to-r from-accent to-yellow-400 mb-2"
-                >
-                  {vnMode ? 'CHAT MODE' : 'VN MODE'}
-                </button>
-              )}
               <button
                 onClick={() => {
                   playHeavyClick();
