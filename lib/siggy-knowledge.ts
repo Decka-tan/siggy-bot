@@ -100,10 +100,47 @@ export const SIGGY_KNOWLEDGE: KnowledgeEntry[] = [
 ];
 
 /**
+ * Extract individual words from a string, filtering out common words
+ */
+function extractWords(text: string): string[] {
+  const commonWords = new Set(['the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'shall', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'and', 'but', 'or', 'nor', 'so', 'yet', 'both', 'either', 'neither', 'not', 'only', 'own', 'same', 'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'any', 'only', 'that', 'this', 'what', 'which', 'who', 'whom', 'whose', 'if', 'then', 'else', 'whether', 'while', 'until', 'unless', 'because', 'although', 'though', 'since', 'it', 'its', 'i', 'you', 'he', 'she', 'we', 'they', 'me', 'him', 'her', 'us', 'them', 'my', 'your', 'his', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs']);
+
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ')  // Remove punctuation, replace with space
+    .split(/\s+/)              // Split by whitespace
+    .filter(word => word.length > 2 && !commonWords.has(word));  // Filter short words and common words
+}
+
+/**
+ * Calculate word-based match score between input and keywords
+ * Returns a score between 0 and 1 based on how many keyword words match input words
+ */
+function calculateWordMatchScore(inputWords: Set<string>, keywords: string[]): number {
+  let totalKeywordWords = 0;
+  let matchedWords = 0;
+
+  for (const keyword of keywords) {
+    const keywordWords = extractWords(keyword);
+
+    for (const kwWord of keywordWords) {
+      totalKeywordWords++;
+      if (inputWords.has(kwWord) || inputWords.has(kwWord + 's') || inputWords.has(kwWord.replace(/s$/, ''))) {
+        matchedWords++;
+      }
+    }
+  }
+
+  // Return match ratio (0 to 1)
+  return totalKeywordWords > 0 ? matchedWords / totalKeywordWords : 0;
+}
+
+/**
  * Retrieve relevant knowledge entries based on user input
+ * Uses intelligent word-based matching that handles typos, plurals, and word order
  */
 export function getRelevantKnowledge(userInput: string, maxEntries: number = 3): KnowledgeEntry[] {
-  const inputLower = userInput.toLowerCase();
+  const inputWords = new Set(extractWords(userInput));
 
   // Combine ALL knowledge sources including comprehensive events and community info
   const allKnowledge = [
@@ -115,20 +152,22 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
     ...ritualEventsKnowledge, // 803 complete events from July 2025 - March 2026
   ];
 
-  // Score each entry based on keyword matches
+  // Score each entry based on intelligent word matching
   const scored = allKnowledge.map(entry => {
-    let score = 0;
-    for (const keyword of entry.keywords) {
-      if (inputLower.includes(keyword)) {
-        score += entry.priority;
-      }
-    }
-    return { entry, score };
+    // Calculate match score (0 to 1)
+    const matchScore = calculateWordMatchScore(inputWords, entry.keywords);
+
+    // Apply priority to get final score
+    // Match score * priority * 10 (to get reasonable score range)
+    const finalScore = matchScore * entry.priority * 10;
+
+    return { entry, score: finalScore };
   });
 
   // Sort by score and return top entries
+  // Lower threshold (0.1) to catch partial matches like "moderator" vs "moderators"
   return scored
-    .filter(s => s.score > 0)
+    .filter(s => s.score > 0.1)
     .sort((a, b) => b.score - a.score)
     .slice(0, maxEntries)
     .map(s => s.entry);
