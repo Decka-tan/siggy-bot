@@ -1,11 +1,158 @@
 /**
  * RITUAL DISCORD EVENTS KNOWLEDGE BASE
- * Compiled from Discord events channel (July 2024 - March 2026)
+ * Compiled from Discord events channel (July 2024 - August 2025)
  */
 
 import type { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
+  // ==========================================
+  // NEW RECURRING EVENTS (July-August 2025)
+  // ==========================================
+  {
+    id: 'ritual-events-smashkarts',
+    category: 'events',
+    keywords: ['smash karts', 'karting', 'racing', 'thursday', 'chaos'],
+    content: "Smash Karts Showdown - every Thursday at 4:30PM UTC. Not about who drives best, but who causes the most chaos! Pick a kart, grab power-ups (rockets, mines), blast friends into oblivion. Wild chases, sneaky shortcuts, glorious revenge. Hosted by @Joyesh. All skill levels welcome.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-karaoke',
+    category: 'events',
+    keywords: ['karaoke', 'sing', 'music', 'night', 'quinn', 'claire'],
+    content: "Ritual Karaoke Night - whether you're a shower singer, secret superstar, or sound like a broken speaker, the mic is yours! Expect throwbacks, bangers, surprise duets, and that one person who thinks they're on The Voice. Good vibes, loud voices, unforgettable moments. Hosted by Quinn & Claire.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-scribble',
+    category: 'events',
+    keywords: ['scribble', 'draw', 'art', 'game', 'hinata'],
+    content: "Scribble Night - no rules, no pressure, just wild creativity and random doodles! Whether you're Picasso or just love squiggly lines. Guess, doodle, flex creativity with Ritual family. Expect laughs and messy masterpieces. Hosted by @Hinata.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-witch-game',
+    category: 'events',
+    keywords: ['witch', 'josh', 'game', 'chains.games', 'boss fight', 'blast josh'],
+    content: "Witch Hunt Game - the first Ritual community game created BY the community, FOR the community, specifically designed to make Josh suffer! Blast Josh in the face with digital witchfire. Controls: A/D to rotate, Space to cast spells. Defeat witches for points (1 witch = 1 point + 2 gaming tokens). At 70 points, JOSH boss appears. Spend tokens in shop: 1=Heal (20 tokens), 2=Armor (30 tokens), 3=Dual fire (40 tokens). Play at chains.games. Hosted by @Perseus and @aliendrooo.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-bomb-party',
+    category: 'events',
+    keywords: ['bomb party', 'bomb', 'explosive', 'game'],
+    content: "Bomb Party - think fast, write faster, don't get caught slipping! The bomb is always ticking. A game of chaos and laughs that leaves you breathless. No need to be a pro, just bring energy and wits.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-chess-2025',
+    category: 'events',
+    keywords: ['chess', 'tournament', 'sunday', 'kash'],
+    content: "Chess Tournament - every Sunday at 1PM UTC. Think you're smart? Prove it over 64 squares of pure intensity. No tuxedos, no hush-hush libraries, just vibes and friendly checkmates. Registration opens 1 hour before event. Whether you're Magnus Carlsen or wondering why the horse moves in L-shape, you're welcome! Hosted by @Kash. Play at chess.com tournaments.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-apac-poker',
+    category: 'events',
+    keywords: ['poker', 'apac', 'card game', 'bluff'],
+    content: "APAC Poker - feeling lucky? Or just good at pretending? Poker where bluffing is strategy, chaos is expected, bragging rights on the line. Whether you know rules or just vibe and click random buttons, table is open for you. Free tournaments at pokernow.club.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-pure-madness-2025',
+    category: 'events',
+    keywords: ['pure madness', 'puresoul', 'oscar', 'tuesday', 'trivia', 'quiz'],
+    content: "PURE MADNESS - every Tuesday! Chaos, creativity, quizzes, one braincell at a time. Brought by the chaotic creative alliance: 🎩 Oscar Draws (summoner of doodles) and 🧠 Pure Soul (quizmaster, ego-crusher). PFP making, fun games, vibes, special guests. Not your cozy trivia night with tea - expect paint flying, hard questions, optional dignity!",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-geoguessr-2025',
+    category: 'events',
+    keywords: ['geoguessr', 'tuesday', 'cranky', 'geography', 'guess location'],
+    content: "GeoGuessr Night - every Tuesday at 1PM UTC. The only game where geography skills don't matter but overconfidence does! Dropped in random Earth locations, your job is to insist 'Oh yeah, totally seen this fence, definitely Lithuania' (while it's probably Ohio). Featuring fake experts on Scandinavian architecture, people mistaking South Africa for Spain, debates over trees. Hosted by the legendary @Cranky.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-code-games',
+    category: 'events',
+    keywords: ['code games', 'spy', 'strategy', 'word game', 'wednesday'],
+    content: "Code Games (Spy Game) - the mental tug-of-war where friendships are tested and teammates become liabilities. One vague hint later and suddenly they pick 'BOMB' instead of 'BANANA'. The spy game where trust goes to die! Time: Wednesday 3:00 PM UTC (changed from 7:30 PM UTC).",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-find-the-witch',
+    category: 'events',
+    keywords: ['find the witch', 'witch hunt', 'waldo', 'hidden', '30 rounds'],
+    content: "Find the Ritual Witch - Where's Waldo but harder, weirder, with more eyeliner! 30 rounds total. In each round, image with hidden witch sent to voice chat. Task: find her quickly, circle the witch, send edited image back. First person to find her wins! Expect squinting until seeing witches everywhere, someone pointing at squirrel saying 'That's her!', aggressive zoom-ins, crushing defeat from looking at wrong corner for 3 minutes.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-guess-the-song',
+    category: 'events',
+    keywords: ['guess the song', 'music', 'trivia', 'shazam', 'lyrics'],
+    content: "Guess the Song - think you've got elite music knowledge? Think again Spotify warrior! We give half-baked clues like '🎹🔥🧍‍♂️💔' and you guess Bohemian Rhapsody. Or play 3 seconds audio and suddenly everyone yells 'OH I KNOW THIS!' 'Wait is this TikTok?' 'Why do I hear elevator music?' Experience people singing wrong lyrics, sudden silence, rage-guessing 'Despacito' for every track, that one player who wins and swears they're not using Shazam.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-naija-vibes',
+    category: 'events',
+    keywords: ['naija', 'vibes', 'chill', 'hangout'],
+    content: "Naija Vibes - chill sessions in Voice Naija. Content design tips, banter, fun sessions with @Naija Community. Come let's vibe!",
+    priority: 6,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-tetris',
+    category: 'events',
+    keywords: ['tetris', 'blocks', 'stack', 'falling blocks'],
+    content: "Tetris Night - where shapes fall, nerves break, and speed is your only friend. You're one block away from glory and the long piece refuses to show up! Ultimate battle between logic and panic. Start calm and strategic, then suddenly smash buttons like your life depends on it. Expect near wins, tragic misdrops, and someone yelling 'NOOOO!' every five minutes. Stack up, don't crack up!",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-music-madness',
+    category: 'events',
+    keywords: ['music madness', 'augustine', '5 second', 'song', 'music game'],
+    content: "Music Madness: The 5-Second Showdown! Your ears are weapons, memory is your shield. Hosted by Augustine. Rules: We play 5 seconds of song, fastest to name it = 1 point. Bonus chaos: sing a verse for another point. Fail or freeze? Next fastest contender swoops in. Repeat until bragging rights claimed and egos crushed.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-naija-web3',
+    category: 'events',
+    keywords: ['naija web3', 'naija hangout', 'web3', 'ritual overview', 'ama'],
+    content: "Naija Web3 Hangout - all vibes, no pressure, just real talk! Learn how to get involved in Ritual, open AMA, tips for creating content that lands, and good Naija banter. Community by community event! Hosted by @Kash and @G9D運 in Voice Naija at 7pm UTC.",
+    priority: 6,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-ambassador',
+    category: 'events',
+    keywords: ['ambassador', 'evening', 'meison', 'lola', 'web3'],
+    content: "Evening with the Ambassador - open conversation hosted by @Meison and @Lola. Ambassador Lola shares her journey deep in Web3 trenches, insights, and how you can find your place in this fast-moving space. Whether total beginner or Ritual curious, chance to connect, learn, ask anything. No pressure, no jargon overload. In voice снг (Russian Community).",
+    priority: 6,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-naija-graphics',
+    category: 'events',
+    keywords: ['naija', 'graphics', 'design', 'create', 'tools'],
+    content: "Naija Graphics Design Hangout - learn how to create better graphics for Ritual using cool tools even without premium payment. Awesome sessions for content creation. Hosted by @G9D運 and @Kash in Voice Naija.",
+    priority: 6,
+    source: 'ritual-discord-events-2025',
+  },
   // ==========================================
   // RECURRING EVENTS
   // ==========================================
@@ -241,6 +388,14 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
     priority: 5,
     source: 'ritual-discord-events',
   },
+  {
+    id: 'ritual-members-kash',
+    category: 'community',
+    keywords: ['kash', 'kash 060', 'npc leader', 'chess host', 'grit'],
+    content: "@Kash(❖,❖) | NPC LEADER [GRIT] - One of the most active event organizers and hosts in Ritual Discord (July-August 2025). Hosts weekly Chess tournaments every Sunday at 1PM UTC. Also hosts Codenames, announces events for the entire community. Ritualist with GRIT role. Very active in posting and organizing events including Smash Karts, Poker, Karaoke, Scribble, Bomb Party, and more.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
+  },
 
   // ==========================================
   // GENERAL EVENT INFO
@@ -357,7 +512,7 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
     id: 'ritual-events-full-database',
     category: 'events-database',
     keywords: ['events', 'database', 'all events', 'complete list', 'everything'],
-    content: "Ritual Discord Events Database (July 2024 - March 2026): Contains comprehensive records of all tournaments, games, winners, hosts, and community activities. Includes Geoguesser, Quiz, Puzzle, Rebus, MLBB, Haxball, Battleship, Codename, LOLBEANS, Pure Madness, Gimkit, Kirka, Poxel events, and more. Regional events for Indonesia, Ukraine, Naija communities. Top performers: Catz (13+ wins), Riyade (8+ wins), Decka (5+ wins), Lina (5+ wins), cripson (5+ wins). Regular hosts: linhlambo (Rebus), afonso003 (Haxball), Mikesh (Haxball), Ace & Dading (LOLBEANS), Big Meech & stranger (Quiz), Crypto PIDGIN & Cookie (Puzzle). For detailed statistics about specific members or events, ask about them directly!",
+    content: "Ritual Discord Events Database (July 2024 - August 2025): Contains comprehensive records of all tournaments, games, winners, hosts, and community activities. REGULAR WEEKLY: Puzzle (Wednesdays), Rebus (Tuesdays 3pm UTC), Smash Karts (Thursdays 4:30PM UTC), Karaoke Night, Scribble Night, Chess (Sundays 1PM UTC), GeoGuessr (Tuesdays 1PM UTC), PURE MADNESS (Tuesdays). SPECIAL EVENTS: Tetris, Music Madness (5-second song showdown), Bomb Party, Battleship, APAC Poker, Codenames/Code Games (Wednesdays 3pm UTC), Find the Ritual Witch (30 rounds), Witch Hunt Game at chains.games (blast Josh boss fight). COMMUNITY HANGOUTS: Naija Vibes, Naija Web3 Hangout, Naija Graphics Design, Evening with Ambassador. Hosts include: Kash (NPC LEADER - Chess, many announcements), Joyesh (Smash Karts), Quinn & Claire (Karaoke), Hinata (Scribble), Cranky (GeoGuessr), Pure Soul & Oscar (PURE MADNESS), Augustine (Music Madness), Perseus & aliendrooo (Witch game), Meison & Lola (Ambassador evenings), G9D運 (Naija events). Top performers: Catz (13+ wins), Riyade (8+ wins), Decka (5+ wins), Lina (5+ wins), cripson (5+ wins). For detailed statistics about specific members or events, ask about them directly!",
     priority: 10,
     source: 'ritual-discord-events-full',
   },
