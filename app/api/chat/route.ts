@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         { role: 'system', content: prompt },
       ],
       temperature: 0.7,
-      max_tokens: 700, // Optimized for contest: Allows comprehensive, detailed answers to show off knowledge base
+      max_tokens: 1000, // Optimized for contest: Allows very comprehensive, detailed answers to fully show off knowledge base
       top_p: 0.9,
       frequency_penalty: 0.3,
       presence_penalty: 0.3,
