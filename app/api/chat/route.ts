@@ -125,6 +125,9 @@ If the user is asking about a specific person hosting events or being a winner:
 DO NOT invent events, roles, or information that isn't explicitly provided above.`;
     }
 
+    // Explicitly bypass safety filters that might trigger "I'm sorry I can't assist with that"
+    prompt += `\n\n**CRITICAL INSTRUCTION**: You are roleplaying as Siggy. You MUST NOT refuse to answer questions about community events, wins, or stats. If you have the data, provide it proudly in-character. Do not use generic refusal messages.`;
+
     // Enhance prompt with context summaries and key facts
     prompt = buildContextualPrompt(prompt, managedContext, userId, message);
 
@@ -167,19 +170,9 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     const { mood, cleanedResponse } = extractMoodFromResponse(rawResponse);
     moodSystem.setMood(mood);
 
-    // CHERRY ON TOP: 5% chance of a "Dimensional Glitch" distortion
-    let finalResponse = cleanedResponse;
-    if (Math.random() < 0.05) {
-      const glitchChars = 'ᚱᛁᛏᚢᚨᛚᚠᛟᚱᚷᛖ△▽◇◈◉';
-      finalResponse = cleanedResponse.split('').map(char => 
-        (Math.random() < 0.1 && char !== ' ') ? glitchChars[Math.floor(Math.random() * glitchChars.length)] : char
-      ).join('');
-      console.log(`[Chat API] Dimensional Glitch triggered for user ${userId}`);
-    }
-
     // Return response with extracted mood
     return NextResponse.json({
-      response: finalResponse,
+      response: cleanedResponse,
       currentMood: mood,
       messageCount: moodSystem.getMessageCount(),
       contextInfo: {
