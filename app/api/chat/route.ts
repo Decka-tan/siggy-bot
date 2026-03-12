@@ -98,6 +98,16 @@ export async function POST(req: NextRequest) {
         .join('\n\n');
 
       prompt += `${contextInstruction}\n\n=== RELEVANT KNOWLEDGE ===\n${knowledgeText}\n=== END KNOWLEDGE ===`;
+    } else {
+      // NO RELEVANT KNOWLEDGE FOUND - Explicitly tell bot to say "I don't know"
+      prompt += `\n\n**IMPORTANT: No relevant knowledge found in the database for this specific question.**
+If the user is asking about a specific person hosting events or being a winner:
+- Check if the person exists in the provided knowledge
+- If the person appears but NOT in the requested role (e.g., asking about hosting but they're only listed as winner), say: "I found [Name] in the community, but I don't have information about them hosting events. They appear as a winner in some events."
+- If the person doesn't appear at all, say: "I don't have information about [Name] in my current knowledge base."
+- DO NOT HALLUCINATE or make up events/roles that aren't in the knowledge!
+
+DO NOT invent events, roles, or information that isn't explicitly provided above.`;
     }
 
     // Enhance prompt with context summaries and key facts
