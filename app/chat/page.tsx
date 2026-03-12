@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
@@ -721,21 +721,29 @@ export default function ChatPage() {
             </button>
             {/* Username */}
             {!sidebarCollapsed && (
-              <div className="mt-3 text-center">
+              <div className="mt-3 text-center w-full px-2">
                 {editingName ? (
                   <input
                     type="text"
                     value={userName}
                     onChange={(e) => setUserName(e.target.value)}
-                    onBlur={() => { setEditingName(false); localStorage.setItem(USER_NAME_KEY, userName); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem(USER_NAME_KEY, userName); } }}
+                    onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                     autoFocus
                     className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
                   />
                 ) : (
-                  <button onClick={() => setEditingName(true)} className="text-sm font-mono font-semibold text-text-primary hover:text-accent transition-colors" title="Click to edit name">
-                    {userName}
-                  </button>
+                  <div className="flex flex-col items-center">
+                    <button 
+                      onClick={() => setEditingName(true)} 
+                      className="flex items-center gap-2 text-sm font-mono font-semibold text-text-primary hover:text-accent transition-colors group" 
+                      title="Edit Username"
+                    >
+                      {userName}
+                      <Pencil className="w-3 h-3 text-text-secondary opacity-50 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                    <p className="font-mono text-[9px] text-text-secondary uppercase tracking-widest mt-1">Earth Resident</p>
+                  </div>
                 )}
               </div>
             )}
@@ -788,19 +796,39 @@ export default function ChatPage() {
                       <X className="w-5 h-5" />
                     </button>
 
-                    <div className="flex flex-col items-center gap-4 cursor-pointer group" onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}>
-                      <div className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] group-hover:border-accent transition-all">
+                    <div className="flex flex-col items-center gap-4">
+                      <div 
+                        className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] hover:border-accent transition-all cursor-pointer group"
+                        onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}
+                        title="Change Avatar"
+                      >
                         {userAvatar ? (
-                          <img src={userAvatar} alt="Profile" className="w-full h-full object-cover" />
+                          <img src={userAvatar} alt="Profile" className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                         ) : (
-                          <User className="w-10 h-10 text-text-secondary/50" />
+                          <User className="w-10 h-10 text-text-secondary/50 group-hover:scale-110 transition-transform" />
                         )}
                       </div>
-                      <div className="text-center">
-                        <h3 className="font-mono text-base font-bold text-text-primary uppercase flex items-center justify-center gap-2">
-                          {userName}
-                          <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-                        </h3>
+                      <div className="text-center w-full px-4">
+                        {editingName ? (
+                          <input
+                            type="text"
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
+                            autoFocus
+                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                          />
+                        ) : (
+                          <h3 
+                            className="font-mono text-base font-bold text-text-primary uppercase flex items-center justify-center gap-2 cursor-pointer hover:text-accent transition-colors group"
+                            onClick={() => setEditingName(true)}
+                            title="Edit Username"
+                          >
+                            {userName}
+                            <Pencil className="w-3 h-3 text-text-secondary opacity-50 group-hover:opacity-100 transition-opacity" />
+                          </h3>
+                        )}
                         <p className="font-mono text-[10px] text-text-secondary uppercase tracking-widest mt-1">Earth Resident</p>
                       </div>
                     </div>
@@ -831,14 +859,30 @@ export default function ChatPage() {
         )}
 
         {/* Floating Action Buttons (below header) */}
-        <div className="fixed top-24 left-0 right-0 z-40 flex justify-end px-8">
-          <div className="max-w-7xl mx-auto flex flex-col gap-2">
-            {/* Mobile sidebar toggle */}
+        <div className="fixed top-24 left-0 right-0 z-40 flex px-8 pointer-events-none">
+          <div className="max-w-7xl w-full mx-auto flex justify-between items-start pointer-events-none">
+            {/* Desktop Center-Top Sidebar Toggle */}
             {!vnMode && (
-              <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg">
-                <MessageSquareMore className="w-4 h-4" />
-              </button>
+              <div className="flex-1 flex justify-center pointer-events-none">
+                <button 
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
+                  className="hidden lg:flex pointer-events-auto px-4 py-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg items-center gap-2 text-xs font-mono tracking-wider uppercase text-text-primary hover:text-accent transition-colors"
+                  title="Toggle Sidebar"
+                >
+                  <MessageSquareMore className="w-4 h-4" />
+                  Sidebar
+                </button>
+              </div>
             )}
+
+            {/* Mobile sidebar toggle (Right Aligned) */}
+            <div className="flex flex-col gap-2 pointer-events-auto shrink-0 ml-auto">
+              {!vnMode && (
+                <button onClick={() => setShowMobileSidebar(!showMobileSidebar)} className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg">
+                  <MessageSquareMore className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -1044,14 +1088,15 @@ export default function ChatPage() {
                             <button onClick={resetCurrentConversation} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Refresh Chat">
                               <RefreshCw className="w-4 h-4" />
                             </button>
-                            <input
-                              type="text"
+                            <textarea
                               value={input}
                               onChange={(e) => setInput(e.target.value)}
-                              onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
                               placeholder="What will you say?"
                               disabled={isLoading}
-                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-xs transition-all font-mono shadow-inner min-w-[100px]"
+                              rows={1}
+                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[100px] resize-none overflow-y-auto max-h-[80px]"
+                              style={{ minHeight: '36px' }}
                             />
                             <button
                               onClick={() => handleSendMessage()}
