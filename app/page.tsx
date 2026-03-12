@@ -69,7 +69,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="text-5xl sm:text-6xl md:text-8xl lg:text-9xl font-display leading-[0.9] md:leading-[0.85] tracking-tight mb-4 md:mb-6 text-accent"
+                className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-display leading-[0.9] md:leading-[0.85] tracking-tight mb-4 md:mb-6 text-accent"
               >
                 MULTI-VERSE<br />CAT GIRL
               </motion.h1>
