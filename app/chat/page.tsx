@@ -121,7 +121,7 @@ const parseMessageContent = (content: string) => {
 };
 
 // Typewriter Text Component
-const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME' }) => {
+const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality, speed = 20 }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME'; speed?: number }) => {
   const hasAnimatedRef = useRef(alreadyAnimated);
   const [displayedText, setDisplayedText] = useState(() => {
     if (!isLatest || alreadyAnimated) return text;
@@ -140,6 +140,16 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
 
     setDisplayedText('');
     let i = 0;
+    
+    // If speed is 0 or very low, show instantly
+    if (speed <= 1) {
+      if (playVoiceLine && personality) playVoiceLine(personality);
+      setDisplayedText(text);
+      hasAnimatedRef.current = true;
+      onAnimationComplete?.();
+      return;
+    }
+
     const interval = setInterval(() => {
       // Check for a hidden window property that we'll set on 'Enter'
       if ((window as any).forceSkipAnimation) {
@@ -158,11 +168,11 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
         hasAnimatedRef.current = true;
         onAnimationComplete?.();
       }
-    }, 20);
+    }, speed);
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text, isLatest, alreadyAnimated]);
+  }, [text, isLatest, alreadyAnimated, speed]);
 
   return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
 };
@@ -1081,9 +1091,37 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      {/* Side Navigation Arrows - Positioned at EXTREME edges of the SCREEN (-offset relative to center box) */}
+                      {/* Side Tap Triggers - Invisible areas for quick history navigation */}
                       {vnMode && activeConversation && activeConversation.messages.length > 1 && (
                         <>
+                          {/* Left Tap Zone (30% width) */}
+                          <div 
+                            onClick={() => {
+                              const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                              if (currentIdx > 0) {
+                                setVnHistoryIndex(currentIdx - 1);
+                                playClick();
+                              }
+                            }}
+                            className="fixed left-0 top-0 bottom-0 w-[30%] z-30 cursor-pointer pointer-events-auto"
+                            title="Tap to go back"
+                          />
+                          {/* Right Tap Zone (30% width) */}
+                          <div 
+                            onClick={() => {
+                              if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                setVnHistoryIndex(vnHistoryIndex + 1);
+                                playClick();
+                              } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                setVnHistoryIndex(-1);
+                                playClick();
+                              }
+                            }}
+                            className="fixed right-0 top-0 bottom-0 w-[30%] z-30 cursor-pointer pointer-events-auto"
+                            title="Tap to go forward"
+                          />
+
+                          {/* Side Navigation Arrows - Positioned at EXTREME edges (DESKTOP ONLY) */}
                           <button 
                             onClick={() => {
                               const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
@@ -1091,7 +1129,7 @@ export default function ChatPage() {
                               playClick();
                             }}
                             disabled={vnHistoryIndex === 0}
-                            className="fixed left-4 sm:left-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+                            className="fixed left-4 sm:left-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] hidden sm:flex"
                             title="Previous Message (Left Arrow)"
                           >
                             <ChevronLeft className="w-16 h-16 sm:w-20 sm:h-20" />
@@ -1107,7 +1145,7 @@ export default function ChatPage() {
                               }
                             }}
                             disabled={vnHistoryIndex === -1}
-                            className="fixed right-4 sm:right-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+                            className="fixed right-4 sm:right-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] hidden sm:flex"
                             title="Next Message (Right Arrow)"
                           >
                             <ChevronRight className="w-16 h-16 sm:w-20 sm:h-20" />
@@ -1127,9 +1165,40 @@ export default function ChatPage() {
                             
                             {/* Starting Topic Buttons for VN Mode */}
                             <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
-                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                                {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                              </button>
+                              <div className="col-span-2 flex items-center gap-2">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="flex-1 px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                  {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                                </button>
+                                {/* Mobile-specific history arrows */}
+                                <div className="flex gap-2 sm:hidden">
+                                  <button 
+                                    onClick={() => {
+                                      const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                      if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                                      playClick();
+                                    }}
+                                    disabled={vnHistoryIndex === 0}
+                                    className="p-3 bg-black/40 border border-white/10 rounded-lg text-white disabled:opacity-30"
+                                  >
+                                    <ChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                        setVnHistoryIndex(vnHistoryIndex + 1);
+                                        playClick();
+                                      } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                        setVnHistoryIndex(-1);
+                                      }
+                                      playClick();
+                                    }}
+                                    disabled={vnHistoryIndex === -1}
+                                    className="p-3 bg-black/40 border border-white/10 rounded-lg text-white disabled:opacity-30"
+                                  >
+                                    <ChevronRight className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
                               </button>
@@ -1166,6 +1235,10 @@ export default function ChatPage() {
                                         animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`);
                                       }
                                     }} 
+                                    speed={useSettings().textSpeed}
+                                    playTyping={playTyping}
+                                    playVoiceLine={playVoiceLine}
+                                    personality={personality as 'CAT' | 'ANIME'}
                                   />
                                 )}
                               </div>
@@ -1328,7 +1401,7 @@ export default function ChatPage() {
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
                             {message.role === 'assistant' ? (
-                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} />
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} />
                             ) : (
                               <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
                             )}
@@ -1414,9 +1487,40 @@ export default function ChatPage() {
                           {/* Suggestions Grid (2x2) */}
                           {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
                             <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
-                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                                {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                              </button>
+                              <div className="col-span-2 flex items-center gap-2">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="flex-1 px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                  {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                                </button>
+                                {/* Mobile-specific history arrows */}
+                                <div className="flex gap-2 sm:hidden">
+                                  <button 
+                                    onClick={() => {
+                                      const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                      if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                                      playClick();
+                                    }}
+                                    disabled={vnHistoryIndex === 0}
+                                    className="p-3 bg-surface border border-border rounded-lg text-text-primary disabled:opacity-30"
+                                  >
+                                    <ChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                        setVnHistoryIndex(vnHistoryIndex + 1);
+                                        playClick();
+                                      } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                        setVnHistoryIndex(-1);
+                                      }
+                                      playClick();
+                                    }}
+                                    disabled={vnHistoryIndex === -1}
+                                    className="p-3 bg-surface border border-border rounded-lg text-text-primary disabled:opacity-30"
+                                  >
+                                    <ChevronRight className="w-5 h-5" />
+                                  </button>
+                                </div>
+                              </div>
                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
                               </button>
