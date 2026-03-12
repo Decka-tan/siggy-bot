@@ -234,7 +234,7 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-events-find-witch',
     category: 'events',
-    keywords: ['find the witch', 'august', 'september', 'where\\'s waldo', '30 rounds', '15 rounds'],
+    keywords: ['find the witch', 'august', 'september', 'wheres waldo', '30 rounds', '15 rounds', 'where is waldo'],
     content: "Find the Ritual Witch (August-September 2025) - Where's Waldo-style game with Ritual Witch hiding in images! 15-30 rounds. Pictures start easy, get harder. Circle the witch and send edited image. First to find wins. 'Aggressively staring at JPEGs' until you spot the witch! Event link: https://discord.com/events/1210468736205852672/1403485532675113001",
     priority: 8,
     source: 'ritual-discord-events-special-2025',
