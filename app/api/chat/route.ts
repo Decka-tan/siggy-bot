@@ -81,14 +81,16 @@ export async function POST(req: NextRequest) {
       let contextInstruction = "\n\n**IMPORTANT - Use knowledge based on user's intent:**\n";
 
       if (userIntent.includes('host') || userIntent.includes('hosted') || userIntent.includes('hosting')) {
-        contextInstruction += "- User is asking about HOSTING events → Prioritize information where the person is the HOST\n";
-        contextInstruction += "- Ignore entries where person is just a winner/participant\n";
+        contextInstruction += "- User is asking about HOSTING → ONLY use entries where person is explicitly marked as 'HOST:'\n";
+        contextInstruction += "- Completely IGNORE entries where person is just listed as winner/participant\n";
+        contextInstruction += "- Look for 'HOST: @name' pattern in the knowledge\n";
       } else if (userIntent.includes('win') || userIntent.includes('won') || userIntent.includes('winner') || userIntent.includes('champ')) {
-        contextInstruction += "- User is asking about WINNING → Prioritize information where the person is a WINNER\n";
-        contextInstruction += "- Focus on their victories and achievements\n";
+        contextInstruction += "- User is asking about WINNING → Focus on entries where person is a winner/champion\n";
+        contextInstruction += "- Look for 'CHAMP', 'winner', or person listed as winner in events\n";
       } else if (userIntent.includes('event') || userIntent.includes('what')) {
-        contextInstruction += "- User is asking about someone's events → If person is a HOST, describe events they HOST (not just events they won)\n";
-        contextInstruction += "- Hosting is more relevant than winning for 'what event' questions\n";
+        contextInstruction += "- User is asking about someone's events → If person is marked as 'HOST:', describe events they HOST\n";
+        contextInstruction += "- CRITICAL: Hosting (HOST:) is MORE important than winning for 'what event/what events' questions\n";
+        contextInstruction += "- If knowledge shows 'HOST: @person', describe THAT event (not events where they just won)\n";
       }
 
       const knowledgeText = relevantKnowledge
