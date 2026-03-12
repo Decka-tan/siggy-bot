@@ -337,8 +337,8 @@ export default function ChatPage() {
       currentMood: 'DEFAULT' as MoodState,
       messageCount: 0,
       timestamp: Date.now(),
-      relationshipLevel: lastConv?.relationshipLevel,
-      relationshipScore: lastConv?.relationshipScore,
+      relationshipLevel: lastConv?.relationshipLevel || 'ACQUAINTANCE',
+      relationshipScore: lastConv?.relationshipScore || 0,
     };
     setConversations(prev => [newConv, ...prev]);
     setActiveConversationId(newConv.id);
@@ -635,8 +635,8 @@ export default function ChatPage() {
         currentMood: 'DEFAULT' as MoodState,
         messageCount: 0,
         timestamp: Date.now(),
-        relationshipLevel: lastConv?.relationshipLevel,
-        relationshipScore: lastConv?.relationshipScore,
+        relationshipLevel: lastConv?.relationshipLevel || 'ACQUAINTANCE',
+        relationshipScore: lastConv?.relationshipScore || 0,
       };
       setConversations(prev => [newConv, ...prev]);
       targetConvId = newConv.id;

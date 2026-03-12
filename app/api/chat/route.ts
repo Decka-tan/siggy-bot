@@ -144,6 +144,8 @@ export async function POST(req: NextRequest) {
         estimatedTokens: managedContext.estimatedTokens,
         hasSummary: !!managedContext.summary,
       },
+      relationshipLevel: managedContext.relationshipLevel,
+      relationshipScore: managedContext.relationshipScore,
     });
 
   } catch (error) {
