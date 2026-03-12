@@ -8,6 +8,7 @@ import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_EVENTS_KNOWLEDGE } from './ritual-events-knowledge';
 import { RITUAL_EVENTS_COMPREHENSIVE } from './ritual-events-comprehensive';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
+import { RITUAL_EVENTS_COMPLETE_KNOWLEDGE } from './ritual-events-complete-knowledge';
 
 export interface KnowledgeEntry {
   id: string;
@@ -105,7 +106,14 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
   const inputLower = userInput.toLowerCase();
 
   // Combine ALL knowledge sources including comprehensive events and community info
-  const allKnowledge = [...SIGGY_KNOWLEDGE, ...RITUAL_WEB_KNOWLEDGE, ...RITUAL_EVENTS_KNOWLEDGE, ...RITUAL_EVENTS_COMPREHENSIVE, ...RITUAL_COMMUNITY_KNOWLEDGE];
+  const allKnowledge = [
+    ...SIGGY_KNOWLEDGE,
+    ...RITUAL_WEB_KNOWLEDGE,
+    ...RITUAL_EVENTS_KNOWLEDGE,
+    ...RITUAL_EVENTS_COMPREHENSIVE,
+    ...RITUAL_COMMUNITY_KNOWLEDGE,
+    ...RITUAL_EVENTS_COMPLETE_KNOWLEDGE, // 803 complete events from July 2025 - March 2026
+  ];
 
   // Score each entry based on keyword matches
   const scored = allKnowledge.map(entry => {
