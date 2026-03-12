@@ -17,6 +17,7 @@ import {
   buildContextualPrompt,
 } from '@/lib/context-manager';
 import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
+import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -66,8 +67,15 @@ export async function POST(req: NextRequest) {
       currentForm
     );
 
-    // RETRIEVE RELEVANT KNOWLEDGE and add to prompt
-    const relevantKnowledge = getRelevantKnowledge(message, 5); // Optimized for contest - shows more knowledge
+    // RETRIEVE RELEVANT KNOWLEDGE using semantic search
+    // Uses OpenAI embeddings for intelligent semantic matching
+    let relevantKnowledge = await semanticKnowledgeSearch(message, 10);
+
+    // Fallback to keyword matching if semantic search returns nothing
+    if (relevantKnowledge.length === 0) {
+      console.log('[Chat API] Semantic search returned no results, falling back to keyword matching');
+      relevantKnowledge = getRelevantKnowledge(message, 10);
+    }
     if (relevantKnowledge.length > 0) {
       const knowledgeText = relevantKnowledge
         .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
