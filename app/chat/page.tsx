@@ -1138,11 +1138,9 @@ export default function ChatPage() {
                             
                             {/* Starting Topic Buttons for VN Mode */}
                             <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
-                              <div className="col-span-2 flex items-center gap-2">
-                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="flex-1 px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                              </div>
                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
                               </button>
@@ -1192,6 +1190,45 @@ export default function ChatPage() {
                       </div>
 
                       {/* Floating Action Buttons & Input Area */}
+                      <AnimatePresence>
+                        {showStats && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-4">
+                              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                                <div className="font-mono text-[10px] text-text-secondary">
+                                  Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
+                                </div>
+                              </div>
+                              
+                              {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
+                                <div className="grid grid-cols-2 gap-3 mb-2">
+                                  <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                    {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                                  </button>
+                                  <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                    Cosmic origins
+                                  </button>
+                                  <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                    Weird dimensions
+                                  </button>
+                                  <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                    Earth food
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       <div className="max-w-7xl mx-auto flex flex-col pt-2 sm:pt-4 mt-1 sm:mt-2 border-t border-border">
                         {/* Input Form & Action Controls integrated tightly */}
                         <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
@@ -1466,11 +1503,9 @@ export default function ChatPage() {
                           {/* Suggestions Grid (2x2) */}
                           {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
                             <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
-                              <div className="col-span-2 flex items-center gap-2">
-                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="flex-1 px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                              </div>
                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
                               </button>
