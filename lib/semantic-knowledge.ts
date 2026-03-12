@@ -13,6 +13,7 @@ import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
 import { RITUAL_DISCORD_KNOWLEDGE } from './ritual-discord-knowledge';
 import { RITUAL_STATS_KNOWLEDGE } from './ritual-stats-knowledge';
+import { MANUAL_KNOWLEDGE } from './manual-knowledge';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
@@ -84,6 +85,7 @@ async function initializeEmbeddings(): Promise<void> {
     ...RITUAL_COMMUNITY_KNOWLEDGE,
     ...RITUAL_DISCORD_KNOWLEDGE,
     ...RITUAL_STATS_KNOWLEDGE,
+    ...MANUAL_KNOWLEDGE,
   ];
 
   // ONLY embed high-priority entries initially (priority >= 8) for faster startup

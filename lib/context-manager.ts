@@ -174,15 +174,18 @@ export class ContextManager {
   /**
    * Get or create user memory
    */
-  private getMemory(userId: string): UserMemory {
+  private getMemory(userId: string, initialScore?: number): UserMemory {
     if (!this.memories.has(userId)) {
       this.memories.set(userId, {
         userId,
         summaries: [],
         keyFacts: [],
         lastInteraction: Date.now(),
-        relationshipScore: 0,
+        relationshipScore: typeof initialScore === 'number' ? initialScore : 0,
       });
+    } else if (typeof initialScore === 'number' && initialScore > this.memories.get(userId)!.relationshipScore) {
+      // Sync if client has a higher/newer score (safeguard)
+      this.memories.get(userId)!.relationshipScore = initialScore;
     }
     return this.memories.get(userId)!;
   }
@@ -193,9 +196,10 @@ export class ContextManager {
   async manageContext(
     userId: string,
     conversationHistory: Message[],
-    currentMood: string
+    currentMood: string,
+    clientRelationshipScore?: number
   ): Promise<ManagedContext> {
-    const memory = this.getMemory(userId);
+    const memory = this.getMemory(userId, clientRelationshipScore);
     memory.lastInteraction = Date.now();
 
     const totalMessages = conversationHistory.length;

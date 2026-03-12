@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
@@ -78,6 +78,8 @@ const SIDEBAR_KEY = 'siggy-sidebar-collapsed';
 const VN_MODE_KEY = 'siggy-vn-mode';
 const USER_AVATAR_KEY = 'siggy-user-avatar';
 const USER_NAME_KEY = 'siggy-user-name';
+const GLOBAL_BOND_SCORE_KEY = 'siggy-global-bond-score';
+const GLOBAL_BOND_LEVEL_KEY = 'siggy-global-bond-level';
 
 // VN Mode backgrounds (rotate every 10s)
 const VN_BACKGROUNDS = [
@@ -231,7 +233,18 @@ export default function ChatPage() {
   const [personality, setPersonality] = useState<'CAT' | 'ANIME'>('ANIME');
   const [vnBgIndex, setVnBgIndex] = useState(0);
   const [showStats, setShowStats] = useState(true);
+  const [vnHistoryIndex, setVnHistoryIndex] = useState<number>(-1); // -1 means latest
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Track global bond across sessions
+  const [globalRelationshipScore, setGlobalRelationshipScore] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0;
+    return Number(localStorage.getItem(GLOBAL_BOND_SCORE_KEY)) || 0;
+  });
+  const [globalRelationshipLevel, setGlobalRelationshipLevel] = useState<string>(() => {
+    if (typeof window === 'undefined') return 'ACQUAINTANCE';
+    return localStorage.getItem(GLOBAL_BOND_LEVEL_KEY) || 'ACQUAINTANCE';
+  });
 
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
 
@@ -281,6 +294,14 @@ export default function ChatPage() {
     }
   }, [userAvatar]);
 
+  // Sync global bond to localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(GLOBAL_BOND_SCORE_KEY, globalRelationshipScore.toString());
+      localStorage.setItem(GLOBAL_BOND_LEVEL_KEY, globalRelationshipLevel);
+    }
+  }, [globalRelationshipScore, globalRelationshipLevel]);
+
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -303,6 +324,8 @@ export default function ChatPage() {
 
   useEffect(() => {
     scrollToBottom();
+    // Reset VN history index when messages change
+    setVnHistoryIndex(-1);
   }, [activeConversation?.messages, activeConversationId]);
 
   // Rotate VN backgrounds every 10s
@@ -340,8 +363,8 @@ export default function ChatPage() {
       currentMood: 'DEFAULT' as MoodState,
       messageCount: 0,
       timestamp: Date.now(),
-      relationshipLevel: lastConv?.relationshipLevel || 'ACQUAINTANCE',
-      relationshipScore: lastConv?.relationshipScore || 0,
+      relationshipLevel: globalRelationshipLevel || 'ACQUAINTANCE',
+      relationshipScore: globalRelationshipScore || 0,
     };
     setConversations(prev => [newConv, ...prev]);
     setActiveConversationId(newConv.id);
@@ -420,6 +443,7 @@ export default function ChatPage() {
           isFirstMessage: conversationHistory.length === 0,
           userName,
           currentForm: personality,
+          relationshipScore: globalRelationshipScore, // Send global score
         }),
       });
 
@@ -503,7 +527,14 @@ export default function ChatPage() {
 
     setConversations(prev => prev.map(conv => {
       if (conv.id === activeConversationId) {
-        return { ...conv, messages: [], currentMood: 'DEFAULT' as MoodState, messageCount: 0 };
+        return { 
+          ...conv, 
+          messages: [], 
+          currentMood: 'DEFAULT' as MoodState, 
+          messageCount: 0,
+          relationshipLevel: globalRelationshipLevel || 'ACQUAINTANCE',
+          relationshipScore: globalRelationshipScore || 0
+        };
       }
       return conv;
     }));
@@ -578,6 +609,7 @@ export default function ChatPage() {
           userId: `conv-${activeConversationId}`,
           isFirstMessage: false,
           userName,
+          relationshipScore: globalRelationshipScore,
         }),
       });
 
@@ -638,8 +670,8 @@ export default function ChatPage() {
         currentMood: 'DEFAULT' as MoodState,
         messageCount: 0,
         timestamp: Date.now(),
-        relationshipLevel: lastConv?.relationshipLevel || 'ACQUAINTANCE',
-        relationshipScore: lastConv?.relationshipScore || 0,
+        relationshipLevel: globalRelationshipLevel || 'ACQUAINTANCE',
+        relationshipScore: globalRelationshipScore || 0,
       };
       setConversations(prev => [newConv, ...prev]);
       targetConvId = newConv.id;
@@ -672,6 +704,7 @@ export default function ChatPage() {
           userId: `conv-${targetConvId}`,
           isFirstMessage: conversationHistory.length === 0,
           userName,
+          relationshipScore: globalRelationshipScore,
         }),
       });
 
@@ -911,7 +944,7 @@ export default function ChatPage() {
             )}
 
             {/* Chat Content (with VN-aware styling) */}
-            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 sm:px-8 pb-2 sm:pb-4'}`}>
+            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 sm:px-6 pb-2 sm:pb-4'}`}>
               {vnMode ? (
                 /* =========================================================
                    VN MODE LAYOUT
@@ -925,10 +958,10 @@ export default function ChatPage() {
                       <motion.div
                         initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`${activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
+                        className={`${(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
                       >
                         <Image
-                          src={getSpriteForMood(personality, activeConversation?.messages[activeConversation.messages.length - 1]?.mood || activeConversation?.currentMood || 'DEFAULT')}
+                          src={getSpriteForMood(personality, (vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.mood : activeConversation?.messages[vnHistoryIndex]?.mood) || activeConversation?.currentMood || 'DEFAULT')}
                           alt="Siggy"
                           width={260}
                           height={360}
@@ -941,7 +974,7 @@ export default function ChatPage() {
                     {/* User Sprite (Right Side) */}
                     <div className="flex-1 flex justify-end">
                       <AnimatePresence>
-                        {activeConversation?.messages[activeConversation.messages.length - 1]?.role === 'user' && userAvatar && (
+                        {(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' && userAvatar && (
                           <motion.div
                             initial={{ opacity: 0, y: 50, x: 20 }}
                             animate={{ opacity: 1, y: 0, x: 0 }}
@@ -961,17 +994,61 @@ export default function ChatPage() {
                   {/* Main Dialogue Box (Full Width) */}
                   <div className="w-full relative bg-black/80 backdrop-blur-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transition-all">
                     <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-                    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 sm:py-8 relative">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 relative">
                       {/* Box Header: Name + Mode Info */}
                       {activeConversation && (
                         <div className="mb-2 flex items-center justify-between pb-3 relative">
                           <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
                           <div className="flex items-center gap-3">
-                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
-                              {activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
+                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
+                              {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? 'You' : 'Siggy'}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
+                            {/* History Navigation Arrows */}
+                            {activeConversation.messages.length > 1 && (
+                              <div className="flex items-center gap-2 bg-accent/20 border border-accent/30 rounded-full px-3 py-1 mr-4 shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]">
+                                <span className="text-[9px] font-bold text-accent uppercase tracking-tighter flex items-center gap-1 mr-1">
+                                  <Clock className="w-2.5 h-2.5" />
+                                  History
+                                </span>
+                                <button 
+                                  onClick={() => {
+                                    const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                    if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                                  }}
+                                  disabled={vnHistoryIndex === 0}
+                                  className="p-1 text-white hover:text-accent disabled:opacity-30 transition-colors"
+                                  title="Previous Message"
+                                >
+                                  <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <span className="text-[11px] font-mono text-white font-bold w-10 text-center">
+                                  {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
+                                </span>
+                                <button 
+                                  onClick={() => {
+                                    if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                      setVnHistoryIndex(vnHistoryIndex + 1);
+                                    } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                      setVnHistoryIndex(-1);
+                                    }
+                                  }}
+                                  disabled={vnHistoryIndex === -1}
+                                  className="p-1 text-white hover:text-accent disabled:opacity-30 transition-colors"
+                                  title="Next Message"
+                                >
+                                  <ChevronRight className="w-5 h-5" />
+                                </button>
+                                <button 
+                                  onClick={() => setVnHistoryIndex(-1)}
+                                  className={`text-[9px] font-bold px-2 py-0.5 border rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black border-accent' : 'text-accent/60 border-accent/20 hover:text-accent hover:border-accent/40'}`}
+                                >
+                                  LATEST
+                                </button>
+                              </div>
+                            )}
+
                             {/* Bond Resonance Meter (RIGHT SIDE) */}
                             {activeConversation.relationshipLevel && (
                               <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
@@ -1037,18 +1114,26 @@ export default function ChatPage() {
                                 *Siggy is thinking...*
                               </div>
                             ) : (
-                              <div className="relative flex flex-col items-start mt-2">
-                                {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
+                              <div className="relative flex flex-col items-start mt-2 w-full">
+                                {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
-                                    className="text-sm md:text-base leading-relaxed font-mono italic text-text-secondary"
+                                    className="text-sm md:text-base leading-relaxed font-mono italic text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
-                                      __html: parseMessageContent(activeConversation.messages[activeConversation.messages.length - 1].content)
+                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content)
                                     }}
                                   />
                                 ) : (
-                                  <TypewriterText text={activeConversation.messages[activeConversation.messages.length - 1].content} isLatest={true} alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`)} />
+                                  <TypewriterText 
+                                    text={vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content} 
+                                    isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
+                                    alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
+                                    onAnimationComplete={() => {
+                                      if (vnHistoryIndex === -1) {
+                                        animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`);
+                                      }
+                                    }} 
+                                  />
                                 )}
-                                {/* Action buttons moved down below the chat scroll area */}
                               </div>
                             )}
                           </div>
@@ -1135,7 +1220,7 @@ export default function ChatPage() {
                    ========================================================= */
                 <div className="max-w-7xl mx-auto h-full flex flex-col min-h-0 w-full relative">
                   {/* Messages - scrollable */}
-                  <div className="flex-1 overflow-y-auto space-y-3 py-3 px-4 min-h-0 relative z-10">
+                  <div className="flex-1 overflow-y-auto space-y-3 py-3 px-4 sm:px-6 min-h-0 relative z-10">
                     {!activeConversation || activeConversation.messages.length === 0 ? (
                       <div className="text-center py-16">
                         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 flex justify-center">
