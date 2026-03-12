@@ -7,6 +7,25 @@ import type { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   // ==========================================
+  // TOP COMMUNITY CHAMPIONS (HIGHEST PRIORITY)
+  // ==========================================
+  {
+    id: 'ritual-top-winners',
+    category: 'champions',
+    keywords: ['top winners', 'who won the most', 'champions', 'best players', 'winningest', 'most wins', 'top 10 winners', 'frequent winners', 'event winners', 'lina', 'vans', 'linhlambo'],
+    content: `Ritual Discord Top 10 Winners (Most Event Wins - extracted from Discord event announcements with win/champ/congrat keywords): 1) Lina - 168 wins (DOMINATES contests - most successful competitor), 2) linhlambo - 91 wins (also a top host - true community champion!), 3) Vans - 85 wins, 4) Sahil - 66 wins, 5) Catz - 61 wins, 6) Livrein - 49 wins, 7) Orth - 47 wins, 8) elijapapi - 43 wins, 9) Perseus - 36 wins, 10) rubi - 35 wins. Data extracted from ALL event files in C:\\Codingers\\ALL EVENT (main folder + Tambahan) using Python script with proper Discord mention parsing. Winners are people tagged in announcements with winner-related keywords.`,
+    priority: 20, // HIGHEST PRIORITY - Champions info
+    source: 'ritual-events-python-extracted',
+  },
+  {
+    id: 'ritual-top-hosts',
+    category: 'champions',
+    keywords: ['top hosts', 'who hosts the most', 'most events hosted', 'frequent hosts', 'active hosts', 'event hosts', 'hosted by', 'top 10 hosts', 'keybinft', 'preshynode'],
+    content: `Ritual Discord Top 10 Event Hosts (Excluding Kash & Hinata): 1) keybinft - 24 events hosted, 2) preshynode - 15 events hosted, 3) kastew - 15 events hosted, 4) x e r 0 - 13 events hosted, 5) zaemetr0 - 13 events hosted, 6) linhlambo - 12 events hosted (also a top winner - DOUBLE THREAT!), 7) uliana - 11 events hosted, 8) jericd - 10 events hosted, 9) kundan - 10 events hosted, 10) light - 10 events hosted. Data extracted from ALL event files using Python script with host pattern matching. linhlambo is exceptional - appearing in BOTH top winners (#2) and top hosts (#6).`,
+    priority: 20, // HIGHEST PRIORITY - Hosts info
+    source: 'ritual-events-python-extracted',
+  },
+  // ==========================================
   // MODERATORS & TEAM OVERVIEW
   // ==========================================
   {
