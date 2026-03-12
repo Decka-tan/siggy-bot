@@ -85,6 +85,9 @@ const VN_BACKGROUNDS = [
   '/vn-bg/2.jpg',
   '/vn-bg/3.jpg',
   '/vn-bg/4.jpg',
+  '/story-bg/chapter1.jpg',
+  '/story-bg/chapter2.jpg',
+  '/story-bg/chapter4.jpg',
 ];
 
 const parseMessageContent = (content: string) => {
