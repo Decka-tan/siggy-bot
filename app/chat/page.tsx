@@ -1124,7 +1124,7 @@ export default function ChatPage() {
                           {/* Side Navigation Arrows - Positioned at EXTREME edges (DESKTOP ONLY) */}
                           <button 
                             onClick={() => {
-                              const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                              const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
                               if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
                               playClick();
                             }}
@@ -1136,10 +1136,10 @@ export default function ChatPage() {
                           </button>
                           <button 
                             onClick={() => {
-                              if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                              if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
                                 setVnHistoryIndex(vnHistoryIndex + 1);
                                 playClick();
-                              } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                              } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
                                 setVnHistoryIndex(-1);
                                 playClick();
                               }
@@ -1173,7 +1173,7 @@ export default function ChatPage() {
                                 <div className="flex gap-2 sm:hidden">
                                   <button 
                                     onClick={() => {
-                                      const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                      const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
                                       if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
                                       playClick();
                                     }}
@@ -1184,10 +1184,10 @@ export default function ChatPage() {
                                   </button>
                                   <button 
                                     onClick={() => {
-                                      if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                      if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
                                         setVnHistoryIndex(vnHistoryIndex + 1);
                                         playClick();
-                                      } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                      } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
                                         setVnHistoryIndex(-1);
                                       }
                                       playClick();
@@ -1227,7 +1227,7 @@ export default function ChatPage() {
                                   />
                                 ) : (
                                   <TypewriterText 
-                                    text={vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content} 
+                                    text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content} 
                                     isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
                                     alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
                                     onAnimationComplete={() => {
@@ -1420,7 +1420,7 @@ export default function ChatPage() {
                                 <button onClick={shareConversation} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Share">
                                   <Share2 className="w-3.5 h-3.5" />
                                 </button>
-                                {index === activeConversation.messages.length - 1 && (
+                                {activeConversation && index === activeConversation.messages.length - 1 && (
                                   <button onClick={regenerateResponse} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Regenerate">
                                     <RefreshCw className="w-3.5 h-3.5" />
                                   </button>
@@ -1495,7 +1495,7 @@ export default function ChatPage() {
                                 <div className="flex gap-2 sm:hidden">
                                   <button 
                                     onClick={() => {
-                                      const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                      const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
                                       if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
                                       playClick();
                                     }}
@@ -1506,10 +1506,10 @@ export default function ChatPage() {
                                   </button>
                                   <button 
                                     onClick={() => {
-                                      if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                      if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
                                         setVnHistoryIndex(vnHistoryIndex + 1);
                                         playClick();
-                                      } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                      } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
                                         setVnHistoryIndex(-1);
                                       }
                                       playClick();
