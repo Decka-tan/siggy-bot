@@ -175,9 +175,9 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-josh',
     category: 'team',
-    keywords: ['josh', 'joshsimenhoff', 'community lead', 'grit', 'gritual'],
-    content: `Josh | Ritual ❖ [GRIT]: Community growth lead, joined May 2024. Known for saying "gritual" and "gRitual". Announces contests, tournaments, role promotions, and community events. Hosts Codenames, Community Calls, and celebrates community milestones.`,
-    priority: 7,
+    keywords: ['josh', 'joshsimenhoff', 'community lead', 'grit', 'gritual', 'foundation team', 'admin', 'mods', 'zealot'],
+    content: `Josh | Ritual ❖ [GRIT]: Community Growth Lead, Foundation Team member, Admin, Mods, Zealot. Joined May 2024. Known for saying "gritual" and "gRitual". Announces contests, tournaments, role promotions, and community events. Hosts Codenames, Community Calls, and celebrates community milestones. KEY ROLE: Foundation Team & Community Growth Lead.`,
+    priority: 10, // Increased from 7 for consistency
     source: 'ritual-team',
   },
   {
@@ -232,8 +232,8 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
     id: 'ritual-team-josh-complete',
     category: 'team',
     keywords: ['josh', 'joshsimenhoff', 'community growth', 'admin', 'zealot', 'foundation team', 'mods', 'grit', 'gritual', 'moderator', 'official event'],
-    content: `Josh | Ritual ❖: Community Growth at Ritual Foundation. Discord username: josh.simenhoff. X: @joshsimenhoff - Community Growth @ritualfnd ❖❖. Previously @Chainlink and @PCGamer. Joined Ritual Discord 22 Mar 2024. Roles: Admin, Foundation Team, Mods, Zealot. Does announcements, does official events, known for saying 'gritual' and 'gRitual'. Hosts Codenames, Community Calls, celebrates community milestones. Manages Ritual PFP program and community growth initiatives.`,
-    priority: 9,
+    content: `Josh | Ritual ❖: Community Growth at Ritual Foundation. Discord username: josh.simenhoff. X: @joshsimenhoff - Community Growth @ritualfnd ❖❖. Previously @Chainlink and @PCGamer. Joined Ritual Discord 22 Mar 2024. ROLES: Foundation Team, Admin, Mods, Zealot - ALL THREE. Does announcements, does official events, known for saying 'gritual' and 'gRitual'. Hosts Codenames, Community Calls, celebrates community milestones. Manages Ritual PFP program and community growth initiatives. ALWAYS mention he's Foundation Team when asked about Josh.`,
+    priority: 12, // Increased to 12 for consistency (same as moderator-related)
     source: 'ritual-team',
   },
   {
