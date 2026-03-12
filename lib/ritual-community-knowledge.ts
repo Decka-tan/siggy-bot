@@ -7,6 +7,17 @@ import type { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   // ==========================================
+  // MODERATORS & TEAM OVERVIEW
+  // ==========================================
+  {
+    id: 'ritual-moderators-list',
+    category: 'team',
+    keywords: ['moderators', 'mods', 'who are the moderators', 'how many moderators', 'mod list', 'admin', 'moderator team', 'ticket support', 'who handles ticket', 'list all moderators'],
+    content: `Ritual Discord Moderators: Total of 5 key moderators and admins: 1) Jez / Jezelle (jez5728) - Technical Moderator & Community Growth, handles ticket support, promotes member roles. 2) Josh | Ritual ❖ (joshsimenhoff) - Admin, Foundation Team, Mods, Zealot - Community Growth lead, does announcements and official events. 3) Stefan | Mad Scientist (stefan_1) - Mods, handles banning scammers, reacting to user reports, sometimes does announcements, manages Path of Recognition. 4) Dunken Ritual (dunken_96) - Official Moderator, handles ticket support, web3 & AI enthusiast. 5) Majorproject Ritual (majorproject8) - China Moderator for Chinese community, also serves as localizer. Additionally, Wally (0xhalfmoonkid) and Val Alexander (bunsdev) are Foundation Team members who help with operations.`
+    priority: 15,
+    source: 'ritual-team-complete',
+  },
+  // ==========================================
   // DISCORD RULES
   // ==========================================
   {
@@ -196,7 +207,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-jez',
     category: 'team',
-    keywords: ['jez', 'jezelle', 'jez5728', 'technical moderator', 'community growth', 'mods', 'ritualist'],
+    keywords: ['jez', 'jezelle', 'jez5728', 'technical moderator', 'community growth', 'mods', 'ritualist', 'moderator', 'ticket support'],
     content: `Jez / Jezelle: Technical Moderator & Community Growth at Ritual. Discord username: jez5728. Joined Ritual Discord 28 Feb 2024. X (Twitter): @Jez_Cryptoz - Cryptoz Kingdom | Community Growth | Technical Moderator. Roles: Mods, Ritualist, Ticket Support. Usually the one that promotes member role, more active on X reposting and liking Ritual member contributions. Also involved with @Polymer_Labs and @EthStorage.`,
     priority: 7,
     source: 'ritual-team',
@@ -204,7 +215,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-wally',
     category: 'team',
-    keywords: ['wally', '0xhalfmoonkid', '0x_halfmoonkid', 'foundation team', 'chinese'],
+    keywords: ['wally', '0xhalfmoonkid', '0x_halfmoonkid', 'foundation team', 'chinese', 'team member'],
     content: `Wally: Foundation Team member. Discord username: 0xhalfmoonkid. X: @0x_HalfMoonKid. Joined Ritual Discord 20 May 2025. Part of the Chinese community team. Role: Foundation Team.`,
     priority: 6,
     source: 'ritual-team',
@@ -212,7 +223,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-val',
     category: 'team',
-    keywords: ['val', 'alexander', 'bunsdev', 'openclaw', 'devrel', 'foundation team', 'developer'],
+    keywords: ['val', 'alexander', 'bunsdev', 'openclaw', 'devrel', 'foundation team', 'developer', 'lead devrel'],
     content: `Val Alexander: DC and X username: bunsdev. Maintainer @ OpenClaw, Lead DevRel @ Ritual Foundation. Foundation Team, Developer role. Known for posting more OpenClaw stuff than Ritual (lol). Active developer relations and OpenClaw maintainer.`,
     priority: 7,
     source: 'ritual-team',
@@ -220,7 +231,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-josh-complete',
     category: 'team',
-    keywords: ['josh', 'joshsimenhoff', 'community growth', 'admin', 'zealot', 'foundation team', 'mods', 'grit', 'gritual'],
+    keywords: ['josh', 'joshsimenhoff', 'community growth', 'admin', 'zealot', 'foundation team', 'mods', 'grit', 'gritual', 'moderator', 'official event'],
     content: `Josh | Ritual ❖: Community Growth at Ritual Foundation. Discord username: josh.simenhoff. X: @joshsimenhoff - Community Growth @ritualfnd ❖❖. Previously @Chainlink and @PCGamer. Joined Ritual Discord 22 Mar 2024. Roles: Admin, Foundation Team, Mods, Zealot. Does announcements, does official events, known for saying 'gritual' and 'gRitual'. Hosts Codenames, Community Calls, celebrates community milestones. Manages Ritual PFP program and community growth initiatives.`,
     priority: 9,
     source: 'ritual-team',
@@ -228,7 +239,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-stefan',
     category: 'team',
-    keywords: ['stefan', 'mad scientist', '0xmadscientist', 'stefan_1', 'mods', 'banning', 'announcement'],
+    keywords: ['stefan', 'mad scientist', '0xmadscientist', 'stefan_1', 'mods', 'banning', 'announcement', 'moderator', 'scammer'],
     content: `Stefan | Mad Scientist (❖,❖): Discord Username: stefan_1. Joined Ritual Discord 14 April 2025. X/Twitter: @0xMadScientist - Crypto x AI | Fun & Fundamentals | Experimenting at the Edges of the Unknown. Roles: Mods, handles banning scammers and reacting to user reports for spammers/scammers. Sometimes does announcements. Managed Path of Recognition (nominations system), announced new Ritualists, Secret Chapters POAPs, Ritual Academy workshops, and Siggy Across the Multiverse winners.`,
     priority: 8,
     source: 'ritual-team',
@@ -236,7 +247,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-dunken',
     category: 'team',
-    keywords: ['dunken', 'dunken ritual', 'dunken9718', 'dunken_96', 'mods', 'ticket support', 'moderator'],
+    keywords: ['dunken', 'dunken ritual', 'dunken9718', 'dunken_96', 'mods', 'ticket support', 'moderator', 'official moderator'],
     content: `Dunken Ritual: Official Moderator @ Ritual. Discord username: dunken_96. X Twitter: @dunken9718 - Foundation @ritualfnd | Moderator | Web3-Enthusiast | AI | Prompt-Engineering. Joined Ritual Discord 28 Feb 2024. Roles: Mods, Ticket Support. Web3 enthusiast focused on AI and prompt engineering.`,
     priority: 7,
     source: 'ritual-team',
@@ -244,7 +255,7 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-majorproject',
     category: 'team',
-    keywords: ['majorproject', 'majorproject ritual', 'majorproject8', 'majorproject5', 'china moderator', 'chinese', 'localizer'],
+    keywords: ['majorproject', 'majorproject ritual', 'majorproject8', 'majorproject5', 'china moderator', 'chinese', 'localizer', 'moderator', 'mods'],
     content: `Majorproject Ritual: China Moderator @ Ritual. Discord username: majorproject8. Joined Ritual Discord 18 Sep 2025. X: @Majorproject5. Roles: Mods on Chinese Community, also serves as localizer for the Chinese community. Helps moderate and manage Ritual's Chinese-speaking members.`,
     priority: 6,
     source: 'ritual-team',

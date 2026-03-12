@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     );
 
     // RETRIEVE RELEVANT KNOWLEDGE and add to prompt
-    const relevantKnowledge = getRelevantKnowledge(message, 5);
+    const relevantKnowledge = getRelevantKnowledge(message, 10); // Increased from 5 to 10
     if (relevantKnowledge.length > 0) {
       const knowledgeText = relevantKnowledge
         .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
