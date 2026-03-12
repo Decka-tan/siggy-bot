@@ -1093,12 +1093,25 @@ export default function ChatPage() {
                             <textarea
                               value={input}
                               onChange={(e) => setInput(e.target.value)}
-                              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                              onInput={(e) => {
+                                const target = e.target as HTMLTextAreaElement;
+                                target.style.height = 'auto';
+                                target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
+                              }}
+                              onKeyDown={(e) => { 
+                                if (e.key === 'Enter' && !e.shiftKey) { 
+                                  e.preventDefault(); 
+                                  handleSendMessage(); 
+                                  // Reset height after sending
+                                  const target = e.target as HTMLTextAreaElement;
+                                  setTimeout(() => target.style.height = 'auto', 10);
+                                } 
+                              }}
                               placeholder="What will you say?"
                               disabled={isLoading}
                               rows={1}
-                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[100px] resize-none overflow-y-auto max-h-[80px]"
-                              style={{ minHeight: '36px' }}
+                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] md:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[80px]"
+                              style={{ minHeight: '32px', height: 'auto' }}
                             />
                             <button
                               onClick={() => handleSendMessage()}
