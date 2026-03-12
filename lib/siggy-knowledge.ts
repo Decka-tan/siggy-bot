@@ -155,21 +155,36 @@ function detectUserIntent(userInput: string): 'host' | 'winner' | 'general' {
  * Extract person's name from user input
  */
 function extractPersonName(userInput: string): string | null {
-  // Look for patterns like "linhlambo events", "what does X do"
+  const inputLower = userInput.toLowerCase().replace(/[?!.,]/g, '');
+  const words = inputLower.split(/\s+/);
+  
+  // Specific patterns for common questions
   const patterns = [
-    /what does ([a-z0-9_.-]+) (?:host|do|organize)/i,
-    /what (?:is|are) ([a-z0-9_.-]+) events/i,
-    /([a-z0-9_.-]+) events/i,
-    /([a-z0-9_.-]+) (?:host|organize)/i,
-    /who is ([a-z0-9_.-]+)/i,
+    /what (?:is|are|does) ([a-z0-9_.-]+) (?:event|events|host|win|stat|do|organize)/i,
     /stats for ([a-z0-9_.-]+)/i,
+    /how many (?:times )?([a-z0-9_.-]+)/i,
+    /who is ([a-z0-9_.-]+)/i,
   ];
 
   for (const pattern of patterns) {
     const match = userInput.match(pattern);
     if (match && match[1]) {
-      // Handle suffixes like @name(❖)
       return match[1].toLowerCase().split(/[❖\s(]/)[0].replace(/^@/, '');
+    }
+  }
+
+  // Improved heuristic: find words near "host", "win", "event"
+  const triggers = ['host', 'hosted', 'hosting', 'win', 'won', 'wins', 'winner', 'event', 'events', 'stats'];
+  for (let i = 0; i < words.length; i++) {
+    if (triggers.includes(words[i])) {
+      // Check word before
+      if (i > 0 && words[i-1].length > 2 && !['many', 'the', 'how', 'about', 'for', 'did', 'does', 'and'].includes(words[i-1])) {
+        return words[i-1].replace(/^@/, '');
+      }
+      // Check word after
+      if (i < words.length - 1 && words[i+1].length > 2 && !['many', 'the', 'how', 'about', 'for', 'did', 'does', 'and'].includes(words[i+1])) {
+        return words[i+1].replace(/^@/, '');
+      }
     }
   }
 
@@ -216,43 +231,35 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
     // Calculate match score (0 to 1)
     let matchScore = calculateWordMatchScore(inputWords, entry.keywords);
 
-    // INTENT-AWARE SCORING: Boost scores based on user intent and content patterns
-    if (personName) {
-      const contentLower = entry.content.toLowerCase();
+    // ROBUST NAME/KEYWORD MATCHING (Fuzzy substring)
+    // Check if ANY keyword is partially contained in the user input or vice versa
+    const hasFuzzyNameMatch = entry.keywords.some(k => {
+      if (k.length < 3) return false; // Ignore very short keywords for fuzzy matching
+      return inputLower.includes(k) || k.includes(personName || '___none___');
+    });
 
-      if (userIntent === 'host') {
-        // HIGH BOOST for explicit "HOST: @name" pattern
-        if (hasExplicitHostMarker(entry.content, personName)) {
-          matchScore *= 5.0; // 5x boost for explicit host markers
-        }
-        // Medium boost if content mentions hosting
-        else if (contentLower.includes('host') && contentLower.includes(personName)) {
-          matchScore *= 2.0;
-        }
-        // PENALTY if person only appears as winner/participant
-        else if (contentLower.includes('champ') || contentLower.includes('winner')) {
-          matchScore *= 0.3; // Reduce score for winner entries when asking about hosting
-        }
-      }
-      else if (userIntent === 'winner') {
-        // Boost for winner/champion mentions
-        if (contentLower.includes('champ') || contentLower.includes('winner') && contentLower.includes(personName)) {
-          matchScore *= 3.0;
-        }
-        // PENALTY if person is marked as HOST (don't want host info when asking about wins)
-        else if (hasExplicitHostMarker(entry.content, personName)) {
-          matchScore *= 0.5;
-        }
+    if (hasFuzzyNameMatch) {
+      if (entry.category === 'stats') {
+          matchScore = Math.max(matchScore, 0.7); // Strong signal for stats
+      } else {
+          matchScore = Math.max(matchScore, 0.3); // Medium signal for others
       }
     }
 
+    // INTENT-AWARE BOOSTS
+    const contentLower = entry.content.toLowerCase();
+    if (userIntent === 'host' && (hasExplicitHostMarker(entry.content, personName || '') || contentLower.includes('hosted'))) {
+       matchScore *= 2.0;
+    } else if (userIntent === 'winner' && (contentLower.includes('winner') || contentLower.includes('won'))) {
+       matchScore *= 2.0;
+    }
+
     // Apply priority to get final score
-    // Match score * priority * 10 (to get reasonable score range)
     let finalScore = matchScore * entry.priority * 10;
 
     // LEADERBOARD BOOST: If query is about ranking/top users, boost the global-leaderboard entry
     if (entry.id === 'global-leaderboard' && (inputLower.includes('top') || inputLower.includes('most') || inputLower.includes('leaderboard') || inputLower.includes('best') || inputLower.includes('ranking'))) {
-      finalScore *= 10.0; // Massive boost to make it the #1 result
+      finalScore *= 20.0; // Massive boost
     }
 
     return { entry, score: finalScore };
