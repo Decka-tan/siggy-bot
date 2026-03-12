@@ -20,6 +20,7 @@ export interface ConversationSummary {
   messageCount: number;
   timestamp: number;
   keyFacts: string[];
+  sentimentScore: number; // -1 to 1 (negative to positive)
 }
 
 export interface ManagedContext {
@@ -27,6 +28,8 @@ export interface ManagedContext {
   summary?: ConversationSummary;
   totalMessages: number;
   estimatedTokens: number;
+  relationshipScore: number;
+  relationshipLevel: string;
 }
 
 export interface UserMemory {
@@ -34,6 +37,7 @@ export interface UserMemory {
   summaries: ConversationSummary[];
   keyFacts: string[];
   lastInteraction: number;
+  relationshipScore: number; // Persistent across sessions
 }
 
 // ==========================================
@@ -79,6 +83,7 @@ export async function summarizeMessages(
       messageCount: 0,
       timestamp: Date.now(),
       keyFacts: [],
+      sentimentScore: 0,
     };
   }
 
@@ -101,8 +106,11 @@ TASK:
 Respond in this JSON format:
 {
   "summary": "Brief summary here",
-  "keyFacts": ["fact1", "fact2", "fact3"]
+  "keyFacts": ["fact1", "fact2", "fact3"],
+  "sentimentScore": 0.5
 }
+
+The sentimentScore should be between -1.0 (user was very rude/hostile) and 1.0 (user was very friendly/helpful). Neutral is 0.
 
 Keep the summary under 100 words total.`;
 
@@ -124,6 +132,7 @@ Keep the summary under 100 words total.`;
       messageCount: messages.length,
       timestamp: Date.now(),
       keyFacts: parsed.keyFacts || [],
+      sentimentScore: typeof parsed.sentimentScore === 'number' ? parsed.sentimentScore : 0,
     };
   } catch (error) {
     console.error('Summarization failed, using fallback:', error);
@@ -133,6 +142,7 @@ Keep the summary under 100 words total.`;
       messageCount: messages.length,
       timestamp: Date.now(),
       keyFacts: [],
+      sentimentScore: 0,
     };
   }
 }
@@ -145,6 +155,18 @@ const MAX_CONTEXT_TOKENS = 100000; // Conservative limit (GPT-4o has 128k)
 const PROMPT_BASE_TOKENS = 3000; // Approximate tokens for personality system
 const MAX_RECENT_MESSAGES = 8; // Keep recent messages fresh
 const SUMMARIZATION_THRESHOLD = 12; // Summarize when we have more than this many messages
+
+/**
+ * Get relationship level name based on score
+ */
+export function getRelationshipLevel(score: number): string {
+  if (score >= 20) return 'SOULBOUND';
+  if (score >= 10) return 'BESTIE';
+  if (score >= 3) return 'FRIEND';
+  if (score >= -2) return 'ACQUAINTANCE';
+  if (score >= -10) return 'SKETCHY';
+  return 'ENEMY';
+}
 
 export class ContextManager {
   private memories = new Map<string, UserMemory>();
@@ -159,6 +181,7 @@ export class ContextManager {
         summaries: [],
         keyFacts: [],
         lastInteraction: Date.now(),
+        relationshipScore: 0,
       });
     }
     return this.memories.get(userId)!;
@@ -213,11 +236,20 @@ export class ContextManager {
     const historyTokens = estimateMessageTokens(recentMessages);
     const estimatedTokens = PROMPT_BASE_TOKENS + historyTokens;
 
+    // Update relationship score based on sentiment of newest summary if it exists
+    if (summary) {
+      memory.relationshipScore += (summary.sentimentScore * 2); // Amplify impact
+      // Clamp score
+      memory.relationshipScore = Math.max(-20, Math.min(30, memory.relationshipScore));
+    }
+
     return {
       recentMessages,
       summary,
       totalMessages,
       estimatedTokens,
+      relationshipScore: memory.relationshipScore,
+      relationshipLevel: getRelationshipLevel(memory.relationshipScore),
     };
   }
 

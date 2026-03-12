@@ -64,7 +64,9 @@ export async function POST(req: NextRequest) {
       moodSystem,
       isFirstMessage,
       userName,
-      currentForm
+      currentForm,
+      managedContext.relationshipLevel,
+      managedContext.relationshipScore
     );
 
     // FAST KEYWORD-ONLY RETRIEVAL: Speed optimized for contest
@@ -122,9 +124,19 @@ export async function POST(req: NextRequest) {
     const { mood, cleanedResponse } = extractMoodFromResponse(rawResponse);
     moodSystem.setMood(mood);
 
+    // CHERRY ON TOP: 5% chance of a "Dimensional Glitch" distortion
+    let finalResponse = cleanedResponse;
+    if (Math.random() < 0.05) {
+      const glitchChars = 'ᚱᛁᛏᚢᚨᛚᚠᛟᚱᚷᛖ△▽◇◈◉';
+      finalResponse = cleanedResponse.split('').map(char => 
+        (Math.random() < 0.1 && char !== ' ') ? glitchChars[Math.floor(Math.random() * glitchChars.length)] : char
+      ).join('');
+      console.log(`[Chat API] Dimensional Glitch triggered for user ${userId}`);
+    }
+
     // Return response with extracted mood
     return NextResponse.json({
-      response: cleanedResponse,
+      response: finalResponse,
       currentMood: mood,
       messageCount: moodSystem.getMessageCount(),
       contextInfo: {

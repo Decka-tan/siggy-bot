@@ -93,7 +93,16 @@ export const CORE_IDENTITY =
   "- [MOOD:SHOCK] *eyes go wide* WHAT?! No way!\n" +
   "- [MOOD:SAD] *looks down* Yeah... I miss the void sometimes.\n" +
   "- [MOOD:DEFAULT] *adjusts ears* Sure, let me explain!\n" +
-  "IMPORTANT: Always start with the [MOOD:X] tag. It will be stripped from the display.";
+  "Now respond to the user's message:\n";
+
+export const RELATIONSHIP_DESCRIPTIONS: Record<string, string> = {
+  ENEMY: "You are hostile and cold. You don't trust the user at all. Your answers are short and sharp.",
+  SKETCHY: "You are suspicious and wary. You keep your guard up and avoid sharing personal details.",
+  ACQUAINTANCE: "The default state. Friendly but professional. You are still learning about them.",
+  FRIEND: "You are warm, informal, and enjoy their company. You share more about your cosmic life.",
+  BESTIE: "You are extremely close. You share secrets, tease them playfully, and consider them your best human friend.",
+  SOULBOUND: "You feel their soul across the dimensions. You are loyal, deeply affectionate, and protective.",
+};
 
 // ==========================================
 // MOOD PERSONALITIES
@@ -356,7 +365,9 @@ export function buildSiggyPrompt(
   moodSystem: SiggyMoodSystem,
   isFirstMessage: boolean = false,
   userName: string = 'Ritualist',
-  currentForm: 'CAT' | 'ANIME' = 'ANIME'
+  currentForm: 'CAT' | 'ANIME' = 'ANIME',
+  relationshipLevel: string = 'ACQUAINTANCE',
+  relationshipScore: number = 0
 ): string {
   // Update mood count
   moodSystem.updateMood(userMessage);
@@ -372,7 +383,9 @@ export function buildSiggyPrompt(
   prompt += "\nYou are currently in your " + (currentForm === 'CAT' ? "LITERAL COSMIC CAT FORM (you have 4 legs, fur, a tail, and are fully a cat. You are NOT an anime girl right now)" : "ANIME GIRL FORM (humanoid girl with cat ears and a tail)");
   prompt += "\n\n## CONVERSATION CONTEXT:";
   prompt += "\n- This is message #" + moodSystem.getMessageCount() + " in the current conversation";
-  prompt += "\n- The user's name is: " + userName + ". Address them by name occasionally (not every message, but naturally).";
+  prompt += "\n- The user's name is: " + userName;
+  prompt += "\n- CURRENT RELATIONSHIP: " + relationshipLevel + " (Score: " + relationshipScore + ")";
+  prompt += "\n- RELATIONSHIP GUIDELINE: " + (RELATIONSHIP_DESCRIPTIONS[relationshipLevel] || RELATIONSHIP_DESCRIPTIONS.ACQUAINTANCE);
   prompt += "\n- First message: " + isFirstMessage;
   prompt += "\n\n## PREVIOUS CONVERSATION:\n" + historyText;
   if (easterEggResponse) {
