@@ -136,11 +136,68 @@ function calculateWordMatchScore(inputWords: Set<string>, keywords: string[]): n
 }
 
 /**
+ * Detect user's intent from the question
+ */
+function detectUserIntent(userInput: string): 'host' | 'winner' | 'general' {
+  const inputLower = userInput.toLowerCase();
+
+  const hostKeywords = ['host', 'hosts', 'hosted', 'hosting', 'lead', 'leads', 'organize', 'organizes'];
+  const winnerKeywords = ['win', 'wins', 'won', 'winner', 'champion', 'champ', 'victory', 'beat', '1st', '2nd', '3rd'];
+
+  const hostScore = hostKeywords.filter(k => inputLower.includes(k)).length;
+  const winnerScore = winnerKeywords.filter(k => inputLower.includes(k)).length;
+
+  if (hostScore > winnerScore) return 'host';
+  if (winnerScore > hostScore) return 'winner';
+  return 'general';
+}
+
+/**
+ * Extract person's name from user input
+ */
+function extractPersonName(userInput: string): string | null {
+  // Look for patterns like "linhlambo events", "what does X do"
+  const patterns = [
+    /what does ([a-z0-9_]+) (?:host|do|organize)/i,
+    /what (?:is|are) ([a-z0-9_]+) events/i,
+    /([a-z0-9_]+) events/i,
+    /([a-z0-9_]+) (?:host|organize)/i,
+    /who is ([a-z0-9_]+)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = userInput.match(pattern);
+    if (match && match[1]) {
+      return match[1].toLowerCase();
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Check if content explicitly marks someone as HOST
+ */
+function hasExplicitHostMarker(content: string, personName: string): boolean {
+  // Look for "HOST: @name" pattern
+  const hostPattern = new RegExp(`HOST:\\s*[@${personName}]`, 'i');
+  const hostedByPattern = new RegExp(`hosted by\\s*[@${personName}]`, 'i');
+  const yourHostPattern = new RegExp(`your host\\s*[@${personName}]`, 'i');
+
+  return hostPattern.test(content) ||
+         hostedByPattern.test(content) ||
+         yourHostPattern.test(content);
+}
+
+/**
  * Retrieve relevant knowledge entries based on user input
  * Uses intelligent word-based matching that handles typos, plurals, and word order
+ * NOW WITH INTENT DETECTION for better accuracy
  */
 export function getRelevantKnowledge(userInput: string, maxEntries: number = 3): KnowledgeEntry[] {
   const inputWords = new Set(extractWords(userInput));
+  const userIntent = detectUserIntent(userInput);
+  const personName = extractPersonName(userInput);
 
   // Combine ALL knowledge sources including comprehensive events and community info
   const allKnowledge = [
@@ -152,10 +209,40 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
     ...ritualEventsKnowledge, // 803 complete events from July 2025 - March 2026
   ];
 
-  // Score each entry based on intelligent word matching
+  // Score each entry based on intelligent word matching + INTENT AWARENESS
   const scored = allKnowledge.map(entry => {
     // Calculate match score (0 to 1)
-    const matchScore = calculateWordMatchScore(inputWords, entry.keywords);
+    let matchScore = calculateWordMatchScore(inputWords, entry.keywords);
+
+    // INTENT-AWARE SCORING: Boost scores based on user intent and content patterns
+    if (personName) {
+      const contentLower = entry.content.toLowerCase();
+
+      if (userIntent === 'host') {
+        // HIGH BOOST for explicit "HOST: @name" pattern
+        if (hasExplicitHostMarker(entry.content, personName)) {
+          matchScore *= 5.0; // 5x boost for explicit host markers
+        }
+        // Medium boost if content mentions hosting
+        else if (contentLower.includes('host') && contentLower.includes(personName)) {
+          matchScore *= 2.0;
+        }
+        // PENALTY if person only appears as winner/participant
+        else if (contentLower.includes('champ') || contentLower.includes('winner')) {
+          matchScore *= 0.3; // Reduce score for winner entries when asking about hosting
+        }
+      }
+      else if (userIntent === 'winner') {
+        // Boost for winner/champion mentions
+        if (contentLower.includes('champ') || contentLower.includes('winner') && contentLower.includes(personName)) {
+          matchScore *= 3.0;
+        }
+        // PENALTY if person is marked as HOST (don't want host info when asking about wins)
+        else if (hasExplicitHostMarker(entry.content, personName)) {
+          matchScore *= 0.5;
+        }
+      }
+    }
 
     // Apply priority to get final score
     // Match score * priority * 10 (to get reasonable score range)
