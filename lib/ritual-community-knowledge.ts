@@ -287,14 +287,6 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
     priority: 8,
     source: 'ritual-team',
   },
-  {
-    id: 'ritual-team-linhlambo',
-    category: 'team',
-    keywords: ['linhlambo', 'rebus', 'rebus puzzle', 'puzzle host', 'event host', 'top winner', 'top host'],
-    content: `linhlambo: Top Ritual community member - Top 2 Winner (91 wins) and Top 6 Host (12 events hosted). PRIMARY EVENT: Hosts Rebus Puzzle Night every Tuesday 3pm UTC with @NOIRE. Rebus Puzzle is a brain-teasing game where players solve puzzles using images, emojis, and phrases. linhlambo is one of the most active community members, both competing in and hosting events. A true double-threat champion!`,
-    priority: 12, // High priority to override winner entries
-    source: 'ritual-team',
-  },
 
   // ==========================================
   // SPECIAL CHARACTERS (Lore)
