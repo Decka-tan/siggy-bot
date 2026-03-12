@@ -24,6 +24,8 @@ interface Conversation {
   currentMood: MoodState;
   messageCount: number;
   timestamp: number;
+  relationshipLevel?: string;
+  relationshipScore?: number;
 }
 
 interface ContextInfo {
@@ -302,6 +304,9 @@ export default function ChatPage() {
   }, []);
 
   const createNewConversation = () => {
+    // Inherit relationship from newest existing conversation
+    const lastConv = conversations[0];
+    
     const newConv: Conversation = {
       id: Date.now().toString(),
       title: 'New Chat',
@@ -309,6 +314,8 @@ export default function ChatPage() {
       currentMood: 'DEFAULT' as MoodState,
       messageCount: 0,
       timestamp: Date.now(),
+      relationshipLevel: lastConv?.relationshipLevel,
+      relationshipScore: lastConv?.relationshipScore,
     };
     setConversations(prev => [newConv, ...prev]);
     setActiveConversationId(newConv.id);
@@ -414,6 +421,8 @@ export default function ChatPage() {
             messages: [...conv.messages, siggyMessage],
             currentMood: data.currentMood,
             messageCount: data.messageCount,
+            relationshipLevel: data.relationshipLevel,
+            relationshipScore: data.relationshipScore,
           };
         }
         return conv;
@@ -562,6 +571,8 @@ export default function ChatPage() {
             messages: [...messagesWithoutLast, { role: 'assistant', content: processedResponse, mood: data.currentMood }],
             currentMood: data.currentMood,
             messageCount: data.messageCount,
+            relationshipLevel: data.relationshipLevel,
+            relationshipScore: data.relationshipScore,
           };
         }
         return conv;
@@ -591,6 +602,9 @@ export default function ChatPage() {
 
     let targetConvId = activeConversationId;
     if (!targetConvId) {
+      // Inherit relationship from newest existing conversation
+      const lastConv = conversations[0];
+
       const newConv: Conversation = {
         id: Date.now().toString(),
         title: generateTitle(transformMsg),
@@ -598,6 +612,8 @@ export default function ChatPage() {
         currentMood: 'DEFAULT' as MoodState,
         messageCount: 0,
         timestamp: Date.now(),
+        relationshipLevel: lastConv?.relationshipLevel,
+        relationshipScore: lastConv?.relationshipScore,
       };
       setConversations(prev => [newConv, ...prev]);
       targetConvId = newConv.id;
@@ -875,21 +891,42 @@ export default function ChatPage() {
                     <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
                     <div className="max-w-7xl mx-auto px-8 py-8 relative">
                       {/* Box Header: Name + Mode Info */}
-                      {activeConversation && activeConversation.messages.length > 0 && (
+                      {activeConversation && (
                         <div className="mb-2 flex items-center justify-between pb-3 relative">
                           <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
                           <div className="flex items-center gap-3">
-                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
-                              {activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
+                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
+                              {activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? 'You' : 'Siggy'}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
+                            {/* Bond Resonance Meter (RIGHT SIDE) */}
+                            {activeConversation.relationshipLevel && (
+                              <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2">
+                                <Sparkles className="w-3 h-3 text-accent animate-pulse" />
+                                <span className="text-[10px] font-mono font-bold text-accent tracking-tighter">
+                                  BOND: {activeConversation.relationshipLevel}
+                                </span>
+                                <div className="hidden md:flex gap-0.5 ml-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <div 
+                                      key={i} 
+                                      className={`h-1.5 w-3 rounded-sm ${
+                                        (activeConversation.relationshipScore || 0) >= (i * 5) 
+                                          ? 'bg-accent shadow-[0_0_5px_rgba(0,255,148,0.5)]' 
+                                          : 'bg-white/10'
+                                      }`} 
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             <div className="flex gap-1">
                               <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-surface border border-border'}`} />
                               <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(0,255,148,0.8)]' : 'bg-surface border border-border'}`} />
                             </div>
                             <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
-                              Mode: {personality === 'CAT' ? 'Cat Form' : 'Anime Girl Form'}
+                              Mode: {personality === 'CAT' ? 'Cat' : 'Anime'}
                             </span>
                           </div>
                         </div>
