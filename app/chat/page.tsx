@@ -352,6 +352,33 @@ export default function ChatPage() {
     };
   }, []);
 
+  // Keyboard navigation for VN History
+  useEffect(() => {
+    if (!vnMode || !activeConversation || activeConversation.messages.length <= 1) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in input
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'ArrowLeft') {
+        const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+        if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+        playClick();
+      } else if (e.key === 'ArrowRight') {
+        if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+          setVnHistoryIndex(vnHistoryIndex + 1);
+          playClick();
+        } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+          setVnHistoryIndex(-1);
+          playClick();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [vnMode, vnHistoryIndex, activeConversation, playClick]);
+
   const createNewConversation = () => {
     // Inherit relationship from newest existing conversation
     const lastConv = conversations[0];
@@ -1004,51 +1031,24 @@ export default function ChatPage() {
                               {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? 'You' : 'Siggy'}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3">
-                            {/* History Navigation Arrows */}
-                            {activeConversation.messages.length > 1 && (
-                              <div className="flex items-center gap-2 bg-accent/20 border border-accent/30 rounded-full px-3 py-1 mr-4 shadow-[0_0_10px_rgba(var(--accent-rgb),0.1)]">
-                                <span className="text-[9px] font-bold text-accent uppercase tracking-tighter flex items-center gap-1 mr-1">
-                                  <Clock className="w-2.5 h-2.5" />
-                                  History
-                                </span>
-                                <button 
-                                  onClick={() => {
-                                    const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
-                                    if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
-                                  }}
-                                  disabled={vnHistoryIndex === 0}
-                                  className="p-1 text-white hover:text-accent disabled:opacity-30 transition-colors"
-                                  title="Previous Message"
-                                >
-                                  <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <span className="text-[11px] font-mono text-white font-bold w-10 text-center">
-                                  {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
-                                </span>
-                                <button 
-                                  onClick={() => {
-                                    if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
-                                      setVnHistoryIndex(vnHistoryIndex + 1);
-                                    } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
-                                      setVnHistoryIndex(-1);
-                                    }
-                                  }}
-                                  disabled={vnHistoryIndex === -1}
-                                  className="p-1 text-white hover:text-accent disabled:opacity-30 transition-colors"
-                                  title="Next Message"
-                                >
-                                  <ChevronRight className="w-5 h-5" />
-                                </button>
-                                <button 
-                                  onClick={() => setVnHistoryIndex(-1)}
-                                  className={`text-[9px] font-bold px-2 py-0.5 border rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black border-accent' : 'text-accent/60 border-accent/20 hover:text-accent hover:border-accent/40'}`}
-                                >
-                                  LATEST
-                                </button>
-                              </div>
-                            )}
 
+                          {/* History Status Pill (matches Bond Meter style) */}
+                          {activeConversation.messages.length > 1 && (
+                            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full mr-2 transition-all duration-300">
+                              <Clock className="w-3 h-3 text-accent animate-pulse" />
+                              <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
+                                HISTORY: {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
+                              </span>
+                              <button 
+                                onClick={() => setVnHistoryIndex(-1)}
+                                className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black' : 'text-accent/60 hover:text-accent'}`}
+                              >
+                                LATEST
+                              </button>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-3">
                             {/* Bond Resonance Meter (RIGHT SIDE) */}
                             {activeConversation.relationshipLevel && (
                               <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
@@ -1079,6 +1079,40 @@ export default function ChatPage() {
                             </span>
                           </div>
                         </div>
+                      )}
+
+                      {/* Side Navigation Arrows - Positioned absolutely at the very edges of the relative container */}
+                      {vnMode && activeConversation && activeConversation.messages.length > 1 && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                              if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                              playClick();
+                            }}
+                            disabled={vnHistoryIndex === 0}
+                            className="absolute left-1 sm:left-2 top-1/2 -translate-y-1/2 z-30 p-1 text-white/30 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                            title="Previous Message (Left Arrow)"
+                          >
+                            <ChevronLeft className="w-12 h-12" />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                setVnHistoryIndex(vnHistoryIndex + 1);
+                                playClick();
+                              } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                setVnHistoryIndex(-1);
+                                playClick();
+                              }
+                            }}
+                            disabled={vnHistoryIndex === -1}
+                            className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-30 p-1 text-white/30 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+                            title="Next Message (Right Arrow)"
+                          >
+                            <ChevronRight className="w-12 h-12" />
+                          </button>
+                        </>
                       )}
 
                       <div className="min-h-[120px] sm:min-h-[180px] max-h-[180px] sm:max-h-[250px] overflow-y-auto mb-2 sm:mb-6 pr-4 signature-scroll flex items-start">
