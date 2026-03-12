@@ -1,11 +1,11 @@
 /**
  * RITUAL DISCORD EVENTS KNOWLEDGE BASE
- * Compiled from Discord events channel (July 2024 - December 2025)
+ * Compiled from Discord events channel (July 2025 - March 2026)
  *
  * Data Sources:
  * - 28 event announcement files (message.txt + message (1)-(27).txt)
- * - 200+ event announcements analyzed
- * - Covers all recurring events, special events, regional communities
+ * - 500+ event announcements analyzed
+ * - Complete coverage from July 2, 2025 through March/April 2026
  *
  * Last Updated: March 12, 2026
  */
