@@ -1037,14 +1037,14 @@ export default function ChatPage() {
                         <div className="mb-2 flex items-center justify-between pb-3 relative">
                           <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
                           <div className="flex items-center gap-3">
-                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
-                              {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? 'You' : 'Siggy'}
+                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].role : activeConversation?.messages[vnHistoryIndex].role) === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
+                              {(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].role : activeConversation?.messages[vnHistoryIndex].role) === 'user' ? 'You' : 'Siggy'}
                             </span>
                           </div>
 
                           <div className="flex items-center gap-3">
                             {/* History Status Pill (Moved next to Bond) */}
-                            {activeConversation.messages.length > 1 && (
+                            {activeConversation?.messages.length > 1 && (
                               <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full transition-all duration-300">
                                 <Clock className="w-3 h-3 text-accent animate-pulse" />
                                 <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
@@ -1169,35 +1169,37 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="flex-1 px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                                {/* Mobile-specific history arrows */}
-                                <div className="flex gap-2 sm:hidden">
-                                  <button 
-                                    onClick={() => {
-                                      const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
-                                      if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
-                                      playClick();
-                                    }}
-                                    disabled={vnHistoryIndex === 0}
-                                    className="p-3 bg-black/40 border border-white/10 rounded-lg text-white disabled:opacity-30"
-                                  >
-                                    <ChevronLeft className="w-5 h-5" />
-                                  </button>
-                                  <button 
-                                    onClick={() => {
-                                      if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
-                                        setVnHistoryIndex(vnHistoryIndex + 1);
+                                {/* Mobile-specific history arrows (VN MODE ONLY) */}
+                                {vnMode && (
+                                  <div className="flex gap-2 sm:hidden">
+                                    <button 
+                                      onClick={() => {
+                                        const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
+                                        if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
                                         playClick();
-                                      } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
-                                        setVnHistoryIndex(-1);
-                                      }
-                                      playClick();
-                                    }}
-                                    disabled={vnHistoryIndex === -1}
-                                    className="p-3 bg-black/40 border border-white/10 rounded-lg text-white disabled:opacity-30"
-                                  >
-                                    <ChevronRight className="w-5 h-5" />
-                                  </button>
-                                </div>
+                                      }}
+                                      disabled={vnHistoryIndex === 0}
+                                      className="p-3 bg-black/40 border border-white/10 rounded-lg text-white disabled:opacity-30"
+                                    >
+                                      <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                          setVnHistoryIndex(vnHistoryIndex + 1);
+                                          playClick();
+                                        } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
+                                          setVnHistoryIndex(-1);
+                                        }
+                                        playClick();
+                                      }}
+                                      disabled={vnHistoryIndex === -1}
+                                      className="p-3 bg-black/40 border border-white/10 rounded-lg text-white disabled:opacity-30"
+                                    >
+                                      <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
@@ -1253,18 +1255,18 @@ export default function ChatPage() {
                         <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
                           <div className="flex items-center justify-between w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar gap-2">
                             {/* Reinstated Floating Action Buttons (Left Aligned) */}
-                            {activeConversation && activeConversation.messages.length > 0 && activeConversation.messages[activeConversation.messages.length - 1].role === 'assistant' && (
+                            {activeConversation && activeConversation.messages.length > 0 && activeConversation?.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                               <div className="flex items-center gap-1 pr-2 shrink-0">
-                                <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation.messages[activeConversation.messages.length - 1].mood || 'DEFAULT']}`}>
-                                  {activeConversation.messages[activeConversation.messages.length - 1].mood}
+                                <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation?.messages[activeConversation.messages.length - 1].mood || 'DEFAULT']}`}>
+                                  {activeConversation?.messages[activeConversation.messages.length - 1].mood}
                                 </span>
-                                <button onClick={() => copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
+                                <button onClick={() => activeConversation && copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
                                   <Copy className="w-4 h-4" />
                                 </button>
-                                <button onClick={() => toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
+                                <button onClick={() => activeConversation && toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation?.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
                                   <ThumbsUp className="w-4 h-4" />
                                 </button>
-                                <button onClick={() => toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
+                                <button onClick={() => activeConversation && toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation?.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
                                   <ThumbsDown className="w-4 h-4" />
                                 </button>
                                 <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
@@ -1491,35 +1493,37 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="flex-1 px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                                {/* Mobile-specific history arrows */}
-                                <div className="flex gap-2 sm:hidden">
-                                  <button 
-                                    onClick={() => {
-                                      const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
-                                      if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
-                                      playClick();
-                                    }}
-                                    disabled={vnHistoryIndex === 0}
-                                    className="p-3 bg-surface border border-border rounded-lg text-text-primary disabled:opacity-30"
-                                  >
-                                    <ChevronLeft className="w-5 h-5" />
-                                  </button>
-                                  <button 
-                                    onClick={() => {
-                                      if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
-                                        setVnHistoryIndex(vnHistoryIndex + 1);
+                                {/* Mobile-specific history arrows (VN MODE ONLY) */}
+                                {vnMode && (
+                                  <div className="flex gap-2 sm:hidden">
+                                    <button 
+                                      onClick={() => {
+                                        const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
+                                        if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
                                         playClick();
-                                      } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
-                                        setVnHistoryIndex(-1);
-                                      }
-                                      playClick();
-                                    }}
-                                    disabled={vnHistoryIndex === -1}
-                                    className="p-3 bg-surface border border-border rounded-lg text-text-primary disabled:opacity-30"
-                                  >
-                                    <ChevronRight className="w-5 h-5" />
-                                  </button>
-                                </div>
+                                      }}
+                                      disabled={vnHistoryIndex === 0}
+                                      className="p-3 bg-surface border border-border rounded-lg text-text-primary disabled:opacity-30"
+                                    >
+                                      <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                      onClick={() => {
+                                        if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                          setVnHistoryIndex(vnHistoryIndex + 1);
+                                          playClick();
+                                        } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
+                                          setVnHistoryIndex(-1);
+                                        }
+                                        playClick();
+                                      }}
+                                      disabled={vnHistoryIndex === -1}
+                                      className="p-3 bg-surface border border-border rounded-lg text-text-primary disabled:opacity-30"
+                                    >
+                                      <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                  </div>
+                                )}
                               </div>
                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
