@@ -7,6 +7,26 @@ import { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_STATS_KNOWLEDGE: KnowledgeEntry[] = [
   {
+    "id": "global-leaderboard",
+    "category": "stats",
+    "keywords": [
+      "top",
+      "best",
+      "winner",
+      "host",
+      "ranking",
+      "leaderboard",
+      "most",
+      "wins",
+      "hosted",
+      "1st",
+      "2nd",
+      "3rd"
+    ],
+    "content": "RITUAL COMMUNITY LEADERBOARD (Top 10):\n- TOP WINNERS: @lina (109 wins), @'vans (87 wins), @linhlambo (71 wins), @sahil (60 wins), @catz (54 wins), @livrein (44 wins), @'orth (39 wins), @elijapapi (37 wins), @-heat (36 wins), @perseus (31 wins)\n- TOP HOSTS: @joyesh (31 hosted), @hinata (29 hosted), @kash_060 (29 hosted), @cranky (24 hosted), @bagholder (17 hosted), @'orth (15 hosted), @preshynode (15 hosted), @jiro (15 hosted), @kastew (15 hosted), @keybinft (15 hosted)\n\nUse this data for any \"who hosted most\" or \"top 3 winners\" questions.",
+    "priority": 10
+  },
+  {
     "id": "stats-lina",
     "category": "stats",
     "keywords": [

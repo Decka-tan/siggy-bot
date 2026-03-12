@@ -5,11 +5,13 @@ import { RITUAL_DISCORD_KNOWLEDGE } from '../lib/ritual-discord-knowledge';
 const stats = new Map<string, { wins: number, hosted: number, wonEvents: string[], hostedEvents: string[] }>();
 
 function extractUsernames(text: string): string[] {
-  // Broad regex to catch Discord usernames after @
+  // Broad regex to catch Discord usernames after @, including those with suffixes like (❖
   const matches = text.match(/@([a-zA-Z0-9_.-]+|[^\s❖(]+)/g);
   if (!matches) return [];
   return matches.map(m => {
-    let name = m.substring(1).toLowerCase().trim();
+    let name = m.substring(1).trim();
+    // remove suffixes like (❖,❖), (❖), | (❖), green heart, etc.
+    name = name.split(/\s*\(|❖|\|/)[0].toLowerCase();
     // remove some non-alphanumeric noise at the end if caught
     name = name.replace(/[^a-z0-9_.-]+$/g, '');
     return name;
@@ -50,10 +52,11 @@ for (const entry of RITUAL_DISCORD_KNOWLEDGE) {
   }
   
   // Also check keywords array if it's there
-  if (hosts.length === 0 && entry.keywords.includes('host')) {
+  if (hosts.length === 0 && (entry.keywords.includes('host') || entry.content.includes('Host:'))) {
     // maybe it has @ mentions in content not properly formatted
-    const contentHosts = extractUsernames(entry.content.split('Host (penting):')[1] || '');
-    hosts = contentHosts;
+    const hostLine = entry.content.split('Host:')[1] || entry.content.split('Host (penting):')[1] || '';
+    const contentHosts = extractUsernames(hostLine);
+    if (contentHosts.length > 0) hosts = contentHosts;
   }
   
   for (const h of hosts) addStat(h, 'host', eventName);
@@ -62,6 +65,22 @@ for (const entry of RITUAL_DISCORD_KNOWLEDGE) {
 
 const knowledgeEntries = [];
 
+const sortedByWins = Array.from(stats.entries()).sort((a, b) => b[1].wins - a[1].wins);
+const sortedByHosted = Array.from(stats.entries()).sort((a, b) => b[1].hosted - a[1].hosted);
+
+// 1. Create Ranking Leaderboard Knowledge
+const topWins = sortedByWins.slice(0, 10).map(([name, s]) => `@${name} (${s.wins} wins)`).join(', ');
+const topHosts = sortedByHosted.slice(0, 10).map(([name, s]) => `@${name} (${s.hosted} hosted)`).join(', ');
+
+knowledgeEntries.push({
+  id: 'global-leaderboard',
+  category: 'stats',
+  keywords: ['top', 'best', 'winner', 'host', 'ranking', 'leaderboard', 'most', 'wins', 'hosted', '1st', '2nd', '3rd'],
+  content: `RITUAL COMMUNITY LEADERBOARD (Top 10):\n- TOP WINNERS: ${topWins}\n- TOP HOSTS: ${topHosts}\n\nUse this data for any "who hosted most" or "top 3 winners" questions.`,
+  priority: 10
+});
+
+// 2. Individual stats
 for (const [name, s] of Array.from(stats.entries()).sort((a, b) => (b[1].wins + b[1].hosted) - (a[1].wins + a[1].hosted))) {
   if (s.wins === 0 && s.hosted === 0) continue;
   

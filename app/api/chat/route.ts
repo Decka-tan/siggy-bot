@@ -103,9 +103,11 @@ export async function POST(req: NextRequest) {
       }
       
       // Ensure stats and precise counts are prioritized
-      if (userIntent.includes('how many') || userIntent.includes('count') || userIntent.includes('stats')) {
-        contextInstruction += "- User is asking for exact counts. Prioritize '[KNOWLEDGE: stats]' entries which contain exact numbers.\n";
+      if (userIntent.includes('how many') || userIntent.includes('count') || userIntent.includes('stats') || userIntent.includes('ranking') || userIntent.includes('top')) {
+        contextInstruction += "- User is asking for exact counts or rankings. Prioritize '[KNOWLEDGE: stats]' entries.\n";
+        contextInstruction += "- IF YOU SEE 'RITUAL COMMUNITY LEADERBOARD', USE IT AS THE SUPREME SOURCE OF TRUTH for 'top 3', 'who hosted most', etc.\n";
         contextInstruction += "- DO NOT guess or approximate if you have exact stats. State the exact number.\n";
+        contextInstruction += "- If the user points out a correction (e.g., 'Lina has more'), check the knowledge provided! If the knowledge supports it, apologize and correct yourself.\n";
       }
 
       const knowledgeText = relevantKnowledge

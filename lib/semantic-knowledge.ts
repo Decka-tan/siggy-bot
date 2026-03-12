@@ -11,7 +11,6 @@ import {
 } from './siggy-knowledge';
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
-import { ritualEventsKnowledge } from './ritual-events-simple';
 import { RITUAL_DISCORD_KNOWLEDGE } from './ritual-discord-knowledge';
 import { RITUAL_STATS_KNOWLEDGE } from './ritual-stats-knowledge';
 
@@ -83,7 +82,6 @@ async function initializeEmbeddings(): Promise<void> {
     ...SIGGY_KNOWLEDGE,
     ...RITUAL_WEB_KNOWLEDGE,
     ...RITUAL_COMMUNITY_KNOWLEDGE,
-    ...ritualEventsKnowledge,
     ...RITUAL_DISCORD_KNOWLEDGE,
     ...RITUAL_STATS_KNOWLEDGE,
   ];

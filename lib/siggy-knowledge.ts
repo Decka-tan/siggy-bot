@@ -6,7 +6,6 @@
 
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
-import { ritualEventsKnowledge } from './ritual-events-simple';
 import { RITUAL_DISCORD_KNOWLEDGE } from './ritual-discord-knowledge';
 import { RITUAL_STATS_KNOWLEDGE } from './ritual-stats-knowledge';
 
@@ -107,9 +106,9 @@ function extractWords(text: string): string[] {
 
   return text
     .toLowerCase()
-    .replace(/[^\w\s]/g, ' ')  // Remove punctuation, replace with space
+    .replace(/[^\w\s@]/g, ' ')  // Remove punctuation, replace with space, but KEEP @
     .split(/\s+/)              // Split by whitespace
-    .filter(word => word.length > 2 && !commonWords.has(word));  // Filter short words and common words
+    .filter(word => word.length > 1 && !commonWords.has(word));  // Filter short words and common words
 }
 
 /**
@@ -158,17 +157,19 @@ function detectUserIntent(userInput: string): 'host' | 'winner' | 'general' {
 function extractPersonName(userInput: string): string | null {
   // Look for patterns like "linhlambo events", "what does X do"
   const patterns = [
-    /what does ([a-z0-9_]+) (?:host|do|organize)/i,
-    /what (?:is|are) ([a-z0-9_]+) events/i,
-    /([a-z0-9_]+) events/i,
-    /([a-z0-9_]+) (?:host|organize)/i,
-    /who is ([a-z0-9_]+)/i,
+    /what does ([a-z0-9_.-]+) (?:host|do|organize)/i,
+    /what (?:is|are) ([a-z0-9_.-]+) events/i,
+    /([a-z0-9_.-]+) events/i,
+    /([a-z0-9_.-]+) (?:host|organize)/i,
+    /who is ([a-z0-9_.-]+)/i,
+    /stats for ([a-z0-9_.-]+)/i,
   ];
 
   for (const pattern of patterns) {
     const match = userInput.match(pattern);
     if (match && match[1]) {
-      return match[1].toLowerCase();
+      // Handle suffixes like @name(❖)
+      return match[1].toLowerCase().split(/[❖\s(]/)[0].replace(/^@/, '');
     }
   }
 
@@ -205,13 +206,13 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
     ...SIGGY_KNOWLEDGE,
     ...RITUAL_WEB_KNOWLEDGE,
     ...RITUAL_COMMUNITY_KNOWLEDGE,
-    ...ritualEventsKnowledge, // 573 events with proper HOST/WINNER parsing
     ...RITUAL_DISCORD_KNOWLEDGE, // Add our extracted discord knowledge
     ...RITUAL_STATS_KNOWLEDGE, // Exact aggregated counts
   ];
 
   // Score each entry based on intelligent word matching + INTENT AWARENESS
   const scored = allKnowledge.map(entry => {
+    const inputLower = userInput.toLowerCase();
     // Calculate match score (0 to 1)
     let matchScore = calculateWordMatchScore(inputWords, entry.keywords);
 
@@ -247,7 +248,12 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
 
     // Apply priority to get final score
     // Match score * priority * 10 (to get reasonable score range)
-    const finalScore = matchScore * entry.priority * 10;
+    let finalScore = matchScore * entry.priority * 10;
+
+    // LEADERBOARD BOOST: If query is about ranking/top users, boost the global-leaderboard entry
+    if (entry.id === 'global-leaderboard' && (inputLower.includes('top') || inputLower.includes('most') || inputLower.includes('leaderboard') || inputLower.includes('best') || inputLower.includes('ranking'))) {
+      finalScore *= 10.0; // Massive boost to make it the #1 result
+    }
 
     return { entry, score: finalScore };
   });
