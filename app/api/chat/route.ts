@@ -67,15 +67,32 @@ export async function POST(req: NextRequest) {
       currentForm
     );
 
-    // RETRIEVE RELEVANT KNOWLEDGE using semantic search
-    // Uses OpenAI embeddings for intelligent semantic matching
-    let relevantKnowledge = await semanticKnowledgeSearch(message, 10);
+    // HYBRID KNOWLEDGE RETRIEVAL: Semantic + Keyword for best coverage
+    // Semantic search: Smart matching with synonyms and paraphrasing
+    // Keyword search: Fast exact matching for high-priority entries
+    const [semanticResults, keywordResults] = await Promise.all([
+      semanticKnowledgeSearch(message, 8),
+      Promise.resolve(getRelevantKnowledge(message, 8)),
+    ]);
 
-    // Fallback to keyword matching if semantic search returns nothing
-    if (relevantKnowledge.length === 0) {
-      console.log('[Chat API] Semantic search returned no results, falling back to keyword matching');
-      relevantKnowledge = getRelevantKnowledge(message, 10);
+    // Combine and deduplicate results (prioritize keyword matches for critical info like moderators)
+    const combinedMap = new Map<string, typeof keywordResults[0]>();
+
+    // Add keyword results first (higher priority for factual queries)
+    for (const entry of keywordResults) {
+      combinedMap.set(entry.id, entry);
     }
+
+    // Add semantic results (fills gaps with intelligent matches)
+    for (const entry of semanticResults) {
+      if (!combinedMap.has(entry.id)) {
+        combinedMap.set(entry.id, entry);
+      }
+    }
+
+    const relevantKnowledge = Array.from(combinedMap.values()).slice(0, 12);
+
+    console.log(`[Chat API] Retrieved ${relevantKnowledge.length} knowledge entries (${semanticResults.length} semantic + ${keywordResults.length} keyword)`);
     if (relevantKnowledge.length > 0) {
       const knowledgeText = relevantKnowledge
         .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
@@ -92,9 +109,9 @@ export async function POST(req: NextRequest) {
       messages: [
         { role: 'system', content: prompt },
       ],
-      temperature: 0.7,
-      max_tokens: 1000, // Optimized for contest: Allows very comprehensive, detailed answers to fully show off knowledge base
-      top_p: 0.9,
+      temperature: 0.5, // Optimized for factual accuracy - contest requires precision over creativity
+      max_tokens: 2000, // DOUBLED for comprehensive answers - bot can demonstrate full knowledge base
+      top_p: 0.95, // Increased for more diverse knowledge utilization
       frequency_penalty: 0.3,
       presence_penalty: 0.3,
     });
