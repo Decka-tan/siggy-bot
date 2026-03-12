@@ -6,6 +6,7 @@
 
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
+import { ritualEventsKnowledge } from './ritual-events-simple';
 
 export interface KnowledgeEntry {
   id: string;
@@ -197,12 +198,12 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
   const personName = extractPersonName(userInput);
 
   // Combine ALL knowledge sources
-  // Note: Event knowledge files were deleted due to parsing errors
-  // Need to re-extract from C:\Codingers\ALL EVENT with proper parsing
+  // Event knowledge RE-EXTRACTED with simple, proper parsing
   const allKnowledge = [
     ...SIGGY_KNOWLEDGE,
     ...RITUAL_WEB_KNOWLEDGE,
     ...RITUAL_COMMUNITY_KNOWLEDGE,
+    ...ritualEventsKnowledge, // 573 events with proper HOST/WINNER parsing
   ];
 
   // Score each entry based on intelligent word matching + INTENT AWARENESS
