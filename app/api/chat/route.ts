@@ -67,32 +67,12 @@ export async function POST(req: NextRequest) {
       currentForm
     );
 
-    // HYBRID KNOWLEDGE RETRIEVAL: Semantic + Keyword for best coverage
-    // Semantic search: Smart matching with synonyms and paraphrasing
-    // Keyword search: Fast exact matching for high-priority entries
-    const [semanticResults, keywordResults] = await Promise.all([
-      semanticKnowledgeSearch(message, 8),
-      Promise.resolve(getRelevantKnowledge(message, 8)),
-    ]);
+    // FAST KEYWORD-ONLY RETRIEVAL: Speed optimized for contest
+    // Semantic search DISABLED temporarily - too slow for real-time responses
+    // Keyword matching with intelligent word-based matching (handles plurals, variations)
+    const relevantKnowledge = getRelevantKnowledge(message, 12);
 
-    // Combine and deduplicate results (prioritize keyword matches for critical info like moderators)
-    const combinedMap = new Map<string, typeof keywordResults[0]>();
-
-    // Add keyword results first (higher priority for factual queries)
-    for (const entry of keywordResults) {
-      combinedMap.set(entry.id, entry);
-    }
-
-    // Add semantic results (fills gaps with intelligent matches)
-    for (const entry of semanticResults) {
-      if (!combinedMap.has(entry.id)) {
-        combinedMap.set(entry.id, entry);
-      }
-    }
-
-    const relevantKnowledge = Array.from(combinedMap.values()).slice(0, 12);
-
-    console.log(`[Chat API] Retrieved ${relevantKnowledge.length} knowledge entries (${semanticResults.length} semantic + ${keywordResults.length} keyword)`);
+    console.log(`[Chat API] Retrieved ${relevantKnowledge.length} knowledge entries (keyword-only, fast mode)`);
     if (relevantKnowledge.length > 0) {
       const knowledgeText = relevantKnowledge
         .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
