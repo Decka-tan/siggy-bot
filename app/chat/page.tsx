@@ -1091,35 +1091,6 @@ export default function ChatPage() {
                         </div>
                       )}
 
-                      {/* Side Tap Triggers - Invisible areas for quick history navigation */}
-                      {vnMode && activeConversation && activeConversation.messages.length > 1 && (
-                        <>
-                          {/* Left Tap Zone (30% width) */}
-                          <div 
-                            onClick={() => {
-                              const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
-                              if (currentIdx > 0) {
-                                setVnHistoryIndex(currentIdx - 1);
-                                playClick();
-                              }
-                            }}
-                            className="fixed left-0 top-0 bottom-0 w-[30%] z-30 cursor-pointer pointer-events-auto"
-                            title="Tap to go back"
-                          />
-                          {/* Right Tap Zone (30% width) */}
-                          <div 
-                            onClick={() => {
-                              if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
-                                setVnHistoryIndex(vnHistoryIndex + 1);
-                                playClick();
-                              } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
-                                setVnHistoryIndex(-1);
-                                playClick();
-                              }
-                            }}
-                            className="fixed right-0 top-0 bottom-0 w-[30%] z-30 cursor-pointer pointer-events-auto"
-                            title="Tap to go forward"
-                          />
 
                           {/* Side Navigation Arrows - Positioned at EXTREME edges (DESKTOP ONLY) */}
                           <button 
@@ -1278,6 +1249,39 @@ export default function ChatPage() {
                             <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
                               {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
                             </button>
+
+                            {/* Mobile-specific history arrows (VN MODE ONLY - Main Row) */}
+                            {vnMode && activeConversation && activeConversation.messages.length > 1 && (
+                              <div className="flex gap-1 sm:hidden shrink-0 ml-1">
+                                <button 
+                                  onClick={() => {
+                                    const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                    if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                                    playClick();
+                                  }}
+                                  disabled={vnHistoryIndex === 0}
+                                  className="p-2.5 bg-surface border border-border rounded-lg text-accent disabled:opacity-30"
+                                  title="Previous"
+                                >
+                                  <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <button 
+                                  onClick={() => {
+                                    if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                      setVnHistoryIndex(vnHistoryIndex + 1);
+                                    } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                      setVnHistoryIndex(-1);
+                                    }
+                                    playClick();
+                                  }}
+                                  disabled={vnHistoryIndex === -1}
+                                  className="p-2.5 bg-surface border border-border rounded-lg text-accent disabled:opacity-30"
+                                  title="Next"
+                                >
+                                  <ChevronRight className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
                           </div>
 
                           <div className="flex-1 w-full flex items-center gap-2">
