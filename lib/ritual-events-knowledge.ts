@@ -1,11 +1,389 @@
 /**
  * RITUAL DISCORD EVENTS KNOWLEDGE BASE
- * Compiled from Discord events channel (July 2024 - August 2025)
+ * Compiled from Discord events channel (July 2024 - December 2025)
+ *
+ * Data Sources:
+ * - 28 event announcement files (message.txt + message (1)-(27).txt)
+ * - 200+ event announcements analyzed
+ * - Covers all recurring events, special events, regional communities
+ *
+ * Last Updated: March 12, 2026
  */
 
 import type { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
+  // ==========================================
+  // COMPREHENSIVE WEEKLY RECURRING EVENTS (July-December 2025)
+  // Based on analysis of 28 event announcement files
+  // ==========================================
+
+  // TUESDAY EVENTS
+  {
+    id: 'ritual-events-pure-madness',
+    category: 'events',
+    keywords: ['pure madness', 'tuesday', 'puresoul', 'oscar', 'chaos', 'creativity', 'quiz', 'pfp'],
+    content: "PURE MADNESS - Every Tuesday! Ritual community PFP making, fun games, quizzes, vibes, and special guests. Hosted by Puresoul & Oscar (Oscar Draws). Features 'Comic Nerd Battles' and creative sessions. Times vary (announced weekly). Event link: https://discord.com/events/1210468736205852672/1393612705440596039",
+    priority: 9,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-geoguessr',
+    category: 'events',
+    keywords: ['geoguessr', 'tuesday', 'geography', 'cranky', '1pm utc', 'guess location'],
+    content: "GeoGuessr - Every Tuesday at 1PM UTC! Geography guessing game where players are dropped in random locations. Hosted by @cranky. No actual geography skills required - overconfidence counts! Wild guesses and fake expertise encouraged. Event link: https://discord.com/events/1210468736205852672/1392450590851989554",
+    priority: 9,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // WEDNESDAY EVENTS
+  {
+    id: 'ritual-events-ritual-puzzle',
+    category: 'events',
+    keywords: ['puzzle', 'wednesday', 'ogumaterry', 'cookie', 'naija', 'picture puzzle'],
+    content: "Ritual Puzzle Game - Every Wednesday! Picture puzzle game hosted by Ogumaterry (Host) and Cookie (Cohost). Location: voice naija (Naija Community). Game link: https://ritualpicpuzzle.vercel.app/. Known as 'the puzzle that makes you regret joining Discord' - hard puzzles that make you doubt your math skills. Open link, shuffle puzzle, first to finish wins! Event link: https://discord.com/events/1210468736205852672/1409952104033947840",
+    priority: 9,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-tetris',
+    category: 'events',
+    keywords: ['tetris', 'wednesday', 'jericd', 'block stacking', 'falling blocks'],
+    content: "Tetris Battle - Every Wednesday! Block-stacking battle hosted by @JericD (❖,❖). Shapes fall, nerves break, logic vs panic. Near wins and tragic misdrops, someone yells 'NOOOO!' every 5 minutes. Stack up, don't crack up! Event link: https://discord.com/events/1210468736205852672/1392552045281677423",
+    priority: 8,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-fitness',
+    category: 'events',
+    keywords: ['fitness', 'workout', 'wednesday', 'kundan', 'home workout', 'survival'],
+    content: "Fitness At Home - Wednesdays (intermittent)! Home workout sessions hosted by @Kundan. 'The Survival Edition' with light workouts, jumping jacks, squats. Camera optional, stay hydrated, laugh through the pain. Question your life choices after 3 jumping jacks!",
+    priority: 7,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // THURSDAY EVENTS
+  {
+    id: 'ritual-events-smashkarts-comprehensive',
+    category: 'events',
+    keywords: ['smash karts', 'thursday', '4:30pm utc', 'joyesh', 'karting', 'racing', 'chaos', 'power-ups'],
+    content: "Smash Karts Showdown - Every Thursday at 4:30PM UTC! Hosted by @Joyesh. Kart racing chaos with power-ups (rockets, mines). Not about driving skills, but causing chaos! Wild chases, sneaky shortcuts, glorious revenge. Link shared at start time. All skill levels welcome. 'A war on wheels.' Event link: https://discord.com/events/1210468736205852672/1392899453433675839",
+    priority: 10,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-guess-song',
+    category: 'events',
+    keywords: ['guess the song', 'music', 'trivia', 'edward', 'augustine', 'thursday', 'friday', 'songtrivia'],
+    content: "Guess the Song - Weekly (Thursdays/Fridays)! Music trivia hosted by @EDWARD (❖,❖) and Augustine. Platform: https://songtrivia2.io/. Guess song from 3-5 seconds audio clip. Fastest to name = 1 point. Bonus: sing verse for extra point. Fail/freeze = next person's chance. Event link: https://discord.com/events/1210468736205852672/1392884947731222558",
+    priority: 8,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // FRIDAY EVENTS
+  {
+    id: 'ritual-events-scribble-comprehensive',
+    category: 'events',
+    keywords: ['scribble', 'friday', 'hinata', 'draw', 'art', 'drawing game', 'guess drawing'],
+    content: "Scribble Night - Every Friday! Drawing and guessing game hosted by @Hinata. Unleash your inner artist! No skills required, no rules, no pressure. Wild creativity, random doodles, pure fun. Guess, doodle, flex creativity with Ritual family. Expect laughs and messy masterpieces. Event link: https://discord.com/events/1210468736205852672/1393289825582321734",
+    priority: 9,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // SATURDAY EVENTS
+  {
+    id: 'ritual-events-team-draw-battle',
+    category: 'events',
+    keywords: ['draw battle', 'saturday', '5pm utc', 'mjd63', 'livrein', 'team drawing', 'art mayhem'],
+    content: "Team Draw Battle - Every Saturday at 5PM UTC! Hosted by @mjd63 and @Livrein. Team vs Team drawing competition. Artistic skills help but teammates' brain cells decide fate. 'Where Art Meets Mayhem.' Event link: https://discord.com/events/1210468736205852672/1437517576644202616",
+    priority: 8,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // SUNDAY EVENTS
+  {
+    id: 'ritual-events-chess-comprehensive',
+    category: 'events',
+    keywords: ['chess', 'sunday', '1pm utc', 'kash', 'kash_060', 'npc leader', 'tournament', 'checkmate'],
+    content: "Chess Tournament - Every Sunday at 1PM UTC! Hosted by @kash_060 (NPC LEADER). Platform: Chess.com (tournament link varies weekly). Registration opens 1 hour before event - come early! All skill levels welcome. No tuxedos or hushed libraries, just vibes and friendly checkmates. 'Who's really got that checkmate energy?' Event link: https://discord.com/events/1210468736205852672/1393958930169991240",
+    priority: 10,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-movie-night',
+    category: 'events',
+    keywords: ['movie night', 'sunday', 'xer0', 'film', 'watch together'],
+    content: "Movie Night - Every Sunday! Hosted by @X E R 0. Movies under 1 hour 30 minutes. Rules: No spoilers, mic off during movie (unless being funny), bring virtual snacks. Optional: dramatic crying for engagement. 'Vibes, chaos, and community bonding.' Event link: https://discord.com/events/1210468736205852672/1437092765707014226",
+    priority: 7,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // MULTIPLE TIMES PER WEEK
+  {
+    id: 'ritual-events-karaoke-comprehensive',
+    category: 'events',
+    keywords: ['karaoke', 'sing', 'quinn', 'claire', 'fcfs', 'multiple times', 'voice', 'microphone'],
+    content: "Ritual Karaoke Night - Multiple times per week (2-3x)! Hosted by Quinn & Claire (main), various regional hosts. Location: 🎤┇ritty karaoke. 'The Noise not The Voice' - whether you're the next Burna Boy or just in it for fun. FCFS (First Come First Served) - limited participants, show up early! Variations: Naija Edition (@Oluwasegun & ! !* 🌻 KENA (❖,❖)), Chinese Edition (mido.0826 & fairy, voice china). Event link: https://discord.com/events/1210468736205852672/1393226219981508629",
+    priority: 10,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-bomb-party-comprehensive',
+    category: 'events',
+    keywords: ['bomb party', 'word game', 'rudra', 'typing', 'explosive', 'keyboard panic', '2-3x per week'],
+    content: "Bomb Party - 2-3 times per week! Fast-paced word game with ticking bomb hosted by @rudra. Type fast, think faster! No installs needed - just keyboard and will to win. Pray brain doesn't freeze. 'Keyboard Panic Edition.' Event link: https://discord.com/events/1210468736205852672/1393648428382163005",
+    priority: 9,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+  {
+    id: 'ritual-events-poker',
+    category: 'events',
+    keywords: ['poker', 'weekly', 'sunday', 'monday', 'lepoker', 'pokernow', 'tournament', 'bluff'],
+    content: "Poker Tournament - Weekly (Sundays/Mondays)! Platforms: https://app.lepoker.io/ or https://www.pokernow.club/. 'Circus of calm faces and nervous souls.' No cash, just pride and glory. Sometimes FCFS (first 50 only). Bold bluffs and dramatic all-ins. Right to talk smack until next round. Event link: https://discord.gg/mCDfhHKsJ?event=1394317583976501308",
+    priority: 8,
+    source: 'ritual-discord-events-comprehensive-2025',
+  },
+
+  // ==========================================
+  // REGIONAL COMMUNITY EVENTS
+  // ==========================================
+
+  // NAIJA COMMUNITY (Nigeria)
+  {
+    id: 'ritual-events-naija-web3-hangout',
+    category: 'events',
+    keywords: ['naija', 'web3', 'hangout', 'nigeria', 'kash', 'g9d', '7pm utc', 'voice naija'],
+    content: "Naija Web3 Hangout - For the Nigerian Ritual community! Hosted by @Kash(❖,❖) | NPC LEADER and @G9D運(❖). Time: 7pm UTC. Location: voice naija. Topics: How to get involved in Ritual, Open AMA, tips for creating content that lands, Naija banter and vibes. 'All vibes, no pressure, just real talk.' Variation: Graphics design tutorial (creating better graphics without premium payment). For the community, by the community!",
+    priority: 8,
+    source: 'ritual-discord-events-regional-2025',
+  },
+  {
+    id: 'ritual-events-naija-karaoke',
+    category: 'events',
+    keywords: ['naija karaoke', 'nigeria', 'oluwasegun', 'kena', 'burna boy', 'ayra starr', 'davido', 'wizkid'],
+    content: "Naija Karaoke Night - Nigerian edition! Hosted by @Oluwasegun (❖,❖) and @! !* 🌻 KENA (❖,❖). Location: voice naija. Sing Burna Boy, Ayra Starr, Davido, Wizkid! Voice can sound like 'frog + generator combo' - stage has no shame, community hypes regardless of quality. Nigerian vibes, Afrobeat tunes, regional pride!",
+    priority: 7,
+    source: 'ritual-discord-events-regional-2025',
+  },
+  {
+    id: 'ritual-events-naija-riddle',
+    category: 'events',
+    keywords: ['naija riddle', 'rumble', 'preshynode', 'brain teaser', 'nigeria', 'voice naija'],
+    content: "Ritual Riddle Rumble - Naija community brain teaser! Hosted by @PRESHYNODE(❖,❖). Location: voice naija. 10 brain-melting riddles. Rules: No calculators, no ChatGPT. 'Not about who's smartest, who can pretend to be.' Test your wits against the Nigerian community!",
+    priority: 7,
+    source: 'ritual-discord-events-regional-2025',
+  },
+  {
+    id: 'ritual-events-naija-scribble',
+    category: 'events',
+    keywords: ['naija scribble', 'nigeria', 'mmorgs', 'momo', 'pidgin', 'pepper soup'],
+    content: "Scribble Night - Naija Edition! Hosted by @Mmorgs and @MOMO独(❖,❖). Location: voice naija. Drawing game with Nigerian Pidgin descriptions. 'Where your cat fit look like pepper soup.' Nigerian vibes, 'wahala lovers,' regional humor in drawing form!",
+    priority: 7,
+    source: 'ritual-discord-events-regional-2025',
+  },
+
+  // INDONESIAN COMMUNITY (Komunitas Indonesia)
+  {
+    id: 'ritual-events-health-hotline-comprehensive',
+    category: 'events',
+    keywords: ['health hotline', 'indonesia', 'indo', 'tchan', 'rikky', 'ritualdoc', 'lifestyle', 'sickness', '11 december 2025'],
+    content: "Ritual Health Hotline (also called Ritual Health Talk) - For Indonesian region (Komunitas Indonesia)! Started December 11, 2025 (announced by Kash | NPC LEADER). Hosted by @TChan - Boo the Ritual Cat (❖,❖) and @rikkydwiyanto | RitualDoc (❖,❖). Location: voice indo. Live Q&A, practical advice, zero judgment about lifestyle habits and everyday sicknesses. Topics: 'Why my head hurts every Monday.' Tagline: 'unless you still think coffee counts as breakfast.' Discussing real lifestyle habits and everyday sicknesses with zero judgment.",
+    priority: 10,
+    source: 'ritual-discord-events-regional-2025',
+  },
+  {
+    id: 'ritual-events-indo-movie-guessing',
+    category: 'events',
+    keywords: ['guess the movie', 'indonesia', 'indo', 'emoji', 'babyhulq', 'oonat', '1pm utc', 'voice indo'],
+    content: "Guess The Movie With Emoji - Indonesian community event! Hosted by @babyHULQ ❖,❖ and @Oonat. Time: 1pm UTC. Location: voice indo. Guess movies from emoji clues. Rules: Emoji clues posted in chat, guess movie title, no arguing with emojis (auto-lose), first correct guess wins. Test your movie knowledge with the Indonesian Ritual community!",
+    priority: 7,
+    source: 'ritual-discord-events-regional-2025',
+  },
+
+  // CHINESE COMMUNITY
+  {
+    id: 'ritual-events-chinese-karaoke',
+    category: 'events',
+    keywords: ['chinese karaoke', 'china', 'mido', 'fairy', 'emiyns', 'voice china', 'wednesday'],
+    content: "Ritual Karaoke Event (CN) - Chinese community karaoke! Hosts: mido.0826 and fairy. Artist: emiyns. Time: Wednesday, 03 December 2025 19:00. Location: voice china. Singing, listening, discussing Ritual project. All languages acceptable, other regions welcome to join the Chinese community karaoke night!",
+    priority: 7,
+    source: 'ritual-discord-events-regional-2025',
+  },
+
+  // RUSSIAN COMMUNITY
+  {
+    id: 'ritual-events-russian-ambassador',
+    category: 'events',
+    keywords: ['russian', 'ambassador', 'evening', 'meison', 'lola', 'voice снг', 'july 18 2025'],
+    content: "Evening with the Ambassador - Russian community event! Hosted by @Meison (❖❖) and @Lola (❖❖). Speaker: Lola (Ritual ambassador). Time: July 18, 2025 11:30 PM. Location: voice снг. Topics: Web3 journey, insights and experiences, how to find place in Web3 space. Beginner-friendly, no jargon. Learn from Lola's path as a Ritual ambassador in the Russian community!",
+    priority: 7,
+    source: 'ritual-discord-events-regional-2025',
+  },
+
+  // ==========================================
+  // SPECIAL EVENTS & TOURNAMENTS
+  // ==========================================
+  {
+    id: 'ritual-events-witch-hunting',
+    category: 'events',
+    keywords: ['witch hunting', 'august 2025', 'perseus', 'aliendrooo', 'chains.games', 'josh boss', 'community game'],
+    content: "Ritual Witch Hunting Game (August 2025) - First Ritual community game created BY the community, FOR the community! Hosted by @Perseus and @aliendrooo. Game: Rotate character with A/D keys, press Spacebar to cast spells at witches. Earn 1 point + 2 gaming tokens per witch. Josh (boss) appears at 70 points! Shop: Heal (20 tokens), Armor (30 tokens), Dual fire (40 tokens). Start with 10 HP. 'Specifically designed to make Josh suffer!' Play at https://chains.games/",
+    priority: 9,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-find-witch',
+    category: 'events',
+    keywords: ['find the witch', 'august', 'september', 'where\\'s waldo', '30 rounds', '15 rounds'],
+    content: "Find the Ritual Witch (August-September 2025) - Where's Waldo-style game with Ritual Witch hiding in images! 15-30 rounds. Pictures start easy, get harder. Circle the witch and send edited image. First to find wins. 'Aggressively staring at JPEGs' until you spot the witch! Event link: https://discord.com/events/1210468736205852672/1403485532675113001",
+    priority: 8,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-rocket-bot-royale',
+    category: 'events',
+    keywords: ['rocket bot royale', 'august', 'december', 'weekly', 'tank', 'physics', 'chaos'],
+    content: "Rocket Bot Royale (August-December 2025) - Weekly tank battle game! Platform: https://rocketbotroyale2.winterpixel.io/. 'Where physics and common sense go to die.' Destroy other tanks, collect power-ups, be last one standing. 90% of playtime spent respawning. 'Fast-paced, explosive, full of chaos.' Event link: https://discord.com/events/1210468736205852672/1409953832779251732",
+    priority: 8,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-stumble-guys',
+    category: 'events',
+    keywords: ['stumble guys', 'november', 'december', 'krishna', 'skitter', 'shobe', 'ayana', 'obstacle course'],
+    content: "Stumble Guys (November-December 2025) - Colorful knockout game! Hosts: @Krishna16❤, @SKITTER (❖,❖), @Shobe | BatClub (❖,❖), @ayanaa (❖,❖). Race through obstacle courses, survive chaos. How to play: Download Stumble Guys on mobile/PC, enter lobby code, survive obstacle courses, last player standing wins. 'Where everyone's a pro, until they trip over nothing.' Event link: https://discord.com/events/1210468736205852672/1430648677227040911",
+    priority: 8,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-goose-goose-duck',
+    category: 'events',
+    keywords: ['goose goose duck', 'november', 'among us', 'printer', 'gaggle.fun', 'betrayal'],
+    content: "Goose Goose Duck (November 2025) - Among Us-style game with geese! Host: @ThePrinter⌘. Platform: https://gaggle.fun/goose-goose-duck. Complete tasks while guessing who's murdering. Discuss, argue, vote with zero evidence. Roles: Goose or Duck. 'Where friendship is temporary but betrayal is forever.' Repeat until traumatized and laughing! Event link: https://discord.com/events/1210468736205852672/1433369014167539824",
+    priority: 8,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-haxball',
+    category: 'events',
+    keywords: ['haxball', 'november', 'amr mousa', 'football', 'haxball.com', 'teamwork'],
+    content: "Haxball Tournament (November 2025) - Football game where teamwork goes to die! Host: @Amr mousa (❖,❖). Platform: haxball.com. Two teams, one ball. Use keyboard arrows to move and kick. Team with highest score wins. 'Where teammate swears they're defending while doing donuts.' Infinite screaming and blaming lag! Event link: https://discord.com/events/1210468736205852672/1438632180078088212",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-word-race',
+    category: 'events',
+    keywords: ['word race', 'november', 'daniennix', 'typing', 'bloob.io', 'keyboard carnage'],
+    content: "Word Race (November 2025) - Typing speed game! Host: @Daniennix (❖,❖). Platform: bloob.io. Type words as fast as possible. Brain loses, fingers panic. Accidentally spell 'cat' as 'cta'. 'Keyboard Carnage Night - where fingers race your brain!' Event link: https://discord.com/events/1210468736205852672/1431743642803900507",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-battleship',
+    category: 'events',
+    keywords: ['battleship', 'edward', 'war', 'ocean', 'guess ships', 'logic luck'],
+    content: "Battleship War (Multiple months) - Classic Battleship game! Hosted by @EDWARD (❖,❖). Find opponent's ships, blow them up. Half logic, half luck, fully hilarious. One lucky guess makes you a legend. 'Turn the ocean into a war zone of chaos and screams!' Often paired with music trivia. Event link: https://discord.com/events/1210468736205852672/1392884947731222558",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-codenames',
+    category: 'events',
+    keywords: ['codenames', 'word association', 'lechi', 'afonso003', 'danny', 'spy game', 'wednesday'],
+    content: "Codenames (July, December 2025) - Word association spy game! Hosts: Various (Lechi, @afonso003, @Danny). Location: ritty zone 1. One-word hints to teams, full sentences = immediate retirement. Don't accidentally lead team to assassin word! 'The Spy Game Where Trust Goes to Die.' Originally Wednesday 7:30PM UTC, moved to 3:00PM UTC. Team Red vs Team Blue, first to decode wins!",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-gimkit',
+    category: 'events',
+    keywords: ['gimkit', 'chaos', 'orth', 'jiro', 'quiz', 'power-ups', 'november'],
+    content: "Gimkit Chaos (November 2025) - Quiz game with power-ups! Hosts: @'Orth (❖,❖) and @JIRO 멧개 (❖,❖). Platform: https://www.gimkit.com/join. Answer fast, guess faster. Spam power-ups, pray screen doesn't freeze. 'Nobody leaves with dignity intact!' Event link: https://discord.com/events/1210468736205852672/1432832484923674807",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-jigsaw',
+    category: 'events',
+    keywords: ['jigsaw', 'puzzle', 'marathon', 'pince croco', 'patience', 'november'],
+    content: "Jigsaw Puzzle Marathon (November 2025) - Test your patience and eyes! Host: @pince croco (❖,❖). Prove sharpest mind under pressure. 'Where if you win, people call you bot!' Event link: https://discord.com/events/1210468736205852672/1431182592706744422",
+    priority: 6,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-drawize',
+    category: 'events',
+    keywords: ['drawize', 'chaos night', 'ylona', 'drawing', 'brain acts never seen circle'],
+    content: "Drawize Chaos Night (November 2025) - Drawing game where hand betrays you! Host: @! Ylona ❖,❖^ྀི. Get a word, try to draw like normal human. Everyone guesses and laughs. Winner gets respect, loser gets screenshots. 'Your brain acts like it's never seen a circle before!' Event link: https://discord.com/events/1210468736205852672/1433891697984798920",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-internet-game',
+    category: 'events',
+    keywords: ['internet game night', 'september', 'november', 'afonso003', 'danny', 'simple games', 'no downloads'],
+    content: "Internet Game Night (September-November 2025) - Simple online social games, no downloads! Hosts: @afonso003 (❖,❖) and @Danny (❖,❖). Fast typing, questionable drawings, skill vs luck battles. 'Where Wi-Fi is strong and someone's blaming lag!' Event link: https://discord.com/events/1210468736205852672/1415223309897043988",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-bingo',
+    category: 'events',
+    keywords: ['bingo', 'night', 'seed', 'd4nny', 'november', 'numbers'],
+    content: "Bingo Night (November 2025) - Classic bingo Ritual style! Hosts: @Seed (Cedweak) (❖,❖) and @D4nny (❖,❖). 'WHY IS EVERYONE GETTING NUMBERS EXCEPT ME?? Bingo' Event link: https://discord.com/events/1210468736205852672/1434608187579039928",
+    priority: 6,
+    source: 'ritual-discord-events-special-2025',
+  },
+  {
+    id: 'ritual-events-scavenger',
+    category: 'events',
+    keywords: ['scavenger hunt', 'bagholder', 'tella', 'november', 'december', 'search items'],
+    content: "Scavenger Hunt (November-December 2025) - Ultimate race against time and memory! Hosts: @BAGHOLDER | THE SIMP (❖,❖) and @Tella (❖,❖). Search, sprint, trip over slippers. Find random items in house. Compete for glory and existential crisis. Event link: https://discord.com/events/1210468736205852672/1430667127626535022",
+    priority: 7,
+    source: 'ritual-discord-events-special-2025',
+  },
+
+  // ==========================================
+  // EVENT RULES & GUIDELINES
+  // ==========================================
+  {
+    id: 'ritual-events-rules-comprehensive',
+    category: 'rules',
+    keywords: ['rules', 'guidelines', '100 xp', 'top 3', 'discord name', 'in-game name', 'name matching', 'fcfs'],
+    content: "Ritual Discord Events Rules (Comprehensive): 1) In-game name MUST match Discord name for smooth recognition. 2) After each event, hosts send top 3 winners using Discord @mention. 3) Top 3 winners receive 100 XP each. 4) FCFS (First Come First Served) for limited spot events like Karaoke - show up early! 5) Registration opens 1 hour before event for events like Chess - don't wait till last minute. 6) All skill levels welcome - no pressure, just vibes. 7) Events posted in 🎪┇events channel. 8) @Events role required for notifications.",
+    priority: 10,
+    source: 'ritual-discord-events-rules-2025',
+  },
+
+  // ==========================================
+  // HOST ASSIGNMENTS & SCHEDULES
+  // ==========================================
+  {
+    id: 'ritual-hosts-primary',
+    category: 'hosts',
+    keywords: ['hosts', 'kash', 'quinn', 'claire', 'hinata', 'cranky', 'joyesh', 'schedule', 'assignments'],
+    content: "Primary Ritual Discord Event Hosts: @kash_060 (Chess - Sundays 1PM UTC, NPC LEADER, Event Manager). Quinn & Claire (Karaoke - multiple times per week, FCFS, 🎤┇ritty karaoke). @Hinata (Scribble - Fridays). @cranky (GeoGuessr - Tuesdays 1PM UTC, 'The legendary'). @Joyesh (Smash Karts - Thursdays 4:30PM UTC). @rudra (Bomb Party - 2-3x per week). @JericD (Tetris - Wednesdays). Ogumaterry & Cookie (Ritual Puzzle - Wednesdays, voice naija). Puresoul & Oscar (Pure Madness - Tuesdays). @EDWARD (Guess the Song, Battleship). @X E R 0 (Movie Night - Sundays).",
+    priority: 10,
+    source: 'ritual-discord-events-hosts-2025',
+  },
+  {
+    id: 'ritual-hosts-regional',
+    category: 'hosts',
+    keywords: ['hosts', 'regional', 'naija', 'indonesia', 'chinese', 'russian', 'community'],
+    content: "Regional Community Hosts: Naija (Nigeria) - @Kash(❖,❖), @G9D運(❖), @Oluwasegun (❖,❖), ! !* 🌻 KENA (❖,❖), @PRESHYNODE(❖,❖), @Mmorgs, @MOMO独(❖,❖), @Lechi, @Kundan. Indonesian - @TChan - Boo the Ritual Cat (❖,❖), @rikkydwiyanto | RitualDoc (❖,❖), @babyHULQ ❖,❖, @Oonat. Chinese - mido.0826, fairy, emiyns. Russian - @Meison (❖❖), @Lola (❖❖). These hosts manage regional events, karaoke nights, games, and community discussions in their respective voice channels and languages.",
+    priority: 9,
+    source: 'ritual-discord-events-hosts-regional-2025',
+  },
+  {
+    id: 'ritual-hosts-special',
+    category: 'hosts',
+    keywords: ['hosts', 'special', 'tournaments', 'per', 'aliendrooo', 'krishna', 'skitter', 'orth', 'jiro', 'printer'],
+    content: "Special Event Hosts: @Perseus & @aliendrooo (Witch Hunting Game). @Krishna16❤, @SKITTER (❖,❖), @Shobe | BatClub (❖,❖), @ayanaa (❖,❖) (Stumble Guys). @ThePrinter⌘ (Goose Goose Duck). @Amr mousa (❖,❖) (Haxball). @Daniennix (❖,❖) (Word Race). @'Orth (❖,❖) & @JIRO 멧개 (❖,❖) (Gimkit). @pince croco (❖,❖) (Jigsaw). @! Ylona ❖,❖^ྀི (Drawize). @afonso003 (❖,❖) & @Danny (❖,❖) (Internet Game Night, Codenames). @Seed (Cedweak) (❖,❖) & @D4nny (❖,❖) (Bingo). @BAGHOLDER | THE SIMP (❖,❖) & @Tella (❖,❖) (Scavenger Hunt). @mjd63 & @Livrein (Team Draw Battle). These hosts manage special one-time or monthly events and tournaments.",
+    priority: 8,
+    source: 'ritual-discord-events-hosts-special-2025',
+  },
+
   // ==========================================
   // NEW RECURRING EVENTS (July-August 2025)
   // ==========================================
