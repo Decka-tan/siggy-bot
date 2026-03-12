@@ -49,6 +49,29 @@ const getSpriteForMood = (personality: string, mood: MoodState): string => {
   return `${prefix}-${mood.toLowerCase()}.png`;
 };
 
+const getBondColor = (level?: string): string => {
+  if (!level) return 'text-accent';
+  switch (level.toUpperCase()) {
+    case 'SOULBOUND': return 'text-yellow-400';
+    case 'BESTIE': return 'text-pink-400';
+    case 'FRIEND': return 'text-accent';
+    case 'ACQUAINTANCE': return 'text-blue-400';
+    case 'SKETCHY': return 'text-orange-400';
+    case 'ENEMY': return 'text-red-500';
+    default: return 'text-accent';
+  }
+};
+
+const getBondBarColor = (level?: string): string => {
+  if (!level) return 'bg-accent';
+  switch (level.toUpperCase()) {
+    case 'SOULBOUND': return 'bg-yellow-400';
+    case 'BESTIE': return 'bg-pink-400';
+    case 'ENEMY': return 'bg-red-500';
+    default: return 'bg-accent';
+  }
+};
+
 const CONVERSATIONS_KEY = 'siggy-conversations';
 const ACTIVE_CONV_KEY = 'siggy-active-conversation';
 const SIDEBAR_KEY = 'siggy-sidebar-collapsed';
@@ -902,18 +925,18 @@ export default function ChatPage() {
                           <div className="flex items-center gap-3">
                             {/* Bond Resonance Meter (RIGHT SIDE) */}
                             {activeConversation.relationshipLevel && (
-                              <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2">
-                                <Sparkles className="w-3 h-3 text-accent animate-pulse" />
-                                <span className="text-[10px] font-mono font-bold text-accent tracking-tighter">
+                              <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
+                                <Sparkles className={`w-3 h-3 animate-pulse ${getBondColor(activeConversation.relationshipLevel)}`} />
+                                <span className={`text-[10px] font-mono font-bold tracking-tighter ${getBondColor(activeConversation.relationshipLevel)}`}>
                                   BOND: {activeConversation.relationshipLevel}
                                 </span>
                                 <div className="hidden md:flex gap-0.5 ml-1">
                                   {[...Array(5)].map((_, i) => (
                                     <div 
                                       key={i} 
-                                      className={`h-1.5 w-3 rounded-sm ${
+                                      className={`h-1.5 w-3 rounded-sm transition-all duration-500 ${
                                         (activeConversation.relationshipScore || 0) >= (i * 5) 
-                                          ? 'bg-accent shadow-[0_0_5px_rgba(0,255,148,0.5)]' 
+                                          ? `${getBondBarColor(activeConversation.relationshipLevel)} shadow-[0_0_5px_rgba(0,0,0,0.3)]` 
                                           : 'bg-white/10'
                                       }`} 
                                     />
