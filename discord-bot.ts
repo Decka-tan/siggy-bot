@@ -128,6 +128,7 @@ async function generateSiggyResponse(
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: prompt + knowledgeContext },
+        { role: 'user', content: userMessage }
       ],
       temperature: 0.7,
       max_tokens: 300,

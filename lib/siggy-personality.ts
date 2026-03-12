@@ -407,9 +407,7 @@ export function buildSiggyPrompt(
   if (isFirstMessage) {
     prompt += "\n\n## OPENING LINE SUGGESTION: " + moodSystem.getOpeningLine();
   }
-  prompt += "\n\nNow respond to the user's message:";
-  prompt += "\nUser (" + userName + "): " + userMessage;
-  prompt += "\n\nSiggy (remember to start with [MOOD:X]):";
+  prompt += "\n\nRemember to start your response with [MOOD:X].";
 
   return prompt;
 }

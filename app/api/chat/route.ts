@@ -156,6 +156,7 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: prompt },
+        { role: 'user', content: message }
       ],
       temperature: temperature,
       max_tokens: 2000,
