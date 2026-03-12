@@ -83,15 +83,35 @@ export async function POST(req: NextRequest) {
     // Enhance prompt with context summaries and key facts
     prompt = buildContextualPrompt(prompt, managedContext, userId, message);
 
+    // Dynamic temperature based on mood and knowledge
+    let temperature = 0.7; // Default
+    const currentMood = moodSystem.getCurrentMood();
+    
+    const moodTemperatures: Record<string, number> = {
+      DEFAULT: 0.7,
+      HAPPY: 0.9,
+      SAD: 0.5,
+      SHOCK: 0.9,
+      SHY: 0.4,
+      ANGRY: 0.6
+    };
+
+    temperature = moodTemperatures[currentMood] || 0.7;
+
+    // If knowledge is found, prioritize accuracy by reducing temperature
+    if (relevantKnowledge.length > 0) {
+      temperature = Math.max(0.3, temperature - 0.2);
+    }
+
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o',
       messages: [
         { role: 'system', content: prompt },
       ],
-      temperature: 0.5, // Optimized for factual accuracy - contest requires precision over creativity
-      max_tokens: 2000, // DOUBLED for comprehensive answers - bot can demonstrate full knowledge base
-      top_p: 0.95, // Increased for more diverse knowledge utilization
+      temperature: temperature,
+      max_tokens: 2000,
+      top_p: 0.95,
       frequency_penalty: 0.3,
       presence_penalty: 0.3,
     });
