@@ -186,10 +186,10 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-events-health-hotline-comprehensive',
     category: 'events',
-    keywords: ['health hotline', 'indonesia', 'indo', 'tchan', 'rikky', 'ritualdoc', 'lifestyle', 'sickness', '11 december 2025'],
-    content: "Ritual Health Hotline (also called Ritual Health Talk) - For Indonesian region (Komunitas Indonesia)! Started December 11, 2025 (announced by Kash | NPC LEADER). Hosted by @TChan - Boo the Ritual Cat (❖,❖) and @rikkydwiyanto | RitualDoc (❖,❖). Location: voice indo. Live Q&A, practical advice, zero judgment about lifestyle habits and everyday sicknesses. Topics: 'Why my head hurts every Monday.' Tagline: 'unless you still think coffee counts as breakfast.' Discussing real lifestyle habits and everyday sicknesses with zero judgment.",
+    keywords: ['health hotline', 'indonesia', 'indo', 'tchan', 'rikky', 'ritualdoc', 'lifestyle', 'sickness', 'wednesday', 'weekly', '14 times'],
+    content: "Ritual Health Hotline (also called Ritual Health Talk) - Weekly event for Indonesian region (Komunitas Indonesia)! EVERY WEDNESDAY at 7:45-8:00 PM UTC. Hosted by @TChan - Boo the Ritual Cat (❖,❖) and @rikkydwiyanto | RitualDoc (❖,❖). Location: voice indo. Started November 12, 2025. Total sessions: 14 times (Nov 2025 - Apr 2026). Live Q&A, practical advice, zero judgment about lifestyle habits and everyday sicknesses. Topics: 'Why my head hurts every Monday,' diagnosing yourself with 12 rare diseases. Tagline: 'unless you still think coffee counts as breakfast.' Schedule: Nov 2025 (3x: 12, 19, 26), Dec 2025 (3x: 3, 10, 17), Jan 2026 (3x: 14, 21, 28), Feb 2026 (4x: 4, 11, 18, 25), Apr 2026 (1x: 3). March 2026 was hiatus. Discussing real lifestyle habits and everyday sicknesses with zero judgment.",
     priority: 10,
-    source: 'ritual-discord-events-regional-2025',
+    source: 'ritual-discord-events-regional-full',
   },
   {
     id: 'ritual-events-indo-movie-guessing',
