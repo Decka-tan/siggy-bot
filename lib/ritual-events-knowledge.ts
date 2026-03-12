@@ -153,6 +153,30 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
     priority: 6,
     source: 'ritual-discord-events-2025',
   },
+  {
+    id: 'ritual-events-rocket-bot',
+    category: 'events',
+    keywords: ['rocket bot royale', 'rocket bot', 'tanks', 'destroy', 'battle royale'],
+    content: "Rocket Bot Royale - The game where physics and common sense both go to die! Fast-paced, explosive, full of chaos. Mission: Be the last one standing (or at least the last to rage-quit). Destroy other tanks with unique power-ups. PC: Add room code. Mobile: Download from Play Store/App Store. 90% of playtime is spent respawning. Collect power-ups, blast your way through, try to be last standing. Multiple rounds with winners like @Waris niz, @Ninja Hattori, @EREN, @Sahil, @Kavsss, @DARK MAGE VOLDAR, @Gold LeaF, @EDEX, @Cymes.",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-roblox',
+    category: 'events',
+    keywords: ['roblox', 'roblox night', 'game night', 'keybi'],
+    content: "Roblox Game Night - Ready to block, build, and maybe accidentally fall off the map? Chaos is non-stop, chance to meet creativity. Racing through obstacle courses, role-playing as pizza chef, or trolling friends in Brookhaven. Random games chosen by squad, plenty of laughs and 'oops I didn't mean to jump there' moments. Flex your avatar drip. Hosted by @Keybi (Roblox Host). Download Roblox and create account ahead of time. Will you conquer the leaderboard or rage-quit in style?",
+    priority: 7,
+    source: 'ritual-discord-events-2025',
+  },
+  {
+    id: 'ritual-events-poker-platforms',
+    category: 'events',
+    keywords: ['poker', 'pokernow', 'lepoker', 'poker platform', 'card game'],
+    content: "Ritual Poker events use multiple platforms: 1) Poker Now Club (pokernow.club) - Earlier events, MTT format. 2) Lepoker (app.lepoker.io) - New platform from September 2025. Both are free private tournaments. Features: bluffing is strategy, chaos expected, bragging rights on the line. Sometimes FCFS (first 50 only). Watch chips disappear faster than salary, perfect poker face while soul screams internally. Winners receive 100 XP.",
+    priority: 6,
+    source: 'ritual-discord-events-2025',
+  },
   // ==========================================
   // RECURRING EVENTS
   // ==========================================
@@ -415,6 +439,14 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
     content: "To join Ritual events: watch the #events channel for announcements, join the voice channels during events, follow event links to RSVP. Most events are open to all regions - Indonesia, Ukraine, Naija, and global. Some events require registration (like MLBB tournaments), others are drop-in style.",
     priority: 7,
     source: 'ritual-discord-events',
+  },
+  {
+    id: 'ritual-events-rules-2025',
+    category: 'events',
+    keywords: ['rules', 'event rules', 'discord name', 'username', 'xp', '100 xp', 'recognition'],
+    content: "Ritual Event Rules (August 2025): 1) In-game name MUST match Discord name for smooth recognition. 2) After each event, hosts send top 3 winners using Discord @mention (not display name). 3) Top 3 winners receive 100 XP each. 4) Winners announced on 🎪┇events channel. 5) Name mismatch = disqualification (happened to Chess 1st and 2nd place winners). 6) Some events are FCFS like Poker (first 50 only). Hosted by Kash as event manager. Tag host to confirm identity when winning to avoid appearing as a bot.",
+    priority: 9,
+    source: 'ritual-discord-events-2025',
   },
 
   // ==========================================
