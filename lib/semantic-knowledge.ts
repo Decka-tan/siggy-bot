@@ -10,10 +10,9 @@ import {
   type KnowledgeEntry,
 } from './siggy-knowledge';
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
-import { RITUAL_EVENTS_KNOWLEDGE } from './ritual-events-knowledge';
-import { RITUAL_EVENTS_COMPREHENSIVE } from './ritual-events-comprehensive';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
-import { ritualEventsKnowledge } from './ritual-events-complete-knowledge';
+import { ritualEventsKnowledge } from './ritual-events-simple';
+import { RITUAL_DISCORD_KNOWLEDGE } from './ritual-discord-knowledge';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
@@ -82,10 +81,9 @@ async function initializeEmbeddings(): Promise<void> {
   const allKnowledge: KnowledgeEntry[] = [
     ...SIGGY_KNOWLEDGE,
     ...RITUAL_WEB_KNOWLEDGE,
-    ...RITUAL_EVENTS_KNOWLEDGE,
-    ...RITUAL_EVENTS_COMPREHENSIVE,
     ...RITUAL_COMMUNITY_KNOWLEDGE,
     ...ritualEventsKnowledge,
+    ...RITUAL_DISCORD_KNOWLEDGE,
   ];
 
   // ONLY embed high-priority entries initially (priority >= 8) for faster startup

@@ -3,7 +3,7 @@
  * This shows how to use the extracted event data
  */
 
-import { ritualEventsKnowledge } from './ritual-events-complete-knowledge';
+import { ritualEventsKnowledge } from './ritual-events-simple';
 
 // Test 1: Count total events
 console.log('=== KNOWLEDGE BASE TEST ===');
