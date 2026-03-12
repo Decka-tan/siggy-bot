@@ -69,12 +69,21 @@ export async function POST(req: NextRequest) {
       managedContext.relationshipScore
     );
 
-    // FAST KEYWORD-ONLY RETRIEVAL: Speed optimized for contest
-    // Semantic search DISABLED temporarily - too slow for real-time responses
-    // Keyword matching with intelligent word-based matching (handles plurals, variations)
-    const relevantKnowledge = getRelevantKnowledge(message, 12);
+    // FAST KEYWORD-ONLY RETRIEVAL
+    // If the message is a short follow-up (e.g. "how many times?"), include recent context so we don't lose the subject
+    const recentUserMsgs = conversationHistory
+      .filter((m: any) => m.role === 'user')
+      .slice(-2)
+      .map((m: any) => m.content)
+      .join(' ');
+      
+    const searchContext = (message.split(' ').length < 6 && recentUserMsgs)
+      ? `${recentUserMsgs} ${message}`
+      : message;
 
-    console.log(`[Chat API] Retrieved ${relevantKnowledge.length} knowledge entries (keyword-only, fast mode)`);
+    const relevantKnowledge = getRelevantKnowledge(searchContext, 12);
+
+    console.log(`[Chat API] Retrieved ${relevantKnowledge.length} knowledge entries for context: "${searchContext.substring(0, 50)}..."`);
     if (relevantKnowledge.length > 0) {
       // Add context-aware instructions
       const userIntent = message.toLowerCase();
@@ -91,6 +100,12 @@ export async function POST(req: NextRequest) {
         contextInstruction += "- User is asking about someone's events → If person is marked as 'HOST:', describe events they HOST\n";
         contextInstruction += "- CRITICAL: Hosting (HOST:) is MORE important than winning for 'what event/what events' questions\n";
         contextInstruction += "- If knowledge shows 'HOST: @person', describe THAT event (not events where they just won)\n";
+      }
+      
+      // Ensure stats and precise counts are prioritized
+      if (userIntent.includes('how many') || userIntent.includes('count') || userIntent.includes('stats')) {
+        contextInstruction += "- User is asking for exact counts. Prioritize '[KNOWLEDGE: stats]' entries which contain exact numbers.\n";
+        contextInstruction += "- DO NOT guess or approximate if you have exact stats. State the exact number.\n";
       }
 
       const knowledgeText = relevantKnowledge

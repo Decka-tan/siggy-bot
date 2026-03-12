@@ -7,6 +7,8 @@
 import { RITUAL_WEB_KNOWLEDGE } from './ritual-web-knowledge';
 import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
 import { ritualEventsKnowledge } from './ritual-events-simple';
+import { RITUAL_DISCORD_KNOWLEDGE } from './ritual-discord-knowledge';
+import { RITUAL_STATS_KNOWLEDGE } from './ritual-stats-knowledge';
 
 export interface KnowledgeEntry {
   id: string;
@@ -204,6 +206,8 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
     ...RITUAL_WEB_KNOWLEDGE,
     ...RITUAL_COMMUNITY_KNOWLEDGE,
     ...ritualEventsKnowledge, // 573 events with proper HOST/WINNER parsing
+    ...RITUAL_DISCORD_KNOWLEDGE, // Add our extracted discord knowledge
+    ...RITUAL_STATS_KNOWLEDGE, // Exact aggregated counts
   ];
 
   // Score each entry based on intelligent word matching + INTENT AWARENESS
