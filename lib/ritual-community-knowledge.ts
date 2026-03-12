@@ -7,25 +7,6 @@ import type { KnowledgeEntry } from './siggy-knowledge';
 
 export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   // ==========================================
-  // TOP COMMUNITY CHAMPIONS (HIGHEST PRIORITY)
-  // ==========================================
-  {
-    id: 'ritual-top-winners',
-    category: 'champions',
-    keywords: ['top winners', 'who won the most', 'champions', 'best players', 'winningest', 'most wins', 'top 10 winners', 'frequent winners', 'event winners'],
-    content: `Ritual Discord Top 10 Winners (Most Event Wins - tagged by Kash/Hinata with win/champ/congrat keywords): 1) Lina - 37 wins (DOMINATES contests, most successful competitor), 2) linhlambo - 25 wins (also a top host - true community champion!), 3) emmu - 20 wins, 4) Livrein - 18 wins, 5) Perseus - 15 wins, 6) Cwit - 15 wins, 7) Baster - 14 wins, 8) Moriarty - 11 wins, 9) Catz - 11 wins, 10) Sahil - 10 wins. Winners are people tagged in Discord announcements with win/champ/congrat keywords. Data from 803+ events July 2025 - March 2026.`,
-    priority: 20, // HIGHEST PRIORITY - Champions info
-    source: 'ritual-events-complete',
-  },
-  {
-    id: 'ritual-top-hosts',
-    category: 'champions',
-    keywords: ['top hosts', 'who hosts the most', 'most events hosted', 'frequent hosts', 'active hosts', 'event hosts', 'hosted by', 'top 10 hosts'],
-    content: `Ritual Discord Top 10 Event Hosts (Excluding Kash & Hinata): 1) Keybi - 25 events hosted, 2) Boranoona - 22 events hosted, 3) Joyesh - 18 events hosted, 4) keybinft - 15 events hosted, 5) PRESHYNODE - 14 events hosted, 6) Oluwasegun - 14 events hosted, 7) linhlambo - 14 events hosted (also a top winner - DOUBLE THREAT!), 8) Lechi - 13 events hosted, 9) cranky - 12 events hosted, 10) NOIRE - 11 events hosted. These hosts organize the most Discord events. linhlambo is exceptional - appearing in BOTH top winners (#2) and top hosts (#7). Data extracted from 803+ events July 2025 - March 2026.`,
-    priority: 20, // HIGHEST PRIORITY - Hosts info
-    source: 'ritual-events-complete',
-  },
-  // ==========================================
   // MODERATORS & TEAM OVERVIEW
   // ==========================================
   {
