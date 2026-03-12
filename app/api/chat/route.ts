@@ -76,10 +76,26 @@ export async function POST(req: NextRequest) {
 
     console.log(`[Chat API] Retrieved ${relevantKnowledge.length} knowledge entries (keyword-only, fast mode)`);
     if (relevantKnowledge.length > 0) {
+      // Add context-aware instructions
+      const userIntent = message.toLowerCase();
+      let contextInstruction = "\n\n**IMPORTANT - Use knowledge based on user's intent:**\n";
+
+      if (userIntent.includes('host') || userIntent.includes('hosted') || userIntent.includes('hosting')) {
+        contextInstruction += "- User is asking about HOSTING events → Prioritize information where the person is the HOST\n";
+        contextInstruction += "- Ignore entries where person is just a winner/participant\n";
+      } else if (userIntent.includes('win') || userIntent.includes('won') || userIntent.includes('winner') || userIntent.includes('champ')) {
+        contextInstruction += "- User is asking about WINNING → Prioritize information where the person is a WINNER\n";
+        contextInstruction += "- Focus on their victories and achievements\n";
+      } else if (userIntent.includes('event') || userIntent.includes('what')) {
+        contextInstruction += "- User is asking about someone's events → If person is a HOST, describe events they HOST (not just events they won)\n";
+        contextInstruction += "- Hosting is more relevant than winning for 'what event' questions\n";
+      }
+
       const knowledgeText = relevantKnowledge
         .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
         .join('\n\n');
-      prompt += `\n\n=== RELEVANT KNOWLEDGE ===\n${knowledgeText}\n=== END KNOWLEDGE ===`;
+
+      prompt += `${contextInstruction}\n\n=== RELEVANT KNOWLEDGE ===\n${knowledgeText}\n=== END KNOWLEDGE ===`;
     }
 
     // Enhance prompt with context summaries and key facts
