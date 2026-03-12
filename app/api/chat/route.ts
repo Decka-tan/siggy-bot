@@ -16,6 +16,7 @@ import {
   contextManager,
   buildContextualPrompt,
 } from '@/lib/context-manager';
+import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -64,6 +65,15 @@ export async function POST(req: NextRequest) {
       userName,
       currentForm
     );
+
+    // RETRIEVE RELEVANT KNOWLEDGE and add to prompt
+    const relevantKnowledge = getRelevantKnowledge(message, 5);
+    if (relevantKnowledge.length > 0) {
+      const knowledgeText = relevantKnowledge
+        .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
+        .join('\n\n');
+      prompt += `\n\n=== RELEVANT KNOWLEDGE ===\n${knowledgeText}\n=== END KNOWLEDGE ===`;
+    }
 
     // Enhance prompt with context summaries and key facts
     prompt = buildContextualPrompt(prompt, managedContext, userId, message);
