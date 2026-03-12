@@ -207,10 +207,10 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-events-health',
     category: 'events',
-    keywords: ['health', 'hotline', 'talk', 'lifestyle', 'ritual health'],
-    content: "Ritual Health Hotline - for Indonesia region (Komunitas Indonesia). Live Q&A, practical advice, and zero judgment about lifestyle habits and everyday sicknesses. Hosted by @TChan and @rikkydwiyanto in Voice Indo channel.",
-    priority: 6,
-    source: 'ritual-discord-events',
+    keywords: ['health', 'hotline', 'talk', 'lifestyle', 'ritual health', 'ritualdoc'],
+    content: "Ritual Health Hotline (also called Ritual Health Talk) - for Indonesia region (Komunitas Indonesia). Live Q&A, practical advice, and zero judgment about lifestyle habits and everyday sicknesses (like 'why my head hurts every Monday'). Hosted by @TChan - Boo the Ritual Cat (❖,❖) and @rikkydwiyanto | RitualDoc (❖,❖) in Voice Indo channel. Started December 11, 2025 (announced by Kash | NPC LEADER). Tagline: 'unless you still think coffee counts as breakfast' - discussing real lifestyle habits and everyday sicknesses.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
   },
 
   // ==========================================
@@ -339,10 +339,10 @@ export const RITUAL_EVENTS_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-community-indonesia',
     category: 'community',
-    keywords: ['indonesia', 'indo', 'regional', 'komunitas indonesia'],
-    content: "Ritual Indonesia Community (Komunitas Indonesia) - Active regional group with MLBB tournaments every Saturday 20.00 WIB, Health Hotline talks, and events in Voice Indo channel. Hosts include @! rizan, @himmelif, @TChan, @rikkydwiyanto.",
-    priority: 7,
-    source: 'ritual-discord-events',
+    keywords: ['indonesia', 'indo', 'regional', 'komunitas indonesia', 'voice indo'],
+    content: "Ritual Indonesia Community (Komunitas Indonesia) - Active regional group with MLBB tournaments every Saturday 20.00 WIB, Health Hotline talks (started December 11, 2025), and events in Voice Indo channel. Health Hotline hosted by @TChan - Boo the Ritual Cat (❖,❖) and @rikkydwiyanto | RitualDoc (❖,❖). Other hosts include @! rizan, @himmelif. The Health Hotline discusses lifestyle habits, everyday sicknesses, and health topics with zero judgment.",
+    priority: 8,
+    source: 'ritual-discord-events-2025',
   },
   {
     id: 'ritual-community-ukraine',
