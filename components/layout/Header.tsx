@@ -75,7 +75,7 @@ export function Header() {
               e.currentTarget.src = "https://via.placeholder.com/100x40?text=Siggy";
             }}
           />
-          <span className="text-2xl font-mono tracking-widest uppercase text-accent">SIGGY</span>
+          <span className="hidden sm:block text-2xl font-mono tracking-widest uppercase text-accent">SIGGY</span>
         </Link>
 
         {/* Desktop Navigation - Centered */}
