@@ -174,7 +174,7 @@ export function KnowledgeGraph() {
 
       {/* Desktop: Diamond Layout */}
       <div className="hidden md:block">
-        <div className="relative aspect-[16/10] bg-black/40 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <div className="relative aspect-[16/10] bg-black/40 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden p-8">
           {/* Animated Background Grid */}
           <div className="absolute inset-0 opacity-20">
             <div className="absolute inset-0" style={{
@@ -190,12 +190,12 @@ export function KnowledgeGraph() {
                 const connNode = nodes.find(n => n.id === connId);
                 if (!connNode) return null;
 
-                // Diamond positions: top, right, bottom, left (SYMMETRICAL)
+                // Diamond positions: top, right, bottom, left (SYMMETRICAL + PADDING)
                 const positions: Record<string, { x: number; y: number }> = {
-                  lore: { x: 50, y: 12 },
-                  tech: { x: 88, y: 50 },
-                  community: { x: 50, y: 88 },
-                  events: { x: 12, y: 50 }
+                  lore: { x: 50, y: 18 },
+                  tech: { x: 72, y: 50 },
+                  community: { x: 50, y: 82 },
+                  events: { x: 28, y: 50 }
                 };
 
                 const nodePos = positions[node.id];
