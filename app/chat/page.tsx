@@ -531,6 +531,14 @@ export default function ChatPage() {
         return conv;
       }));
 
+      // Update global relationship state for future conversations
+      if (data.relationshipLevel) {
+        setGlobalRelationshipLevel(data.relationshipLevel);
+      }
+      if (data.relationshipScore !== undefined) {
+        setGlobalRelationshipScore(data.relationshipScore);
+      }
+
       setContextInfo(data.contextInfo || null);
     } catch (error) {
       console.error('Error sending message:', error);
@@ -692,6 +700,14 @@ export default function ChatPage() {
         return conv;
       }));
 
+      // Update global relationship state for future conversations
+      if (data.relationshipLevel) {
+        setGlobalRelationshipLevel(data.relationshipLevel);
+      }
+      if (data.relationshipScore !== undefined) {
+        setGlobalRelationshipScore(data.relationshipScore);
+      }
+
       setContextInfo(data.contextInfo || null);
     } catch (error) {
       console.error('Regenerate failed:', error);
@@ -777,10 +793,26 @@ export default function ChatPage() {
       const siggyMessage: Message = { role: 'assistant', content: processedResponse, mood: data.currentMood };
       setConversations(prev => prev.map(conv => {
         if (conv.id === targetConvId) {
-          return { ...conv, messages: [...conv.messages, siggyMessage], currentMood: data.currentMood, messageCount: data.messageCount };
+          return {
+            ...conv,
+            messages: [...conv.messages, siggyMessage],
+            currentMood: data.currentMood,
+            messageCount: data.messageCount,
+            relationshipLevel: data.relationshipLevel,
+            relationshipScore: data.relationshipScore,
+          };
         }
         return conv;
       }));
+
+      // Update global relationship state for future conversations
+      if (data.relationshipLevel) {
+        setGlobalRelationshipLevel(data.relationshipLevel);
+      }
+      if (data.relationshipScore !== undefined) {
+        setGlobalRelationshipScore(data.relationshipScore);
+      }
+
       setContextInfo(data.contextInfo || null);
     } catch (error) {
       console.error('Transform failed:', error);
