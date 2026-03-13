@@ -3,23 +3,23 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Brain, Zap, Users, PartyPopper, Activity } from 'lucide-react';
+import { getKnowledgeCounts, formatCount, type KnowledgeCounts } from '@/lib/knowledge-counter';
 
 interface KnowledgeNode {
   id: string;
   label: string;
   icon: React.ElementType;
-  count: string;
+  count: number;
   color: string;
   description: string;
   connections: string[];
 }
 
-const nodes: KnowledgeNode[] = [
+const staticNodes: Omit<KnowledgeNode, 'count'>[] = [
   {
     id: 'lore',
     label: 'Lore',
     icon: Brain,
-    count: '10',
     color: 'from-purple-500 to-purple-700',
     description: 'Origin, Forms, Ritual Forge, Characters',
     connections: ['tech', 'community'],
@@ -28,7 +28,6 @@ const nodes: KnowledgeNode[] = [
     id: 'tech',
     label: 'Ritual Tech',
     icon: Zap,
-    count: '35',
     color: 'from-yellow-500 to-amber-600',
     description: 'EVM++, Infernet, Architecture, Team',
     connections: ['lore', 'community', 'events'],
@@ -37,7 +36,6 @@ const nodes: KnowledgeNode[] = [
     id: 'community',
     label: 'Community',
     icon: Users,
-    count: '36',
     color: 'from-emerald-500 to-teal-600',
     description: 'People, Roles, Programs, Partners',
     connections: ['lore', 'tech', 'events'],
@@ -46,7 +44,6 @@ const nodes: KnowledgeNode[] = [
     id: 'events',
     label: 'Events',
     icon: PartyPopper,
-    count: '1,200+',
     color: 'from-pink-500 to-rose-600',
     description: 'Game Nights, Karaoke, Tournaments',
     connections: ['tech', 'community'],
@@ -56,6 +53,18 @@ const nodes: KnowledgeNode[] = [
 export function KnowledgeGraph() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [activeConnections, setActiveConnections] = useState<string[]>([]);
+  const [counts, setCounts] = useState<KnowledgeCounts>({ lore: 10, tech: 35, community: 36, events: 1200, total: 1281 });
+
+  // Load actual counts on mount
+  useEffect(() => {
+    const actualCounts = getKnowledgeCounts();
+    setCounts(actualCounts);
+  }, []);
+
+  const nodes: KnowledgeNode[] = staticNodes.map(node => ({
+    ...node,
+    count: counts[node.id as keyof KnowledgeCounts] || 0
+  }));
 
   useEffect(() => {
     if (hoveredNode) {
@@ -111,7 +120,7 @@ export function KnowledgeGraph() {
                         {node.label}
                       </div>
                       <div className="text-lg font-display font-bold bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
-                        {node.count}
+                        {formatCount(node.count)}
                       </div>
                     </div>
                   </div>
@@ -154,7 +163,7 @@ export function KnowledgeGraph() {
             className="text-center mt-6 py-4 bg-black/40 backdrop-blur-sm rounded-xl border border-white/5"
           >
             <div className="text-4xl font-display font-bold bg-gradient-to-br from-accent to-yellow-400 bg-clip-text text-transparent">
-              1,281
+              {formatCount(counts.total)}
             </div>
             <div className="text-[9px] font-mono text-text-secondary/60 uppercase tracking-widest mt-1">
               Total Knowledge Entries
@@ -355,7 +364,7 @@ export function KnowledgeGraph() {
               transition={{ duration: 0.5, delay: 0.5 }}
             >
               <div className="text-6xl font-display font-bold bg-gradient-to-br from-accent to-yellow-400 bg-clip-text text-transparent mb-2">
-                1,281
+                {formatCount(counts.total)}
               </div>
               <div className="text-xs font-mono text-text-secondary/60 uppercase tracking-widest">
                 Total Knowledge Entries
