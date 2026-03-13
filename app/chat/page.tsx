@@ -1095,6 +1095,18 @@ export default function ChatPage() {
                             <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${(vnHistoryIndex === -1 ? activeConversation?.messages[(activeConversation?.messages.length || 0) - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
                               {(vnHistoryIndex === -1 ? activeConversation?.messages[(activeConversation?.messages.length || 0) - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'You' : 'Siggy'}
                             </span>
+                            {/* MOOD BADGE - Mobile friendly, shown on all screens */}
+                            {vnMode && activeConversation && activeConversation.messages.length > 0 && (
+                              <span className={`text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                                moodColors[(vnHistoryIndex === -1
+                                  ? activeConversation.messages[activeConversation.messages.length - 1]?.mood
+                                  : activeConversation.messages[vnHistoryIndex]?.mood) || activeConversation.currentMood] || moodColors.DEFAULT
+                              }`}>
+                                {(vnHistoryIndex === -1
+                                  ? activeConversation.messages[activeConversation.messages.length - 1]?.mood
+                                  : activeConversation.messages[vnHistoryIndex]?.mood) || activeConversation.currentMood || 'DEFAULT'}
+                              </span>
+                            )}
                           </div>
 
                           <div className="flex items-center gap-3">
@@ -1303,9 +1315,6 @@ export default function ChatPage() {
                             {/* Reinstated Floating Action Buttons (Left Aligned) */}
                             {activeConversation && activeConversation.messages.length > 0 && activeConversation?.messages[activeConversation.messages.length - 1].role === 'assistant' && (
                               <div className="flex items-center gap-1 pr-2 shrink-0">
-                                <span className={`text-xs font-mono px-3 py-1.5 rounded-full mr-1 ${moodColors[activeConversation?.messages[activeConversation.messages.length - 1].mood || 'DEFAULT']}`}>
-                                  {activeConversation?.messages[activeConversation.messages.length - 1].mood}
-                                </span>
                                 <button onClick={() => activeConversation && copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
                                   <Copy className="w-4 h-4" />
                                 </button>
