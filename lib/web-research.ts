@@ -160,7 +160,7 @@ export function formatResponseWithSources(
     return aiResponse;
   }
 
-  const sources = researchResult.results.map(r => `• ${r.title} - ${r.url}`).join('\n');
+  const sources = researchResult.results.map(r => `• [${r.title}](${r.url})`).join('\n');
 
   return `${aiResponse}\n\n---\n📚 **Sources:**\n${sources}`;
 }

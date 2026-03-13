@@ -95,6 +95,9 @@ const VN_BACKGROUNDS = [
 const parseMessageContent = (content: string) => {
   let html = content;
 
+  // Links [text](url) - IMPORTANT: Must be first to avoid interfering with other markdown
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
+
   // First, preserve paragraph breaks (double newlines)
   html = html.replace(/\n\n/g, '</p><p class="mt-2">');
 
