@@ -190,12 +190,12 @@ export function KnowledgeGraph() {
                 const connNode = nodes.find(n => n.id === connId);
                 if (!connNode) return null;
 
-                // Diamond positions: top, right, bottom, left
+                // Diamond positions: top, right, bottom, left (SYMMETRICAL)
                 const positions: Record<string, { x: number; y: number }> = {
-                  lore: { x: 50, y: 20 },
-                  tech: { x: 80, y: 50 },
-                  community: { x: 50, y: 80 },
-                  events: { x: 20, y: 50 }
+                  lore: { x: 50, y: 12 },
+                  tech: { x: 88, y: 50 },
+                  community: { x: 50, y: 88 },
+                  events: { x: 12, y: 50 }
                 };
 
                 const nodePos = positions[node.id];
@@ -250,12 +250,12 @@ export function KnowledgeGraph() {
             const isConnected = activeConnections.includes(node.id);
             const shouldShow = !hoveredNode || isHovered || isConnected;
 
-            // Diamond positions
+            // Diamond positions (SYMMETRICAL)
             const positions: Record<string, { x: number; y: number }> = {
-              lore: { x: 50, y: 20 },
-              tech: { x: 80, y: 50 },
-              community: { x: 50, y: 80 },
-              events: { x: 20, y: 50 }
+              lore: { x: 50, y: 12 },
+              tech: { x: 88, y: 50 },
+              community: { x: 50, y: 88 },
+              events: { x: 12, y: 50 }
             };
 
             const pos = positions[node.id];
