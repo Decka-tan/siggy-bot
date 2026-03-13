@@ -38,7 +38,8 @@ function getMoodSystem(userId: string): SiggyMoodSystem {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { message, conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist', currentForm = 'ANIME', relationshipScore: clientScore } = body;
+    const { conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist', currentForm = 'ANIME', relationshipScore: clientScore } = body;
+    let message = body.message as string;
 
     // Validate input
     if (!message || typeof message !== 'string') {
@@ -159,7 +160,8 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
         console.log(`[Web Research] Found ${webResearchResult.results.length} sources`);
 
         // Enhance the user message with web research
-        message = buildEnhancedPrompt(message, webResearchResult, researchIntent.type);
+        const enhancedMessage = buildEnhancedPrompt(message, webResearchResult, researchIntent.type);
+        message = enhancedMessage;
       }
     }
 
