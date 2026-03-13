@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ArrowRight, MessageSquare, BookOpen, Sparkles } from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
+import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 
 export default function LandingPage() {
   const scrollToBio = () => {
@@ -141,6 +142,40 @@ export default function LandingPage() {
               />
             </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* Knowledge Graph Section */}
+      <section className="py-24 px-8 border-t border-border bg-bg relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+
+        <div className="max-w-7xl mx-auto">
+          {/* Section Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-4">
+              Siggy&apos;s Knowledge
+            </h2>
+            <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
+              Over 1,280 knowledge entries about Ritual, the community, and her cosmic origins.
+              Explore the connections between different domains of her intelligence.
+            </p>
+          </motion.div>
+
+          {/* Knowledge Graph Component */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <KnowledgeGraph />
+          </motion.div>
         </div>
       </section>
 
