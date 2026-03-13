@@ -225,17 +225,6 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
       relationshipScore: managedContext.relationshipScore,
       usedWebResearch, // Flag to indicate web research was used
     });
-      response: cleanedResponse,
-      currentMood: mood,
-      messageCount: moodSystem.getMessageCount(),
-      contextInfo: {
-        totalMessages: managedContext.totalMessages,
-        estimatedTokens: managedContext.estimatedTokens,
-        hasSummary: !!managedContext.summary,
-      },
-      relationshipLevel: managedContext.relationshipLevel,
-      relationshipScore: managedContext.relationshipScore,
-    });
 
   } catch (error) {
     console.error('Error in chat API:', error);
