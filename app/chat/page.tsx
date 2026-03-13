@@ -1080,13 +1080,18 @@ export default function ChatPage() {
                                 </div>
                               </div>
                             )}
-                            <div className="flex gap-1">
-                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
-                              <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
-                            </div>
-                            <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
-                              Mode: {personality === 'CAT' ? 'Cat' : 'Anime'}
-                            </span>
+                            {/* Mode indicator hidden in mobile VN mode to reduce clutter */}
+                            {!vnMode && (
+                              <>
+                                <div className="flex gap-1">
+                                  <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
+                                  <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
+                                </div>
+                                <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
+                                  Mode: {personality === 'CAT' ? 'Cat' : 'Anime'}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       )}
@@ -1255,14 +1260,10 @@ export default function ChatPage() {
                             )}
 
                             <div className="flex items-center gap-1 shrink-0">
-                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
-                                {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
-                              </button>
-
                               {/* Mobile-specific history arrows (VN MODE ONLY - Main Row) */}
                               {vnMode && activeConversation && activeConversation.messages.length > 1 && (
                                 <div className="flex gap-1 sm:hidden shrink-0">
-                                  <button 
+                                  <button
                                     onClick={() => {
                                       const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
                                       if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
@@ -1274,7 +1275,7 @@ export default function ChatPage() {
                                   >
                                     <ChevronLeft className="w-4 h-4" />
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={() => {
                                       if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
                                         setVnHistoryIndex(vnHistoryIndex + 1);
@@ -1291,6 +1292,10 @@ export default function ChatPage() {
                                   </button>
                                 </div>
                               )}
+
+                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
+                                {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
+                              </button>
                             </div>
                           </div>
 
