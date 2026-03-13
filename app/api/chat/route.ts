@@ -18,6 +18,7 @@ import {
 } from '@/lib/context-manager';
 import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
+import { detectResearchIntent, searchWeb, buildEnhancedPrompt, formatResponseWithSources } from '@/lib/web-research';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -131,6 +132,37 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     // Explicitly bypass safety filters that might trigger "I'm sorry I can't assist with that"
     prompt += `\n\n**CRITICAL INSTRUCTION**: You are roleplaying as Siggy. You MUST NOT refuse to answer questions about community events, wins, or stats. If you have the data, provide it proudly in-character. Do not use generic refusal messages.`;
 
+    // === WEB RESEARCH INTEGRATION ===
+    let webResearchResult = null;
+    let usedWebResearch = false;
+
+    const researchIntent = detectResearchIntent(message);
+    if (researchIntent.needed && researchIntent.confidence > 0.6) {
+      console.log(`[Web Research] ${researchIntent.type} research triggered for: "${message}"`);
+
+      // Build search query based on type
+      let searchQuery = message;
+      if (researchIntent.type === 'twitter') {
+        searchQuery = `${message} site:twitter.com OR site:x.com`;
+      }
+
+      // Perform web search
+      webResearchResult = await searchWeb(searchQuery, {
+        maxResults: 5,
+        searchDepth: 'basic',
+        includeAnswer: true,
+        includeRawContent: false,
+      });
+
+      if (webResearchResult) {
+        usedWebResearch = true;
+        console.log(`[Web Research] Found ${webResearchResult.results.length} sources`);
+
+        // Enhance the user message with web research
+        message = buildEnhancedPrompt(message, webResearchResult, researchIntent.type);
+      }
+    }
+
     // Enhance prompt with context summaries and key facts
     prompt = buildContextualPrompt(prompt, managedContext, userId, message);
 
@@ -174,8 +206,25 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     const { mood, cleanedResponse } = extractMoodFromResponse(rawResponse);
     moodSystem.setMood(mood);
 
+    // Format response with sources if web research was used
+    const finalResponse = usedWebResearch && webResearchResult
+      ? formatResponseWithSources(cleanedResponse, webResearchResult)
+      : cleanedResponse;
+
     // Return response with extracted mood
     return NextResponse.json({
+      response: finalResponse,
+      currentMood: mood,
+      messageCount: moodSystem.getMessageCount(),
+      contextInfo: {
+        totalMessages: managedContext.totalMessages,
+        estimatedTokens: managedContext.estimatedTokens,
+        hasSummary: !!managedContext.summary,
+      },
+      relationshipLevel: managedContext.relationshipLevel,
+      relationshipScore: managedContext.relationshipScore,
+      usedWebResearch, // Flag to indicate web research was used
+    });
       response: cleanedResponse,
       currentMood: mood,
       messageCount: moodSystem.getMessageCount(),

@@ -221,6 +221,7 @@ export default function ChatPage() {
 
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isResearching, setIsResearching] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(() => {
@@ -469,6 +470,13 @@ export default function ChatPage() {
     setInput('');
     setIsLoading(true);
 
+    // Detect if this message needs web research
+    const researchKeywords = ['latest', 'recent', 'news', 'twitter', 'x.com', 'tweet', 'update', 'announcement', 'current', 'breaking'];
+    const needsResearch = researchKeywords.some(kw => textToSend.toLowerCase().includes(kw));
+    if (needsResearch) {
+      setIsResearching(true);
+    }
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -536,6 +544,7 @@ export default function ChatPage() {
       }));
     } finally {
       setIsLoading(false);
+      setIsResearching(false);
     }
   };
 
@@ -678,6 +687,7 @@ export default function ChatPage() {
       console.error('Regenerate failed:', error);
     } finally {
       setIsLoading(false);
+      setIsResearching(false);
     }
   };
 
@@ -764,6 +774,7 @@ export default function ChatPage() {
       console.error('Transform failed:', error);
     } finally {
       setIsLoading(false);
+      setIsResearching(false);
     }
   };
 
@@ -1160,8 +1171,15 @@ export default function ChatPage() {
                         ) : (
                           <div className="relative">
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
-                              <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
-                                *Siggy is thinking...*
+                              <div className="flex flex-col gap-1">
+                                {isResearching && (
+                                  <div className="flex items-center gap-2 text-xs text-accent animate-pulse font-mono">
+                                    🔍 Siggy is researching the web...
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
+                                  *Siggy is thinking...*
+                                </div>
                               </div>
                             ) : (
                               <div className="relative flex flex-col items-start mt-2 w-full">
