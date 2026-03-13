@@ -357,6 +357,94 @@ export const RITUAL_WEB_KNOWLEDGE: KnowledgeEntry[] = [
     priority: 5,
     source: 'https://www.ritualfoundation.org/blog',
   },
+
+  // ==========================================
+  // RECENT UPDATES (2025-2026)
+  // ==========================================
+  {
+    id: 'ritual-evm-launch',
+    category: 'updates',
+    keywords: ['evm++', 'launch', 'mainnet', 'recent', '2025', '2026', 'mainnet launch'],
+    content: "EVM++ Launch (2025-2026): Ritual launched EVM++, a backwards-compatible EVM extension with expressive compute precompiles. Enables AI inference, ZK proofs, and TEE execution directly in smart contracts. Features native scheduling for recurring transactions, built-in account abstraction, and support for heterogeneous compute types. This is a major milestone bringing 'the brain on-chain' - blockchain without native inference is like a nervous system without a brain.",
+    priority: 10,
+    source: 'ritual-announcements',
+  },
+  {
+    id: 'ritual-infernet-growth',
+    category: 'updates',
+    keywords: ['infernet', 'nodes', 'growth', '8000', 'expansion', '2025', 'decentralized'],
+    content: "Infernet Network Growth (2025): Ritual's Infernet decentralized oracle network expanded to 8,000+ connected nodes worldwide. This massive growth enables anyone to tap into transparent AI with strong privacy and verifiability guardrails. Infernet acts as connective tissue between Web3 ecosystem and Ritual Chain, providing an alternative to centralized APIs that geo-restrict and censor. The network empowers developers to access AI models on-chain via smart contracts.",
+    priority: 9,
+    source: 'ritual-announcements',
+  },
+  {
+    id: 'ritual-starkware-integration',
+    category: 'updates',
+    keywords: ['starkware', 'starknet', 'integration', 'partnership', 'non-evm', '2025'],
+    content: "StarkWare Integration (2025): Ritual announced strategic integration with StarkWare, marking the first non-EVM chain expansion. This brings Ritual's expressive compute capabilities to Starknet and the broader Stark ecosystem. The partnership enables AI inference and ZK proof verification on StarkNet, expanding Ritual's reach beyond EVM-compatible chains.",
+    priority: 8,
+    source: 'ritual-announcements',
+  },
+  {
+    id: 'ritual-arbitrum-coprocessor',
+    category: 'updates',
+    keywords: ['arbitrum', 'coprocessor', 'ai', 'integration', 'orbit', '2025'],
+    content: "Arbitrum AI Coprocessor (2025): Ritual launched as the AI coprocessor for Arbitrum One and Orbit L2s/L3s. This integration brings expressive AI compute to the Arbitrum ecosystem, enabling developers to build AI-powered dApps with smart contract integration. Uses Orbit framework for custom L2/L3 deployment with Ritual's AI capabilities baked in.",
+    priority: 8,
+    source: 'ritual-announcements',
+  },
+  {
+    id: 'ritual-infernet-cloud',
+    category: 'updates',
+    keywords: ['infernet cloud', 'cli', 'explorer', 'tools', 'developer', '2025'],
+    content: "Developer Tools Launch (2025): Ritual released Infernet Cloud (self-hostable UI for node management), Infernet CLI (one-click deployment), and Infernet Explorer (monitor 6K+ active nodes globally). These tools make it easier for developers to deploy and manage Infernet nodes, monitor network activity, and integrate Ritual into their workflows. All tools completed security audits.",
+    priority: 7,
+    source: 'ritual-announcements',
+  },
+
+  // ==========================================
+  // COMPETITIVE LANDSCAPE
+  // ==========================================
+  {
+    id: 'ritual-vs-bittensor',
+    category: 'competition',
+    keywords: ['bittensor', 'vs', 'comparison', 'competition', 'tao', 'tao'],
+    content: "Ritual vs Bittensor: While Bittensor focuses on model training with a token-based incentive network for machine intelligence, Ritual focuses on inference with on-chain smart contract integration. Bittensor uses TAO token for incentivizing model training, while Ritual enables AI execution directly in smart contracts. Ritual provides EVM++ extensions for native AI compute, while Bittensor requires off-chain execution. Key difference: Ritual is blockchain-first with AI capabilities, Bittensor is AI-first with blockchain elements.",
+    priority: 8,
+    source: 'ritual-vs-competition',
+  },
+  {
+    id: 'ritual-vs-eigenlayer',
+    category: 'competition',
+    keywords: ['eigenlayer', 'vs', 'comparison', 'restaking', 'avs', 'competition'],
+    content: "Ritual vs EigenLayer: EigenLayer focuses on restaking Ethereum validators with Actively Validated Services (AVS) for security. Ritual focuses on expressive AI compute (inference, ZK proofs, TEE) with native smart contract integration. EigenLayer secures protocols through restaked ETH, while Ritual enables actual AI execution on-chain. Ritual's EVM++ allows AI models to run directly in smart contracts, something EigenLayer doesn't provide. Ritual is for AI workloads, EigenLayer is for security protocols.",
+    priority: 8,
+    source: 'ritual-vs-competition',
+  },
+  {
+    id: 'ritual-vs-akash',
+    category: 'competition',
+    keywords: ['akash', 'vs', 'comparison', 'depin', 'compute', 'marketplace'],
+    content: "Ritual vs Akash: Akash is a DePIN marketplace for compute resources (CPU, GPU, storage) focusing on hardware-limited compute hosting. Ritual is software-defined and optimized for heterogeneous compute (AI inference, ZK proofs, TEE) on-chain. Akash is about renting hardware for containers, Ritual is about running AI models in smart contracts. Akash = cloud compute marketplace, Ritual = expressive blockchain with AI native integration. Ritual can use Akash for node hosting but provides the AI execution layer.",
+    priority: 7,
+    source: 'ritual-vs-competition',
+  },
+  {
+    id: 'ritual-vs-allora',
+    category: 'competition',
+    keywords: ['allora', 'vs', 'comparison', 'inference', 'network'],
+    content: "Ritual vs Allora Network: Allora focuses on decentralized AI inference with worker networks and self-improving models. Ritual provides broader heterogeneous compute (AI inference + ZK proofs + TEE) with native EVM smart contract integration. Ritual's EVM++ allows AI to run directly in smart contracts without oracles, while Allora uses an off-chain worker network. Ritual is more blockchain-native with expressive compute beyond just AI inference. Both aim for decentralized AI but Ritual has deeper smart contract integration.",
+    priority: 7,
+    source: 'ritual-vs-competition',
+  },
+  {
+    id: 'ritual-vs-ritual',
+    category: 'competition',
+    keywords: ['ritual', 'vs', 'comparison', 'other', 'crypto', 'ai', 'landscape'],
+    content: "Ritual's Unique Positioning: Unlike model training networks (PrimeIntellect, Gensyn), Ritual focuses on inference with on-chain integration. Unlike Web2 inference (Hyperbolic, Kuzco), Ritual is blockchain-native. Unlike agent frameworks (Eliza, ZerePy, Virtuals, GAME, ARC), Ritual provides infrastructure not frameworks. Unlike IP platforms (Story, Sentient), Ritual has enshrined IP primitives. Ritual combines novel architecture (EVM++, Infernet, Resonance, Symphony) with familiar interfaces, making it the schelling point for AI in Web3.",
+    priority: 9,
+    source: 'ritual-vs-competition',
+  },
 ];
 
 export default RITUAL_WEB_KNOWLEDGE;
