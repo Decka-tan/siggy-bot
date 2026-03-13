@@ -1501,7 +1501,7 @@ export default function ChatPage() {
                           )}
                           <div className={`max-w-[80%] rounded-xl bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'} ${(message.content?.split('\n').length || 0) > 6 ? 'sm:px-4 sm:py-3 px-4 py-3 pb-6' : 'px-4 py-3'}`}>
                             <div className="flex items-center gap-3 mb-2">
-                              <span className={`font-display text-sm md:text-base font-bold uppercase tracking-widest ${message.role === 'assistant' ? 'text-accent' : 'text-text-primary'} hidden sm:inline-block`}>
+                              <span className={`font-display text-sm md:text-base font-bold uppercase tracking-widest ${message.role === 'assistant' ? 'text-accent' : 'text-text-primary'}`}>
                                 {message.role === 'user' ? 'YOU' : 'SIGGY'}
                               </span>
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
