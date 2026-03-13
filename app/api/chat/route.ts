@@ -25,20 +25,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
 
-// In-memory mood system (in production, use Redis or database)
-const moodSystems = new Map<string, SiggyMoodSystem>();
-
-function getMoodSystem(userId: string): SiggyMoodSystem {
-  if (!moodSystems.has(userId)) {
-    moodSystems.set(userId, new SiggyMoodSystem());
-  }
-  return moodSystems.get(userId)!;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist', currentForm = 'ANIME', relationshipScore: clientScore } = body;
+    const { conversationHistory = [], userId = 'default', isFirstMessage = false, userName = 'Ritualist', currentForm = 'ANIME', relationshipScore: clientScore, currentMood: clientMood, messageCount: clientMessageCount } = body;
     let message = body.message as string;
 
     // Validate input
@@ -49,8 +39,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get or create mood system for this user
-    const moodSystem = getMoodSystem(userId);
+    // Create mood system with current state from frontend (fixes serverless reset issue)
+    const moodSystem = new SiggyMoodSystem();
+
+    // Restore mood state from frontend
+    if (clientMood) {
+      moodSystem.setMood(clientMood);
+    }
+
+    // Restore message count from frontend
+    for (let i = 0; i < (clientMessageCount || 0); i++) {
+      moodSystem.updateMood(''); // Just increment count
+    }
 
     // Manage context - summarize old messages if needed
     const managedContext = await contextManager.manageContext(
@@ -266,12 +266,11 @@ export async function DELETE(req: NextRequest) {
     const body = await req.json();
     const { userId = 'default' } = body;
 
-    // Reset mood system
-    const moodSystem = getMoodSystem(userId);
-    moodSystem.reset();
-
     // Reset context manager memory
     contextManager.resetMemory(userId);
+
+    // Note: Mood system is now managed client-side via localStorage
+    // Frontend handles resetting mood by calling resetCurrentConversation()
 
     return NextResponse.json({
       status: 'reset',

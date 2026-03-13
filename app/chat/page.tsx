@@ -67,6 +67,9 @@ const getBondBarColor = (level?: string): string => {
   switch (level.toUpperCase()) {
     case 'SOULBOUND': return 'bg-yellow-400';
     case 'BESTIE': return 'bg-pink-400';
+    case 'FRIEND': return 'bg-accent';
+    case 'ACQUAINTANCE': return 'bg-blue-400';
+    case 'SKETCHY': return 'bg-orange-400';
     case 'ENEMY': return 'bg-red-500';
     default: return 'bg-accent';
   }
@@ -491,7 +494,9 @@ export default function ChatPage() {
           isFirstMessage: conversationHistory.length === 0,
           userName,
           currentForm: personality,
-          relationshipScore: globalRelationshipScore, // Send global score
+          relationshipScore: globalRelationshipScore,
+          currentMood: activeConversation?.currentMood || 'DEFAULT',
+          messageCount: activeConversation?.messageCount || 0,
         }),
       });
 
@@ -659,6 +664,8 @@ export default function ChatPage() {
           isFirstMessage: false,
           userName,
           relationshipScore: globalRelationshipScore,
+          currentMood: activeConversation?.currentMood || 'DEFAULT',
+          messageCount: activeConversation?.messageCount || 0,
         }),
       });
 
@@ -755,6 +762,8 @@ export default function ChatPage() {
           isFirstMessage: conversationHistory.length === 0,
           userName,
           relationshipScore: globalRelationshipScore,
+          currentMood: activeConversation?.currentMood || 'DEFAULT',
+          messageCount: activeConversation?.messageCount || 0,
         }),
       });
 
@@ -1057,14 +1066,14 @@ export default function ChatPage() {
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {/* History Status Pill (Moved next to Bond) */}
+                            {/* History Status Pill (Moved next to Bond) - DESKTOP ONLY */}
                             {activeConversation?.messages.length > 1 && (
-                              <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full transition-all duration-300">
+                              <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full transition-all duration-300">
                                 <Clock className="w-3 h-3 text-accent animate-pulse" />
                                 <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
                                   HISTORY: {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
                                 </span>
-                                <button 
+                                <button
                                   onClick={() => setVnHistoryIndex(-1)}
                                   className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black' : 'text-accent/60 hover:text-accent'}`}
                                 >
