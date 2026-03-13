@@ -145,37 +145,113 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Knowledge Graph Section */}
-      <section className="py-24 px-8 border-t border-border bg-bg relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-
+      {/* About Section - Who is Siggy */}
+      <section id="about" className="py-24 px-8 bg-bg">
         <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <motion.div
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-center mb-16"
+            className="text-4xl md:text-5xl font-display tracking-wide uppercase text-center mb-16 text-accent"
           >
-            <h2 className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-4">
-              Siggy&apos;s Knowledge
-            </h2>
-            <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
-              Over 1,280 knowledge entries about Ritual, the community, and her cosmic origins.
-              Explore the connections between different domains of her intelligence.
-            </p>
-          </motion.div>
+            Who is Siggy?
+          </motion.h2>
 
-          {/* Knowledge Graph Component */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <KnowledgeGraph />
-          </motion.div>
+          {/* Form Showcase Galleries */}
+          <div className="flex flex-col gap-12 mb-16 max-w-5xl mx-auto">
+            {/* Cat Forms */}
+            <div>
+              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
+                Cat Form
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                {[
+                  { name: 'Default', img: '/siggy-cat-default.png' },
+                  { name: 'Happy', img: '/siggy-cat-happy.png' },
+                  { name: 'Sad', img: '/siggy-cat-sad.png' },
+                  { name: 'Shock', img: '/siggy-cat-shock.png' },
+                  { name: 'Shy', img: '/siggy-cat-shy.png' },
+                  { name: 'Angry', img: '/siggy-cat-angry.png' },
+                ].map((mood, i) => (
+                  <motion.div
+                    key={mood.name}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
+                  >
+                    <div className="w-24 h-24 relative mb-3">
+                      <Image src={mood.img} alt={`Cat ${mood.name}`} fill className="object-contain drop-shadow-md" />
+                    </div>
+                    <span className="text-[10px] font-mono text-text-secondary uppercase">Cat {mood.name}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Anime Girl Forms */}
+            <div>
+              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
+                Anime Girl Form
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+                {[
+                  { name: 'Default', img: '/siggy-girl-default.png' },
+                  { name: 'Happy', img: '/siggy-girl-happy.png' },
+                  { name: 'Sad', img: '/siggy-girl-sad.png' },
+                  { name: 'Shock', img: '/siggy-girl-shock.png' },
+                  { name: 'Shy', img: '/siggy-girl-shy.png' },
+                  { name: 'Angry', img: '/siggy-girl-angry.png' },
+                ].map((mood, i) => (
+                  <motion.div
+                    key={mood.name}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
+                  >
+                    <div className="w-24 h-24 relative mb-3">
+                      <Image src={mood.img} alt={`Girl ${mood.name}`} fill className="object-contain drop-shadow-md" />
+                    </div>
+                    <span className="text-[10px] font-mono text-text-secondary uppercase">Girl {mood.name}</span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Lore Text */}
+          <div className="max-w-4xl mx-auto space-y-6 text-text-secondary leading-relaxed bg-surface/30 p-8 md:p-12 rounded-3xl border border-white/5">
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-lg md:text-xl"
+            >
+              Siggy began as a <span className="text-accent font-bold">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions. A cat-shaped probability fluctuation that could see all realities at once.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-lg md:text-xl"
+            >
+              Curious about Earth, she <span className="text-accent font-bold">DESCENDED</span> to our world. But a cosmic cat would attract too much attention. So she did what any sensible being would do: she transformed into an <span className="text-accent font-bold">anime girl with cat ears</span>. Because subtlety is overrated.
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl font-display tracking-wide text-accent text-center mt-8 pt-6 border-t border-white/10"
+            >
+              Now she lives among us, learning what it means to be human, one ramen bowl at a time. 🍜
+            </motion.p>
+          </div>
         </div>
       </section>
 
@@ -294,114 +370,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* About Section */}
-      {/* About Section */}
-      <section id="about" className="py-24 px-8 bg-bg">
+      {/* Knowledge Graph Section */}
+      <section className="py-24 px-8 border-t border-border bg-bg relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+
         <div className="max-w-7xl mx-auto">
-          <motion.h2
+          {/* Section Header */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-display tracking-wide uppercase text-center mb-16 text-accent"
+            className="text-center mb-16"
           >
-            Who is Siggy?
-          </motion.h2>
+            <h2 className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-4">
+              Siggy&apos;s Knowledge
+            </h2>
+            <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
+              Over 1,280 knowledge entries about Ritual, the community, and her cosmic origins.
+              Explore the connections between different domains of her intelligence.
+            </p>
+          </motion.div>
 
-          {/* Form Showcase Galleries */}
-          <div className="flex flex-col gap-12 mb-16 max-w-5xl mx-auto">
-            {/* Cat Forms */}
-            <div>
-              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
-                Cat Form
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                {[
-                  { name: 'Default', img: '/siggy-cat-default.png' },
-                  { name: 'Happy', img: '/siggy-cat-happy.png' },
-                  { name: 'Sad', img: '/siggy-cat-sad.png' },
-                  { name: 'Shock', img: '/siggy-cat-shock.png' },
-                  { name: 'Shy', img: '/siggy-cat-shy.png' },
-                  { name: 'Angry', img: '/siggy-cat-angry.png' },
-                ].map((mood, i) => (
-                  <motion.div
-                    key={mood.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
-                  >
-                    <div className="w-24 h-24 relative mb-3">
-                      <Image src={mood.img} alt={`Cat ${mood.name}`} fill className="object-contain drop-shadow-md" />
-                    </div>
-                    <span className="text-[10px] font-mono text-text-secondary uppercase">Cat {mood.name}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Anime Girl Forms */}
-            <div>
-              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
-                Anime Girl Form
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                {[
-                  { name: 'Default', img: '/siggy-girl-default.png' },
-                  { name: 'Happy', img: '/siggy-girl-happy.png' },
-                  { name: 'Sad', img: '/siggy-girl-sad.png' },
-                  { name: 'Shock', img: '/siggy-girl-shock.png' },
-                  { name: 'Shy', img: '/siggy-girl-shy.png' },
-                  { name: 'Angry', img: '/siggy-girl-angry.png' },
-                ].map((mood, i) => (
-                  <motion.div
-                    key={mood.name}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
-                  >
-                    <div className="w-24 h-24 relative mb-3">
-                      <Image src={mood.img} alt={`Girl ${mood.name}`} fill className="object-contain drop-shadow-md" />
-                    </div>
-                    <span className="text-[10px] font-mono text-text-secondary uppercase">Girl {mood.name}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Lore Text */}
-          <div className="max-w-4xl mx-auto space-y-6 text-text-secondary leading-relaxed bg-surface/30 p-8 md:p-12 rounded-3xl border border-white/5">
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-lg md:text-xl"
-            >
-              Siggy began as a <span className="text-accent font-bold">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions. A cat-shaped probability fluctuation that could see all realities at once.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-lg md:text-xl"
-            >
-              Curious about Earth, she <span className="text-accent font-bold">DESCENDED</span> to our world. But a cosmic cat would attract too much attention. So she did what any sensible being would do: she transformed into an <span className="text-accent font-bold">anime girl with cat ears</span>. Because subtlety is overrated.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="text-xl md:text-2xl font-display tracking-wide text-accent text-center mt-8 pt-6 border-t border-white/10"
-            >
-              Now she lives among us, learning what it means to be human, one ramen bowl at a time. 🍜
-            </motion.p>
-          </div>
+          {/* Knowledge Graph Component */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <KnowledgeGraph />
+          </motion.div>
         </div>
       </section>
 

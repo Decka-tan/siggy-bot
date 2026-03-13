@@ -974,11 +974,17 @@ export default function ChatPage() {
                   </div>
                 </div>
                     
-                <div className="p-4 border-b border-border">
-                  <button onClick={createNewConversation} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)] active:scale-95">
+                <div className="p-4 border-b border-border space-y-2">
+                  <button onClick={() => { createNewConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)] active:scale-95">
                     <Plus className="w-4 h-4" />
                     New Chat
                   </button>
+                  {activeConversation && (
+                    <button onClick={() => { resetCurrentConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-surface border border-border text-text-secondary hover:text-accent hover:border-accent rounded-xl font-mono text-sm uppercase tracking-wider transition-all" title="Reset current conversation">
+                      <RefreshCw className="w-4 h-4" />
+                      Reset Chat
+                    </button>
+                  )}
                 </div>
                 <div className="flex-1 overflow-y-auto p-2 space-y-1">
                   {conversations.map(conv => (
@@ -1340,10 +1346,10 @@ export default function ChatPage() {
                               </div>
                             )}
 
-                            <div className="flex items-center gap-1 shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
                               {/* Mobile-specific history arrows (VN MODE ONLY - Main Row) */}
                               {vnMode && activeConversation && activeConversation.messages.length > 1 && (
-                                <div className="flex gap-1 sm:hidden shrink-0">
+                                <div className="flex gap-1.5 sm:hidden shrink-0">
                                   <button
                                     onClick={() => {
                                       const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
@@ -1381,7 +1387,7 @@ export default function ChatPage() {
                           </div>
 
                           <div className="flex-1 w-full flex items-center gap-2">
-                            <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI">
+                            <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                               {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                             </button>
                             <textarea
@@ -1392,25 +1398,26 @@ export default function ChatPage() {
                                 target.style.height = 'auto';
                                 target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                               }}
-                              onKeyDown={(e) => { 
-                                if (e.key === 'Enter' && !e.shiftKey) { 
-                                  e.preventDefault(); 
-                                  handleSendMessage(); 
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSendMessage();
                                   // Reset height after sending
                                   const target = e.target as HTMLTextAreaElement;
                                   setTimeout(() => target.style.height = 'auto', 10);
-                                } 
+                                }
                               }}
                               placeholder="What will you say?"
                               disabled={isLoading}
                               rows={1}
-                              className="flex-1 px-3 py-1.5 sm:py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
-                              style={{ minHeight: '28px', height: 'auto' }}
+                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
+                              style={{ minHeight: '40px', height: 'auto' }}
                             />
                             <button
                               onClick={() => handleSendMessage()}
                               disabled={isLoading || !input.trim()}
                               className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
+                              style={{ height: '40px' }}
                             >
                               {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
                             </button>
@@ -1492,9 +1499,9 @@ export default function ChatPage() {
                               <Image src={getSpriteForMood(personality, message.mood || 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                             </div>
                           )}
-                          <div className={`max-w-[80%] rounded-xl px-4 py-3 bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'}`}>
+                          <div className={`max-w-[80%] rounded-xl bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'} ${(message.content?.split('\n').length || 0) > 6 ? 'sm:px-4 sm:py-3 px-4 py-3 pb-6' : 'px-4 py-3'}`}>
                             <div className="flex items-center gap-3 mb-2">
-                              <span className={`font-display text-sm md:text-base font-bold uppercase tracking-widest ${message.role === 'assistant' ? 'text-accent' : 'text-text-primary'}`}>
+                              <span className={`font-display text-sm md:text-base font-bold uppercase tracking-widest ${message.role === 'assistant' ? 'text-accent' : 'text-text-primary'} hidden sm:inline-block`}>
                                 {message.role === 'user' ? 'YOU' : 'SIGGY'}
                               </span>
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
@@ -1606,7 +1613,7 @@ export default function ChatPage() {
 
                     {/* Input */}
                     <div className="flex gap-2 pt-2 items-center relative z-20">
-                      <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats">
+                      <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
                         {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                       </button>
                       <textarea
@@ -1617,21 +1624,21 @@ export default function ChatPage() {
                           target.style.height = 'auto';
                           target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                         }}
-                        onKeyDown={(e) => { 
-                          if (e.key === 'Enter' && !e.shiftKey) { 
-                            e.preventDefault(); 
-                            handleSendMessage(); 
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
                             const target = e.target as HTMLTextAreaElement;
                             setTimeout(() => target.style.height = 'auto', 10);
-                          } 
+                          }
                         }}
                         placeholder="Type your message..."
                         disabled={isLoading}
                         rows={1}
-                        className="flex-1 px-3 py-1.5 sm:py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
-                        style={{ minHeight: '28px', height: 'auto' }}
+                        className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
+                        style={{ minHeight: '44px', height: 'auto' }}
                       />
-                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none">
+                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
                         {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                       </button>
                     </div>
