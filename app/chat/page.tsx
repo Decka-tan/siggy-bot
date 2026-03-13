@@ -471,7 +471,7 @@ export default function ChatPage() {
     setIsLoading(true);
 
     // Detect if this message needs web research
-    const researchKeywords = ['latest', 'recent', 'news', 'twitter', 'x.com', 'tweet', 'update', 'announcement', 'current', 'breaking'];
+    const researchKeywords = ['latest', 'recent', 'news', 'twitter', 'x.com', 'tweet', 'update', 'announcement', 'current', 'breaking', 'research', 'how many', 'stats', 'followers', 'count', 'berapa', 'skrg', 'sekarang'];
     const needsResearch = researchKeywords.some(kw => textToSend.toLowerCase().includes(kw));
     if (needsResearch) {
       setIsResearching(true);

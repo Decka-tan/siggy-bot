@@ -35,13 +35,13 @@ export function detectResearchIntent(message: string): {
     return { needed: true, type: 'twitter', confidence: 0.9 };
   }
 
-  // News/updates/latest
-  if (lower.match(/latest|recent|current|news|update|announcement|what happened|breaking/)) {
+  // News/updates/latest/current - including "skrg" (Indonesian for "now")
+  if (lower.match(/latest|recent|current|news|update|announcement|what happened|breaking|research|how many|stats|followers|count/)) {
     return { needed: true, type: 'news', confidence: 0.8 };
   }
 
-  // Research keywords
-  if (lower.match(/search|find|lookup|check|google|tell me about|what is/)) {
+  // Search/lookup keywords
+  if (lower.match(/search|find|lookup|check|google|tell me about|what is|berapa|skrg|sekarang/)) {
     return { needed: true, type: 'general', confidence: 0.6 };
   }
 
