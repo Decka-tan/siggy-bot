@@ -131,12 +131,13 @@ export default function LandingPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
               className="relative"
+              style={{ height: '100vh', width: 'auto' }}
             >
-              {/* Ritual Logo Behind Character - bottom-aligned and larger */}
+              {/* Ritual Logo Behind Character - centered for desktop, adjusted for mobile */}
               <img
                 src="/Logo_RItual_White.png"
                 alt="Ritual Logo"
-                className="absolute bottom-0 left-1/2 -translate-x-1/2 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
+                className="absolute md:inset-0 bottom-0 left-1/2 -translate-x-1/2 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
                 style={{ height: '120vh', width: 'auto', maxWidth: '65vw' }}
               />
               <Image
