@@ -1050,9 +1050,9 @@ export default function ChatPage() {
                   {/* Ritual Logo Overlay - Black for VN Mode */}
                   <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
                     <img
-                      src="/Logo_Ritual_Black.png"
+                      src="/Logo_RItual_Black.png"
                       alt="Ritual Logo"
-                      className="w-[50vh] h-[50vh] object-contain"
+                      className="w-[50vh] h-[50vh] object-contain opacity-50"
                     />
                   </div>
                 </div>
@@ -1063,9 +1063,9 @@ export default function ChatPage() {
             {!vnMode && (
               <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
                 <img
-                  src="/Logo_Ritual_White.png"
+                  src="/Logo_RItual_White.png"
                   alt="Ritual Logo"
-                  className="w-[50vh] h-[50vh] object-contain"
+                  className="w-[50vh] h-[50vh] object-contain opacity-50"
                 />
               </div>
             )}
