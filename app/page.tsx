@@ -126,11 +126,17 @@ export default function LandingPage() {
 
           {/* Right Content - Character Image (mentok kanan bawah!) */}
           <div className="absolute bottom-0 right-0 pointer-events-none flex items-end justify-end" style={{ right: '-50px', bottom: '-20px' }}>
+            {/* Ritual Logo Behind Character (outside motion.div) */}
+            <img
+              src="/Logo_RItual_White.png"
+              alt="Ritual Logo"
+              className="absolute z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
+              style={{ right: '-50px', bottom: '-20px', height: '110vh', width: 'auto', maxWidth: '75vw', maxHeight: '110vh' }}
+            />
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="relative"
             >
               <Image
                 src="/character.png"
@@ -140,13 +146,6 @@ export default function LandingPage() {
                 className="object-contain object-bottom drop-shadow-2xl relative z-0"
                 priority
                 style={{ height: '100vh', width: 'auto', maxHeight: '100vh', maxWidth: '55vw' }}
-              />
-              {/* Ritual Logo Behind Character */}
-              <img
-                src="/Logo_RItual_White.png"
-                alt="Ritual Logo"
-                className="absolute z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
-                style={{ right: '-50px', bottom: '-20px', height: '110vh', width: 'auto', maxWidth: '75vw', maxHeight: '110vh' }}
               />
             </motion.div>
           </div>
