@@ -174,8 +174,12 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     }
 
     const researchIntent = detectResearchIntent(message);
-    // ONLY research if we DIDN'T find specific Discord data for the user
-    if (!discordDataFound && researchIntent.needed && researchIntent.confidence > 0.6) {
+    
+    // Check if we already have local knowledge that might answer this (e.g. stats)
+    const hasLocalStats = relevantKnowledge.some(k => k.category === 'stats' || k.id.includes('stats-'));
+    
+    // ONLY research if we DIDN'T find specific Discord data AND we don't have local stats knowledge
+    if (!discordDataFound && !hasLocalStats && researchIntent.needed && researchIntent.confidence > 0.6) {
       console.log(`[Web Research] ${researchIntent.type} research triggered for: "${message}"`);
 
       // Build search query based on type
