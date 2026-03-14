@@ -145,8 +145,8 @@ export default function LandingPage() {
               <img
                 src="/Logo_RItual_White.png"
                 alt="Ritual Logo"
-                className="absolute bottom-0 right-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none"
-                style={{ height: '80vh', width: 'auto', maxWidth: '45vw', maxHeight: '80vh', objectPosition: 'bottom right' }}
+                className="absolute bottom-0 right-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
+                style={{ height: '90vh', width: 'auto', maxWidth: '50vw', maxHeight: '90vh', objectPosition: 'bottom right' }}
               />
             </motion.div>
           </div>
