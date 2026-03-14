@@ -61,6 +61,15 @@ export default function LandingPage() {
           </div>
         </div>
 
+        {/* Ritual Logo Overlay - Yellow for Landing Page */}
+        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-[0.05]">
+          <img
+            src="/Logo_Ritual_White.png"
+            alt="Ritual Logo"
+            className="w-[40vh] h-[40vh] object-contain sepia(1) saturate(8) brightness(0.7)"
+          />
+        </div>
+
         {/* Hero Content */}
         <div className="relative z-10 h-screen w-full">
           {/* Left Content */}
