@@ -126,20 +126,18 @@ export default function LandingPage() {
 
           {/* Right Content - Character Image (mentok kanan bawah!) */}
           <div className="absolute bottom-0 right-0 pointer-events-none flex items-end justify-end" style={{ right: '-50px', bottom: '-20px' }}>
+            {/* Ritual Logo Behind Character */}
+            <img
+              src="/Logo_RItual_White.png"
+              alt="Ritual Logo"
+              className="absolute bottom-0 right-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
+              style={{ height: '110vh', width: 'auto', maxWidth: '60vw' }}
+            />
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="relative"
-              style={{ height: '100vh', width: 'auto' }}
             >
-              {/* Ritual Logo Behind Character */}
-              <img
-                src="/Logo_RItual_White.png"
-                alt="Ritual Logo"
-                className="absolute inset-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
-                style={{ height: '100vh', width: 'auto', maxWidth: '55vw' }}
-              />
               <Image
                 src="/character.png"
                 alt="Anime Character"
