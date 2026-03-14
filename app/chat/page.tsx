@@ -1052,7 +1052,7 @@ export default function ChatPage() {
                     <img
                       src="/Logo_RItual_Black.png"
                       alt="Ritual Logo"
-                      className="w-[50vh] h-[50vh] object-contain opacity-50"
+                      className="w-[50vh] h-[50vh] object-contain opacity-30"
                     />
                   </div>
                 </div>
@@ -1065,7 +1065,7 @@ export default function ChatPage() {
                 <img
                   src="/Logo_RItual_White.png"
                   alt="Ritual Logo"
-                  className="w-[50vh] h-[50vh] object-contain opacity-50"
+                  className="w-[50vh] h-[50vh] object-contain opacity-30"
                 />
               </div>
             )}
