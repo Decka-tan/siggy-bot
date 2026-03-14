@@ -145,7 +145,7 @@ export default function LandingPage() {
               <img
                 src="/Logo_RItual_White.png"
                 alt="Ritual Logo"
-                className="absolute inset-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none w-[60vw] h-[60vw] md:w-full md:h-full"
+                className="absolute bottom-0 right-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none w-[50vw] h-[50vw] md:w-[60vw] md:h-[60vw]"
               />
             </motion.div>
           </div>
