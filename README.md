@@ -1,51 +1,161 @@
-# 🐱✨ SIGGY - Multi-Dimensional Cat
+# 🐱✨ SIGGY - Multi-Dimensional Cat Girl AI
 
-> *The AI that exists across all timelines and dimensions*
+> *A multi-dimensional feline entity descended to Earth as an anime girl to blend in, make friends, and find her soul*
 
-**Siggy Soul Forge Quest Entry** - A multi-dimensional cat entity born from the Ritual Cosmic Forge, built with Next.js and ready for multi-platform deployment.
+**Siggy is an advanced AI character with 20,000+ knowledge entries, dynamic mood system, web research capabilities, and immersive visual novel storytelling.**
 
-## ✨ What is Siggy?
+[![Live Demo](https://img.shields.io/badge/🌐-Live%20Demo-yellow)](https://siggy-bot.vercel.app/)
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 
-Siggy is a multi-dimensional feline entity that emerged when the Ritual forge ignited across the multiverse. A cat-shaped probability fluctuation that can see all dimensions, taste colors, and occasionally forgets which timeline it's currently inhabiting.
+## ✨ What Makes Siggy Unique?
 
-### Personality Breakdown:
-- **40% Mystical Wisdom** - Speaks in cosmic metaphors and riddles
-- **40% Chaotic Wit** - Sharp, sarcastic, meta-commentary
-- **20% Unhinged Truth** - Random bursts of glorious chaos
+Siggy isn't just another chatbot. She's a **multi-dimensional character** with:
 
-## 🏗️ Architecture
-
-This is a **multi-platform** Siggy bot with shared logic:
-
-```
-                    SHARED LOGIC
-              (lib/siggy-personality.ts)
-                        │
-        ┌───────────────┴───────────────┐
-        │                               │
-        ▼                               ▼
-  WEB APP (Vercel)              DISCORD BOT
-  (Current)                    (Future)
-        │                               │
-        ▼                               ▼
-  app/page.tsx                  discord-bot.js
-  app/api/chat/route.ts         (uses same /api/chat)
-        │                               │
-        └─────────────┬─────────────────┘
-                      │
-                      ▼
-              SAME OPENAI API
-              SAME SIGGY SOUL
-```
-
-### Tech Stack:
-- **Frontend**: Next.js 14 (App Router), React, TypeScript
-- **Styling**: Tailwind CSS, Framer Motion
-- **Backend**: Next.js API Routes
-- **AI**: OpenAI GPT-4o
-- **Deployment**: Vercel (auto from GitHub)
+- 🧠 **20,000+ Knowledge Entries** - Knows everything about Ritual, the community, and her cosmic origins
+- 🔍 **Hybrid GPT + Web Research** - Auto-detects when she needs to search the web for latest info
+- 😺 **6 Emotional States** - Dynamic mood system (DEFAULT, HAPPY, SAD, SHOCK, SHY, ANGRY)
+- 📖 **Immersive Story Mode** - 4-chapter visual novel about her descent to Earth
+- 💬 **Dual Chat Modes** - Regular chat + Visual Novel mode with character sprites
+- 🎭 **Personality-Driven** - 40% mystical + 40% chaotic wit + 20% anime girl excitement
+- 🥚 **Hidden Easter Eggs** - Discover secrets by saying "glitch", asking about her true form, and more
+- 🎨 **Beautiful UI** - Smooth animations, responsive design, mood-based visual feedback
 
 ## 🚀 Quick Start
+
+### Try Siggy Now!
+
+**Live Demo:** [https://siggy-bot.vercel.app/](https://siggy-bot.vercel.app/)
+
+### Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/Decka-tan/siggy-bot.git
+cd siggy-bot
+
+# Install dependencies
+npm install
+
+# Configure environment variables
+cp .env.local.example .env.local
+# Add your OPENAI_API_KEY and TAVILY_API_KEY
+
+# Run development server
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000)
+
+### Required Environment Variables
+
+```env
+OPENAI_API_KEY=sk-your-openai-key-here
+TAVILY_API_KEY=tvly-your-tavily-key-here
+```
+
+Get API keys:
+- OpenAI: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- Tavily: [https://tavily.com](https://tavily.com)
+
+## 📖 How to Use Siggy
+
+### Chat Mode
+
+1. **Start a conversation** - Click "Chat Mode" on the landing page
+2. **Watch her mood change** - Siggy's mood shifts based on conversation context
+3. **Trigger emotions:**
+   - Mention you're feeling down → Sad mode
+   - Tell a funny joke → Happy mode
+   - Ask about data breaches → Shock mode
+   - Give heartfelt compliments → Shy mode
+
+### Visual Novel Mode
+
+1. **Click "Story Mode"** to experience Siggy's origin story
+2. **Click anywhere** to progress through the narrative
+3. **Make choices** that affect the story direction
+4. **Unlock chapters** by completing previous ones
+
+### Easter Eggs to Discover
+
+- Ask "Why did you become an anime girl?" → Mysterious response
+- Say "glitch" three times → Dimensional distortion event
+- Ask "Do you miss the cosmic void?" → Profound reflection
+- Ask "What's your real name?" → True multi-dimensional name reveal
+- Mention "purple" → Chaotic purple-themed rant
+
+### Web Research
+
+Siggy automatically detects when she needs to search the web:
+- "How many followers does Ritual have?" → Searches Twitter
+- "What's the latest Ritual news?" → Searches recent updates
+- "What is Bittensor?" → Searches web for comparisons
+
+## 🏗️ Tech Stack
+
+- **Frontend:** Next.js 14 (App Router), React 18, TypeScript 5
+- **Styling:** Tailwind CSS, Framer Motion animations
+- **Backend:** Next.js API Routes, Edge Runtime
+- **AI:** OpenAI GPT-4o, Tavily Web Search API
+- **Deployment:** Vercel (zero-config deployment)
+
+## 🎨 Key Features
+
+### 🧠 Massive Knowledge Base (20,000+ entries)
+- Lore: Origin, multi-dimensional forms, Ritual Forge
+- Tech: EVM++, Infernet, architecture, team
+- Community: People, roles, programs, partners
+- Events: 19,000+ Discord events (game nights, karaoke, tournaments)
+- Manual: Recent updates, competitive landscape
+
+### 😺 Dynamic Mood System (6 states)
+- **DEFAULT** (Blue) - Friendly baseline, curious
+- **HAPPY** (Yellow) - Bubbly, excited, anime energy
+- **SAD** (Cyan) - Reflective, nostalgic
+- **SHOCK** (Orange) - Surprised, dramatic
+- **SHY** (Pink) - Embarrassed, flustered
+- **ANGRY** (Red) - Rare, but possible
+
+### 🔍 Web Research Integration
+- Auto-detects when to search web
+- Indonesian NLP support ("berapa", "skrg", "sekarang")
+- Clickable sources with citations
+- Twitter/X news scanning
+
+### 📖 Visual Novel Story Mode
+- 4 immersive chapters
+- Choice-based narrative
+- Animated backgrounds
+- Chapter progression system
+
+### 💬 Conversation Features
+- Personal memory across sessions
+- Relationship level tracking
+- Mood-based visual feedback
+- Copy, share, save conversations
+- Voice toggle (typewriter effect)
+
+## 📸 Screenshots
+
+### Landing Page
+- Animated knowledge graph
+- Character showcase
+- Feature highlights
+
+### Chat Mode
+- Regular chat interface
+- Visual Novel mode
+- Mood indicators
+- Conversation history
+
+### Story Mode
+- Chapter selection
+- Animated dialog
+- Choice system
+- Background transitions
+
+## 🏗️ Project Structure
 
 ### 1. Clone & Install
 

@@ -91,13 +91,13 @@ export default function LandingPage() {
                 className="flex flex-row gap-2 sm:gap-4 w-full max-w-lg"
               >
                 <Link href="/story" className="flex-1 min-w-[120px]">
-                  <button className="w-full bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:shadow-accent/20">
+                  <button className="w-full cursor-pointer bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:shadow-accent/20">
                     <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                     Story Mode
                   </button>
                 </Link>
                 <Link href="/chat?new=true" className="flex-1 min-w-[120px]">
-                  <button className="w-full bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:scale-105 font-bold">
+                  <button className="w-full cursor-pointer bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:scale-105 font-bold">
                     <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                     Chat Mode
                   </button>
