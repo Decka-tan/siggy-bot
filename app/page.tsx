@@ -62,7 +62,7 @@ export default function LandingPage() {
         </div>
 
         {/* Ritual Logo Overlay - Yellow for Landing Page */}
-        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-[0.05]">
+        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
           <img
             src="/Logo_Ritual_White.png"
             alt="Ritual Logo"

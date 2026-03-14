@@ -805,7 +805,7 @@ export default function StoryModePage() {
         )}
         <div className="absolute inset-0 bg-black/30" />
         {/* Ritual Logo Overlay - Black for Story Mode */}
-        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center opacity-[0.03]">
+        <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
           <img
             src="/Logo_Ritual_Black.png"
             alt="Ritual Logo"
