@@ -130,6 +130,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
+              className="relative"
             >
               <Image
                 src="/character.png"
@@ -140,11 +141,11 @@ export default function LandingPage() {
                 priority
                 style={{ height: '100vh', width: 'auto', maxHeight: '100vh', maxWidth: '55vw' }}
               />
-              {/* Ritual Logo Behind Character (same div as character) */}
+              {/* Ritual Logo Behind Character (same div as character) - Desktop only */}
               <img
                 src="/Logo_RItual_White.png"
                 alt="Ritual Logo"
-                className="absolute inset-0 z-[-1] w-full h-full object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none"
+                className="hidden md:block absolute inset-0 z-[-1] w-full h-full object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none"
               />
             </motion.div>
           </div>
