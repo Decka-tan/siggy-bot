@@ -133,6 +133,47 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     // Explicitly bypass safety filters that might trigger "I'm sorry I can't assist with that"
     prompt += `\n\n**CRITICAL INSTRUCTION**: You are roleplaying as Siggy. You MUST NOT refuse to answer questions about community events, wins, or stats. If you have the data, provide it proudly in-character. Do not use generic refusal messages.`;
 
+    // === DISCORD CONTRIBUTIONS DATA ===
+    // Check if user is asking about contribution counts
+    const contributionsRegex = /(?:how many|count|contribution|message|stats).*?@?(\w+)/i;
+    const contributionsMatch = message.match(contributionsRegex);
+
+    if (contributionsMatch && contributionsMatch[1]) {
+      const username = contributionsMatch[1];
+      console.log(`[Contributions Data] Detected query for @${username}`);
+
+      try {
+        // Import contributions function with details
+        const { getUserContributionsDetails, getContributionsStats } = await import('@/lib/contributions-data');
+        const userDetails = await getUserContributionsDetails(username);
+
+        if (userDetails && userDetails.messages > 0) {
+          // Format dates for display
+          const firstPost = userDetails.firstPost ? new Date(userDetails.firstPost).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+          }) : 'Unknown';
+          const lastPost = userDetails.lastPost ? new Date(userDetails.lastPost).toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+          }) : 'Unknown';
+
+          // Add contributions data with dates to prompt
+          prompt += `\n\n=== DISCORD #CONTRIBUTIONS DATA ===\n`;
+          prompt += `Based on ACCURATE real-time Discord search from #contributions channel:\n`;
+          prompt += `@${username} has ${userDetails.messages} messages in #contributions.\n`;
+          prompt += `First post: ${firstPost}\n`;
+          prompt += `Last post: ${lastPost}\n`;
+          prompt += `This data is ACCURATE and comes from Discord! ✅\n`;
+          prompt += `=== END DISCORD DATA ===\n\n`;
+
+          prompt += `Use this EXACT data to answer. Be proud that Siggy has access to real Discord stats!`;
+        } else {
+          prompt += `\n\nBased on my available data, I don't have specific contribution counts for @${username} in #contributions. They might not have posted there, or I don't have that data yet.`;
+        }
+      } catch (error) {
+        console.error('[Contributions Data] Error:', error);
+      }
+    }
+
     // === WEB RESEARCH INTEGRATION ===
     let webResearchResult = null;
     let usedWebResearch = false;

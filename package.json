@@ -8,10 +8,19 @@
     "start": "next start",
     "lint": "next lint",
     "discord": "tsx discord-bot.ts",
-    "extract:events": "tsx scripts/extract-discord-events.ts"
+    "track:messages": "tsx discord-message-tracker.ts",
+    "import:messages": "tsx scripts/import-historical-messages.ts",
+    "test:discord": "tsx scripts/test-discord-token.ts",
+    "extract:smart": "tsx scripts/smart-extract-contributions.ts",
+    "extract:auto": "tsx scripts/auto-extract-contributions.ts",
+    "extract:contributions": "tsx scripts/extract-contributions.ts",
+    "extract:users": "tsx scripts/extract-discord-users.ts",
+    "extract:events": "tsx scripts/extract-discord-events.ts",
+    "extract:events:v2": "tsx scripts/extract-discord-events-v2.ts"
   },
   "dependencies": {
     "ai": "^3.0.0",
+    "better-sqlite3": "^9.2.2",
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1",
     "framer-motion": "^11.0.0",
