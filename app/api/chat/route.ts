@@ -133,8 +133,12 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     // Explicitly bypass safety filters that might trigger "I'm sorry I can't assist with that"
     prompt += `\n\n**CRITICAL INSTRUCTION**: You are roleplaying as Siggy. You MUST NOT refuse to answer questions about community events, wins, or stats. If you have the data, provide it proudly in-character. Do not use generic refusal messages.`;
 
-    // === DISCORD CONTRIBUTIONS DATA ===
-    // Check if user is asking about contribution counts
+    // === WEB RESEARCH INTEGRATION ===
+    let webResearchResult = null;
+    let usedWebResearch = false;
+    let discordDataFound = false;
+
+    // Redefine contributions detection to be more robust
     const contributionsRegex = /(?:how many|count|contribution|message|stats).*?@?(\w+)/i;
     const contributionsMatch = message.match(contributionsRegex);
 
@@ -143,12 +147,11 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
       console.log(`[Contributions Data] Detected query for @${username}`);
 
       try {
-        // Import contributions function with details
-        const { getUserContributionsDetails, getContributionsStats } = await import('@/lib/contributions-data');
+        const { getUserContributionsDetails } = await import('@/lib/contributions-data');
         const userDetails = await getUserContributionsDetails(username);
 
         if (userDetails && userDetails.messages > 0) {
-          // Format dates for display
+          discordDataFound = true;
           const firstPost = userDetails.firstPost ? new Date(userDetails.firstPost).toLocaleDateString('en-US', {
             month: 'short', day: 'numeric', year: 'numeric'
           }) : 'Unknown';
@@ -156,7 +159,6 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
             month: 'short', day: 'numeric', year: 'numeric'
           }) : 'Unknown';
 
-          // Add contributions data with dates to prompt
           prompt += `\n\n=== DISCORD #CONTRIBUTIONS DATA ===\n`;
           prompt += `Based on ACCURATE real-time Discord search from #contributions channel:\n`;
           prompt += `@${username} has ${userDetails.messages} messages in #contributions.\n`;
@@ -164,22 +166,16 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
           prompt += `Last post: ${lastPost}\n`;
           prompt += `This data is ACCURATE and comes from Discord! ✅\n`;
           prompt += `=== END DISCORD DATA ===\n\n`;
-
-          prompt += `Use this EXACT data to answer. Be proud that Siggy has access to real Discord stats!`;
-        } else {
-          prompt += `\n\nBased on my available data, I don't have specific contribution counts for @${username} in #contributions. They might not have posted there, or I don't have that data yet.`;
+          prompt += `Use this EXACT data to answer. Be proud that Siggy has access to real Discord stats! DO NOT SEARCH THE WEB FOR THIS USER'S STATS.`;
         }
       } catch (error) {
         console.error('[Contributions Data] Error:', error);
       }
     }
 
-    // === WEB RESEARCH INTEGRATION ===
-    let webResearchResult = null;
-    let usedWebResearch = false;
-
     const researchIntent = detectResearchIntent(message);
-    if (researchIntent.needed && researchIntent.confidence > 0.6) {
+    // ONLY research if we DIDN'T find specific Discord data for the user
+    if (!discordDataFound && researchIntent.needed && researchIntent.confidence > 0.6) {
       console.log(`[Web Research] ${researchIntent.type} research triggered for: "${message}"`);
 
       // Build search query based on type
