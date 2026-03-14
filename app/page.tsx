@@ -141,11 +141,11 @@ export default function LandingPage() {
                 priority
                 style={{ height: '100vh', width: 'auto', maxHeight: '100vh', maxWidth: '55vw' }}
               />
-              {/* Ritual Logo Behind Character (same div as character) - Desktop only */}
+              {/* Ritual Logo Behind Character (same div as character) - Responsive */}
               <img
                 src="/Logo_RItual_White.png"
                 alt="Ritual Logo"
-                className="hidden md:block absolute inset-0 z-[-1] w-full h-full object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none"
+                className="absolute inset-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-30 pointer-events-none w-[60vw] h-[60vw] md:w-full md:h-full"
               />
             </motion.div>
           </div>
