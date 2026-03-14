@@ -133,12 +133,12 @@ export default function LandingPage() {
               className="relative"
               style={{ height: '100vh', width: 'auto' }}
             >
-              {/* Ritual Logo Behind Character - centered for desktop, adjusted for mobile */}
+              {/* Ritual Logo Behind Character */}
               <img
                 src="/Logo_RItual_White.png"
                 alt="Ritual Logo"
-                className="absolute md:inset-0 bottom-0 left-1/2 -translate-x-1/2 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
-                style={{ height: '120vh', width: 'auto', maxWidth: '65vw' }}
+                className="absolute inset-0 z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none"
+                style={{ height: '100vh', width: 'auto', maxWidth: '55vw' }}
               />
               <Image
                 src="/character.png"
