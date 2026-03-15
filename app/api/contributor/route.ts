@@ -38,48 +38,31 @@ function loadData(): ExtractionData {
     const dataDir = path.join(process.cwd(), 'extracted-data');
 
     // Load from existing files:
-    // 1. complete-guild-members-enriched.json - 7,978 users with roles
-    // 2. member-activity-analysis.json - 787 users with globalMessages
-    // 3. roles-map.json - role ID to name mapping
+    // 1. member-activity-analysis.json - 787 users with globalMessages (smaller, faster)
+    // 2. complete-guild-members-enriched.json - 7,978 users with roles (load only for role mapping)
 
-    const enrichedPath = path.join(dataDir, 'complete-guild-members-enriched.json');
     const activityPath = path.join(dataDir, 'member-activity-analysis.json');
+    const enrichedPath = path.join(dataDir, 'complete-guild-members-enriched.json');
 
     let membersMap = new Map<string, any>();
+    let roleMap = new Map<string, string[]>(); // userId -> roles
 
-    // Load enriched members data (base)
-    if (fs.existsSync(enrichedPath)) {
-      const data = JSON.parse(fs.readFileSync(enrichedPath, 'utf-8'));
+    // Load activity data first (smaller file, faster load)
+    if (fs.existsSync(activityPath)) {
+      const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
         membersMap.set(m.userId, {
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
-          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
-          messageCount: 0, // Will be updated from activity data
-          firstPost: m.joinedAt?.split('T')[0] || '',
+          avatar: `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+          messageCount: m.globalMessages || 0,
+          firstPost: '',
           lastPost: new Date().toISOString().split('T')[0],
-          roles: m.roles || [],
+          roles: [],
         });
       });
-      console.log(`✅ Loaded complete-guild-members-enriched: ${membersMap.size} users`);
-    }
-
-    // Load activity data (global messages for some users)
-    if (fs.existsSync(activityPath)) {
-      const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
-      (data.members || []).forEach((m: any) => {
-        let existing = membersMap.get(m.userId);
-        if (!existing) {
-          existing = Array.from(membersMap.values()).find(v => v.username === m.username);
-        }
-
-        if (existing && m.globalMessages) {
-          existing.messageCount = m.globalMessages;
-          existing.globalMessages = m.globalMessages;
-        }
-      });
-      console.log(`✅ Merged member activity data`);
+      console.log(`✅ Loaded member-activity-analysis: ${membersMap.size} users`);
     }
 
     // Convert to array and remove duplicates by username
