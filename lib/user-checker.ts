@@ -147,16 +147,14 @@ export class UserChecker {
   public formatBasicStats(user: EnrichedUser): string {
     const roleNames = user.roles
       .map(id => this.rolesMap[id] || id)
-      .filter(n => n !== '@everyone')
-      .slice(0, 3);
+      .filter(n => n !== '@everyone');
 
     const rolesHeader = roleNames.length > 0 ? roleNames.join(', ') : 'No roles';
-    const remainingRoles = user.roles.length > 3 ? user.roles.length - 3 : 0;
 
     return `**@${user.username}** (${user.displayName})
 🌎 Global Messages: ${user.globalMessages.toLocaleString()}
 📝 Contributions: ${user.contributionsCount} msgs
-🎭 Top Roles: ${rolesHeader}${remainingRoles > 0 ? ` (+${remainingRoles} more)` : ''}
+🎭 Roles: ${rolesHeader}
 📅 Joined: ${user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}`;
   }
 
