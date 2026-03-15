@@ -115,7 +115,7 @@ export class UserChecker {
       globalMessages: s?.globalMessages || 0,
       contributionsCount,
       eventsCount: s?.eventsCount || 0,
-      roles: allRoles,
+      roles: prioritizedRoles,  // ✅ Use filtered roles!
       joinedAt: r?.joinedAt,
       inServer: r?.inServer ?? true,
       twitterContent,
