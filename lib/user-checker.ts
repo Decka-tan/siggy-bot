@@ -25,7 +25,7 @@ interface EnrichedUser {
 export class UserChecker {
   private deepseek = getDeepSeekClient();
   private statsPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
-  private rolesPath = path.join(process.cwd(), 'extracted-data', 'complete-guild-members-enriched.json');
+  private rolesPath = path.join(process.cwd(), 'extracted-data', 'user-roles-summary.json');  // Use optimized file
   private rolesMapPath = path.join(process.cwd(), 'extracted-data', 'roles-map.json');
   private contributionsPath = path.join(process.cwd(), 'extracted-data', 'complete-contributions-with-dates.json');
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
@@ -64,7 +64,7 @@ export class UserChecker {
       if (withContribs) return withContribs;
       const withMessages = matches.find((m: any) => m.globalMessages > 0);
       if (withMessages) return withMessages;
-      const withRoles = matches.find((m: any) => m.roles && m.roles.length > 0);
+      const withRoles = matches.find((m: any) => (m.roles?.length || m.roleNames?.length) > 0);
       if (withRoles) return withRoles;
       return matches[0];
     };
@@ -74,13 +74,14 @@ export class UserChecker {
 
     if (!s && !r) return null;
 
-    const userId = s?.userId || r?.userId;
+    // Merge by username - prioritize stats from s, roles/joinedAt from r
     const username = s?.username || r?.username || q;
+    const userId = s?.userId || r?.userId;
 
     // Load extra substance
     let twitterContent = [];
     let messageSamples = [];
-    let contributionsCount = s?.contributionsCount || 0; // Use from statsData first!
+    let contributionsCount = s?.contributionsCount || 0;
 
     try {
       if (fs.existsSync(this.twitterCachePath)) {
@@ -94,7 +95,6 @@ export class UserChecker {
         if (entry?.messages) messageSamples = entry.messages.map((m: any) => typeof m === 'string' ? m : m.content || "").slice(0, 20);
       }
 
-      // Fallback: Load contributions count from leaderboard if not in statsData
       if (contributionsCount === 0 && this.contributionsData?.leaderboard) {
         const contribEntry = this.contributionsData.leaderboard.find((e: any) => e.userId === userId || e.username === username);
         if (contribEntry) {
@@ -103,9 +103,8 @@ export class UserChecker {
       }
     } catch (e) {}
 
-    // Sort roles by hierarchy (Ritualist, Ritty, Bitty first)
-    const allRoles = r?.roles || s?.roles || [];
-    const prioritizedRoles = this.sortRolesByPriority(allRoles);
+    // Use roleNames from optimized file, or fallback to roles
+    const allRoles = r?.roleNames || r?.roles || s?.roles || [];
 
     return {
       userId,
@@ -114,7 +113,7 @@ export class UserChecker {
       globalMessages: s?.globalMessages || 0,
       contributionsCount,
       eventsCount: s?.eventsCount || 0,
-      roles: prioritizedRoles,
+      roles: allRoles,
       joinedAt: r?.joinedAt,
       inServer: r?.inServer ?? true,
       twitterContent,
@@ -145,10 +144,8 @@ export class UserChecker {
   }
 
   public formatBasicStats(user: EnrichedUser): string {
-    const roleNames = user.roles
-      .map(id => this.rolesMap[id] || id)
-      .filter(n => n !== '@everyone');
-
+    // Roles are already names from optimized file
+    const roleNames = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone') : [];
     const rolesHeader = roleNames.length > 0 ? roleNames.join(', ') : 'No roles';
 
     return `**@${user.username}** (${user.displayName})
@@ -166,8 +163,9 @@ export class UserChecker {
     if (!user) return `❌ User @${username} not found nyann~! 😿`;
 
     const basicStats = this.formatBasicStats(user);
-    const rolesList = user.roles.map(id => this.rolesMap[id] || id).filter(n => n !== '@everyone').join(', ');
-    
+    // Roles are already names from optimized file
+    const rolesList = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone').join(', ') : 'No roles';
+
     // High-quality Substance Analysis Prompt
     const systemPrompt = `You are "Siggy", the mystical AI companion of the Ritual Network. 🐱✨
 Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis matching this EXACT format:

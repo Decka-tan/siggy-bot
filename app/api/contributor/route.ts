@@ -13,9 +13,10 @@ interface ContributorData {
   displayName: string;
   avatar?: string;
   messageCount: number;
-  firstPost: string;
-  lastPost: string;
+  firstPost?: string;
+  lastPost?: string;
   roles?: string[];
+  joinedAt?: string;
 }
 
 interface ExtractionData {
@@ -38,48 +39,55 @@ function loadData(): ExtractionData {
     const dataDir = path.join(process.cwd(), 'extracted-data');
 
     // Load from existing files:
-    // 1. member-activity-analysis.json - 787 users with globalMessages (smaller, faster)
-    // 2. complete-guild-members-enriched.json - 7,978 users with roles (load only for role mapping)
+    // 1. member-activity-analysis.json - 787 users with globalMessages
+    // 2. user-roles-summary.json - 7,978 users with roles/joinedAt/avatar (optimized, 1.87MB)
 
     const activityPath = path.join(dataDir, 'member-activity-analysis.json');
-    const enrichedPath = path.join(dataDir, 'complete-guild-members-enriched.json');
+    const rolesPath = path.join(dataDir, 'user-roles-summary.json');
 
     let membersMap = new Map<string, any>();
-    let roleMap = new Map<string, string[]>(); // userId -> roles
 
-    // Load activity data first (smaller file, faster load)
+    // Load activity data
     if (fs.existsSync(activityPath)) {
       const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
-        membersMap.set(m.userId, {
+        membersMap.set(m.username, {
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
-          avatar: `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
           messageCount: m.globalMessages || 0,
-          firstPost: '',
-          lastPost: new Date().toISOString().split('T')[0],
-          roles: [],
         });
       });
       console.log(`✅ Loaded member-activity-analysis: ${membersMap.size} users`);
     }
 
-    // Convert to array and remove duplicates by username
-    const uniqueMembers = Array.from(membersMap.values());
-    const deduplicatedMap = new Map<string, any>();
+    // Merge with roles data (includes avatar)
+    if (fs.existsSync(rolesPath)) {
+      const data = JSON.parse(fs.readFileSync(rolesPath, 'utf-8'));
+      (data.members || []).forEach((m: any) => {
+        const existing = membersMap.get(m.username);
+        if (existing) {
+          // Merge: keep activity data, add roles/joinedAt/avatar
+          existing.roles = m.roleNames || [];
+          existing.joinedAt = m.joinedAt;
+          existing.avatar = m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`;
+        } else {
+          // Add new entry from roles data
+          membersMap.set(m.username, {
+            userId: m.userId,
+            username: m.username,
+            displayName: m.displayName,
+            avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+            messageCount: 0,
+            roles: m.roleNames || [],
+            joinedAt: m.joinedAt,
+          });
+        }
+      });
+      console.log(`✅ Merged user-roles-summary`);
+    }
 
-    uniqueMembers.forEach((member: any) => {
-      const existing = deduplicatedMap.get(member.username);
-      if (!existing) {
-        deduplicatedMap.set(member.username, member);
-      } else if ((member.roles?.length || 0) > (existing.roles?.length || 0)) {
-        // Keep entry with more roles
-        deduplicatedMap.set(member.username, member);
-      }
-    });
-
-    const finalMembers = Array.from(deduplicatedMap.values());
+    const finalMembers = Array.from(membersMap.values());
 
     const result: ExtractionData = {
       stats: {
