@@ -124,7 +124,7 @@ export class UserChecker {
   }
 
   private sortRolesByPriority(roles: string[]): string[] {
-    // Priority order (by name): Radiant Ritualist > Ritualist > Zealot > ritty > bitty > others
+    // Priority order (by name): Radiant Ritualist > Ritualist > Zealot > ritty > bitty
     const priorityOrder = [
       'Radiant Ritualist',
       'Ritualist',
@@ -133,22 +133,41 @@ export class UserChecker {
       'bitty',
     ];
 
+    // Filter out non-contributor roles and numeric IDs
+    const nonContributorRoles = [
+      'official', 'community', 'events', 'npc', 'pledged to synful', 'blessed',
+      'korean community', 'japanese community', 'chinese community', 'naija community',
+      'viet community', 'ukraine community', 'russian community', 'indian community',
+      'komunitas indonesia', 'spanish community', 'portuguese community',
+      'french community', 'german community', 'initiate'
+    ];
+
+    const filteredRoles = roles.filter(role => {
+      const roleLower = role.toLowerCase().trim();
+
+      // Filter out numeric-only roles (IDs)
+      if (/^\d+$/.test(role.trim())) return false;
+
+      // Filter out non-contributor roles
+      if (nonContributorRoles.includes(roleLower)) return false;
+
+      return true;
+    });
+
     const priorityRoles: string[] = [];
     const otherRoles: string[] = [];
 
-    roles.forEach(role => {
+    filteredRoles.forEach(role => {
       const roleLower = role.toLowerCase();
-      // Check if this role matches any priority role (case-insensitive)
       const priorityIndex = priorityOrder.findIndex(pr => pr.toLowerCase() === roleLower);
 
       if (priorityIndex !== -1) {
-        priorityRoles[priorityIndex] = role; // Place in correct position
+        priorityRoles[priorityIndex] = role;
       } else {
         otherRoles.push(role);
       }
     });
 
-    // Filter out any undefined slots and concat
     const definedPriorities = priorityRoles.filter(r => r !== undefined);
     return [...definedPriorities, ...otherRoles];
   }
@@ -181,37 +200,38 @@ export class UserChecker {
 Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis matching this EXACT format:
 
 START with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
-Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for [username] [display name]:"
+Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **[display name]** (@username):"
 
 **Contributor Archetype**
-🎨 [Short title with emoji - e.g. "Community Artist & Event Enthusiast"]
+🎨 [Short title with emoji]
 
-**Discord Roles**
-This member holds a diverse set of roles, indicating broad community engagement:
-- Core Roles: [list key roles like ritty, bitty, Ascendant, Initiate]
-- Community & Events: [list relevant roles]
-- Regional Involvement: [list regional community roles]
-- Specialized: [other notable roles]
+**Contributor Roles** [ONLY if they have Ritualist/ritty/bitty/Zealot/Radiant Ritualist]
+This member holds core contributor roles:
+- [List only: Radiant Ritualist, Ritualist, Zealot, ritty, bitty - skip if they don't have any]
 
 **Activity & Engagement**
-- Global Chat: [X] total messages, showing [brief insight about their participation level]
-- Contributions: [X] posts in the dedicated #contributions channel
-- Events: Actively participated in [X] community events
+- Global Chat: [X] total messages, showing [insight about participation level]
+- Contributions: [X] posts in #contributions channel [if 0, say "primarily active in global chat"]
+- Events: [X] community events participated
 
 **Key Contributions & Impact**
-[Provide 3 numbered points with detailed titles, each analyzing their specific impact, Twitter content, or message samples. Each point should be 2-3 sentences with specific examples]
+[Provide 3 numbered points with detailed titles analyzing their specific impact. Use Twitter content or message samples. Each point 2-3 sentences with specific examples.]
 
 **Summary**
-[2-3 sentences summarizing their archetype, what they bring to the community, and their value]
+[2-3 sentences summarizing their archetype, community value, and impact]
 
-Keep it mystical ("nya~", "meow", "purr~") but highly analytical and specific.`;
+IMPORTANT formatting rules:
+- Keep it mystical ("nya~", "meow", "purr~") but highly analytical
+- When mentioning usernames, format as **@username** (bold)
+- Keep under 150 tokens for the response`;
 
     const userPrompt = `Analyze this contributor nya~!
-Name: ${user.displayName} (@${user.username})
-Global Msgs: ${user.globalMessages}
-Roles: ${rolesList || "Initiate"}
+Name: ${user.displayName} (**@${user.username}**)
+Global Messages: ${user.globalMessages}
+Contributions: ${user.contributionsCount || 0}
+Contributor Roles: ${rolesList || "Initiate"}
 
-Twitter/X Substance:
+Twitter/X Content:
 ${user.twitterContent?.map(t => `* ${t.text}`).join('\n') || "(No Twitter data)"}
 
 Message Samples:
@@ -221,7 +241,7 @@ ${user.messageSamples?.join('\n') || "(No message samples)"}`;
       const response = await this.deepseek.chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
-      ], { maxTokens: 800 });
+      ], { maxTokens: 1500 });
 
       return `${basicStats}\n\n${response.choices[0]?.message?.content || 'No analysis available meow!'}`;
     } catch (e: any) {
