@@ -68,7 +68,7 @@ export class UserChecker {
     // Load extra substance
     let twitterContent = [];
     let messageSamples = [];
-    let contributionsCount = 0;
+    let contributionsCount = s?.contributionsCount || 0; // Use from statsData first!
 
     try {
       if (fs.existsSync(this.twitterCachePath)) {
@@ -82,8 +82,8 @@ export class UserChecker {
         if (entry?.messages) messageSamples = entry.messages.map((m: any) => typeof m === 'string' ? m : m.content || "").slice(0, 20);
       }
 
-      // Load contributions count
-      if (this.contributionsData?.leaderboard) {
+      // Fallback: Load contributions count from leaderboard if not in statsData
+      if (contributionsCount === 0 && this.contributionsData?.leaderboard) {
         const contribEntry = this.contributionsData.leaderboard.find((e: any) => e.userId === userId || e.username === username);
         if (contribEntry) {
           contributionsCount = contribEntry.messages || 0;
