@@ -288,12 +288,17 @@ export default function ChatPage() {
   // Slash Command States
   const [showCommandDropdown, setShowCommandDropdown] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
 
   const availableCommands = [
-    { name: 'check', description: 'Analyze a contributor by username', usage: '/check @username' },
-    { name: 'analysis', description: 'Get detailed analysis for a contributor', usage: '/analysis @username' },
-    { name: 'analysiscompare', description: 'Compare multiple contributors', usage: '/analysiscompare @user1 vs @user2' },
+    { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
+    { name: 'analysiscompare', description: 'Compare multiple contributors (vs) in a table', usage: '/analysiscompare @user1 vs @user2' },
+    { name: 'leaderboard', description: 'Show the global message leaderboard', usage: '/leaderboard' },
   ];
+
+  const filteredCommands = commandQuery 
+    ? availableCommands.filter(c => c.name.toLowerCase().startsWith(commandQuery))
+    : availableCommands;
 
   // Track global bond across sessions
   const [globalRelationshipScore, setGlobalRelationshipScore] = useState<number>(() => {
@@ -1900,7 +1905,7 @@ export default function ChatPage() {
                                         alt={contributor.username}
                                         onError={(e) => {
                                           const target = e.target as HTMLImageElement;
-                                          target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
+                                          target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(message.contributor?.userId || '0') % 5}.png`;
                                         }}
                                         className="w-2.5 h-2.5 rounded-full"
                                       />
@@ -2064,6 +2069,67 @@ export default function ChatPage() {
                         )}
                       </AnimatePresence>
 
+                      {/* Slash Command Dropdown */}
+                      <AnimatePresence>
+                        {showCommandDropdown && filteredCommands.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-accent/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                          >
+                            <div className="p-2.5 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                <Terminal className="w-3.5 h-3.5" />
+                                Matching Commands
+                              </span>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                              {filteredCommands.map((command, idx) => (
+                                <button
+                                  key={command.name}
+                                  onClick={() => {
+                                    setInput(`/${command.name} `);
+                                    setShowCommandDropdown(false);
+                                    setSelectedCommandIndex(0);
+                                  }}
+                                  onMouseEnter={() => setSelectedCommandIndex(idx)}
+                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                >
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-accent/40'}`}>
+                                    <span className="font-display font-black text-lg">/</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedCommandIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                        /{command.name}
+                                      </span>
+                                      {idx === selectedCommandIndex && (
+                                        <motion.span layoutId="active-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                          Active
+                                        </motion.span>
+                                      )}
+                                    </div>
+                                    <div className={`text-xs font-mono transition-colors ${idx === selectedCommandIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                      {command.description}
+                                    </div>
+                                    <div className="mt-1.5 text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest group-hover:text-accent/30 transition-colors">
+                                      Usage: {command.usage}
+                                    </div>
+                                  </div>
+                                  {idx === selectedCommandIndex && (
+                                    <div className="shrink-0 flex items-center self-center pr-1">
+                                      <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                    </div>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+
                       <div className="flex gap-2 items-center">
                         <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
                           {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
@@ -2077,6 +2143,31 @@ export default function ChatPage() {
                             target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                           }}
                           onKeyDown={(e) => {
+                            if (showCommandDropdown && filteredCommands.length > 0) {
+                              if (e.key === 'ArrowDown') {
+                                e.preventDefault();
+                                setSelectedCommandIndex(prev => (prev + 1) % filteredCommands.length);
+                                return;
+                              }
+                              if (e.key === 'ArrowUp') {
+                                e.preventDefault();
+                                setSelectedCommandIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+                                return;
+                              }
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const cmd = filteredCommands[selectedCommandIndex];
+                                setInput(`/${cmd.name} `);
+                                setShowCommandDropdown(false);
+                                setSelectedCommandIndex(0);
+                                return;
+                              }
+                              if (e.key === 'Escape') {
+                                setShowCommandDropdown(false);
+                                return;
+                              }
+                            }
+
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault();
                               handleSendMessage();

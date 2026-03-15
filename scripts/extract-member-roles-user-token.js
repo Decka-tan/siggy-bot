@@ -131,7 +131,7 @@ async function extractAllMemberRoles() {
         }, null, 2));
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
     } catch (error) {
       updateRoleStatus({ state: 'FATAL_ERROR', message: error.message });

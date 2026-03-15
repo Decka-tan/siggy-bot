@@ -228,8 +228,8 @@ async function extractAllAvatars() {
         console.log(`\n   💾 Progress saved`);
       }
 
-      // Rate limiting: wait between requests
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Rate limiting: wait between requests (300ms = ~3.3 requests/second, safe for Discord API)
+      await new Promise(resolve => setTimeout(resolve, 300));
 
     } catch (error) {
       updateStatus({ state: 'FATAL_ERROR', message: error.message });
