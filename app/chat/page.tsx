@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
@@ -284,7 +284,17 @@ export default function ChatPage() {
   const [showContributorDropdown, setShowContributorDropdown] = useState(false);
   const [analyzingContributor, setAnalyzingContributor] = useState<string | null>(null);
   const [isSearchingContributors, setIsSearchingContributors] = useState(false);
-  
+
+  // Slash Command States
+  const [showCommandDropdown, setShowCommandDropdown] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+
+  const availableCommands = [
+    { name: 'check', description: 'Analyze a contributor by username', usage: '/check @username' },
+    { name: 'analysis', description: 'Get detailed analysis for a contributor', usage: '/analysis @username' },
+    { name: 'analysiscompare', description: 'Compare multiple contributors', usage: '/analysiscompare @user1 vs @user2' },
+  ];
+
   // Track global bond across sessions
   const [globalRelationshipScore, setGlobalRelationshipScore] = useState<number>(() => {
     if (typeof window === 'undefined') return 0;
@@ -426,6 +436,29 @@ export default function ChatPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [vnMode, vnHistoryIndex, activeConversation, playClick]);
+
+  // Slash Command Detection Effect
+  useEffect(() => {
+    // Check if input starts with /
+    if (input.startsWith('/')) {
+      // Extract command after /
+      const parts = input.slice(1).split(' ');
+      const cmd = parts[0].toLowerCase();
+
+      // Don't show command dropdown if we're already in a specific command flow
+      if (cmd === 'check' || cmd === 'analysis' || cmd === 'analysiscompare') {
+        setShowCommandDropdown(false);
+        return;
+      }
+
+      // Show commands matching input
+      setCommandQuery(cmd);
+      setShowCommandDropdown(true);
+    } else {
+      setShowCommandDropdown(false);
+      setCommandQuery('');
+    }
+  }, [input]);
 
   // Contributor Search Effect
   useEffect(() => {
@@ -1644,6 +1677,45 @@ export default function ChatPage() {
                           </div>
 
                             <div className="flex-1 w-full flex items-center gap-2 relative">
+                              {/* Slash Command Dropdown */}
+                              <AnimatePresence>
+                                {showCommandDropdown && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                  >
+                                    <div className="p-2 border-b border-white/5 bg-accent/5">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                        <Terminal className="w-3 h-3" />
+                                        Matching Commands
+                                      </span>
+                                    </div>
+                                    <div className="max-h-48 overflow-y-auto">
+                                      {availableCommands
+                                        .filter(cmd => cmd.name.includes(commandQuery))
+                                        .map((cmd) => (
+                                        <button
+                                          key={cmd.name}
+                                          onClick={() => {
+                                            setInput(`/${cmd.name} `);
+                                            setShowCommandDropdown(false);
+                                          }}
+                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                        >
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs font-bold text-accent">/{cmd.name}</span>
+                                            <span className="text-[10px] text-text-secondary font-mono">{cmd.usage}</span>
+                                          </div>
+                                          <div className="text-[10px] text-text-secondary">{cmd.description}</div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+
                               {/* Contributor Search Dropdown */}
                               <AnimatePresence>
                                 {showContributorDropdown && contributorResults.length > 0 && (
@@ -1809,15 +1881,15 @@ export default function ChatPage() {
                               <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} />
                             ) : (
                               <div className="space-y-3">
-                                {/* Simple contributor tag with PFP */}
-                                {message.contributor && (
-                                  <div className="inline-flex items-center gap-2 bg-accent/20 border border-accent/50 rounded-full px-3 py-1.5 mb-2">
-                                    <img src={message.contributor.avatar} alt={message.contributor.username} className="w-6 h-6 rounded-full border border-accent/30" />
-                                    <span className="text-xs font-bold text-accent">@{message.contributor.username}</span>
+                                {/* Contributor mention with small PFP - replaces @username in content */}
+                                {message.contributor ? (
+                                  <div className="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-1">
+                                    <img src={message.contributor.avatar} alt={message.contributor.username} className="w-2.5 h-2.5 rounded-full" />
+                                    <span className="text-xs font-bold text-accent">{message.contributor.displayName || message.contributor.username}</span>
                                   </div>
+                                ) : (
+                                  <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
                                 )}
-
-                                <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
                               </div>
                             )}
 

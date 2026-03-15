@@ -95,16 +95,18 @@ export class UserChecker {
         if (entry?.messages) messageSamples = entry.messages.map((m: any) => typeof m === 'string' ? m : m.content || "").slice(0, 20);
       }
 
-      if (contributionsCount === 0 && this.contributionsData?.leaderboard) {
-        const contribEntry = this.contributionsData.leaderboard.find((e: any) => e.userId === userId || e.username === username);
-        if (contribEntry) {
-          contributionsCount = contribEntry.messages || 0;
+      // Load contributions from leaderboard (match by username优先)
+      if (this.contributionsData?.leaderboard) {
+        const contribEntry = this.contributionsData.leaderboard.find((e: any) => e.username === username || e.userId === userId);
+        if (contribEntry && contribEntry.messages > 0) {
+          contributionsCount = contribEntry.messages;
         }
       }
     } catch (e) {}
 
     // Use roleNames from optimized file, or fallback to roles
     const allRoles = r?.roleNames || r?.roles || s?.roles || [];
+    const prioritizedRoles = this.sortRolesByPriority(allRoles);
 
     return {
       userId,
@@ -122,25 +124,33 @@ export class UserChecker {
   }
 
   private sortRolesByPriority(roles: string[]): string[] {
-    // Priority order: Ritualist > Ritty > Bitty > others
-    const priorityIds = [
-      '1339006464139984906', // Ritualist
-      '1430904963340566661', // ritty
-      '1430904348757725325', // bitty
+    // Priority order (by name): Radiant Ritualist > Ritualist > Zealot > ritty > bitty > others
+    const priorityOrder = [
+      'Radiant Ritualist',
+      'Ritualist',
+      'Zealot',
+      'ritty',
+      'bitty',
     ];
 
     const priorityRoles: string[] = [];
     const otherRoles: string[] = [];
 
     roles.forEach(role => {
-      if (priorityIds.includes(role)) {
-        priorityRoles.push(role);
+      const roleLower = role.toLowerCase();
+      // Check if this role matches any priority role (case-insensitive)
+      const priorityIndex = priorityOrder.findIndex(pr => pr.toLowerCase() === roleLower);
+
+      if (priorityIndex !== -1) {
+        priorityRoles[priorityIndex] = role; // Place in correct position
       } else {
         otherRoles.push(role);
       }
     });
 
-    return [...priorityRoles, ...otherRoles];
+    // Filter out any undefined slots and concat
+    const definedPriorities = priorityRoles.filter(r => r !== undefined);
+    return [...definedPriorities, ...otherRoles];
   }
 
   public formatBasicStats(user: EnrichedUser): string {
