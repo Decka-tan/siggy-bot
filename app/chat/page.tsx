@@ -473,7 +473,24 @@ export default function ChatPage() {
 
   // Analyze contributor with DeepSeek
   const analyzeContributor = async (contributor: ContributorSearchResult) => {
-    if (!activeConversationId) return;
+    let targetConvId = activeConversationId;
+    
+    // Create conversation if none exists
+    if (!targetConvId) {
+      const newConv: Conversation = {
+        id: Date.now().toString(),
+        title: `Analyzing @${contributor.username}`,
+        messages: [],
+        currentMood: 'DEFAULT' as MoodState,
+        messageCount: 0,
+        timestamp: Date.now(),
+        relationshipLevel: globalRelationshipLevel || 'ACQUAINTANCE',
+        relationshipScore: globalRelationshipScore || 0,
+      };
+      setConversations(prev => [newConv, ...prev]);
+      targetConvId = newConv.id;
+      setActiveConversationId(newConv.id);
+    }
 
     setAnalyzingContributor(contributor.userId);
     setShowContributorDropdown(false);
@@ -496,13 +513,14 @@ export default function ChatPage() {
     };
 
     setConversations(prev => prev.map(conv => {
-      if (conv.id === activeConversationId) {
+      if (conv.id === targetConvId) {
         const updatedMessages = [...conv.messages, userMessage];
-        const title = conv.messages.length === 0 ? `Checking @${contributor.username}` : conv.title;
-        return { ...conv, messages: updatedMessages, title };
+        return { ...conv, messages: updatedMessages };
       }
       return conv;
     }));
+
+    const activeId = targetConvId; // Local copy for closure
 
     try {
       const analyzeRes = await fetch('/api/analyze', {
@@ -664,6 +682,38 @@ export default function ChatPage() {
     const needsResearch = researchKeywords.some(kw => textToSend.toLowerCase().includes(kw));
     if (needsResearch) {
       setIsResearching(true);
+    }
+
+    // Intercept manual /check commands
+    if (textToSend.toLowerCase().startsWith('/check') && !analyzingContributor) {
+      const parts = textToSend.split(' ');
+      if (parts.length > 1) {
+        let query = parts[1].replace('@', '').trim();
+        if (query) {
+          setIsLoading(true);
+          try {
+            // First find the user to get their actual ID
+            const searchRes = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
+            const searchData = await searchRes.json();
+            
+            if (searchData.success && searchData.contributors.length > 0) {
+              const exactMatch = searchData.contributors.find((c: any) => 
+                c.username.toLowerCase() === query.toLowerCase() || 
+                c.displayName.toLowerCase() === query.toLowerCase()
+              ) || searchData.contributors[0];
+              
+              await analyzeContributor(exactMatch);
+              return; // Exit handleSendMessage early
+            } else {
+              // Fallback: Just let the normal chat handle the "not found" message
+            }
+          } catch (error) {
+            console.error('Manual /check interception error:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      }
     }
 
     try {
@@ -1606,7 +1656,7 @@ export default function ChatPage() {
                                     <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Search className="w-3 h-3" />
-                                        {input.startsWith('/check') ? 'Select Contributor' : 'Available Commands'}
+                                        Select Contributor
                                       </span>
                                       {isSearchingContributors && (
                                         <RefreshCw className="w-3 h-3 text-accent animate-spin" />
@@ -1659,7 +1709,7 @@ export default function ChatPage() {
                                 placeholder="What will you say? (type /check to analyze username)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
-                                className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
+                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/20 ring-2 ring-accent/50 border-accent' : 'bg-black/40'}`}
                                 style={{ minHeight: '40px', height: 'auto' }}
                               />
                             <button
@@ -1760,69 +1810,6 @@ export default function ChatPage() {
                             ) : (
                               <div className="space-y-3">
                                 <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
-                                
-                                {message.contributor && (
-                                  <motion.div 
-                                    initial={{ scale: 0.95, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    className="mt-3 p-5 bg-gradient-to-br from-surface to-accent/5 border border-accent/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(255,215,0,0.15)] relative group"
-                                  >
-                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
-                                      <Trophy className="w-12 h-12 text-accent" />
-                                    </div>
-                                    
-                                    <div className="flex items-center gap-5 mb-5 relative z-10">
-                                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-accent shadow-[0_0_20px_rgba(255,215,0,0.4)]">
-                                        <img src={message.contributor.avatar} alt={message.contributor.username} className="w-full h-full object-cover" />
-                                      </div>
-                                      <div>
-                                        <h4 className="font-display text-accent text-xl leading-tight uppercase tracking-widest font-bold">
-                                          {message.contributor.displayName}
-                                        </h4>
-                                        <div className="flex items-center gap-2 mt-1">
-                                          <span className="text-[10px] font-mono text-text-secondary bg-white/5 px-2 py-0.5 rounded">
-                                            @{message.contributor.username}
-                                          </span>
-                                          <span className="text-[9px] font-mono text-accent uppercase tracking-tighter opacity-70">
-                                            ID: {message.contributor.userId}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-3 gap-3 mb-5">
-                                      <div className="bg-black/20 rounded-xl p-3 text-center border border-white/5 hover:border-accent/30 transition-colors">
-                                        <div className="text-[10px] text-text-secondary uppercase mb-1 font-mono tracking-tighter">Messages</div>
-                                        <div className="font-mono text-accent text-lg font-bold">{(message.contributor.globalMessages ?? 0).toLocaleString()}</div>
-                                      </div>
-                                      <div className="bg-black/20 rounded-xl p-3 text-center border border-white/5 hover:border-accent/30 transition-colors">
-                                        <div className="text-[10px] text-text-secondary uppercase mb-1 font-mono tracking-tighter">Contribs</div>
-                                        <div className="font-mono text-accent text-lg font-bold">{(message.contributor.contributionsCount ?? 0).toLocaleString()}</div>
-                                      </div>
-                                      <div className="bg-black/20 rounded-xl p-3 text-center border border-white/5 hover:border-accent/30 transition-colors">
-                                        <div className="text-[10px] text-text-secondary uppercase mb-1 font-mono tracking-tighter">Events</div>
-                                        <div className="font-mono text-accent text-lg font-bold">{(message.contributor.eventsCount ?? 0).toLocaleString()}</div>
-                                      </div>
-                                    </div>
-
-                                    {message.contributor.roles && message.contributor.roles.length > 0 && (
-                                      <div className="flex flex-wrap gap-1.5 mt-2">
-                                        {message.contributor.roles.map(role => (
-                                          <span key={role} className="px-2 py-0.5 bg-accent/10 border border-accent/20 rounded text-[9px] font-mono text-accent">
-                                            {role}
-                                          </span>
-                                        ))}
-                                      </div>
-                                    )}
-                                    
-                                    {message.contributor.joinedAt && (
-                                      <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-[9px] font-mono text-text-secondary">
-                                        <Clock className="w-3 h-3" />
-                                        MEMBER SINCE {new Date(message.contributor.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase()}
-                                      </div>
-                                    )}
-                                  </motion.div>
-                                )}
                               </div>
                             )}
 
@@ -1925,36 +1912,80 @@ export default function ChatPage() {
                       )}
                     </AnimatePresence>
 
-                    {/* Input */}
-                    <div className="flex gap-2 pt-2 items-center relative z-20">
-                      <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
-                        {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                      </button>
-                      <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
+                    {/* Input Area (Standard) */}
+                    <div className="space-y-3 relative z-20 pt-2">
+                       {/* Contributor Search Dropdown */}
+                       <AnimatePresence>
+                        {showContributorDropdown && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                          >
+                            <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                <Search className="w-3 h-3" />
+                                Select Contributor
+                              </span>
+                              {isSearchingContributors && (
+                                <RefreshCw className="w-3 h-3 text-accent animate-spin" />
+                              )}
+                            </div>
+                            <div className="max-h-48 overflow-y-auto">
+                              {contributorResults.map((contributor) => (
+                                <button
+                                  key={contributor.userId}
+                                  onClick={() => analyzeContributor(contributor)}
+                                  className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                >
+                                  <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                    <img src={contributor.avatar} alt={contributor.username} className="w-full h-full object-cover" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
+                                    <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
+                                  </div>
+                                  <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+                                    {contributor.messageCount} msgs
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <div className="flex gap-2 items-center">
+                        <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
+                          {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </button>
+                        <textarea
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          onInput={(e) => {
                             const target = e.target as HTMLTextAreaElement;
-                            setTimeout(() => target.style.height = 'auto', 10);
-                          }
-                        }}
-                        placeholder="Type your message..."
-                        disabled={isLoading}
-                        rows={1}
-                        className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
-                        style={{ minHeight: '44px', height: 'auto' }}
-                      />
-                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
-                        {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
-                      </button>
+                            target.style.height = 'auto';
+                            target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendMessage();
+                              const target = e.target as HTMLTextAreaElement;
+                              setTimeout(() => target.style.height = 'auto', 10);
+                            }
+                          }}
+                          placeholder="What will you say? (type /check to analyze username)"
+                          disabled={isLoading || analyzingContributor !== null}
+                          rows={1}
+                          className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
+                          style={{ minHeight: '44px', height: 'auto' }}
+                        />
+                        <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
+                          {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
