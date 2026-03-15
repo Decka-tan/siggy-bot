@@ -12,6 +12,8 @@ import {
   Message as DiscordMessage,
   ActivityType,
   ChannelType,
+  Interaction,
+  ChatInputCommandInteraction,
 } from 'discord.js';
 import { OpenAI } from 'openai';
 import {
@@ -229,13 +231,143 @@ function handleCommand(message: DiscordMessage): string | null {
     return [
       '🐱 **Siggy Commands**',
       '',
+      '**Bot Commands:**',
       '`!mood` — Check my current mood',
       '`!reset` — Reset our conversation',
       '`!story` — Read my origin story',
-      '`!help` — This message',
+      '',
+      '**Analysis Commands (Powered by DeepSeek AI ✨):**',
+      '`!check @username` — AI-powered user analysis',
+      '`!user @username` — Basic user stats',
+      '`!top 10` — Show top contributors',
+      '`!stats` — Show leaderboard',
+      '`!compare @user1 @user2` — Compare two users',
+      '`!overall` — Server-wide stats',
       '',
       'Or just talk to me! Mention me or say my name~ 💜',
     ].join('\n');
+  }
+
+  return null;
+}
+
+// ==========================================
+// HANDLE ANALYSIS COMMANDS
+// ==========================================
+
+async function handleAnalysisCommand(message: DiscordMessage): Promise<string | null> {
+  const content = message.content.trim().toLowerCase();
+  const { getContributorAnalyzer } = require('./lib/contributor-analyzer');
+  const analyzer = getContributorAnalyzer();
+
+  // Stats command
+  if (content.startsWith('!stats') || content.startsWith('!leaderboard')) {
+    const limit = content.match(/\d+/)?.[0] ? parseInt(content.match(/\d+/)![0]) : 10;
+    return analyzer.formatLeaderboard(limit);
+  }
+
+  // NEW: /check command with AI analysis via API
+  const checkMatch = message.content.match(/^!check\s+(.+)/i);
+  if (checkMatch) {
+    const username = checkMatch[1].trim().replace(/^@/, '');
+
+    // Show typing indicator (this might take a moment)
+    if ('sendTyping' in message.channel) {
+      await message.channel.sendTyping();
+    }
+
+    try {
+      // Call the API endpoint (uses merged data with Ritual names, roles, stats)
+      const apiResponse = await fetch('http://localhost:3000/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ contributorId: username }),
+        signal: AbortSignal.timeout(60000), // 60 second timeout
+      });
+
+      if (!apiResponse.ok) {
+        const errorData = await apiResponse.json().catch(() => ({}));
+        console.error('API Error:', apiResponse.status, errorData);
+        throw new Error(errorData.error || 'API request failed');
+      }
+
+      const data = await apiResponse.json();
+
+      if (data.success && data.analysis) {
+        return data.analysis;
+      } else {
+        throw new Error(data.error || 'Invalid response');
+      }
+    } catch (error: any) {
+      console.error('Check command error:', error);
+
+      // Provide helpful error message
+      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
+        return `⏱️ **Analysis timeout!** nya~ 😿
+
+Sorry nya~! The analysis took too long (API might be processing lots of data).
+
+Debug Info:
+• Contributor ID: ${username}
+• Error: Request timeout (>60s)
+
+**Try again later or check:**
+• Is the dev server running? (npm run dev)
+• API endpoint: http://localhost:3000/api/analyze`;
+      }
+
+      return `❌ **Sorry nya~! Analysis failed:** ${error.message} 😿
+
+Debug Info:
+• Contributor ID: ${username}
+• Error: ${error.message}
+
+**Please check:**
+• DeepSeek API key is configured (.env.local)
+• Data files exist (complete-guild-members.json, smart-extraction-result.json)
+• Discord User Token is valid
+
+Server console should have more details meow! 🐱`;
+    }
+  }
+
+  // User stats command: !user @username or !user username
+  const userMatch = message.content.match(/^!user\s+(.+)/i);
+  if (userMatch) {
+    const username = userMatch[1].trim().replace(/^@/, '');
+    const stats = analyzer.getContributorStats(username);
+    if (stats) {
+      return stats;
+    } else {
+      return `❌ Couldn't find contributor data for "@${username}". Try checking the exact username!`;
+    }
+  }
+
+  // Compare command: !compare @user1 @user2
+  const compareMatch = message.content.match(/^!compare\s+@?(\S+)\s+@?(\S+)/i);
+  if (compareMatch) {
+    const [, user1, user2] = compareMatch;
+    const comparison = analyzer.compareContributors(user1, user2);
+    if (comparison) {
+      return comparison;
+    } else {
+      return `❌ Couldn't find data for one or both users. Check the usernames!`;
+    }
+  }
+
+  // Top contributors: !top 10
+  if (content.startsWith('!top')) {
+    const limit = content.match(/\d+/)?.[0] ? parseInt(content.match(/\d+/)![0]) : 10;
+    const { getUserChecker } = require('./lib/user-checker');
+    const checker = getUserChecker();
+    return checker.getTopContributors(limit);
+  }
+
+  // Overall stats
+  if (content === '!overall' || content === '!total') {
+    return analyzer.getOverallStats();
   }
 
   return null;
@@ -304,6 +436,13 @@ client.on('messageCreate', async (message: DiscordMessage) => {
     return;
   }
 
+  // Check for contributor analysis commands
+  const analysisCommand = await handleAnalysisCommand(message);
+  if (analysisCommand) {
+    await message.reply(analysisCommand);
+    return;
+  }
+
   // Clean the message (remove mentions)
   let userMessage = message.content
     .replace(/<@!?\d+>/g, '') // Remove mentions
@@ -342,6 +481,145 @@ client.on('messageCreate', async (message: DiscordMessage) => {
   } catch (error) {
     console.error('Error handling message:', error);
     await message.reply('*glitches* Something went wrong with my dimensional connection... *taps phone* Try again?');
+  }
+});
+
+// ==========================================
+// HANDLE SLASH COMMANDS
+// ==========================================
+
+client.on('interactionCreate', async (interaction: Interaction) => {
+  if (!interaction.isChatInputCommand()) return;
+
+  const { commandName } = interaction;
+
+  try {
+    // Defer reply if command might take time (AI analysis)
+    if (commandName === 'check') {
+      await interaction.deferReply();
+    }
+
+    switch (commandName) {
+      case 'check': {
+        const username = interaction.options.getString('username', true);
+        const { getUserChecker } = require('./lib/user-checker');
+        const checker = getUserChecker();
+
+        try {
+          const analysis = await checker.getAIAnalysis(username);
+          await interaction.editReply(analysis);
+        } catch (error) {
+          console.error('Check command error:', error);
+          await interaction.editReply(`❌ Error checking @${username}. Make sure extraction data exists!`);
+        }
+        break;
+      }
+
+      case 'top': {
+        const count = interaction.options.getInteger('count') || 10;
+        const { getUserChecker } = require('./lib/user-checker');
+        const checker = getUserChecker();
+        const leaderboard = checker.getTopContributors(count);
+        await interaction.reply(leaderboard);
+        break;
+      }
+
+      case 'compare': {
+        const user1 = interaction.options.getString('user1', true);
+        const user2 = interaction.options.getString('user2', true);
+        const { getUserChecker } = require('./lib/user-checker');
+        const checker = getUserChecker();
+
+        try {
+          const comparison = await checker.compareUsers(user1, user2);
+          await interaction.reply(comparison);
+        } catch (error) {
+          await interaction.reply('❌ Error comparing users. Check usernames!');
+        }
+        break;
+      }
+
+      case 'stats': {
+        const { getContributorAnalyzer } = require('./lib/contributor-analyzer');
+        const analyzer = getContributorAnalyzer();
+        const stats = analyzer.getOverallStats();
+        await interaction.reply(stats);
+        break;
+      }
+
+      case 'user': {
+        const username = interaction.options.getString('username', true);
+        const { getContributorAnalyzer } = require('./lib/contributor-analyzer');
+        const analyzer = getContributorAnalyzer();
+        const userStats = analyzer.getContributorStats(username);
+
+        if (userStats) {
+          await interaction.reply(userStats);
+        } else {
+          await interaction.reply(`❌ Couldn't find data for @${username}`);
+        }
+        break;
+      }
+
+      case 'mood': {
+        const state = getChannelState(interaction.channelId);
+        const mood = state.moodSystem.getCurrentMood();
+        const moodEmojis: Record<MoodState, string> = {
+          DEFAULT: '😺',
+          HAPPY: '😸',
+          SAD: '😿',
+          SHOCK: '🙀',
+          SHY: '🫣',
+          ANGRY: '😾',
+        };
+        await interaction.reply(
+          `${moodEmojis[mood]} Current mood: **${mood}** | Messages: ${state.moodSystem.getMessageCount()}`
+        );
+        break;
+      }
+
+      case 'reset': {
+        const state = getChannelState(interaction.channelId);
+        state.moodSystem.reset();
+        state.conversationHistory = [];
+        state.isFirstMessage = true;
+        await interaction.reply(
+          '*stretches* Ahhh~ Fresh start! *adjusts cat ears* What were we talking about? I forgot everything~ 😸'
+        );
+        break;
+      }
+
+      case 'help': {
+        const helpText = [
+          '🐱 **Siggy Commands**',
+          '',
+          '**Slash Commands:**',
+          '`/check @username` — AI-powered user analysis',
+          '`/user @username` — Basic user stats',
+          '`/top [count]` — Show top contributors',
+          '`/stats` — Server-wide statistics',
+          '`/compare @user1 @user2` — Compare two users',
+          '`/mood` — Check my current mood',
+          '`/reset` — Reset our conversation',
+          '',
+          '**Or just talk to me!** Mention me or say my name~ 💜',
+        ].join('\n');
+        await interaction.reply(helpText);
+        break;
+      }
+
+      default:
+        await interaction.reply('❌ Unknown command');
+    }
+  } catch (error) {
+    console.error('Error handling slash command:', error);
+    const errorMessage = '❌ Something went wrong! *glitches* Try again?';
+
+    if (interaction.deferred) {
+      await interaction.editReply(errorMessage);
+    } else {
+      await interaction.reply(errorMessage);
+    }
   }
 });
 
