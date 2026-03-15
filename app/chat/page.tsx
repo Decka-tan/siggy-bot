@@ -1891,20 +1891,23 @@ export default function ChatPage() {
                             ) : (
                               <div className="space-y-3">
                                 {/* Contributor mention with small PFP - replaces @username in content */}
-                                {message.contributor ? (
-                                  <div className="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-1">
-                                    <img
-                                      src={message.contributor.avatar}
-                                      alt={message.contributor.username}
-                                      onError={(e) => {
-                                        const target = e.target as HTMLImageElement;
-                                        target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(message.contributor.userId) % 5}.png`;
-                                      }}
-                                      className="w-2.5 h-2.5 rounded-full"
-                                    />
-                                    <span className="text-xs font-bold text-accent">{message.contributor.displayName || message.contributor.username}</span>
-                                  </div>
-                                ) : (
+                                {message.contributor ? (() => {
+                                  const contributor = message.contributor;
+                                  return (
+                                    <div className="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-1">
+                                      <img
+                                        src={contributor.avatar}
+                                        alt={contributor.username}
+                                        onError={(e) => {
+                                          const target = e.target as HTMLImageElement;
+                                          target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
+                                        }}
+                                        className="w-2.5 h-2.5 rounded-full"
+                                      />
+                                      <span className="text-xs font-bold text-accent">{contributor.displayName || contributor.username}</span>
+                                    </div>
+                                  );
+                                })() : (
                                   <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
                                 )}
                               </div>
