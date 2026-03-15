@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-03-15T13:50:55.843Z",
+  "updatedAt": "2026-03-15T14:28:09.775Z",
   "method": "discord_zen_stable",
   "serverId": "1210468736205852672",
-  "totalAnalyzed": 846,
+  "totalAnalyzed": 1028,
   "members": [
     {
       "userId": "524950921865101312",
@@ -8784,6 +8784,1644 @@
       "contributionsCount": 42,
       "eventsCount": 0,
       "globalMessages": 45,
+      "roles": []
+    },
+    {
+      "userId": "760175902616846347",
+      "username": "oyeng.",
+      "displayName": "Oyeng",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 11262,
+      "roles": []
+    },
+    {
+      "userId": "1042033834839003157",
+      "username": "samey2666",
+      "displayName": "Alessia  (❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 2071,
+      "roles": []
+    },
+    {
+      "userId": "1192262661296103527",
+      "username": "0xyuura",
+      "displayName": "! Yuura",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 13579,
+      "roles": []
+    },
+    {
+      "userId": "1362978939647037730",
+      "username": "iameffie_",
+      "displayName": "Effie (❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 6818,
+      "roles": []
+    },
+    {
+      "userId": "982576964546207774",
+      "username": "viet0508",
+      "displayName": "Peanut",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 6031,
+      "roles": []
+    },
+    {
+      "userId": "917439881658134528",
+      "username": "conan761311",
+      "displayName": "conan761311 (❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 1083,
+      "roles": []
+    },
+    {
+      "userId": "1214643832356868167",
+      "username": "0xtremolo",
+      "displayName": "Tremolo",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 16216,
+      "roles": []
+    },
+    {
+      "userId": "974998412879601664",
+      "username": "justbabyt",
+      "displayName": "Timzy",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 7085,
+      "roles": []
+    },
+    {
+      "userId": "1035053840183074868",
+      "username": "dimka070",
+      "displayName": "dimka070(❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 2284,
+      "roles": []
+    },
+    {
+      "userId": "1139105227727974501",
+      "username": "calinama32",
+      "displayName": "Nove (❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 1079,
+      "roles": []
+    },
+    {
+      "userId": "1139350805317685318",
+      "username": "scallyy.2",
+      "displayName": "Scally🚬 (❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 815,
+      "roles": []
+    },
+    {
+      "userId": "650296810493181972",
+      "username": "popala4i",
+      "displayName": "Popala4i",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 2380,
+      "roles": []
+    },
+    {
+      "userId": "509533865489203200",
+      "username": "azceputa",
+      "displayName": "Vegapunk",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 1436,
+      "roles": []
+    },
+    {
+      "userId": "382837548470370314",
+      "username": "goyujin6142",
+      "displayName": "yougogirl",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 6057,
+      "roles": []
+    },
+    {
+      "userId": "574875922164088852",
+      "username": "damggu",
+      "displayName": "Damggu 🍈",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 24995,
+      "roles": []
+    },
+    {
+      "userId": "471830438776668201",
+      "username": "mayday.eth",
+      "displayName": "MayDay",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 3684,
+      "roles": []
+    },
+    {
+      "userId": "1215687686350700595",
+      "username": "varaz_z",
+      "displayName": "Sam",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 1695,
+      "roles": []
+    },
+    {
+      "userId": "1320216639081414706",
+      "username": "dxi_vii",
+      "displayName": "Fc",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 1002,
+      "roles": []
+    },
+    {
+      "userId": "1267671012258873384",
+      "username": "cryptomokey25",
+      "displayName": "MOKIE (❖,❖)",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 784,
+      "roles": []
+    },
+    {
+      "userId": "939593531192901753",
+      "username": "0x_manhattan",
+      "displayName": "MetaManhattan",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 1762,
+      "roles": []
+    },
+    {
+      "userId": "1207178480949919765",
+      "username": "lutfimee",
+      "displayName": "lutpiupiu",
+      "contributionsCount": 41,
+      "eventsCount": 0,
+      "globalMessages": 81,
+      "roles": []
+    },
+    {
+      "userId": "932993304067465216",
+      "username": "tcmains",
+      "displayName": "!              tcMains",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 5663,
+      "roles": []
+    },
+    {
+      "userId": "956743513343680532",
+      "username": "shinjiihhh",
+      "displayName": "Shinn nye nye nye(❖,❖)",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 18834,
+      "roles": []
+    },
+    {
+      "userId": "1201733094898663487",
+      "username": "akusejati",
+      "displayName": "Aku sejati (❖,❖)",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 5436,
+      "roles": []
+    },
+    {
+      "userId": "659358327565975562",
+      "username": "juniorr1945",
+      "displayName": "Juniorrr",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 11802,
+      "roles": []
+    },
+    {
+      "userId": "854357118874025984",
+      "username": "lhealhea",
+      "displayName": "LHEA 🌻𓅪",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 11429,
+      "roles": []
+    },
+    {
+      "userId": "927449849312464896",
+      "username": "maleeh02",
+      "displayName": "MALEEH 🎃",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 2202,
+      "roles": []
+    },
+    {
+      "userId": "1321487714301776007",
+      "username": "0xhammadx",
+      "displayName": "! • 𝗙𝗔𝗧𝗛𝗘𝗥  ~",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 5113,
+      "roles": []
+    },
+    {
+      "userId": "749643541122384003",
+      "username": "bao1240",
+      "displayName": "bao1240",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 982,
+      "roles": []
+    },
+    {
+      "userId": "1131209275147047004",
+      "username": "gberyll",
+      "displayName": "Beryll",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 5891,
+      "roles": []
+    },
+    {
+      "userId": "1094853916333707265",
+      "username": "ariflangka",
+      "displayName": "ArifLangka",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 8107,
+      "roles": []
+    },
+    {
+      "userId": "921892700029059143",
+      "username": "topa9176",
+      "displayName": "UCANSEE",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 83,
+      "roles": []
+    },
+    {
+      "userId": "1200527217789247508",
+      "username": "asumaa123",
+      "displayName": "Asuma",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 3987,
+      "roles": []
+    },
+    {
+      "userId": "867613257300967434",
+      "username": "kathalia",
+      "displayName": "Kathalia (❖,❖)",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 23155,
+      "roles": []
+    },
+    {
+      "userId": "1017740001825521725",
+      "username": "milesoo",
+      "displayName": "Milesoo (❖,❖)",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 1911,
+      "roles": []
+    },
+    {
+      "userId": "651415383949049861",
+      "username": "huak01",
+      "displayName": "Huak",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 792,
+      "roles": []
+    },
+    {
+      "userId": "603251960556027904",
+      "username": "loveyou92",
+      "displayName": "lonelystar",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 1507,
+      "roles": []
+    },
+    {
+      "userId": "546566082446753823",
+      "username": "verdammt48",
+      "displayName": "Verdammt | (❖,❖)",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 2126,
+      "roles": []
+    },
+    {
+      "userId": "624771448577327135",
+      "username": "kirahell69",
+      "displayName": "Kira",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 3196,
+      "roles": []
+    },
+    {
+      "userId": "957796876990685214",
+      "username": "thabo138",
+      "displayName": "Thabo",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 956,
+      "roles": []
+    },
+    {
+      "userId": "406865737714761728",
+      "username": "bms_",
+      "displayName": "BMS",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 6626,
+      "roles": []
+    },
+    {
+      "userId": "334314284941049856",
+      "username": "ksup.",
+      "displayName": "KSupreme",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 2917,
+      "roles": []
+    },
+    {
+      "userId": "602241327920447594",
+      "username": "bigsbt",
+      "displayName": "BIGI",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 2331,
+      "roles": []
+    },
+    {
+      "userId": "897577914739077130",
+      "username": "ulas1010",
+      "displayName": "ulas1010",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 2705,
+      "roles": []
+    },
+    {
+      "userId": "472059058883657749",
+      "username": "odharmieklever",
+      "displayName": "OD 🚀🪖",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 1098,
+      "roles": []
+    },
+    {
+      "userId": "1085202647587504168",
+      "username": "ods857",
+      "displayName": "ODS",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 120,
+      "roles": []
+    },
+    {
+      "userId": "1117866368029700100",
+      "username": "blacktheman.",
+      "displayName": "Blacktheman",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 1193,
+      "roles": []
+    },
+    {
+      "userId": "774666569695494155",
+      "username": "victorstudy",
+      "displayName": "Victor",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 698,
+      "roles": []
+    },
+    {
+      "userId": "915074781085315146",
+      "username": "ptphung3576",
+      "displayName": "Vandas",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 2520,
+      "roles": []
+    },
+    {
+      "userId": "1239566765088964718",
+      "username": "nandakay341",
+      "displayName": "TongPAI",
+      "contributionsCount": 40,
+      "eventsCount": 0,
+      "globalMessages": 57,
+      "roles": []
+    },
+    {
+      "userId": "923690297475612712",
+      "username": "aetherion.eth",
+      "displayName": "0xAetherion - sonicfiringz",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 17274,
+      "roles": []
+    },
+    {
+      "userId": "1322135171084062752",
+      "username": "veera_eth",
+      "displayName": "Veera",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 3996,
+      "roles": []
+    },
+    {
+      "userId": "937203084038373386",
+      "username": "hyshowcrypto",
+      "displayName": "Hyshow(❖,❖)🥷☠",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 3840,
+      "roles": []
+    },
+    {
+      "userId": "759369816103714856",
+      "username": "dikidikuy",
+      "displayName": "ᗪIKI",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 2597,
+      "roles": []
+    },
+    {
+      "userId": "959948706562592768",
+      "username": "emeli_mag",
+      "displayName": "Emeli_mag (❖,❖)",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 4960,
+      "roles": []
+    },
+    {
+      "userId": "398854945937555456",
+      "username": "0xpampamm",
+      "displayName": "pampam (❖,❖)",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 3361,
+      "roles": []
+    },
+    {
+      "userId": "1035808419426340926",
+      "username": "_deich",
+      "displayName": "deich (❖,❖)",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 1058,
+      "roles": []
+    },
+    {
+      "userId": "1336772034830536805",
+      "username": "toma_76947",
+      "displayName": "Тома",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 256,
+      "roles": []
+    },
+    {
+      "userId": "873442739881115658",
+      "username": "dappy0070",
+      "displayName": "dappy",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 22347,
+      "roles": []
+    },
+    {
+      "userId": "983276577112621076",
+      "username": "bigmarvini",
+      "displayName": "Daniel (❖,❖)",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 1944,
+      "roles": []
+    },
+    {
+      "userId": "1286177209639505923",
+      "username": "dhikokristyan1",
+      "displayName": "Dhikoo",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 3596,
+      "roles": []
+    },
+    {
+      "userId": "931930194720202772",
+      "username": "fachrulfnd",
+      "displayName": "Rul",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 2702,
+      "roles": []
+    },
+    {
+      "userId": "1031228554333126756",
+      "username": "fluxio_eth",
+      "displayName": "! Fluxio !",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 2316,
+      "roles": []
+    },
+    {
+      "userId": "958511061848444948",
+      "username": "ermorasi",
+      "displayName": "ermorA(❖,❖)",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 4335,
+      "roles": []
+    },
+    {
+      "userId": "1160507662916669541",
+      "username": "indrakusuma00",
+      "displayName": "Wel₿ek",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 6214,
+      "roles": []
+    },
+    {
+      "userId": "1355407958430711838",
+      "username": "heyprisca",
+      "displayName": "Priscilla",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 10994,
+      "roles": []
+    },
+    {
+      "userId": "971981177944702977",
+      "username": "godfather_idn",
+      "displayName": "GodFather ☠",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 3306,
+      "roles": []
+    },
+    {
+      "userId": "1254126712510353414",
+      "username": "crypthanos",
+      "displayName": "Quasar",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 1630,
+      "roles": []
+    },
+    {
+      "userId": "1291903942929940491",
+      "username": "anoncarboyt",
+      "displayName": "anoncarboyt",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 786,
+      "roles": []
+    },
+    {
+      "userId": "928569173448208384",
+      "username": "paulothefirst",
+      "displayName": "Paulo (❖,❖)",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 782,
+      "roles": []
+    },
+    {
+      "userId": "1249982973198209024",
+      "username": "veemani",
+      "displayName": "Tyler",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 939,
+      "roles": []
+    },
+    {
+      "userId": "1319362534037389382",
+      "username": "carelcar",
+      "displayName": "Carelyn",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 1836,
+      "roles": []
+    },
+    {
+      "userId": "955140449193046098",
+      "username": "bloksy666",
+      "displayName": "Maxastark ♦",
+      "contributionsCount": 39,
+      "eventsCount": 0,
+      "globalMessages": 1123,
+      "roles": []
+    },
+    {
+      "userId": "734980888693047337",
+      "username": "snorlaxx96",
+      "displayName": "mhyco",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 1009,
+      "roles": []
+    },
+    {
+      "userId": "1031887745045516288",
+      "username": "newkoushik123",
+      "displayName": "!𝐍𝐞𝐰𝐊𝐨𝐮𝐬𝐡𝐢𝐤",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 1102,
+      "roles": []
+    },
+    {
+      "userId": "1229087308993527818",
+      "username": "junn_17425737",
+      "displayName": "Junn",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 3433,
+      "roles": []
+    },
+    {
+      "userId": "725326070101835836",
+      "username": "rzstwnn_",
+      "displayName": "Rz",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 5971,
+      "roles": []
+    },
+    {
+      "userId": "1445244317768876112",
+      "username": "ben10112200",
+      "displayName": "Jin woo",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 3657,
+      "roles": []
+    },
+    {
+      "userId": "839533270383460413",
+      "username": "saintcorleone",
+      "displayName": "CorleoneOnChain (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 2443,
+      "roles": []
+    },
+    {
+      "userId": "1097900434565365841",
+      "username": "hannah_tran35",
+      "displayName": "Hannah Tran",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 4077,
+      "roles": []
+    },
+    {
+      "userId": "1026191799699652669",
+      "username": "jaylawals",
+      "displayName": "Jaytheexplorerr (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 4569,
+      "roles": []
+    },
+    {
+      "userId": "1144387776280789024",
+      "username": "15_joe",
+      "displayName": "J.O.E",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 2623,
+      "roles": []
+    },
+    {
+      "userId": "628906480162308096",
+      "username": "elcertified",
+      "displayName": "$EL (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 1619,
+      "roles": []
+    },
+    {
+      "userId": "1204101564378386467",
+      "username": "micah_el04",
+      "displayName": "Yïn_kå🍀 (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 1806,
+      "roles": []
+    },
+    {
+      "userId": "1055452915726295130",
+      "username": "excuzive.crypto",
+      "displayName": "Excuzive ❖,❖",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 327,
+      "roles": []
+    },
+    {
+      "userId": "1216478567349883030",
+      "username": "adhamsrour",
+      "displayName": "Adhamsrour19  (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 641,
+      "roles": []
+    },
+    {
+      "userId": "1361257500749463666",
+      "username": "pegahishere",
+      "displayName": "PEGAH",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 2368,
+      "roles": []
+    },
+    {
+      "userId": "936660217192657007",
+      "username": "trii.be",
+      "displayName": "tri.be",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 2999,
+      "roles": []
+    },
+    {
+      "userId": "886208513347551232",
+      "username": "m_monster9502",
+      "displayName": "Cat247〽 (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 580,
+      "roles": []
+    },
+    {
+      "userId": "1082673116809023508",
+      "username": "bushmond",
+      "displayName": "꧁༺_F8T_Eth ༻꧂",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 866,
+      "roles": []
+    },
+    {
+      "userId": "758722928182689843",
+      "username": "frostkraken",
+      "displayName": "frostkraken",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 1107,
+      "roles": []
+    },
+    {
+      "userId": "1125551251229245540",
+      "username": "ab_1801",
+      "displayName": "AB (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 3982,
+      "roles": []
+    },
+    {
+      "userId": "1289133727443582988",
+      "username": "mikasa_enix",
+      "displayName": "MIKΛƧΛ (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 1294,
+      "roles": []
+    },
+    {
+      "userId": "1102203634386731139",
+      "username": "phiyin",
+      "displayName": "PHIYIN (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 334,
+      "roles": []
+    },
+    {
+      "userId": "1197945539816345771",
+      "username": "fistator21",
+      "displayName": "Fistator21 (❖,❖)",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 632,
+      "roles": []
+    },
+    {
+      "userId": "1301549816408576011",
+      "username": "derisucke",
+      "displayName": "Derioii",
+      "contributionsCount": 38,
+      "eventsCount": 0,
+      "globalMessages": 358,
+      "roles": []
+    },
+    {
+      "userId": "1070605950962122762",
+      "username": "reena6787",
+      "displayName": "Reena ✨",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 2388,
+      "roles": []
+    },
+    {
+      "userId": "665860162967568384",
+      "username": "0xjuss",
+      "displayName": "Juss",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1225,
+      "roles": []
+    },
+    {
+      "userId": "802845819900264458",
+      "username": "temnik_84",
+      "displayName": "Temnik-cook",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1934,
+      "roles": []
+    },
+    {
+      "userId": "960473530556907612",
+      "username": "mirage5815",
+      "displayName": "Lola",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 5374,
+      "roles": []
+    },
+    {
+      "userId": "430310387460603905",
+      "username": "kittz76",
+      "displayName": "kittz",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 2631,
+      "roles": []
+    },
+    {
+      "userId": "1070024503276601405",
+      "username": "sayangxbt",
+      "displayName": "Sayang",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 4016,
+      "roles": []
+    },
+    {
+      "userId": "1252705313975701621",
+      "username": "pinhhh_",
+      "displayName": "Pình",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 7144,
+      "roles": []
+    },
+    {
+      "userId": "508174641395793920",
+      "username": "ryomasaki70",
+      "displayName": "0xMasako",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1009,
+      "roles": []
+    },
+    {
+      "userId": "1319651703016132679",
+      "username": "mifyroxyy",
+      "displayName": "𝒏𝒐𝒎𝒎𝒚",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 8873,
+      "roles": []
+    },
+    {
+      "userId": "1305867319180001313",
+      "username": "sahil552",
+      "displayName": "𝐒 𝐀 𝐇 𝐈 𝐋",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 5427,
+      "roles": []
+    },
+    {
+      "userId": "850680689127849984",
+      "username": "antoniu0112",
+      "displayName": "David Beckham (❖,❖)",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 965,
+      "roles": []
+    },
+    {
+      "userId": "1277262275769794703",
+      "username": "buks199",
+      "displayName": "BUKS (❖,❖)",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 5166,
+      "roles": []
+    },
+    {
+      "userId": "977282432988491846",
+      "username": "monwilliams01",
+      "displayName": "BIG BEN ♡",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 2509,
+      "roles": []
+    },
+    {
+      "userId": "703310841230917693",
+      "username": "katsuyusama",
+      "displayName": "katsuyusama 🇪🇸",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1183,
+      "roles": []
+    },
+    {
+      "userId": "1336199164198912030",
+      "username": "captainn888",
+      "displayName": "! Captain ⚡",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1362,
+      "roles": []
+    },
+    {
+      "userId": "1198647370469081238",
+      "username": "gooddfrend",
+      "displayName": "EL Marco",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 4079,
+      "roles": []
+    },
+    {
+      "userId": "1305945472086704140",
+      "username": "saeedeh0361",
+      "displayName": "Saeedeh(❖,❖)",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1788,
+      "roles": []
+    },
+    {
+      "userId": "1306170900936130560",
+      "username": "volodymryy",
+      "displayName": "T (❖,❖)",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 597,
+      "roles": []
+    },
+    {
+      "userId": "896168707309592596",
+      "username": "karol1865",
+      "displayName": "Karol",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 572,
+      "roles": []
+    },
+    {
+      "userId": "1246169252319334522",
+      "username": "0xnesya",
+      "displayName": "nesya",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 15562,
+      "roles": []
+    },
+    {
+      "userId": "887732734728994867",
+      "username": "snwdnnn",
+      "displayName": "snowden",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 4443,
+      "roles": []
+    },
+    {
+      "userId": "312585803786354688",
+      "username": "gr1mmj4w",
+      "displayName": "Grimm",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 4337,
+      "roles": []
+    },
+    {
+      "userId": "359345830253166613",
+      "username": "frankrx15.crypto",
+      "displayName": "Frankie Land",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 2026,
+      "roles": []
+    },
+    {
+      "userId": "1401165584846159882",
+      "username": "aryan992477",
+      "displayName": "Aryan",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 5343,
+      "roles": []
+    },
+    {
+      "userId": "1345522094074499155",
+      "username": "dan078340",
+      "displayName": "Dan",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1002,
+      "roles": []
+    },
+    {
+      "userId": "554687948977602560",
+      "username": "alssoe",
+      "displayName": "alssoe",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 2311,
+      "roles": []
+    },
+    {
+      "userId": "961994852894113832",
+      "username": "bytecypher",
+      "displayName": "Bytecypher",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 695,
+      "roles": []
+    },
+    {
+      "userId": "1067522861557878786",
+      "username": "damn.adeyemi",
+      "displayName": "Ade♧ (❖,❖)",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 1047,
+      "roles": []
+    },
+    {
+      "userId": "1134757848883134505",
+      "username": "mahendra2748",
+      "displayName": ".Mr. Suratmin",
+      "contributionsCount": 37,
+      "eventsCount": 0,
+      "globalMessages": 81,
+      "roles": []
+    },
+    {
+      "userId": "915201869142429706",
+      "username": "yes2511",
+      "displayName": "yes2511",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 1670,
+      "roles": []
+    },
+    {
+      "userId": "1305815133779398667",
+      "username": "ariseaura",
+      "displayName": "𝗔𝗿𝗶𝘀𝗲𝗔𝘂𝗿𝗮  (❖,❖)",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 4038,
+      "roles": []
+    },
+    {
+      "userId": "1335903139295002656",
+      "username": "eazyxbt",
+      "displayName": "Eazy",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 2184,
+      "roles": []
+    },
+    {
+      "userId": "1316807193403850826",
+      "username": "ace_coffee_",
+      "displayName": "Ace | Traditional Artist 🎨🖌",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 4557,
+      "roles": []
+    },
+    {
+      "userId": "386538698445160458",
+      "username": "baonike",
+      "displayName": "Gia Cát Lạng 👹  🇻🇳",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 9445,
+      "roles": []
+    },
+    {
+      "userId": "1280736233005252660",
+      "username": "ferryfadillahhh",
+      "displayName": "Ferryfadillah",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 11041,
+      "roles": []
+    },
+    {
+      "userId": "1225655313215127574",
+      "username": "ngocmen0110",
+      "displayName": "💚 Ngọc Mến 💚 🇻🇳",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 7346,
+      "roles": []
+    },
+    {
+      "userId": "1291007677509533737",
+      "username": "atikrush",
+      "displayName": "Atikrush",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 1815,
+      "roles": []
+    },
+    {
+      "userId": "1035540508354822195",
+      "username": "nouvalzwda",
+      "displayName": "nouvalzwda",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 601,
+      "roles": []
+    },
+    {
+      "userId": "766008914906841138",
+      "username": "toonramp122",
+      "displayName": "Drink Of God ☕⚡",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 835,
+      "roles": []
+    },
+    {
+      "userId": "399240024094408730",
+      "username": ".bebanteman",
+      "displayName": "Yue (❖,❖)",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 8727,
+      "roles": []
+    },
+    {
+      "userId": "906886112629362698",
+      "username": "darkweb8547",
+      "displayName": "BlockChainBar ❖,❖",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 1131,
+      "roles": []
+    },
+    {
+      "userId": "1261986356075429888",
+      "username": "88oli",
+      "displayName": "Olimp",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 622,
+      "roles": []
+    },
+    {
+      "userId": "977275627998687322",
+      "username": "d_mironovich",
+      "displayName": "Den (❖,❖)",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 3192,
+      "roles": []
+    },
+    {
+      "userId": "1118025574795989012",
+      "username": "shankarudai",
+      "displayName": "Shankar",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 6066,
+      "roles": []
+    },
+    {
+      "userId": "1288375595578691608",
+      "username": "namdark35",
+      "displayName": "NAMDARK",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 1055,
+      "roles": []
+    },
+    {
+      "userId": "1087803949295353886",
+      "username": "stoneedge99",
+      "displayName": "StoneEdge99 (❖,❖)",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 359,
+      "roles": []
+    },
+    {
+      "userId": "951649259629998180",
+      "username": "clintife",
+      "displayName": "Cifee❖,❖",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 901,
+      "roles": []
+    },
+    {
+      "userId": "1209572176374538346",
+      "username": "json39536",
+      "displayName": "Jason",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 853,
+      "roles": []
+    },
+    {
+      "userId": "244517221618024450",
+      "username": "decentralizedduck",
+      "displayName": "dexduck",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 1256,
+      "roles": []
+    },
+    {
+      "userId": "758352111821520936",
+      "username": "hzares.",
+      "displayName": "HzAres",
+      "contributionsCount": 36,
+      "eventsCount": 0,
+      "globalMessages": 3223,
+      "roles": []
+    },
+    {
+      "userId": "928307927318675476",
+      "username": "birdlovers",
+      "displayName": "jimgreen (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 810,
+      "roles": []
+    },
+    {
+      "userId": "1133102862029832284",
+      "username": "10.sarada.01",
+      "displayName": "Emma(❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 3723,
+      "roles": []
+    },
+    {
+      "userId": "909180739801735248",
+      "username": "biliebed",
+      "displayName": "Biliebed",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 4321,
+      "roles": []
+    },
+    {
+      "userId": "848382450328797236",
+      "username": "buja723",
+      "displayName": "buja723",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 11541,
+      "roles": []
+    },
+    {
+      "userId": "958890135481647165",
+      "username": "0xanamul",
+      "displayName": "0xAnamul",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 1133,
+      "roles": []
+    },
+    {
+      "userId": "1012306332382150666",
+      "username": "kanyacute",
+      "displayName": "Kanya ❖,❖",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 5423,
+      "roles": []
+    },
+    {
+      "userId": "953548263057948684",
+      "username": "eustasskid56",
+      "displayName": "Captain Kid (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 1964,
+      "roles": []
+    },
+    {
+      "userId": "1339431679525388318",
+      "username": "krishh002",
+      "displayName": "𝐊RISH  (SEISMIC)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 2434,
+      "roles": []
+    },
+    {
+      "userId": "891547761177137202",
+      "username": "callmehannnn",
+      "displayName": "! callmehannn",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 6728,
+      "roles": []
+    },
+    {
+      "userId": "917286191349526538",
+      "username": "misha.maestro",
+      "displayName": "MAESTRO",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 2148,
+      "roles": []
+    },
+    {
+      "userId": "861411736598740994",
+      "username": "shromeey",
+      "displayName": "Shromeey",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 6277,
+      "roles": []
+    },
+    {
+      "userId": "1049418172698210404",
+      "username": "iscobex0587",
+      "displayName": "Iscobex (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 1046,
+      "roles": []
+    },
+    {
+      "userId": "917768383099990036",
+      "username": "only__dylan",
+      "displayName": "𝐝𝐲𝐥𝐚𝐧𝐧",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 7887,
+      "roles": []
+    },
+    {
+      "userId": "827891912500445194",
+      "username": "web3bean",
+      "displayName": "bean",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 91,
+      "roles": []
+    },
+    {
+      "userId": "1147180987424448652",
+      "username": "iamfafkih",
+      "displayName": "fafkih (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 297,
+      "roles": []
+    },
+    {
+      "userId": "1001616407961796678",
+      "username": "axoticat",
+      "displayName": "Axoticat",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 523,
+      "roles": []
+    },
+    {
+      "userId": "1410245954136707155",
+      "username": "tamayo0565",
+      "displayName": "Tamayo🩶",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 4275,
+      "roles": []
+    },
+    {
+      "userId": "1034031843080671253",
+      "username": "tetiana0882",
+      "displayName": "Tetiana",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 546,
+      "roles": []
+    },
+    {
+      "userId": "1261725554860625931",
+      "username": "86kat",
+      "displayName": "Katerina 🕷",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 548,
+      "roles": []
+    },
+    {
+      "userId": "1233795002635649165",
+      "username": "ohsahib1",
+      "displayName": "Arshu (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 6619,
+      "roles": []
+    },
+    {
+      "userId": "558958147507847198",
+      "username": "stabro1",
+      "displayName": "stabro1",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 98,
+      "roles": []
+    },
+    {
+      "userId": "713362586774536203",
+      "username": "ihor.eth",
+      "displayName": "Ihor.eth 🕷(❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 78,
+      "roles": []
+    },
+    {
+      "userId": "1317051888276869152",
+      "username": "ashh.reynolds",
+      "displayName": "Ashley Reynolds",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 2741,
+      "roles": []
+    },
+    {
+      "userId": "1276755983552614522",
+      "username": "rimuru185",
+      "displayName": "Rimuru185 | (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 1960,
+      "roles": []
+    },
+    {
+      "userId": "1222786618507919460",
+      "username": "wickjh",
+      "displayName": "Baba YAGA  (❖,❖)",
+      "contributionsCount": 35,
+      "eventsCount": 0,
+      "globalMessages": 1103,
+      "roles": []
+    },
+    {
+      "userId": "977361304329256980",
+      "username": "jajah_jah",
+      "displayName": "jajah",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 4598,
+      "roles": []
+    },
+    {
+      "userId": "1201255133930078349",
+      "username": "aprilishappy",
+      "displayName": "apriL☆",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 4015,
+      "roles": []
+    },
+    {
+      "userId": "1205943796135759875",
+      "username": "maslenafm",
+      "displayName": "maslenaFM",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 2839,
+      "roles": []
+    },
+    {
+      "userId": "988653447677100050",
+      "username": "captainlsmith",
+      "displayName": "captainlsmith",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 2751,
+      "roles": []
+    },
+    {
+      "userId": "1260559918705016884",
+      "username": "alonetaoqeer112233",
+      "displayName": "AlOنE🦋₹🇵🇰",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 1817,
+      "roles": []
+    },
+    {
+      "userId": "1153958317983547392",
+      "username": "hamiweb3",
+      "displayName": "Hami (❖,❖)",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 3263,
+      "roles": []
+    },
+    {
+      "userId": "1328716810958405655",
+      "username": "ihsan030303",
+      "displayName": "Ihsan [LARRY] (❖,❖)",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 1396,
+      "roles": []
+    },
+    {
+      "userId": "1251272628220727472",
+      "username": "_aman2006",
+      "displayName": "Aman",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 3546,
+      "roles": []
+    },
+    {
+      "userId": "1174283459448033290",
+      "username": "buekhuek",
+      "displayName": "0xWesaru ./",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 7145,
+      "roles": []
+    },
+    {
+      "userId": "1200464545244790835",
+      "username": "snooowflake.",
+      "displayName": "FLAKKYYYY (❖,❖)",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 7758,
+      "roles": []
+    },
+    {
+      "userId": "1309943636485472368",
+      "username": "joyanto0395",
+      "displayName": "Thomas",
+      "contributionsCount": 34,
+      "eventsCount": 0,
+      "globalMessages": 666,
       "roles": []
     }
   ]

@@ -16,12 +16,13 @@ export async function POST(req: NextRequest) {
 
     const checker = getUserChecker();
     const analysis = await checker.getAIAnalysis(contributorId);
+    const user = checker.findUser(contributorId);
 
-    if (analysis.includes('not found')) {
-      return NextResponse.json({ success: false, error: 'Contributor not found' }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, analysis });
+    return NextResponse.json({ 
+      success: true, 
+      analysis,
+      user
+    });
 
   } catch (error: any) {
     console.error('API Error:', error);

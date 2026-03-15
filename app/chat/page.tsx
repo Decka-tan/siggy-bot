@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
@@ -15,6 +15,29 @@ interface Message {
   mood?: MoodState;
   liked?: boolean;
   disliked?: boolean;
+  contributor?: ContributorElement;
+}
+
+interface ContributorElement {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatar?: string;
+  globalMessages: number;
+  contributionsCount: number;
+  eventsCount: number;
+  rank?: number;
+  roles?: string[];
+  twitterCount?: number;
+  joinedAt?: string;
+}
+
+interface ContributorSearchResult {
+  userId: string;
+  username: string;
+  displayName: string;
+  avatar: string;
+  messageCount: number;
 }
 
 interface Conversation {
@@ -253,6 +276,12 @@ export default function ChatPage() {
   const [vnHistoryIndex, setVnHistoryIndex] = useState<number>(-1); // -1 means latest
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Contributor Search States
+  const [contributorResults, setContributorResults] = useState<ContributorSearchResult[]>([]);
+  const [showContributorDropdown, setShowContributorDropdown] = useState(false);
+  const [analyzingContributor, setAnalyzingContributor] = useState<string | null>(null);
+  const [isSearchingContributors, setIsSearchingContributors] = useState(false);
+  
   // Track global bond across sessions
   const [globalRelationshipScore, setGlobalRelationshipScore] = useState<number>(() => {
     if (typeof window === 'undefined') return 0;
@@ -369,7 +398,6 @@ export default function ChatPage() {
     };
   }, []);
 
-  // Keyboard navigation for VN History
   useEffect(() => {
     if (!vnMode || !activeConversation || activeConversation.messages.length <= 1) return;
 
@@ -395,6 +423,155 @@ export default function ChatPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [vnMode, vnHistoryIndex, activeConversation, playClick]);
+
+  // Contributor Search Effect
+  useEffect(() => {
+    if (!input.trim() || !input.includes('@') || analyzingContributor) {
+      setContributorResults([]);
+      setShowContributorDropdown(false);
+      return;
+    }
+
+    const searchMatch = input.match(/@(\w*)$/);
+    if (!searchMatch) {
+      setContributorResults([]);
+      setShowContributorDropdown(false);
+      return;
+    }
+
+    const query = searchMatch[1];
+    if (query.length < 2) {
+      setContributorResults([]);
+      setShowContributorDropdown(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearchingContributors(true);
+      try {
+        const res = await fetch(`/api/contributor?q=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.success) {
+          setContributorResults(data.contributors.slice(0, 5));
+          setShowContributorDropdown(data.contributors.length > 0);
+        }
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setIsSearchingContributors(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [input, analyzingContributor]);
+
+  // Analyze contributor with DeepSeek
+  const analyzeContributor = async (contributor: ContributorSearchResult) => {
+    if (!activeConversationId) return;
+
+    setAnalyzingContributor(contributor.userId);
+    setShowContributorDropdown(false);
+    setInput('');
+
+    // Add user message with contributor element
+    const userMessage: Message = {
+      role: 'user',
+      content: `/check`,
+      contributor: {
+        userId: contributor.userId,
+        username: contributor.username,
+        displayName: contributor.displayName,
+        avatar: contributor.avatar,
+        globalMessages: 0,
+        contributionsCount: 0,
+        eventsCount: 0,
+        roles: [],
+      },
+    };
+
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === activeConversationId) {
+        const updatedMessages = [...conv.messages, userMessage];
+        const title = conv.messages.length === 0 ? `Checking @${contributor.username}` : conv.title;
+        return { ...conv, messages: updatedMessages, title };
+      }
+      return conv;
+    }));
+
+    try {
+      const analyzeRes = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contributorId: contributor.userId }),
+      });
+
+      const analyzeData = await analyzeRes.json();
+
+      if (!analyzeData.success) {
+        const errorMsg: Message = {
+          role: 'assistant',
+          content: `*ears flatten* Myuh... 😿\n\nSorry nya~! Analysis failed: **${analyzeData.error || 'Unknown error'}**`,
+        };
+
+        setConversations(prev => prev.map(conv => {
+          if (conv.id === activeConversationId) {
+            return { ...conv, messages: [...conv.messages, errorMsg] };
+          }
+          return conv;
+        }));
+        return;
+      }
+
+      if (analyzeData.user) {
+        setConversations(prev => prev.map(conv => {
+          if (conv.id === activeConversationId) {
+            const updatedMessages = conv.messages.map(msg => {
+              if (msg.role === 'user' && msg.contributor?.userId === contributor.userId) {
+                return {
+                  ...msg,
+                  contributor: {
+                    ...msg.contributor,
+                    ...analyzeData.user
+                  }
+                };
+              }
+              return msg;
+            });
+            return { ...conv, messages: updatedMessages };
+          }
+          return conv;
+        }));
+      }
+
+      if (analyzeData.analysis) {
+        const siggyMessage: Message = {
+          role: 'assistant',
+          content: analyzeData.analysis,
+        };
+
+        setConversations(prev => prev.map(conv => {
+          if (conv.id === activeConversationId) {
+            return { ...conv, messages: [...conv.messages, siggyMessage] };
+          }
+          return conv;
+        }));
+      }
+    } catch (error) {
+      console.error('Error analyzing contributor:', error);
+      const errorMsg: Message = {
+        role: 'assistant',
+        content: `*tail puffs* ERROR! 😿\n\nSomething went wrong nya~!`,
+      };
+      setConversations(prev => prev.map(conv => {
+        if (conv.id === activeConversationId) {
+          return { ...conv, messages: [...conv.messages, errorMsg] };
+        }
+        return conv;
+      }));
+    } finally {
+      setAnalyzingContributor(null);
+    }
+  };
 
   const createNewConversation = () => {
     // Inherit relationship from newest existing conversation
@@ -677,12 +854,13 @@ export default function ChatPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to regenerate');
-
+      if (!response.ok) throw new Error('Failed to get response');
       const data = await response.json();
 
       // Post-process response to add line breaks after actions
-      let processedResponse = data.response;
+      let processedResponse = data.response || data.analysis;
+      if (!processedResponse) throw new Error('Empty response from AI');
+      
       processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
       processedResponse = processedResponse.replace(/\n\s+/g, '\n');
 
@@ -690,11 +868,15 @@ export default function ChatPage() {
         if (conv.id === activeConversationId) {
           return {
             ...conv,
-            messages: [...messagesWithoutLast, { role: 'assistant', content: processedResponse, mood: data.currentMood }],
-            currentMood: data.currentMood,
-            messageCount: data.messageCount,
-            relationshipLevel: data.relationshipLevel,
-            relationshipScore: data.relationshipScore,
+            messages: [...messagesWithoutLast, { 
+              role: 'assistant', 
+              content: processedResponse, 
+              mood: data.currentMood || 'DEFAULT' 
+            }],
+            currentMood: data.currentMood || conv.currentMood,
+            messageCount: data.messageCount || conv.messageCount,
+            relationshipLevel: data.relationshipLevel || conv.relationshipLevel,
+            relationshipScore: data.relationshipScore !== undefined ? data.relationshipScore : conv.relationshipScore,
           };
         }
         return conv;
@@ -1405,33 +1587,75 @@ export default function ChatPage() {
                             </div>
                           </div>
 
-                          <div className="flex-1 w-full flex items-center gap-2">
-                            <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
-                              {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                            </button>
-                            <textarea
-                              value={input}
-                              onChange={(e) => setInput(e.target.value)}
-                              onInput={(e) => {
-                                const target = e.target as HTMLTextAreaElement;
-                                target.style.height = 'auto';
-                                target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleSendMessage();
-                                  // Reset height after sending
+                            <div className="flex-1 w-full flex items-center gap-2 relative">
+                              {/* Contributor Search Dropdown */}
+                              <AnimatePresence>
+                                {showContributorDropdown && contributorResults.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                  >
+                                    <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                        <Search className="w-3 h-3" />
+                                        Found Contributors
+                                      </span>
+                                      {isSearchingContributors && (
+                                        <RefreshCw className="w-3 h-3 text-accent animate-spin" />
+                                      )}
+                                    </div>
+                                    <div className="max-h-48 overflow-y-auto">
+                                      {contributorResults.map((contributor) => (
+                                        <button
+                                          key={contributor.userId}
+                                          onClick={() => analyzeContributor(contributor)}
+                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                        >
+                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                            <img src={contributor.avatar} alt={contributor.username} className="w-full h-full object-cover" />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
+                                            <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
+                                          </div>
+                                          <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+                                            {contributor.messageCount} msgs
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+
+                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
+                                {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                              </button>
+                              <textarea
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onInput={(e) => {
                                   const target = e.target as HTMLTextAreaElement;
-                                  setTimeout(() => target.style.height = 'auto', 10);
-                                }
-                              }}
-                              placeholder="What will you say?"
-                              disabled={isLoading}
-                              rows={1}
-                              className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
-                              style={{ minHeight: '40px', height: 'auto' }}
-                            />
+                                  target.style.height = 'auto';
+                                  target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                    // Reset height after sending
+                                    const target = e.target as HTMLTextAreaElement;
+                                    setTimeout(() => target.style.height = 'auto', 10);
+                                  }
+                                }}
+                                placeholder="What will you say? (type @ to check contributors)"
+                                disabled={isLoading || analyzingContributor !== null}
+                                rows={1}
+                                className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
+                                style={{ minHeight: '40px', height: 'auto' }}
+                              />
                             <button
                               onClick={() => handleSendMessage()}
                               disabled={isLoading || !input.trim()}
@@ -1528,7 +1752,63 @@ export default function ChatPage() {
                             {message.role === 'assistant' ? (
                               <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} />
                             ) : (
-                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
+                              <div className="space-y-3">
+                                <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
+                                
+                                {message.contributor && (
+                                  <div className="mt-3 p-4 bg-black/40 border border-accent/30 rounded-xl overflow-hidden shadow-2xl relative group">
+                                    <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                                      <Trophy className="w-8 h-8 text-accent/20" />
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-4 mb-4 relative z-10">
+                                      <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-accent/50 shadow-[0_0_15px_rgba(255,215,0,0.3)]">
+                                        <img src={message.contributor.avatar} alt={message.contributor.username} className="w-full h-full object-cover" />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-display text-accent text-lg leading-tight uppercase tracking-wider">
+                                          {message.contributor.displayName}
+                                        </h4>
+                                        <div className="text-[10px] font-mono text-text-secondary">
+                                          @{message.contributor.username} • {message.contributor.userId}
+                                        </div>
+                                      </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-3 gap-2 mb-4">
+                                      <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
+                                        <div className="text-[10px] text-text-secondary uppercase mb-1">Messages</div>
+                                        <div className="font-mono text-accent text-sm">{message.contributor.globalMessages || message.contributor.globalMessages === 0 ? message.contributor.globalMessages : '...'}</div>
+                                      </div>
+                                      <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
+                                        <div className="text-[10px] text-text-secondary uppercase mb-1">Contributions</div>
+                                        <div className="font-mono text-accent text-sm">{message.contributor.contributionsCount || message.contributor.contributionsCount === 0 ? message.contributor.contributionsCount : '...'}</div>
+                                      </div>
+                                      <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
+                                        <div className="text-[10px] text-text-secondary uppercase mb-1">Events</div>
+                                        <div className="font-mono text-accent text-sm">{message.contributor.eventsCount || message.contributor.eventsCount === 0 ? message.contributor.eventsCount : '...'}</div>
+                                      </div>
+                                    </div>
+
+                                    {message.contributor.roles && message.contributor.roles.length > 0 && (
+                                      <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {message.contributor.roles.map(role => (
+                                          <span key={role} className="px-2 py-0.5 bg-accent/10 border border-accent/20 rounded text-[9px] font-mono text-accent">
+                                            {role}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                    
+                                    {message.contributor.joinedAt && (
+                                      <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2 text-[9px] font-mono text-text-secondary">
+                                        <Clock className="w-3 h-3" />
+                                        MEMBER SINCE {new Date(message.contributor.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase()}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             )}
 
                             {message.role === 'assistant' && (
