@@ -131,14 +131,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/@([\w.]+)/g, (match, username) => {
     const data = contributorMap[username.toLowerCase()];
     if (data) {
-      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle">
-        <img 
-          src="${data.avatar}" 
-          class="w-6 h-6 rounded-full border border-accent/20" 
-          onerror="this.src='/Logo_RItual_White.png'"
-        />
-        <span class="text-xs font-bold text-accent">${data.displayName || data.username}</span>
-      </span>`;
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-6 h-6 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
     }
     return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
   });

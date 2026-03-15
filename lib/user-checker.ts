@@ -211,15 +211,17 @@ ${contributorRoles.length > 0 ? contributorRoles.map(r => `- ${r}`).join('\n') :
 [2-3 sentences summarizing their archetype, community value, and impact]
 
 IMPORTANT formatting rules:
-- Keep it mystical ("nya~", "meow", "purr~") but highly analytical
-- When mentioning usernames, ALWAYS format as **@username** (bold with @)
-- Focus on CONTRIBUTOR roles only in analysis (Ritualist, ritty, bitty, Zealot, Radiant Ritualist)
-- Do NOT explain non-contributor roles like DevUpdates, regional communities, etc.`;
+- Keep it mystical ("nya~", "meow", "purr~") but highly analytical and professional.
+- When mentioning usernames, ALWAYS format as **@username** (bold with @) to trigger rich UI chips.
+- Focus on CONTRIBUTOR roles only in analysis (Ritualist, ritty, bitty, Zealot, Radiant Ritualist).
+- Do NOT explain non-contributor roles like DevUpdates, regional communities, etc.
+- In summary, do NOT keep repeating "nya~" in every sentence, use it sparingly for a premium feel.
+- If contribution count is 0 but global messages are high, emphasize their role as a "Silent Pillar" or "Foundational Anchor" whose presence itself is the contribution. NYA~!`;
 
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
 Global Messages: ${user.globalMessages}
-Contributions: ${user.contributionsCount || 0}
+Contributions: ${user.contributionsCount === 0 && user.globalMessages > 5000 ? "Foundational " + (user.globalMessages / 1000).toFixed(1) + "k global msgs" : user.contributionsCount + " posts"}
 Contributor Roles: ${contributorRoles.length > 0 ? contributorRoles.join(', ') : 'Initiate'}
 All Roles: ${rolesList}
 
