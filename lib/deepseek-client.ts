@@ -190,4 +190,5 @@ export function getDeepSeekClient(): DeepSeekClient {
   return deepseekInstance;
 }
 
-export { DeepSeekClient, DeepSeekMessage, DeepSeekResponse };
+export { DeepSeekClient };
+export type { DeepSeekMessage, DeepSeekResponse };
