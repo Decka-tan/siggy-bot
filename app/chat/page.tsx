@@ -588,7 +588,8 @@ export default function ChatPage() {
                   ...msg,
                   contributor: {
                     ...msg.contributor,
-                    ...analyzeData.user
+                    ...analyzeData.user,
+                    avatar: msg.contributor.avatar || analyzeData.user.avatar // Preserve original avatar!
                   }
                 };
               }

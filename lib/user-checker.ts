@@ -12,6 +12,7 @@ interface EnrichedUser {
   userId: string;
   username: string;
   displayName: string;
+  avatar?: string;
   globalMessages: number;
   contributionsCount: number;
   eventsCount: number;
@@ -112,10 +113,11 @@ export class UserChecker {
       userId,
       username,
       displayName: s?.displayName || r?.displayName || username,
+      avatar: r?.avatar || s?.avatar,  // Include avatar from rolesData first!
       globalMessages: s?.globalMessages || 0,
       contributionsCount,
       eventsCount: s?.eventsCount || 0,
-      roles: prioritizedRoles,  // ✅ Use filtered roles!
+      roles: prioritizedRoles,
       joinedAt: r?.joinedAt,
       inServer: r?.inServer ?? true,
       twitterContent,

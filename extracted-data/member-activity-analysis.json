@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-03-15T20:40:09.818Z",
+  "updatedAt": "2026-03-15T20:41:50.127Z",
   "method": "discord_zen_stable",
   "serverId": "1210468736205852672",
-  "totalAnalyzed": 2836,
+  "totalAnalyzed": 2844,
   "members": [
     {
       "userId": "524950921865101312",
@@ -26694,6 +26694,78 @@
       "contributionsCount": 7,
       "eventsCount": 0,
       "globalMessages": 52,
+      "roles": []
+    },
+    {
+      "userId": "1180707794572288002",
+      "username": "akubakullll",
+      "displayName": "bakul sawi(✧ᴗ✧) ❖,❖",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 1055,
+      "roles": []
+    },
+    {
+      "userId": "750948237929611346",
+      "username": "jutangkek",
+      "displayName": "코인백과사전CoinEncyclopedia(❖,❖)",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 645,
+      "roles": []
+    },
+    {
+      "userId": "822001970377916446",
+      "username": "cozymons",
+      "displayName": "ppopi",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 940,
+      "roles": []
+    },
+    {
+      "userId": "1243422283695919145",
+      "username": "toheeb0082",
+      "displayName": "TØhx",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 403,
+      "roles": []
+    },
+    {
+      "userId": "644205607930298374",
+      "username": "alishahab_0.7",
+      "displayName": "ali.",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 158,
+      "roles": []
+    },
+    {
+      "userId": "847182483802816563",
+      "username": "radovsky.nad",
+      "displayName": "radovsky (❖,❖)",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 379,
+      "roles": []
+    },
+    {
+      "userId": "952326599813001227",
+      "username": "iron786786",
+      "displayName": "Aryan ❤🔥",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 206,
+      "roles": []
+    },
+    {
+      "userId": "885569859377840128",
+      "username": "breadydude",
+      "displayName": "BreadyDude(❖,❖)",
+      "contributionsCount": 7,
+      "eventsCount": 0,
+      "globalMessages": 598,
       "roles": []
     }
   ]
