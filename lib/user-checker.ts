@@ -161,9 +161,9 @@ export class UserChecker {
     const roleNames = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone') : [];
     const rolesHeader = roleNames.length > 0 ? roleNames.join(', ') : 'No roles';
 
-    return `**@${user.username}** (${user.displayName})
+    return `@${user.username}
 🌎 Global Messages: ${user.globalMessages.toLocaleString()}
-📝 Contributions: ${user.contributionsCount} msgs
+📝 Contributions: ${user.contributionsCount === 0 && user.globalMessages > 5000 ? "Foundational " + (user.globalMessages / 1000).toFixed(1) + "k msgs" : user.contributionsCount + " msgs"}
 🎭 Roles: ${rolesHeader}
 📅 Joined: ${user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}`;
   }
@@ -191,7 +191,7 @@ export class UserChecker {
 Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis matching this EXACT format:
 
 START with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
-Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **[display name]** (**@username**):"
+Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for @${user.username}:"
 
 **Contributor Archetype**
 🎨 [Short title with emoji]

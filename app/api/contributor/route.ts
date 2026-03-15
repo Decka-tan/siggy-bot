@@ -175,6 +175,25 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (action === 'get_batch') {
+      const usernames = (searchParams.get('usernames') || '').split(',').map(u => u.toLowerCase().trim()).filter(Boolean);
+      const matches = data.allMembers.filter((m: any) =>
+        usernames.includes(m.username.toLowerCase()) ||
+        usernames.includes(m.userId)
+      );
+
+      return NextResponse.json({
+        success: true,
+        contributors: matches.map((m: any) => ({
+          userId: m.userId,
+          username: m.username,
+          displayName: m.displayName,
+          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+          messageCount: m.messageCount || 0,
+        }))
+      });
+    }
+
     // Default: return stats
     return NextResponse.json({
       success: true,

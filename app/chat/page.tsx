@@ -118,42 +118,55 @@ const VN_BACKGROUNDS = [
   '/story-bg/chapter4.jpg',
 ];
 
-const parseMessageContent = (content: string) => {
+const parseMessageContent = (content: string, contributorMap: Record<string, ContributorSearchResult> = {}) => {
   let html = content;
 
   // Links [text](url) - IMPORTANT: Must be first to avoid interfering with other markdown
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
 
   // Preserve paragraph breaks (double newlines)
-  html = html.replace(/\n\n/g, '</p><p class="mt-2">');
+  html = html.replace(/\n\n/g, '</p><p class="mt-2 text-xs font-mono leading-relaxed">');
 
-  // Usernames with yellow border and color
-  html = html.replace(/@(\w+)/g, '<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@$1</span>');
+  // Usernames with rich formatting (Avatar + Name)
+  html = html.replace(/@([\w.]+)/g, (match, username) => {
+    const data = contributorMap[username.toLowerCase()];
+    if (data) {
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle">
+        <img 
+          src="${data.avatar}" 
+          class="w-6 h-6 rounded-full border border-accent/20" 
+          onerror="this.src='/Logo_RItual_White.png'"
+        />
+        <span class="text-xs font-bold text-accent">${data.displayName || data.username}</span>
+      </span>`;
+    }
+    return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
+  });
 
   // Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
   html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
 
   // Italic (but not when part of ** already) - muted color for actions
-  html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic">$1</em>');
+  html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic opacity-80">$1</em>');
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary not-italic">$1</em>');
 
   // Code
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-white/5">$1</code>');
   html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
 
   // Quote
-  html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
+  html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2 opacity-90">$1</blockquote>');
   html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
 
   // Single line breaks (but not in code/quote)
   html = html.replace(/\n/g, '<br />');
 
-  return '<p class="whitespace-pre-wrap">' + html + '</p>';
+  return '<p class="whitespace-pre-wrap leading-relaxed">' + html + '</p>';
 };
 
 // Typewriter Text Component
-const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality, speed = 20 }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME'; speed?: number }) => {
+const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality, speed = 20, contributorMap = {} }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME'; speed?: number, contributorMap?: Record<string, ContributorSearchResult> }) => {
   const hasAnimatedRef = useRef(alreadyAnimated);
   const [displayedText, setDisplayedText] = useState(() => {
     if (!isLatest || alreadyAnimated) return text;
@@ -206,7 +219,7 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, isLatest, alreadyAnimated, speed]);
 
-  return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText) }} />;
+  return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText, contributorMap) }} />;
 };
 
 
@@ -285,6 +298,8 @@ export default function ChatPage() {
   const [analyzingContributor, setAnalyzingContributor] = useState<string | null>(null);
   const [isSearchingContributors, setIsSearchingContributors] = useState(false);
   const [selectedContributorIndex, setSelectedContributorIndex] = useState(0);
+  const [contributorMap, setContributorMap] = useState<Record<string, ContributorSearchResult>>({});
+  const pendingMentions = useRef<Set<string>>(new Set());
 
   // Slash Command States
   const [showCommandDropdown, setShowCommandDropdown] = useState(false);
@@ -442,6 +457,45 @@ export default function ChatPage() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [vnMode, vnHistoryIndex, activeConversation, playClick]);
+
+  // Mentions Hydration Effect
+  useEffect(() => {
+    if (!activeConversation) return;
+
+    const allUsernames = new Set<string>();
+    activeConversation.messages.forEach(msg => {
+      const matches = msg.content.match(/@(\w+)/g);
+      if (matches) {
+        matches.forEach(m => allUsernames.add(m.replace('@', '').toLowerCase()));
+      }
+    });
+
+    const toFetch = Array.from(allUsernames).filter(u => !contributorMap[u] && !pendingMentions.current.has(u));
+
+    if (toFetch.length > 0) {
+      toFetch.forEach(u => pendingMentions.current.add(u));
+      
+      const fetchBatch = async () => {
+        try {
+          const res = await fetch(`/api/contributor?action=get_batch&usernames=${toFetch.join(',')}`);
+          const data = await res.json();
+          if (data.success) {
+            const newMap = { ...contributorMap };
+            data.contributors.forEach((c: any) => {
+              newMap[c.username.toLowerCase()] = c;
+            });
+            setContributorMap(newMap);
+          }
+        } catch (e) {
+          console.error('Mention hydration error:', e);
+        } finally {
+          toFetch.forEach(u => pendingMentions.current.delete(u));
+        }
+      };
+
+      fetchBatch();
+    }
+  }, [activeConversation?.messages, contributorMap]);
 
   // Slash Command Detection Effect
   useEffect(() => {
@@ -1893,30 +1947,9 @@ export default function ChatPage() {
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
                             {message.role === 'assistant' ? (
-                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} />
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
-                              <div className="space-y-3">
-                                {/* Contributor mention with small PFP - replaces @username in content */}
-                                {message.contributor ? (() => {
-                                  const contributor = message.contributor;
-                                  return (
-                                    <div className="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-1">
-                                      <img
-                                        src={contributor.avatar}
-                                        alt={contributor.username}
-                                        onError={(e) => {
-                                          const target = e.target as HTMLImageElement;
-                                          target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(message.contributor?.userId || '0') % 5}.png`;
-                                        }}
-                                        className="w-2.5 h-2.5 rounded-full"
-                                      />
-                                      <span className="text-xs font-bold text-accent">{contributor.displayName || contributor.username}</span>
-                                    </div>
-                                  );
-                                })() : (
-                                  <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
-                                )}
-                              </div>
+                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
                             )}
 
                             {message.role === 'assistant' && (
