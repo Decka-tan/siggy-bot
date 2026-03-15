@@ -216,8 +216,9 @@ ${user.messageSamples?.join('\n') || "(No message samples)"}`;
       ], { maxTokens: 800 });
 
       return `${basicStats}\n\n${response.choices[0]?.message?.content || 'No analysis available meow!'}`;
-    } catch (e) {
-      return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched, but your stats are looking grit nyann~! 🐱`;
+    } catch (e: any) {
+      console.error('DeepSeek analysis error:', e?.message || e);
+      return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched (${e?.message || 'unknown error'}), but your stats are looking grit nyann~! 🐱`;
     }
   }
 
