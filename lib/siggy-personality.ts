@@ -345,7 +345,8 @@ export const RITUAL_KNOWLEDGE =
 const VALID_MOODS: MoodState[] = ['DEFAULT', 'HAPPY', 'SAD', 'SHOCK', 'SHY', 'ANGRY'];
 
 export function extractMoodFromResponse(response: string): { mood: MoodState; cleanedResponse: string } {
-  const moodMatch = response.match(/^\[MOOD:(\w+)\]\s*/);
+  // More robust regex: handle optional leading whitespace/newlines and optional trailing whitespace
+  const moodMatch = response.match(/^\s*\[MOOD:(\w+)\]\s*/i);
   if (moodMatch) {
     const moodStr = moodMatch[1].toUpperCase() as MoodState;
     if (VALID_MOODS.includes(moodStr)) {

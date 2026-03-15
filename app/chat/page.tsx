@@ -132,7 +132,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/@([\w.]+)/g, (match, username) => {
     const data = contributorMap[username.toLowerCase()];
     if (data) {
-      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-5 h-5 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-1.5 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-4 h-4 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
     }
     return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
   });
@@ -141,9 +141,9 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
   html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
 
-  // Italic (but not when part of ** already) - muted color for actions
-  html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic opacity-80">$1</em>');
-  html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary not-italic">$1</em>');
+  // Italic (but not when part of ** already) - muted color for actions - FORCE BLOCK FOR ACTIONS
+  html = html.replace(/\*([^*]+)\*/g, '<div class="block my-1 text-text-secondary/60 italic text-[11px] leading-tight">* $1 *</div>');
+  html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
   html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-white/5">$1</code>');
@@ -1645,15 +1645,15 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                Cosmic origins
-                              </button>
-                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                Weird dimensions
-                              </button>
-                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                Earth food
-                              </button>
+                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                 Cosmic origins
+                               </button>
+                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                               Weird dimensions
+                             </button>
+                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                               Earth food
+                             </button>
                             </div>
                           </div>
                         ) : (
@@ -1672,7 +1672,7 @@ export default function ChatPage() {
                               <div className="relative flex flex-col items-start mt-2 w-full">
                                 {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
-                                    className="text-xs md:text-sm leading-relaxed font-mono italic text-text-secondary w-full"
+                                    className="text-lg md:text-xl lg:text-2xl leading-relaxed font-mono italic text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
                                       __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
                                     }}
@@ -1725,15 +1725,15 @@ export default function ChatPage() {
                                   <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                     {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                   </button>
-                                  <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                    Cosmic origins
-                                  </button>
-                                  <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                    Weird dimensions
-                                  </button>
-                                  <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                    Earth food
-                                  </button>
+                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                     Cosmic origins
+                                   </button>
+                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                     Weird dimensions
+                                   </button>
+                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                     Earth food
+                                   </button>
                                 </div>
                               )}
                             </div>
@@ -2050,17 +2050,19 @@ export default function ChatPage() {
                     {isLoading && (
                       <div className="flex justify-start gap-3 items-end">
                         <div className="shrink-0 mb-3">
-                          <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
+                          <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
-                        <div className="bg-surface border border-border shadow-sm rounded-2xl rounded-bl-none px-6 py-4">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-xs font-mono font-semibold">SIGGY</span>
-                            <span className="text-xs text-text-secondary">*tapping on phone*</span>
-                          </div>
-                          <div className="flex gap-1">
-                            <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <div className="flex flex-col gap-3 items-start animate-pulse mb-6">
+                          <div className="flex items-center gap-4 bg-surface border border-accent/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
+                            <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                            <div className="space-y-2">
+                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is analyzing...</p>
+                              <div className="flex gap-1.5">
+                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -2118,9 +2120,9 @@ export default function ChatPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/40 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                 <Search className="w-3 h-3" />
                                 Select Contributor
@@ -2192,7 +2194,7 @@ export default function ChatPage() {
                             exit={{ opacity: 0, y: 10 }}
                             className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-accent/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2.5 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
                                 <Terminal className="w-3.5 h-3.5" />
                                 Matching Commands
