@@ -284,6 +284,7 @@ export default function ChatPage() {
   const [showContributorDropdown, setShowContributorDropdown] = useState(false);
   const [analyzingContributor, setAnalyzingContributor] = useState<string | null>(null);
   const [isSearchingContributors, setIsSearchingContributors] = useState(false);
+  const [selectedContributorIndex, setSelectedContributorIndex] = useState(0);
 
   // Slash Command States
   const [showCommandDropdown, setShowCommandDropdown] = useState(false);
@@ -2037,14 +2038,15 @@ export default function ChatPage() {
                                 <RefreshCw className="w-3 h-3 text-accent animate-spin" />
                               )}
                             </div>
-                            <div className="max-h-48 overflow-y-auto">
-                              {contributorResults.map((contributor) => (
+                            <div className="max-h-80 overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                              {contributorResults.map((contributor, idx) => (
                                 <button
                                   key={contributor.userId}
                                   onClick={() => analyzeContributor(contributor)}
-                                  className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                  onMouseEnter={() => setSelectedContributorIndex(idx)}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-white/10'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}
@@ -2056,12 +2058,33 @@ export default function ChatPage() {
                                     />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
-                                    <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedContributorIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                        {contributor.displayName}
+                                      </span>
+                                      {idx === selectedContributorIndex && (
+                                        <motion.span layoutId="active-contributor-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                          Select
+                                        </motion.span>
+                                      )}
+                                    </div>
+                                    <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                      @{contributor.username}
+                                    </div>
+                                    <div className="mt-1.5 flex items-center gap-3">
+                                      <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                        {contributor.messageCount.toLocaleString()} messages
+                                      </div>
+                                      <div className="text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest">
+                                        ID: {contributor.userId}
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
-                                    {contributor.messageCount} msgs
-                                  </div>
+                                  {idx === selectedContributorIndex && (
+                                    <div className="shrink-0 flex items-center self-center pr-1">
+                                      <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                    </div>
+                                  )}
                                 </button>
                               ))}
                             </div>
@@ -2164,6 +2187,28 @@ export default function ChatPage() {
                               }
                               if (e.key === 'Escape') {
                                 setShowCommandDropdown(false);
+                                return;
+                              }
+                            }
+
+                            if (showContributorDropdown && contributorResults.length > 0) {
+                              if (e.key === 'ArrowDown') {
+                                e.preventDefault();
+                                setSelectedContributorIndex(prev => (prev + 1) % contributorResults.length);
+                                return;
+                              }
+                              if (e.key === 'ArrowUp') {
+                                e.preventDefault();
+                                setSelectedContributorIndex(prev => (prev - 1 + contributorResults.length) % contributorResults.length);
+                                return;
+                              }
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                analyzeContributor(contributorResults[selectedContributorIndex]);
+                                return;
+                              }
+                              if (e.key === 'Escape') {
+                                setShowContributorDropdown(false);
                                 return;
                               }
                             }
