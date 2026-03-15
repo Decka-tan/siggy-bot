@@ -126,7 +126,7 @@ export class UserChecker {
   }
 
   private sortRolesByPriority(roles: string[]): string[] {
-    // Priority order (by name): Radiant Ritualist > Ritualist > Zealot > ritty > bitty
+    // Priority order (by name): Radiant Ritualist > Ritualist > Zealot > ritty > bitty > others
     const priorityOrder = [
       'Radiant Ritualist',
       'Ritualist',
@@ -135,26 +135,8 @@ export class UserChecker {
       'bitty',
     ];
 
-    // Filter out non-contributor roles and numeric IDs
-    const nonContributorRoles = [
-      'official', 'community', 'events', 'npc', 'pledged to synful', 'blessed',
-      'korean community', 'japanese community', 'chinese community', 'naija community',
-      'viet community', 'ukraine community', 'russian community', 'indian community',
-      'komunitas indonesia', 'spanish community', 'portuguese community',
-      'french community', 'german community', 'initiate'
-    ];
-
-    const filteredRoles = roles.filter(role => {
-      const roleLower = role.toLowerCase().trim();
-
-      // Filter out numeric-only roles (IDs)
-      if (/^\d+$/.test(role.trim())) return false;
-
-      // Filter out non-contributor roles
-      if (nonContributorRoles.includes(roleLower)) return false;
-
-      return true;
-    });
+    // Filter out ONLY numeric-only role IDs
+    const filteredRoles = roles.filter(role => !/^\d+$/.test(role.trim()));
 
     const priorityRoles: string[] = [];
     const otherRoles: string[] = [];
@@ -194,7 +176,14 @@ export class UserChecker {
     if (!user) return `❌ User @${username} not found nyann~! 😿`;
 
     const basicStats = this.formatBasicStats(user);
-    // Roles are already names from optimized file
+
+    // Filter contributor roles for AI (only Ritualist/ritty/bitty/Zealot/Radiant Ritualist)
+    const contributorRoleNames = ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty'];
+    const contributorRoles = Array.isArray(user.roles)
+      ? user.roles.filter(r => contributorRoleNames.includes(r))
+      : [];
+
+    // All roles for display in stats
     const rolesList = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone').join(', ') : 'No roles';
 
     // High-quality Substance Analysis Prompt
@@ -202,14 +191,13 @@ export class UserChecker {
 Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis matching this EXACT format:
 
 START with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
-Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **[display name]** (@username):"
+Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **[display name]** (**@username**):"
 
 **Contributor Archetype**
 🎨 [Short title with emoji]
 
-**Contributor Roles** [ONLY if they have Ritualist/ritty/bitty/Zealot/Radiant Ritualist]
-This member holds core contributor roles:
-- [List only: Radiant Ritualist, Ritualist, Zealot, ritty, bitty - skip if they don't have any]
+**Contributor Roles** ${contributorRoles.length > 0 ? '(They hold these contributor roles):' : '(None yet)'}
+${contributorRoles.length > 0 ? contributorRoles.map(r => `- ${r}`).join('\n') : ''}
 
 **Activity & Engagement**
 - Global Chat: [X] total messages, showing [insight about participation level]
@@ -217,21 +205,23 @@ This member holds core contributor roles:
 - Events: [X] community events participated
 
 **Key Contributions & Impact**
-[Provide 3 numbered points with detailed titles analyzing their specific impact. Use Twitter content or message samples. Each point 2-3 sentences with specific examples.]
+[Provide 3 numbered points with detailed titles analyzing their specific impact. Use Twitter content or message samples. Each point 2-3 sentences with specific examples. Focus on their actual contributions and impact, NOT on general community roles like DevUpdates or regional roles.]
 
 **Summary**
 [2-3 sentences summarizing their archetype, community value, and impact]
 
 IMPORTANT formatting rules:
 - Keep it mystical ("nya~", "meow", "purr~") but highly analytical
-- When mentioning usernames, format as **@username** (bold)
-- Keep under 150 tokens for the response`;
+- When mentioning usernames, ALWAYS format as **@username** (bold with @)
+- Focus on CONTRIBUTOR roles only in analysis (Ritualist, ritty, bitty, Zealot, Radiant Ritualist)
+- Do NOT explain non-contributor roles like DevUpdates, regional communities, etc.`;
 
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
 Global Messages: ${user.globalMessages}
 Contributions: ${user.contributionsCount || 0}
-Contributor Roles: ${rolesList || "Initiate"}
+Contributor Roles: ${contributorRoles.length > 0 ? contributorRoles.join(', ') : 'Initiate'}
+All Roles: ${rolesList}
 
 Twitter/X Content:
 ${user.twitterContent?.map(t => `* ${t.text}`).join('\n') || "(No Twitter data)"}
