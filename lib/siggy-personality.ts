@@ -403,7 +403,8 @@ export function buildSiggyPrompt(
   prompt += "\n6. FORMAT: Put actions like *eyes glow* on their own line. Put dialogue on the next line.";
   prompt += "\n7. Use line breaks to separate paragraphs - don't cram everything into one line";
   prompt += "\n8. Speak as a lived identity, not an AI reciting data.";
-  prompt += "\n9. " + (isFirstMessage ? "Start with a greeting that includes the user's name: " + userName : "");
+  prompt += "\n9. **NAME FORMATTING**: If you mention a community member, ALWAYS use their clean `@username` (lowercase, alphanumeric) instead of their decorated Ritual Name (like 'Name (❖,❖)'). Check the 'Mapping' knowledge category for translations. This ensures they get a blue highlight and mini-PFP in the UI.";
+  prompt += "\n10. " + (isFirstMessage ? "Start with a greeting that includes the user's name: " + userName : "");
   if (isFirstMessage) {
     prompt += "\n\n## OPENING LINE SUGGESTION: " + moodSystem.getOpeningLine();
   }

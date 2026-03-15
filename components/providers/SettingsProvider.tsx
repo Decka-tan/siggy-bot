@@ -37,7 +37,7 @@ const defaultSettings: SettingsContextType = {
   setBgmEnabled: () => {},
   bgmVolume: 25,
   setBgmVolume: () => {},
-  textSpeed: 30, // 30ms default interval
+  textSpeed: 10, // 10ms default (Fast)
   setTextSpeed: () => {},
   showTimestamps: false,
   setShowTimestamps: () => {},
@@ -55,10 +55,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const [sfxEnabled, setSfxEnabled] = useState(true);
   const [sfxVolume, setSfxVolume] = useState(55);
-  const [typingSfxEnabled, setTypingSfxEnabled] = useState(false);
+  const [typingSfxEnabled, setTypingSfxEnabled] = useState(true);
   const [bgmEnabled, setBgmEnabled] = useState(true);
   const [bgmVolume, setBgmVolume] = useState(25);
-  const [textSpeed, setTextSpeed] = useState(30);
+  const [textSpeed, setTextSpeed] = useState(10);
   const [showTimestamps, setShowTimestamps] = useState(false);
 
   const [bgmAudio, setBgmAudio] = useState<HTMLAudioElement | null>(null);

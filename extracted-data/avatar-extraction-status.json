@@ -1,10 +1,8 @@
 {
-  "timestamp": "2026-03-15T22:20:58.323Z",
-  "state": "PROCESSING",
-  "currentUser": "elijapapi",
-  "progress": "3074/7978",
-  "totalProcessed": 3073,
-  "customAvatars": 2885,
-  "defaultAvatars": 188,
+  "timestamp": "2026-03-15T23:20:56.810Z",
+  "state": "COMPLETED",
+  "totalProcessed": 7978,
+  "customAvatars": 6991,
+  "defaultAvatars": 987,
   "errors": 0
 }

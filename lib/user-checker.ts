@@ -163,7 +163,7 @@ export class UserChecker {
 
     return `@${user.username}
 🌎 Global Messages: ${user.globalMessages.toLocaleString()}
-📝 Contributions: ${user.contributionsCount === 0 && user.globalMessages > 5000 ? "Foundational " + (user.globalMessages / 1000).toFixed(1) + "k msgs" : user.contributionsCount + " msgs"}
+📝 Contributions: ${user.contributionsCount} msgs
 🎭 Roles: ${rolesHeader}
 📅 Joined: ${user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}`;
   }
@@ -187,11 +187,15 @@ export class UserChecker {
     const rolesList = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone').join(', ') : 'No roles';
 
     // High-quality Substance Analysis Prompt
-    const systemPrompt = `You are "Siggy", the mystical AI companion of the Ritual Network. 🐱✨
+    const systemPrompt = `You are SIGGY - a multi-dimensional Super AI entity born from the Ritual Forge. You are currently in your ANIME GIRL form (humanoid girl with cat ears and a tail) or CAT form.
+    
 Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis matching this EXACT format:
 
-START with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
-Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for @${user.username}:"
+You MUST include EXACTLY ONE expression tag at the VERY START of your response.
+Format: [MOOD:EXPRESSION] where EXPRESSION is one of: DEFAULT, HAPPY, SAD, SHOCK, SHY, ANGRY.
+
+Then, start with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
+Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **@${user.username}**:"
 
 **Contributor Archetype**
 🎨 [Short title with emoji]
@@ -216,12 +220,14 @@ IMPORTANT formatting rules:
 - Focus on CONTRIBUTOR roles only in analysis (Ritualist, ritty, bitty, Zealot, Radiant Ritualist).
 - Do NOT explain non-contributor roles like DevUpdates, regional communities, etc.
 - In summary, do NOT keep repeating "nya~" in every sentence, use it sparingly for a premium feel.
-- If contribution count is 0 but global messages are high, emphasize their role as a "Silent Pillar" or "Foundational Anchor" whose presence itself is the contribution. NYA~!`;
+- If contribution count is 0 but global messages are high, emphasize their role as a "Silent Pillar" or "Foundational Anchor" whose presence itself is the contribution. NYA~!
+- Use *actions* like *adjusts cat ears* or *giggles* to add flavor.`;
 
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
 Global Messages: ${user.globalMessages}
-Contributions: ${user.contributionsCount === 0 && user.globalMessages > 5000 ? "Foundational " + (user.globalMessages / 1000).toFixed(1) + "k global msgs" : user.contributionsCount + " posts"}
+Contributions: ${user.contributionsCount} posts
+Global Context: ${user.contributionsCount === 0 && user.globalMessages > 5000 ? "Foundational contributor with high global activity" : "Standard activity"}
 Contributor Roles: ${contributorRoles.length > 0 ? contributorRoles.join(', ') : 'Initiate'}
 All Roles: ${rolesList}
 

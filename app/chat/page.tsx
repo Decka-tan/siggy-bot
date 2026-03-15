@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import { extractMoodFromResponse } from '@/lib/siggy-personality';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
@@ -131,7 +132,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/@([\w.]+)/g, (match, username) => {
     const data = contributorMap[username.toLowerCase()];
     if (data) {
-      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-6 h-6 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-5 h-5 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
     }
     return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
   });
@@ -301,8 +302,6 @@ export default function ChatPage() {
 
   const availableCommands = [
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
-    { name: 'analysiscompare', description: 'Compare multiple contributors (vs) in a table', usage: '/analysiscompare @user1 vs @user2' },
-    { name: 'leaderboard', description: 'Show the global message leaderboard', usage: '/leaderboard' },
   ];
 
   const filteredCommands = commandQuery 
@@ -499,7 +498,7 @@ export default function ChatPage() {
       const cmd = parts[0].toLowerCase();
 
       // Don't show command dropdown if we're already in a specific command flow
-      if (cmd === 'check' || cmd === 'analysis' || cmd === 'analysiscompare') {
+      if (cmd === 'check' || cmd === 'analysis') {
         setShowCommandDropdown(false);
         return;
       }
@@ -580,6 +579,7 @@ export default function ChatPage() {
 
     setAnalyzingContributor(contributor.userId);
     setShowContributorDropdown(false);
+    setContributorResults([]); // Clear results
     setInput('');
 
     // Add user message with contributor element
@@ -655,14 +655,22 @@ export default function ChatPage() {
       }
 
       if (analyzeData.analysis) {
+        const { mood, cleanedResponse } = extractMoodFromResponse(analyzeData.analysis);
+        
         const siggyMessage: Message = {
           role: 'assistant',
-          content: analyzeData.analysis,
+          content: cleanedResponse,
+          mood: mood,
         };
 
         setConversations(prev => prev.map(conv => {
           if (conv.id === activeConversationId) {
-            return { ...conv, messages: [...conv.messages, siggyMessage] };
+            return { 
+              ...conv, 
+              messages: [...conv.messages, siggyMessage],
+              currentMood: mood,
+              messageCount: conv.messageCount + 1
+            };
           }
           return conv;
         }));
@@ -770,6 +778,10 @@ export default function ChatPage() {
     if (needsResearch) {
       setIsResearching(true);
     }
+
+    // Always clear search dropdown when sending
+    setShowContributorDropdown(false);
+    setContributorResults([]);
 
     // Intercept manual /check commands
     if (textToSend.toLowerCase().startsWith('/check') && !analyzingContributor) {
@@ -888,6 +900,66 @@ export default function ChatPage() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
+    }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Handle filtered commands navigation first
+    const filteredCommands = availableCommands.filter(cmd => cmd.name.includes(commandQuery));
+    
+    if (showCommandDropdown && filteredCommands.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedCommandIndex(prev => (prev + 1) % filteredCommands.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedCommandIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const cmd = filteredCommands[selectedCommandIndex];
+        setInput(`/${cmd.name} `);
+        setShowCommandDropdown(false);
+        setSelectedCommandIndex(0);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowCommandDropdown(false);
+        return;
+      }
+    }
+
+    if (showContributorDropdown && contributorResults.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedContributorIndex(prev => (prev + 1) % contributorResults.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedContributorIndex(prev => (prev - 1 + contributorResults.length) % contributorResults.length);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        analyzeContributor(contributorResults[selectedContributorIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowContributorDropdown(false);
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+      // Reset height after sending (if it's a textarea)
+      const target = e.target as HTMLTextAreaElement;
+      setTimeout(() => target.style.height = 'auto', 10);
     }
   };
 
@@ -1587,29 +1659,29 @@ export default function ChatPage() {
                         ) : (
                           <div className="relative">
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
-                              <div className="flex flex-col gap-1">
-                                {isResearching && (
-                                  <div className="flex items-center gap-2 text-xs text-accent animate-pulse font-mono">
-                                    🔍 Siggy is researching the web...
+                              <div className="flex flex-col gap-3 items-start animate-pulse">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                                  <div className="space-y-2">
+                                    <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">{isResearching ? 'Searching Knowledge Base...' : 'Siggy is analyzing...'}</p>
+                                    <p className="text-text-secondary font-mono text-xs italic">*Peering through various dimensions... nya~*</p>
                                   </div>
-                                )}
-                                <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
-                                  *Siggy is thinking...*
                                 </div>
                               </div>
                             ) : (
                               <div className="relative flex flex-col items-start mt-2 w-full">
                                 {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
-                                    className="text-sm md:text-base leading-relaxed font-mono italic text-text-secondary w-full"
+                                    className="text-xs md:text-sm leading-relaxed font-mono italic text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
-                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content)
+                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
                                     }}
                                   />
                                 ) : (
                                   <TypewriterText 
                                     text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content} 
                                     isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
+                                    className="text-lg md:text-xl lg:text-2xl leading-relaxed font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
                                     alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
                                     onAnimationComplete={() => {
                                       if (vnHistoryIndex === -1) {
@@ -1620,6 +1692,7 @@ export default function ChatPage() {
                                     playTyping={playTyping}
                                     playVoiceLine={playVoiceLine}
                                     personality={personality as 'CAT' | 'ANIME'}
+                                    contributorMap={contributorMap}
                                   />
                                 )}
                               </div>
@@ -1831,15 +1904,7 @@ export default function ChatPage() {
                                   target.style.height = 'auto';
                                   target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                                 }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSendMessage();
-                                    // Reset height after sending
-                                    const target = e.target as HTMLTextAreaElement;
-                                    setTimeout(() => target.style.height = 'auto', 10);
-                                  }
-                                }}
+                                onKeyDown={handleInputKeyDown}
                                 placeholder="What will you say? (type /check to analyze username)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
@@ -2072,7 +2137,7 @@ export default function ChatPage() {
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
                                   className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-white/10'}`}>
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-accent/20'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}
@@ -2191,61 +2256,7 @@ export default function ChatPage() {
                             target.style.height = 'auto';
                             target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                           }}
-                          onKeyDown={(e) => {
-                            if (showCommandDropdown && filteredCommands.length > 0) {
-                              if (e.key === 'ArrowDown') {
-                                e.preventDefault();
-                                setSelectedCommandIndex(prev => (prev + 1) % filteredCommands.length);
-                                return;
-                              }
-                              if (e.key === 'ArrowUp') {
-                                e.preventDefault();
-                                setSelectedCommandIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
-                                return;
-                              }
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const cmd = filteredCommands[selectedCommandIndex];
-                                setInput(`/${cmd.name} `);
-                                setShowCommandDropdown(false);
-                                setSelectedCommandIndex(0);
-                                return;
-                              }
-                              if (e.key === 'Escape') {
-                                setShowCommandDropdown(false);
-                                return;
-                              }
-                            }
-
-                            if (showContributorDropdown && contributorResults.length > 0) {
-                              if (e.key === 'ArrowDown') {
-                                e.preventDefault();
-                                setSelectedContributorIndex(prev => (prev + 1) % contributorResults.length);
-                                return;
-                              }
-                              if (e.key === 'ArrowUp') {
-                                e.preventDefault();
-                                setSelectedContributorIndex(prev => (prev - 1 + contributorResults.length) % contributorResults.length);
-                                return;
-                              }
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                analyzeContributor(contributorResults[selectedContributorIndex]);
-                                return;
-                              }
-                              if (e.key === 'Escape') {
-                                setShowContributorDropdown(false);
-                                return;
-                              }
-                            }
-
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendMessage();
-                              const target = e.target as HTMLTextAreaElement;
-                              setTimeout(() => target.style.height = 'auto', 10);
-                            }
-                          }}
+                          onKeyDown={handleInputKeyDown}
                           placeholder="What will you say? (type /check to analyze username)"
                           disabled={isLoading || analyzingContributor !== null}
                           rows={1}

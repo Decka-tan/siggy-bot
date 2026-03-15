@@ -9,6 +9,7 @@ import { RITUAL_COMMUNITY_KNOWLEDGE } from './ritual-community-knowledge';
 import { RITUAL_DISCORD_KNOWLEDGE } from './ritual-discord-knowledge';
 import { RITUAL_STATS_KNOWLEDGE } from './ritual-stats-knowledge';
 import { MANUAL_KNOWLEDGE } from './manual-knowledge';
+import { USERNAME_MAPPING_KNOWLEDGE } from './username-mapping-knowledge';
 
 export interface KnowledgeEntry {
   id: string;
@@ -259,6 +260,7 @@ export function getRelevantKnowledge(userInput: string, maxEntries: number = 3):
     ...RITUAL_COMMUNITY_KNOWLEDGE,
     ...RITUAL_DISCORD_KNOWLEDGE, // Add our extracted discord knowledge
     ...RITUAL_STATS_KNOWLEDGE, // Exact aggregated counts
+    ...USERNAME_MAPPING_KNOWLEDGE, // Name to username mappings
     ...MANUAL_KNOWLEDGE, // Verified manual corrections
   ];
 
