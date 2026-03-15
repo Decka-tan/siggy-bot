@@ -266,70 +266,24 @@ async function handleAnalysisCommand(message: DiscordMessage): Promise<string | 
     return analyzer.formatLeaderboard(limit);
   }
 
-  // NEW: /check command with AI analysis via API
+  // NEW: /check command with AI analysis (Local logic, no server needed meow!)
   const checkMatch = message.content.match(/^!check\s+(.+)/i);
   if (checkMatch) {
     const username = checkMatch[1].trim().replace(/^@/, '');
+    const { getUserChecker } = require('./lib/user-checker');
+    const checker = getUserChecker();
 
-    // Show typing indicator (this might take a moment)
+    // Show typing indicator
     if ('sendTyping' in message.channel) {
       await message.channel.sendTyping();
     }
 
     try {
-      // Call the API endpoint (uses merged data with Ritual names, roles, stats)
-      const apiResponse = await fetch('http://localhost:3000/api/analyze', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ contributorId: username }),
-        signal: AbortSignal.timeout(60000), // 60 second timeout
-      });
-
-      if (!apiResponse.ok) {
-        const errorData = await apiResponse.json().catch(() => ({}));
-        console.error('API Error:', apiResponse.status, errorData);
-        throw new Error(errorData.error || 'API request failed');
-      }
-
-      const data = await apiResponse.json();
-
-      if (data.success && data.analysis) {
-        return data.analysis;
-      } else {
-        throw new Error(data.error || 'Invalid response');
-      }
+      const analysis = await checker.getAIAnalysis(username);
+      return analysis;
     } catch (error: any) {
       console.error('Check command error:', error);
-
-      // Provide helpful error message
-      if (error.name === 'AbortError' || error.message?.includes('timeout')) {
-        return `⏱️ **Analysis timeout!** nya~ 😿
-
-Sorry nya~! The analysis took too long (API might be processing lots of data).
-
-Debug Info:
-• Contributor ID: ${username}
-• Error: Request timeout (>60s)
-
-**Try again later or check:**
-• Is the dev server running? (npm run dev)
-• API endpoint: http://localhost:3000/api/analyze`;
-      }
-
-      return `❌ **Sorry nya~! Analysis failed:** ${error.message} 😿
-
-Debug Info:
-• Contributor ID: ${username}
-• Error: ${error.message}
-
-**Please check:**
-• DeepSeek API key is configured (.env.local)
-• Data files exist (complete-guild-members.json, smart-extraction-result.json)
-• Discord User Token is valid
-
-Server console should have more details meow! 🐱`;
+      return `❌ **Sorry nya~! Analysis failed:** ${error.message} 😿`;
     }
   }
 

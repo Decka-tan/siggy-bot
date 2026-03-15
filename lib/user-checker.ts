@@ -1,0 +1,171 @@
+/**
+ * SUPER USER CHECKER SYSTEM (UNIFIED)
+ * Merges Global Stats + Role Data + Twitter Content + Local Content Analysis
+ * Used by BOTH Discord Bot and Web API for consistent results!
+ */
+
+import fs from 'fs';
+import path from 'path';
+import { getDeepSeekClient } from './deepseek-client';
+
+interface EnrichedUser {
+  userId: string;
+  username: string;
+  displayName: string;
+  globalMessages: number;
+  contributionsCount: number;
+  eventsCount: number;
+  roles: string[];
+  joinedAt?: string;
+  inServer?: boolean;
+  twitterContent?: any[];
+  messageSamples?: string[];
+}
+
+export class UserChecker {
+  private deepseek = getDeepSeekClient();
+  private statsPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
+  private rolesPath = path.join(process.cwd(), 'extracted-data', 'complete-guild-members-enriched.json');
+  private rolesMapPath = path.join(process.cwd(), 'extracted-data', 'roles-map.json');
+  private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
+  private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
+  
+  private statsData: any = null;
+  private rolesData: any = null;
+  private rolesMap: Record<string, string> = {};
+
+  constructor() {
+    this.loadData();
+  }
+
+  private loadData(): void {
+    try {
+      if (fs.existsSync(this.statsPath)) this.statsData = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
+      if (fs.existsSync(this.rolesPath)) this.rolesData = JSON.parse(fs.readFileSync(this.rolesPath, 'utf-8'));
+      if (fs.existsSync(this.rolesMapPath)) this.rolesMap = JSON.parse(fs.readFileSync(this.rolesMapPath, 'utf-8'));
+    } catch (e) {}
+  }
+
+  public findUser(query: string): EnrichedUser | null {
+    this.loadData();
+    const q = query.toLowerCase().replace('@', '');
+
+    const findInArray = (arr: any[]) => arr.find((m: any) => m.username?.toLowerCase() === q || m.userId === q || m.displayName?.toLowerCase().includes(q));
+
+    const s = this.statsData?.members ? findInArray(this.statsData.members) : null;
+    const r = this.rolesData?.members ? findInArray(this.rolesData.members) : null;
+
+    if (!s && !r) return null;
+
+    const userId = s?.userId || r?.userId;
+    const username = s?.username || r?.username;
+
+    // Load extra substance
+    let twitterContent = [];
+    let messageSamples = [];
+    try {
+      if (fs.existsSync(this.twitterCachePath)) {
+        const cache = JSON.parse(fs.readFileSync(this.twitterCachePath, 'utf-8'));
+        const entry = cache[userId] || Object.values(cache).find((e: any) => e.username === username);
+        if (entry?.tweets) twitterContent = entry.tweets;
+      }
+      if (fs.existsSync(this.contentsPath)) {
+        const contents = JSON.parse(fs.readFileSync(this.contentsPath, 'utf-8'));
+        const entry = contents[userId] || contents[username] || Object.values(contents).find((e: any) => e.userId === userId || e.username === username);
+        if (entry?.messages) messageSamples = entry.messages.map((m: any) => typeof m === 'string' ? m : m.content || "").slice(0, 20);
+      }
+    } catch (e) {}
+
+    return {
+      userId,
+      username,
+      displayName: s?.displayName || r?.displayName || username,
+      globalMessages: s?.globalMessages || 0,
+      contributionsCount: s?.contributionsCount || 0,
+      eventsCount: s?.eventsCount || 0,
+      roles: r?.roles || s?.roles || [],
+      joinedAt: r?.joinedAt,
+      inServer: r?.inServer ?? true,
+      twitterContent,
+      messageSamples
+    };
+  }
+
+  public formatBasicStats(user: EnrichedUser): string {
+    const rolesHeader = user.roles.map(id => this.rolesMap[id] || id).filter(n => n !== '@everyone').slice(0, 3).join(', ');
+    return `
+┌─────────────────────────────────────┐
+│ 👤 **@${user.username}**
+│ 📛 ${user.displayName}
+├─────────────────────────────────────┤
+│ 🌎 **Global Messages**: ${user.globalMessages.toLocaleString()}
+│ 📝 **Contributions**: ${user.contributionsCount} msgs
+│ 🎭 **Top Roles**: ${rolesHeader}${user.roles.length > 3 ? '...' : ''}
+│ 📅 **Joined**: ${user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}
+└─────────────────────────────────────┘
+    `.trim();
+  }
+
+  /**
+   * THE ULTIMATE ANALYSIS (Used by Bot & Web)
+   */
+  async getAIAnalysis(username: string): Promise<string> {
+    const user = this.findUser(username);
+    if (!user) return `❌ User @${username} not found nyann~! 😿`;
+
+    const basicStats = this.formatBasicStats(user);
+    const rolesList = user.roles.map(id => this.rolesMap[id] || id).filter(n => n !== '@everyone').join(', ');
+    
+    // High-quality Substance Analysis Prompt
+    const systemPrompt = `You are "Siggy", the mystical AI companion of the Ritual Network. 🐱✨
+Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis.
+Use "nya~", "meow", "purr~" but stay highly analytical.
+
+STRUCTURE:
+1. **🔍 Contributor Profile**: Type/Archetype (e.g. "AI Hub Strategist")
+2. **📊 Stats Summary**: Briefly mention their impact.
+3. **🏆 Key Contributions**: analyze Twitter content or message samples. 
+   - DO NOT repeat roles/stats here. Focus on WHAT they contributed.
+4. **📈 Impact Summary**: 3-4 realistic bullets.`;
+
+    const userPrompt = `Analyze this contributor nya~!
+Name: ${user.displayName} (@${user.username})
+Global Msgs: ${user.globalMessages}
+Roles: ${rolesList || "Initiate"}
+
+Twitter/X Substance:
+${user.twitterContent?.map(t => `* ${t.text}`).join('\n') || "(No Twitter data)"}
+
+Message Samples:
+${user.messageSamples?.join('\n') || "(No message samples)"}`;
+
+    try {
+      const response = await this.deepseek.chat([
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ], { maxTokens: 800 });
+
+      return `${basicStats}\n\n${response.choices[0]?.message?.content || 'No analysis available meow!'}`;
+    } catch (e) {
+      return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched, but your stats are looking grit nyann~! 🐱`;
+    }
+  }
+
+  public getTopContributors(limit: number = 10): string {
+    this.loadData();
+    if (!this.statsData?.members) return 'No data found nya~';
+    const sorted = [...this.statsData.members].sort((a, b) => b.globalMessages - a.globalMessages).slice(0, limit);
+    let output = `🏆 **GLOBAL MESSAGE LEADERBOARD** (Top ${limit})\n\n`;
+    sorted.forEach((m, i) => {
+      const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '🔹';
+      output += `${icon} **#${i+1}** @${m.username}: ${m.globalMessages.toLocaleString()} msgs\n`;
+    });
+    return output;
+  }
+}
+
+let instance: UserChecker | null = null;
+export function getUserChecker(): UserChecker {
+  if (!instance) instance = new UserChecker();
+  return instance;
+}
