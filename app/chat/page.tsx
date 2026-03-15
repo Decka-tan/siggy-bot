@@ -1809,55 +1809,11 @@ export default function ChatPage() {
                               <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} />
                             ) : (
                               <div className="space-y-3">
-                                {/* Contributor Card */}
+                                {/* Simple contributor tag with PFP */}
                                 {message.contributor && (
-                                  <div className="bg-gradient-to-r from-accent/20 to-yellow-400/10 border-2 border-accent/50 rounded-xl p-4 shadow-[0_0_20px_rgba(255,215,0,0.15)]">
-                                    <div className="flex items-start gap-3 mb-3">
-                                      <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-accent shrink-0">
-                                        <img src={message.contributor.avatar} alt={message.contributor.username} className="w-full h-full object-cover" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="text-xs font-bold text-accent">@{message.contributor.username}</span>
-                                          {message.contributor.rank && (
-                                            <span className="text-[10px] px-2 py-0.5 bg-accent/20 text-accent rounded-full font-mono">#{message.contributor.rank}</span>
-                                          )}
-                                        </div>
-                                        <div className="text-sm font-bold text-text-primary truncate">{message.contributor.displayName}</div>
-                                      </div>
-                                    </div>
-
-                                    {/* Stats Grid */}
-                                    <div className="grid grid-cols-3 gap-2 mb-3">
-                                      <div className="bg-black/40 rounded-lg p-2 text-center border border-white/10">
-                                        <div className="text-[10px] text-text-secondary font-mono uppercase">Messages</div>
-                                        <div className="text-sm font-bold text-accent">{(message.contributor.globalMessages || 0).toLocaleString()}</div>
-                                      </div>
-                                      <div className="bg-black/40 rounded-lg p-2 text-center border border-white/10">
-                                        <div className="text-[10px] text-text-secondary font-mono uppercase">Contributions</div>
-                                        <div className="text-sm font-bold text-accent">{(message.contributor.contributionsCount || 0).toLocaleString()}</div>
-                                      </div>
-                                      <div className="bg-black/40 rounded-lg p-2 text-center border border-white/10">
-                                        <div className="text-[10px] text-text-secondary font-mono uppercase">Events</div>
-                                        <div className="text-sm font-bold text-accent">{(message.contributor.eventsCount || 0).toLocaleString()}</div>
-                                      </div>
-                                    </div>
-
-                                    {/* Roles */}
-                                    {message.contributor.roles && message.contributor.roles.length > 0 && (
-                                      <div className="flex flex-wrap gap-1.5">
-                                        {message.contributor.roles.slice(0, 5).map((role: string) => (
-                                          <span key={role} className="text-[10px] px-2 py-1 bg-accent/10 border border-accent/30 text-accent rounded-full font-mono truncate max-w-[120px]">
-                                            {role.length > 20 ? role.substring(0, 20) + '...' : role}
-                                          </span>
-                                        ))}
-                                        {message.contributor.roles.length > 5 && (
-                                          <span className="text-[10px] px-2 py-1 bg-white/5 border border-white/10 text-text-secondary rounded-full font-mono">
-                                            +{message.contributor.roles.length - 5} more
-                                          </span>
-                                        )}
-                                      </div>
-                                    )}
+                                  <div className="inline-flex items-center gap-2 bg-accent/20 border border-accent/50 rounded-full px-3 py-1.5 mb-2">
+                                    <img src={message.contributor.avatar} alt={message.contributor.username} className="w-6 h-6 rounded-full border border-accent/30" />
+                                    <span className="text-xs font-bold text-accent">@{message.contributor.username}</span>
                                   </div>
                                 )}
 
