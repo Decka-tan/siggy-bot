@@ -27,12 +27,14 @@ export class UserChecker {
   private statsPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
   private rolesPath = path.join(process.cwd(), 'extracted-data', 'complete-guild-members-enriched.json');
   private rolesMapPath = path.join(process.cwd(), 'extracted-data', 'roles-map.json');
+  private contributionsPath = path.join(process.cwd(), 'extracted-data', 'complete-contributions-with-dates.json');
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
   private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
-  
+
   private statsData: any = null;
   private rolesData: any = null;
   private rolesMap: Record<string, string> = {};
+  private contributionsData: any = null;
 
   constructor() {
     this.loadData();
@@ -43,6 +45,9 @@ export class UserChecker {
       if (fs.existsSync(this.statsPath)) this.statsData = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
       if (fs.existsSync(this.rolesPath)) this.rolesData = JSON.parse(fs.readFileSync(this.rolesPath, 'utf-8'));
       if (fs.existsSync(this.rolesMapPath)) this.rolesMap = JSON.parse(fs.readFileSync(this.rolesMapPath, 'utf-8'));
+      if (fs.existsSync(this.contributionsPath)) {
+        this.contributionsData = JSON.parse(fs.readFileSync(this.contributionsPath, 'utf-8'));
+      }
     } catch (e) {}
   }
 
@@ -58,11 +63,13 @@ export class UserChecker {
     if (!s && !r) return null;
 
     const userId = s?.userId || r?.userId;
-    const username = s?.username || r?.username;
+    const username = s?.username || r?.username || q;
 
     // Load extra substance
     let twitterContent = [];
     let messageSamples = [];
+    let contributionsCount = 0;
+
     try {
       if (fs.existsSync(this.twitterCachePath)) {
         const cache = JSON.parse(fs.readFileSync(this.twitterCachePath, 'utf-8'));
@@ -74,16 +81,28 @@ export class UserChecker {
         const entry = contents[userId] || contents[username] || Object.values(contents).find((e: any) => e.userId === userId || e.username === username);
         if (entry?.messages) messageSamples = entry.messages.map((m: any) => typeof m === 'string' ? m : m.content || "").slice(0, 20);
       }
+
+      // Load contributions count
+      if (this.contributionsData?.leaderboard) {
+        const contribEntry = this.contributionsData.leaderboard.find((e: any) => e.userId === userId || e.username === username);
+        if (contribEntry) {
+          contributionsCount = contribEntry.messages || 0;
+        }
+      }
     } catch (e) {}
+
+    // Sort roles by hierarchy (Ritualist, Ritty, Bitty first)
+    const allRoles = r?.roles || s?.roles || [];
+    const prioritizedRoles = this.sortRolesByPriority(allRoles);
 
     return {
       userId,
       username,
       displayName: s?.displayName || r?.displayName || username,
       globalMessages: s?.globalMessages || 0,
-      contributionsCount: s?.contributionsCount || 0,
+      contributionsCount,
       eventsCount: s?.eventsCount || 0,
-      roles: r?.roles || s?.roles || [],
+      roles: prioritizedRoles,
       joinedAt: r?.joinedAt,
       inServer: r?.inServer ?? true,
       twitterContent,
@@ -91,8 +110,36 @@ export class UserChecker {
     };
   }
 
+  private sortRolesByPriority(roles: string[]): string[] {
+    // Priority order: Ritualist > Ritty > Bitty > others
+    const priorityIds = [
+      '1311411950852243488', // Ritualist
+      // Add Ritty/Bitty IDs if you know them
+    ];
+
+    const priorityRoles: string[] = [];
+    const otherRoles: string[] = [];
+
+    roles.forEach(role => {
+      if (priorityIds.includes(role)) {
+        priorityRoles.push(role);
+      } else {
+        otherRoles.push(role);
+      }
+    });
+
+    return [...priorityRoles, ...otherRoles];
+  }
+
   public formatBasicStats(user: EnrichedUser): string {
-    const rolesHeader = user.roles.map(id => this.rolesMap[id] || id).filter(n => n !== '@everyone').slice(0, 3).join(', ');
+    const roleNames = user.roles
+      .map(id => this.rolesMap[id] || id)
+      .filter(n => n !== '@everyone')
+      .slice(0, 3);
+
+    const rolesHeader = roleNames.length > 0 ? roleNames.join(', ') : 'No roles';
+    const remainingRoles = user.roles.length > 3 ? user.roles.length - 3 : 0;
+
     return `
 ┌─────────────────────────────────────┐
 │ 👤 **@${user.username}**
@@ -100,7 +147,7 @@ export class UserChecker {
 ├─────────────────────────────────────┤
 │ 🌎 **Global Messages**: ${user.globalMessages.toLocaleString()}
 │ 📝 **Contributions**: ${user.contributionsCount} msgs
-│ 🎭 **Top Roles**: ${rolesHeader}${user.roles.length > 3 ? '...' : ''}
+│ 🎭 **Top Roles**: ${rolesHeader}${remainingRoles > 0 ? ` (+${remainingRoles} more)` : ''}
 │ 📅 **Joined**: ${user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}
 └─────────────────────────────────────┘
     `.trim();
@@ -119,14 +166,19 @@ export class UserChecker {
     // High-quality Substance Analysis Prompt
     const systemPrompt = `You are "Siggy", the mystical AI companion of the Ritual Network. 🐱✨
 Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis.
+Start your response with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
 Use "nya~", "meow", "purr~" but stay highly analytical.
 
 STRUCTURE:
-1. **🔍 Contributor Profile**: Type/Archetype (e.g. "AI Hub Strategist")
-2. **📊 Stats Summary**: Briefly mention their impact.
-3. **🏆 Key Contributions**: analyze Twitter content or message samples. 
-   - DO NOT repeat roles/stats here. Focus on WHAT they contributed.
-4. **📈 Impact Summary**: 3-4 realistic bullets.`;
+1. **🔍 Contributor Profile**: [Name] - [Type/Archetype] (e.g. "AI Hub Strategist" or "Pillar Contributor")
+2. **📊 Activity Stats**:
+   - Contributions: [Count] posts in #contributions
+   - Events: [Count] participations
+   - Global Chat: [Count] total messages
+3. **🏆 Key Contributions & Impact**: 3 detailed numbered points analyzing their specific impact, Twitter content, or message samples.
+4. **📈 Impact Summary**: 3-4 realistic bullets about their archetype, trajectory, and potential.
+
+Include a "Final Insight" at the end if you feel extra inspired meow!`;
 
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (@${user.username})
