@@ -278,7 +278,7 @@ export class TFIDFRAGSystem {
     }
 
     // Sort by score (descending) and return top K
-    results.sort((a, b) => b.score - score);
+    results.sort((a, b) => b.score - a.score);
 
     return results.slice(0, topK);
   }
@@ -337,4 +337,4 @@ export async function getRAGSystem(): Promise<TFIDFRAGSystem> {
   return ragInstance;
 }
 
-export { TFIDFRAGSystem, Document, SearchResult };
+export type { Document, SearchResult };
