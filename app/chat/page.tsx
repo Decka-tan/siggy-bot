@@ -426,20 +426,16 @@ export default function ChatPage() {
 
   // Contributor Search Effect
   useEffect(() => {
-    if (!input.trim() || !input.includes('@') || analyzingContributor) {
+    // Dropdown triggers on typing "/check "
+    if (!input.toLowerCase().startsWith('/check') || analyzingContributor) {
       setContributorResults([]);
       setShowContributorDropdown(false);
       return;
     }
 
-    const searchMatch = input.match(/@(\w*)$/);
-    if (!searchMatch) {
-      setContributorResults([]);
-      setShowContributorDropdown(false);
-      return;
-    }
-
-    const query = searchMatch[1];
+    // Extract query: "/check [query]"
+    const query = input.slice(6).trim();
+    
     if (query.length < 2) {
       setContributorResults([]);
       setShowContributorDropdown(false);
@@ -1600,7 +1596,7 @@ export default function ChatPage() {
                                     <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Search className="w-3 h-3" />
-                                        Found Contributors
+                                        {input.startsWith('/check') ? 'Select Contributor' : 'Available Commands'}
                                       </span>
                                       {isSearchingContributors && (
                                         <RefreshCw className="w-3 h-3 text-accent animate-spin" />
@@ -1650,7 +1646,7 @@ export default function ChatPage() {
                                     setTimeout(() => target.style.height = 'auto', 10);
                                   }
                                 }}
-                                placeholder="What will you say? (type @ to check contributors)"
+                                placeholder={input.startsWith('/') ? "Enter command..." : "Ask Siggy anything... (Try /check @user)"}
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
                                 className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
