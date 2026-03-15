@@ -124,8 +124,11 @@ const parseMessageContent = (content: string) => {
   // Links [text](url) - IMPORTANT: Must be first to avoid interfering with other markdown
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
 
-  // First, preserve paragraph breaks (double newlines)
+  // Preserve paragraph breaks (double newlines)
   html = html.replace(/\n\n/g, '</p><p class="mt-2">');
+
+  // Usernames with yellow border and color
+  html = html.replace(/@(\w+)/g, '<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@$1</span>');
 
   // Bold
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -436,9 +439,16 @@ export default function ChatPage() {
     // Extract query: "/check [query]"
     const query = input.slice(6).trim();
     
-    if (query.length < 2) {
-      setContributorResults([]);
-      setShowContributorDropdown(false);
+    // Immediate trigger as long as we have /check
+    if (input.toLowerCase() === '/check' || input.toLowerCase() === '/check ') {
+      // Trigger default or empty search
+      setIsSearchingContributors(true);
+      fetch(`/api/contributor?action=autocomplete&username=`).then(res => res.json()).then(data => {
+        if (data.success) {
+          setContributorResults(data.contributors.slice(0, 8));
+          setShowContributorDropdown(true);
+        }
+      }).finally(() => setIsSearchingContributors(false));
       return;
     }
 
@@ -472,7 +482,7 @@ export default function ChatPage() {
     // Add user message with contributor element
     const userMessage: Message = {
       role: 'user',
-      content: `/check`,
+      content: `/check @${contributor.username}`,
       contributor: {
         userId: contributor.userId,
         username: contributor.username,
@@ -1646,7 +1656,7 @@ export default function ChatPage() {
                                     setTimeout(() => target.style.height = 'auto', 10);
                                   }
                                 }}
-                                placeholder={input.startsWith('/') ? "Enter command..." : "Ask Siggy anything... (Try /check [username])"}
+                                placeholder="What will you say? (type /check to analyze username)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
                                 className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
