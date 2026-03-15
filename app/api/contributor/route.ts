@@ -41,43 +41,63 @@ function loadData(): ExtractionData {
     // Load from existing files:
     // 1. member-activity-analysis.json - 787 users with globalMessages
     // 2. user-roles-summary.json - 7,978 users with roles/joinedAt/avatar (optimized, 1.87MB)
+    // 3. current-member-avatars.json - Current avatar data with fallbacks
 
     const activityPath = path.join(dataDir, 'member-activity-analysis.json');
     const rolesPath = path.join(dataDir, 'user-roles-summary.json');
+    const avatarsPath = path.join(dataDir, 'current-member-avatars.json');
 
     let membersMap = new Map<string, any>();
+    let avatarsMap = new Map<string, { avatar: string; displayName: string }>();
+
+    // Load current avatars first (highest priority for avatar data)
+    if (fs.existsSync(avatarsPath)) {
+      const data = JSON.parse(fs.readFileSync(avatarsPath, 'utf-8'));
+      (data.members || []).forEach((m: any) => {
+        avatarsMap.set(m.username, {
+          avatar: m.avatar,
+          displayName: m.displayName,
+        });
+      });
+      console.log(`✅ Loaded current-member-avatars: ${avatarsMap.size} users`);
+    }
 
     // Load activity data
     if (fs.existsSync(activityPath)) {
       const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
+        const avatarData = avatarsMap.get(m.username);
         membersMap.set(m.username, {
           userId: m.userId,
           username: m.username,
-          displayName: m.displayName,
+          displayName: avatarData?.displayName || m.displayName,
           messageCount: m.globalMessages || 0,
+          avatar: avatarData?.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
         });
       });
       console.log(`✅ Loaded member-activity-analysis: ${membersMap.size} users`);
     }
 
-    // Merge with roles data (includes avatar)
+    // Merge with roles data (includes roles/joinedAt)
     if (fs.existsSync(rolesPath)) {
       const data = JSON.parse(fs.readFileSync(rolesPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
         const existing = membersMap.get(m.username);
+        const avatarData = avatarsMap.get(m.username);
+
         if (existing) {
-          // Merge: keep activity data, add roles/joinedAt/avatar
+          // Merge: keep activity data, add roles/joinedAt, use current avatar
           existing.roles = m.roleNames || [];
           existing.joinedAt = m.joinedAt;
-          existing.avatar = m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`;
+          // Use current avatar if available, otherwise use roles avatar, otherwise fallback
+          existing.avatar = avatarData?.avatar || m.avatar || existing.avatar;
         } else {
           // Add new entry from roles data
           membersMap.set(m.username, {
             userId: m.userId,
             username: m.username,
-            displayName: m.displayName,
-            avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+            displayName: avatarData?.displayName || m.displayName,
+            avatar: avatarData?.avatar || m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
             messageCount: 0,
             roles: m.roleNames || [],
             joinedAt: m.joinedAt,

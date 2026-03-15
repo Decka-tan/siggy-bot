@@ -1743,7 +1743,15 @@ export default function ChatPage() {
                                           className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
                                         >
                                           <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
-                                            <img src={contributor.avatar} alt={contributor.username} className="w-full h-full object-cover" />
+                                            <img
+                                              src={contributor.avatar}
+                                              alt={contributor.username}
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
+                                              }}
+                                              className="w-full h-full object-cover"
+                                            />
                                           </div>
                                           <div className="flex-1 min-w-0">
                                             <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
@@ -1885,7 +1893,15 @@ export default function ChatPage() {
                                 {/* Contributor mention with small PFP - replaces @username in content */}
                                 {message.contributor ? (
                                   <div className="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-1">
-                                    <img src={message.contributor.avatar} alt={message.contributor.username} className="w-2.5 h-2.5 rounded-full" />
+                                    <img
+                                      src={message.contributor.avatar}
+                                      alt={message.contributor.username}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(message.contributor.userId) % 5}.png`;
+                                      }}
+                                      className="w-2.5 h-2.5 rounded-full"
+                                    />
                                     <span className="text-xs font-bold text-accent">{message.contributor.displayName || message.contributor.username}</span>
                                   </div>
                                 ) : (
@@ -2021,7 +2037,15 @@ export default function ChatPage() {
                                   className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
                                 >
                                   <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
-                                    <img src={contributor.avatar} alt={contributor.username} className="w-full h-full object-cover" />
+                                    <img
+                                      src={contributor.avatar}
+                                      alt={contributor.username}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
+                                      }}
+                                      className="w-full h-full object-cover"
+                                    />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
