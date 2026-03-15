@@ -1646,7 +1646,7 @@ export default function ChatPage() {
                                     setTimeout(() => target.style.height = 'auto', 10);
                                   }
                                 }}
-                                placeholder={input.startsWith('/') ? "Enter command..." : "Ask Siggy anything... (Try /check @user)"}
+                                placeholder={input.startsWith('/') ? "Enter command..." : "Ask Siggy anything... (Try /check [username])"}
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
                                 className="flex-1 px-3 py-2 bg-black/40 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
