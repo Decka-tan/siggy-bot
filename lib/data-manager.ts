@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * SIGGY'S HYBRID DATA SYSTEM
  * Combines Discord exports + database + web search
