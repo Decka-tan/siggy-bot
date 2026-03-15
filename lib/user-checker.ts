@@ -59,8 +59,14 @@ export class UserChecker {
       const matches = arr.filter((m: any) => m.username?.toLowerCase() === q || m.userId === q || m.displayName?.toLowerCase().includes(q));
       if (matches.length === 0) return null;
       if (matches.length === 1) return matches[0];
-      // If duplicates, pick the one with actual data (contributionsCount > 0)
-      return matches.find((m: any) => m.contributionsCount > 0) || matches[0];
+      // If duplicates, prioritize: has contributions > has globalMessages > has roles > first
+      const withContribs = matches.find((m: any) => m.contributionsCount > 0);
+      if (withContribs) return withContribs;
+      const withMessages = matches.find((m: any) => m.globalMessages > 0);
+      if (withMessages) return withMessages;
+      const withRoles = matches.find((m: any) => m.roles && m.roles.length > 0);
+      if (withRoles) return withRoles;
+      return matches[0];
     };
 
     const s = this.statsData?.members ? findInArray(this.statsData.members) : null;
@@ -119,8 +125,9 @@ export class UserChecker {
   private sortRolesByPriority(roles: string[]): string[] {
     // Priority order: Ritualist > Ritty > Bitty > others
     const priorityIds = [
-      '1311411950852243488', // Ritualist
-      // Add Ritty/Bitty IDs if you know them
+      '1339006464139984906', // Ritualist
+      '1430904963340566661', // ritty
+      '1430904348757725325', // bitty
     ];
 
     const priorityRoles: string[] = [];
