@@ -55,7 +55,13 @@ export class UserChecker {
     this.loadData();
     const q = query.toLowerCase().replace('@', '');
 
-    const findInArray = (arr: any[]) => arr.find((m: any) => m.username?.toLowerCase() === q || m.userId === q || m.displayName?.toLowerCase().includes(q));
+    const findInArray = (arr: any[]) => {
+      const matches = arr.filter((m: any) => m.username?.toLowerCase() === q || m.userId === q || m.displayName?.toLowerCase().includes(q));
+      if (matches.length === 0) return null;
+      if (matches.length === 1) return matches[0];
+      // If duplicates, pick the one with actual data (contributionsCount > 0)
+      return matches.find((m: any) => m.contributionsCount > 0) || matches[0];
+    };
 
     const s = this.statsData?.members ? findInArray(this.statsData.members) : null;
     const r = this.rolesData?.members ? findInArray(this.rolesData.members) : null;
