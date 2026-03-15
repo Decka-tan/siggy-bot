@@ -372,6 +372,198 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
     priority: 7,
     source: 'ritual-tech',
   },
+
+  // ==========================================
+  // DISCORD CHANNELS GUIDE
+  // ==========================================
+  {
+    id: 'discord-channels-overview',
+    category: 'channels',
+    keywords: ['channels', 'discord channels', 'what channels', 'channel list', 'all channels'],
+    content: `Ritual Discord Channels (19 main channels): Announcements (official news), Events (community events only), Rules (community guidelines), Blessings of Syn (pledge channel), Updates (community updates), Gritual (greetings - "gritual!"), Community (general discussion), Contributions (share guides/tutorials), Confessions (confess your syns), Food (share food pics), Ritual (general chat about Ritual/AI/Crypto), Vestibule (give blessings/curses), Report (report bots/scams), Rank (check your rank), Wen (say "wen" for token/airdrop questions), Nominations (role nominations), Build (collab space for building apps), Support (open private tickets), Language Channels (regional communities).`,
+    priority: 8,
+    source: 'ritual-channels',
+  },
+  {
+    id: 'discord-channels-key',
+    category: 'channels',
+    keywords: ['ritual channel', 'general chat', 'contributions', 'build', 'support'],
+    content: `Key Discord Channels: #ritual - Main chat for Ritual Chain, AI, Crypto discussions, ask questions, share news at AI × Crypto intersection. #contributions - Share your Ritual guides, tutorials, explainers (blog posts, videos, documentation). #build - Collab space for building apps or protocols natively on Ritual. #support - Open private support tickets (upload logs and screenshots). #gritual - Channel for Ritual greetings ("gritual!").`,
+    priority: 7,
+    source: 'ritual-channels',
+  },
+  {
+    id: 'discord-channels-fun',
+    category: 'channels',
+    keywords: ['gritual', 'confessions', 'food', 'vestibule', 'wen'],
+    content: `Fun & Community Channels: #gritual - Say "gritual" to greet fellow Ritualists. #confessions - Confess your syns (sins). #food - Post your food! Share dishes from home cooks or restaurants. #vestibule - Invoke blessings or curses on other community members. #wen - Community meme channel, say "wen" (as in "wen token?", "wen airdrop?").`,
+    priority: 6,
+    source: 'ritual-channels',
+  },
+
+  // ==========================================
+  // WEEKLY EVENTS SCHEDULE
+  // ==========================================
+  {
+    id: 'events-schedule-weekly',
+    category: 'events',
+    keywords: ['events', 'weekly events', 'event schedule', 'what events', 'recurring events', 'event calendar'],
+    content: `Ritual Weekly Events Schedule: Event Managers are @Hinata and @Kash. SATURDAY: Ritual Tech 101 (12:00 PM), Ritual Workshop: 3D CGI Animation (11:00 AM), Words Unscramble (10:00 AM), Minury Talks (2:00 PM). FRIDAY: Guess the Object (11:00 PM), Geo-Guessing (6:00 PM), Scavenger Hunt (5:00 PM), Stumble Guys (3:00 PM), PFP Draw + Game Night (2:00 PM), Ritual Karaoke (12:30 PM), Guess the Ritualist (9:00 AM). THURSDAY: Ritual Rumble Quiz (11:00 PM), Solid Team Up (5:00 PM), Smash Karts (4:00 PM), Ultimate Quiz Test (3:00 PM), Codenames (12:00 PM), Battleship War (10:00 AM). WEDNESDAY: Ritual Quiz (6:00 PM), Rebus Puzzle (3:00 PM), Ritual Puzzle (2:00 PM), Haxball (12:00 PM), Lolbeans (11:00 AM). TUESDAY: Quiz About Ritual (6:00 PM), Among Us with Dino (5:00 PM), Drawize Chaos (2:00 PM), GeoGuessr (1:00 PM), Pure Madness (11:00 AM), Gimkit Chaos (10:00 AM). MONDAY: Roblox (4:00 PM), Poker (2:00 PM), Live Ritual PFP Draw (1:00 PM), Guess Crypto Logo (12:00 PM), Brand Guessing (11:00 AM). SUNDAY: Movie Night (6:00 PM), Jigsaw Puzzle (5:00 PM), Cooking Live (4:00 PM), Among Us (3:00 PM), Haxball Tournament (2:00 PM), Chess (1:00 PM), Maths Quiz (11:00 AM), Rocket Bot Royale (10:00 AM). All times UTC.`,
+    priority: 9,
+    source: 'ritual-events',
+  },
+  {
+    id: 'events-karaoke',
+    category: 'events',
+    keywords: ['karaoke', 'sing', 'ritual karaoke', 'karaoke night'],
+    content: `Ritual Karaoke: Every FRIDAY at 12:30 PM UTC. Hosted by @Cutie Quinn and @Claire. Sing your heart out! One of the most popular weekly events where community members showcase their singing skills (or lack thereof) in a fun, supportive environment.`,
+    priority: 7,
+    source: 'ritual-events',
+  },
+  {
+    id: 'events-tech-101',
+    category: 'events',
+    keywords: ['tech 101', 'ritual tech', 'learning series', 'workshop'],
+    content: `Ritual Tech 101: Every SATURDAY at 12:00 PM UTC. Learning series breaking down Ritual's tech simply. No jargon flexing. Hosted by @Barnabas and @Capt. Awesome. Perfect for learning about Ritual technology in an accessible way.`,
+    priority: 7,
+    source: 'ritual-events',
+  },
+  {
+    id: 'events-quiz',
+    category: 'events',
+    keywords: ['quiz', 'trivia', 'ritual quiz', 'quiz night'],
+    content: `Quiz Events: Multiple quiz events throughout the week. WEDNESDAY 6:00 PM - Ritual Quiz about Ritual (hosted by @Big Meech, @stranger). TUESDAY 6:00 PM - Quiz About Ritual Network (hosted by @Megatron, @JT). THURSDAY 11:00 PM - Ritual Rumble: Ultimate Quiz Clash (hosted by @alybadbad, @KIMCHI). Test your knowledge!`,
+    priority: 7,
+    source: 'ritual-events',
+  },
+
+  // ==========================================
+  // COMMUNITY GLOSSARY & SLANG
+  // ==========================================
+  {
+    id: 'glossary-terms',
+    category: 'glossary',
+    keywords: ['glossary', 'terms', 'slang', 'vocabulary', 'what does', 'meaning', 'definition'],
+    content: `Ritual Community Glossary: GRITUAL - Community greeting ("Gritual mate!", "Gritual champ!"). NPC - Non-Player Character, refers to bot army from NPC War, or playfully insults mindless behavior. SYN/SYNS - Sins, spelled differently (Confessions/Blessings of Syn channels). YAPPING - Active chatting/contributing (positive connotation). BLESSINGS - Positive reputation points via Vestibule. CURSES - Negative reputation points via Vestibule. WEN - "When" meme (wen token?, wen airdrop?). PLEDGE - Committing to Ritual (Blessings of Syn), earning Ascendant role. THE VOID - Time before Ritual existed. FORERUNNERS made it through the void. DUNCE - Humorous insult role for those "without intelligence." MAGE - Exceptional creative contributor (artist/content creator). RADIANT - Highest community role (Radiant Ritualist), super rare. RITTY - Loyal long-term member with Telegram access. RITTY BITTY - Baby ritualist growing in the community. HARMONIC - Equal blessings and curses. EZ - "Easy" used sarcastically after games.`,
+    priority: 8,
+    source: 'ritual-glossary',
+  },
+  {
+    id: 'glossary-gritual',
+    category: 'glossary',
+    keywords: ['gritual', 'greeting', 'hello', 'hi', 'say'],
+    content: `GRITUAL: The Ritual community greeting. Used to say hello to fellow community members. Examples: "Gritual mate!", "Gritual champ!", "Gritual everyone!" Originated from combining "great" + "ritual". Used ubiquitously in the #gritual channel and throughout the server.`,
+    priority: 7,
+    source: 'ritual-glossary',
+  },
+  {
+    id: 'glossary-npc',
+    category: 'glossary',
+    keywords: ['npc', 'bot', 'npc war', '21 day challenge'],
+    content: `NPC (Non-Player Character): Refers to the bot army that attacked Ritual during the NPC War / 21-day challenge. Also used playfully to insult someone acting mindlessly. After the war, community had to revamp roles. Only Zealots retained Ritualist role. Kash was transformed into an NPC leader during the battle.`,
+    priority: 7,
+    source: 'ritual-glossary',
+  },
+  {
+    id: 'glossary-yapping',
+    category: 'glossary',
+    keywords: ['yapping', 'yap', 'chat', 'active', 'contributing'],
+    content: `YAPPING: Active chatting/contributing in the community. Has a POSITIVE connotation in Ritual (unlike general internet usage). Being called a "good yapper" means you're an engaged, valuable community member who contributes to discussions.`,
+    priority: 6,
+    source: 'ritual-glossary',
+  },
+  {
+    id: 'glossary-void',
+    category: 'glossary',
+    keywords: ['void', 'the void', 'before ritual', 'forerunner'],
+    content: `THE VOID: The time before Ritual existed. Forerunners (OGs from earliest days) "made it through the void." Represents the empty, formless time before the Ritual community was formed. Making it through the void is a badge of honor for early community members.`,
+    priority: 7,
+    source: 'ritual-glossary',
+  },
+
+  // ==========================================
+  // UPDATED ROLE SYSTEM (Post-NPC War)
+  // ==========================================
+  {
+    id: 'roles-new-system',
+    category: 'roles',
+    keywords: ['role revamp', 'new roles', 'role system', 'npc war roles'],
+    content: `Ritual Role System Revamp: After NPC War and 21-day challenge, Ritual underwent full Role Revamp. Only Zealots retained Ritualist role. New system designed to protect against future bot invasions. Active Roles: Radiant Ritualist (super rare, community leaders), Ritualist (followers and active yappers), Ritty (long-term loyal, Telegram access), Ritty Bitty (baby Ritualist, growing), Ascendant (pledged to Ritual, first step), Initiate (new members), Dunce (without intelligence), Node Runner (early operators, no longer available), Forerunner (from before Ritual, limited), Mage (exceptional artists/writers), Cursed (more curses than blessings), Blessed (more blessings than curses), Harmonic (equal blessings/curses).`,
+    priority: 9,
+    source: 'ritual-roles-revamp',
+  },
+  {
+    id: 'roles-ascendant',
+    category: 'roles',
+    keywords: ['ascendant', 'ascendant role', 'pledge', 'first step'],
+    content: `@Ascendant Role: You have pledged to Ritual. This is the start of your community journey, your first step. Obtained by pledging in the Blessings of Syn channel. The entry-level role for committed community members.`,
+    priority: 7,
+    source: 'ritual-roles',
+  },
+  {
+    id: 'roles-forerunner',
+    category: 'roles',
+    keywords: ['forerunner', 'og', 'early member', 'before ritual'],
+    content: `@Forerunner Role: From the time before Ritual. A limited number made it through the void. Given to early community members who were present before the current Ritual community formed. Extremely rare and prestigious role marking the true OGs.`,
+    priority: 8,
+    source: 'ritual-roles',
+  },
+
+  // ==========================================
+  // MODERATOR & TEAM CONTACTS
+  // ==========================================
+  {
+    id: 'team-contacts-twitter',
+    category: 'team',
+    keywords: ['twitter', 'x', 'contact', 'social media', 'team twitter'],
+    content: `Ritual Team X (Twitter) Handles: Josh - @joshsimenhoff, Stefan - @0xMadScientist, Jez - @Jez_Cryptoz, Dunken - @dunken9718, Majorproject - @Majorproject5, Flash - @cryptooflashh, CoUnity_ - @CoUnity_, Hinata (Event Manager) - @nft_hinata_eth, Kash (Event Manager) - @Kash_060, Wally (Foundation) - @0x_HalfMoonKid, Valentina Alexander (Foundation) - @BunsDev, Elif Hilal (Foundation) - @elifhilalumucu, Akilesh Potti (Foundation) - @akileshpotti, Saneel (Foundation) - @sanlsrni, Niraj (Foundation) - @niraj, ArshanKhanifar (Foundation) - @ArshanKhanifar, The Cutest Engineer (Foundation) - @0xQTpie.`,
+    priority: 7,
+    source: 'ritual-team-contacts',
+  },
+  {
+    id: 'team-event-managers',
+    category: 'team',
+    keywords: ['event manager', 'hinata', 'kash', 'who manages events', 'event hosts'],
+    content: `Ritual Event Managers: @Hinata (X: @nft_hinata_eth) and @Kash (X: @Kash_060). They coordinate and manage the weekly community events including quizzes, game nights, karaoke, tournaments, and workshops. Contact them for event-related inquiries or to host community events.`,
+    priority: 8,
+    source: 'ritual-team',
+  },
+  {
+    id: 'team-foundation',
+    category: 'team',
+    keywords: ['foundation team', 'who is foundation', 'foundation members'],
+    content: `Ritual Foundation Team: Wally (@0x_HalfMoonKid), Valentina Alexander (@BunsDev), Elif Hilal (@elifhilalumucu), Akilesh Potti (@akileshpotti), Saneel (@sanlsrni), Niraj (@niraj), ArshanKhanifar (@ArshanKhanifar), The Cutest Engineer (@0xQTpie). Foundation team members help with operations, development, and strategic direction of Ritual.`,
+    priority: 7,
+    source: 'ritual-team',
+  },
+
+  // ==========================================
+  // ADDITIONAL ROLE DETAILS
+  // ==========================================
+  {
+    id: 'roles-node-runner',
+    category: 'roles',
+    keywords: ['node runner', 'node runner role', 'early node'],
+    content: `@Node Runner Role: Historical role for early infrastructure operators. NO LONGER AVAILABLE - this role was for early node runners who helped bootstrap Ritual's network. New node operators cannot obtain this role as it's been discontinued. Holders of this role are early adopters from Ritual's initial infrastructure phase.`,
+    priority: 6,
+    source: 'ritual-roles',
+  },
+  {
+    id: 'roles-harmonic',
+    category: 'roles',
+    keywords: ['harmonic', 'harmonic role', 'balanced'],
+    content: `@Harmonic Role: A balanced state — equal blessings and curses. Members with this role have given and received the same number of blessings and curses in the Vestibule channel. Represents equilibrium in community reputation.`,
+    priority: 6,
+    source: 'ritual-roles',
+  },
+  {
+    id: 'roles-blessed-cursed',
+    category: 'roles',
+    keywords: ['blessed', 'cursed', 'blessing', 'cursing'],
+    content: `@Blessed and @Cursed Roles: @Blessed - Members who have received more blessings than curses from fellow community members via Vestibule. @Cursed - Members who have received more curses than blessings. These roles reflect community reputation and are dynamic based on blessings/curses received.`,
+    priority: 6,
+    source: 'ritual-roles',
+  },
 ];
 
 export default RITUAL_COMMUNITY_KNOWLEDGE;
