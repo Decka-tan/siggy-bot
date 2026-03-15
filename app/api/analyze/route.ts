@@ -3,7 +3,7 @@ import { getUserChecker } from '@/lib/user-checker';
 
 /**
  * UNIFIED ANALYSIS API
- * Now uses the same UserChecker as the Discord bot for 100% consistency!
+ * Uses UserChecker for consistent contributor analysis
  */
 export async function POST(req: NextRequest) {
   try {
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
     const analysis = await checker.getAIAnalysis(contributorId);
     const user = checker.findUser(contributorId);
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       analysis,
       user
     });
