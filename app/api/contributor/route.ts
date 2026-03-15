@@ -11,6 +11,7 @@ interface ContributorData {
   userId: string;
   username: string;
   displayName: string;
+  avatar?: string;
   messageCount: number;
   firstPost: string;
   lastPost: string;
@@ -54,6 +55,7 @@ function loadData(): ExtractionData {
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
+          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
           messageCount: 0, // Will be updated from activity data
           firstPost: m.joinedAt?.split('T')[0] || '',
           lastPost: new Date().toISOString().split('T')[0],
@@ -136,7 +138,7 @@ export async function GET(req: NextRequest) {
             userId: m.userId,
             username: m.username,
             displayName: m.displayName,
-            avatar: `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+            avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
             messageCount: m.messageCount || 0,
           }))
         });
@@ -152,7 +154,7 @@ export async function GET(req: NextRequest) {
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
-          avatar: `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
           messageCount: m.messageCount || 0,
         }));
 
