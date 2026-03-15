@@ -199,7 +199,8 @@ async function getStats(userId: string, altIdentifier: string, contributor: Cont
 
   // If still not found, try to match by username from contributor
   if (!stats || (stats.globalMessages === 0 && stats.eventsCount === 0)) {
-    stats = Object.values(statsMap).find(s => s.username === contributor.username);
+    const foundStats = Object.values(statsMap).find(s => s.username === contributor.username);
+    if (foundStats) stats = foundStats;
   }
 
   return {
