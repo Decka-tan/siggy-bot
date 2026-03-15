@@ -1709,7 +1709,7 @@ export default function ChatPage() {
                                 placeholder="What will you say? (type /check to analyze username)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
-                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/20 ring-2 ring-accent/50 border-accent' : 'bg-black/40'}`}
+                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/50 ring-2 ring-accent border-accent' : 'bg-black/40'}`}
                                 style={{ minHeight: '40px', height: 'auto' }}
                               />
                             <button
