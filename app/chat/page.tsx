@@ -449,10 +449,10 @@ export default function ChatPage() {
     const timer = setTimeout(async () => {
       setIsSearchingContributors(true);
       try {
-        const res = await fetch(`/api/contributor?q=${encodeURIComponent(query)}`);
+        const res = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
         const data = await res.json();
         if (data.success) {
-          setContributorResults(data.contributors.slice(0, 5));
+          setContributorResults(data.contributors.slice(0, 8));
           setShowContributorDropdown(data.contributors.length > 0);
         }
       } catch (error) {
@@ -1756,37 +1756,46 @@ export default function ChatPage() {
                                 <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content) }} />
                                 
                                 {message.contributor && (
-                                  <div className="mt-3 p-4 bg-black/40 border border-accent/30 rounded-xl overflow-hidden shadow-2xl relative group">
-                                    <div className="absolute top-0 right-0 p-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                                      <Trophy className="w-8 h-8 text-accent/20" />
+                                  <motion.div 
+                                    initial={{ scale: 0.95, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    className="mt-3 p-5 bg-gradient-to-br from-surface to-accent/5 border border-accent/40 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(255,215,0,0.15)] relative group"
+                                  >
+                                    <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500">
+                                      <Trophy className="w-12 h-12 text-accent" />
                                     </div>
                                     
-                                    <div className="flex items-center gap-4 mb-4 relative z-10">
-                                      <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-accent/50 shadow-[0_0_15px_rgba(255,215,0,0.3)]">
+                                    <div className="flex items-center gap-5 mb-5 relative z-10">
+                                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-accent shadow-[0_0_20px_rgba(255,215,0,0.4)]">
                                         <img src={message.contributor.avatar} alt={message.contributor.username} className="w-full h-full object-cover" />
                                       </div>
                                       <div>
-                                        <h4 className="font-display text-accent text-lg leading-tight uppercase tracking-wider">
+                                        <h4 className="font-display text-accent text-xl leading-tight uppercase tracking-widest font-bold">
                                           {message.contributor.displayName}
                                         </h4>
-                                        <div className="text-[10px] font-mono text-text-secondary">
-                                          @{message.contributor.username} • {message.contributor.userId}
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-[10px] font-mono text-text-secondary bg-white/5 px-2 py-0.5 rounded">
+                                            @{message.contributor.username}
+                                          </span>
+                                          <span className="text-[9px] font-mono text-accent uppercase tracking-tighter opacity-70">
+                                            ID: {message.contributor.userId}
+                                          </span>
                                         </div>
                                       </div>
                                     </div>
 
-                                    <div className="grid grid-cols-3 gap-2 mb-4">
-                                      <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
-                                        <div className="text-[10px] text-text-secondary uppercase mb-1">Messages</div>
-                                        <div className="font-mono text-accent text-sm">{message.contributor.globalMessages || message.contributor.globalMessages === 0 ? message.contributor.globalMessages : '...'}</div>
+                                    <div className="grid grid-cols-3 gap-3 mb-5">
+                                      <div className="bg-black/20 rounded-xl p-3 text-center border border-white/5 hover:border-accent/30 transition-colors">
+                                        <div className="text-[10px] text-text-secondary uppercase mb-1 font-mono tracking-tighter">Messages</div>
+                                        <div className="font-mono text-accent text-lg font-bold">{(message.contributor.globalMessages ?? 0).toLocaleString()}</div>
                                       </div>
-                                      <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
-                                        <div className="text-[10px] text-text-secondary uppercase mb-1">Contributions</div>
-                                        <div className="font-mono text-accent text-sm">{message.contributor.contributionsCount || message.contributor.contributionsCount === 0 ? message.contributor.contributionsCount : '...'}</div>
+                                      <div className="bg-black/20 rounded-xl p-3 text-center border border-white/5 hover:border-accent/30 transition-colors">
+                                        <div className="text-[10px] text-text-secondary uppercase mb-1 font-mono tracking-tighter">Contribs</div>
+                                        <div className="font-mono text-accent text-lg font-bold">{(message.contributor.contributionsCount ?? 0).toLocaleString()}</div>
                                       </div>
-                                      <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5">
-                                        <div className="text-[10px] text-text-secondary uppercase mb-1">Events</div>
-                                        <div className="font-mono text-accent text-sm">{message.contributor.eventsCount || message.contributor.eventsCount === 0 ? message.contributor.eventsCount : '...'}</div>
+                                      <div className="bg-black/20 rounded-xl p-3 text-center border border-white/5 hover:border-accent/30 transition-colors">
+                                        <div className="text-[10px] text-text-secondary uppercase mb-1 font-mono tracking-tighter">Events</div>
+                                        <div className="font-mono text-accent text-lg font-bold">{(message.contributor.eventsCount ?? 0).toLocaleString()}</div>
                                       </div>
                                     </div>
 
@@ -1806,7 +1815,7 @@ export default function ChatPage() {
                                         MEMBER SINCE {new Date(message.contributor.joinedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }).toUpperCase()}
                                       </div>
                                     )}
-                                  </div>
+                                  </motion.div>
                                 )}
                               </div>
                             )}
