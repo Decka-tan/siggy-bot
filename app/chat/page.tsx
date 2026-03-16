@@ -911,31 +911,31 @@ export default function ChatPage() {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle filtered commands navigation first
-    const filteredCommands = availableCommands.filter(cmd => cmd.name.includes(commandQuery));
-    
-    if (showCommandDropdown && filteredCommands.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedCommandIndex(prev => (prev + 1) % filteredCommands.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedCommandIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
-        return;
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const cmd = filteredCommands[selectedCommandIndex];
-        setInput(`/${cmd.name} `);
-        setShowCommandDropdown(false);
-        setSelectedCommandIndex(0);
-        return;
-      }
-      if (e.key === 'Escape') {
-        setShowCommandDropdown(false);
-        return;
+    if (showCommandDropdown) {
+      const currentFilteredCommands = availableCommands.filter(cmd => cmd.name.includes(commandQuery));
+      if (currentFilteredCommands.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSelectedCommandIndex(prev => (prev + 1) % currentFilteredCommands.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSelectedCommandIndex(prev => (prev - 1 + currentFilteredCommands.length) % currentFilteredCommands.length);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const cmd = currentFilteredCommands[selectedCommandIndex];
+          setInput(`/${cmd.name} `);
+          setShowCommandDropdown(false);
+          setSelectedCommandIndex(0);
+          return;
+        }
+        if (e.key === 'Escape') {
+          setShowCommandDropdown(false);
+          return;
+        }
       }
     }
 
@@ -1670,12 +1670,12 @@ export default function ChatPage() {
                           <div className="relative">
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
                               <div className="flex flex-col gap-1 items-start mt-2">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-display text-sm uppercase tracking-widest text-accent">SIGGY</span>
-                                  <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
-                                </div>
-                                <div className="bg-surface/40 border border-border p-4 rounded-2xl rounded-tl-none shadow-[0_0_20px_rgba(255,215,0,0.05)]">
-                                  <p className="text-sm font-mono text-neutral-400 italic mb-3">
+                                <div className="bg-surface border border-border p-4 rounded-2xl rounded-tl-none shadow-[0_0_20px_rgba(255,215,0,0.05)] w-full">
+                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/10">
+                                    <span className="font-display text-xs uppercase tracking-widest text-accent">SIGGY</span>
+                                    <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
+                                  </div>
+                                  <p className="text-sm font-mono text-neutral-400 italic mb-4">
                                     {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
                                   </p>
                                   <div className="flex gap-1.5 ml-1">
@@ -2215,9 +2215,9 @@ export default function ChatPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2.5 border-b border-border/20 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
                                 <Terminal className="w-3.5 h-3.5" />
                                 Matching Commands
@@ -2233,7 +2233,7 @@ export default function ChatPage() {
                                     setSelectedCommandIndex(0);
                                   }}
                                   onMouseEnter={() => setSelectedCommandIndex(idx)}
-                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
                                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-border/40'}`}>
                                     <span className="font-display font-black text-lg">/</span>
