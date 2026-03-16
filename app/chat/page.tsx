@@ -2087,7 +2087,7 @@ export default function ChatPage() {
                                   </button>
                                 )}
                                 <div className="ml-auto flex items-center gap-1.5 px-2">
-                                  <span className="text-[8px] sm:text-[9px] font-mono text-text-secondary/60 border border-white/10 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-text-secondary/60 border border-white/10 px-1.5 py-0.5 rounded truncate max-w-[60px]">
                                     HISTORY: {Math.floor(index / 2) + 1}/{Math.floor(activeConversation.messages.length / 2)}
                                   </span>
                                   {index === activeConversation.messages.length - 1 && (
