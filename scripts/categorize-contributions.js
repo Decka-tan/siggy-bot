@@ -31,20 +31,24 @@ const ARCHETYPES = {
 
 function analyzeUser(user) {
   const samples = user.samples || [];
-  const text = samples.join(' ').toLowerCase();
+  const text = samples.join(' ');
+  const textLower = text.toLowerCase();
   
   const breakdown = {
     topLinks: [],
-    keywords: [],
-    archetype: 'Inquisitor',
-    detectedStyle: 'General'
+    categories: [],
+    archetype: 'INITIATE',
+    detectedStyle: 'General',
+    qualityScore: 0,
+    projects: [],
+    impactStatement: ''
   };
 
   // 1. Link Analysis
   const linkRegex = /(?:https?:\/\/)?(?:www\.)?([^\/\s]+)/g;
   const domains = new Map();
   let match;
-  while ((match = linkRegex.exec(text)) !== null) {
+  while ((match = linkRegex.exec(textLower)) !== null) {
     const domain = match[1];
     domains.set(domain, (domains.get(domain) || 0) + 1);
   }
@@ -52,48 +56,64 @@ function analyzeUser(user) {
     .sort((a, b) => b[1] - a[1])
     .map(e => e[0]);
 
-  // 2. Keyword/Category Analysis
-  const categoriesFound = new Set();
-  if (text.includes('cura')) categoriesFound.add('Cura');
-  if (text.includes('x.com') || text.includes('twitter')) categoriesFound.add('Twitter/X');
-  if (text.includes('github') || text.includes('code')) categoriesFound.add('Technical');
-  if (text.includes('medium') || text.includes('article') || text.includes('mirror')) categoriesFound.add('Writing');
-  if (text.includes('video') || text.includes('youtube')) categoriesFound.add('Video');
+  // 2. Project & Keyword Detection
+  const projects = new Set();
+  if (textLower.match(/cura|deployment|deploy/)) projects.add('Cura Deployment');
+  if (textLower.match(/ritual art|design|drawing|graphic/)) projects.add('Ritual Art');
+  if (textLower.match(/guide|tutorial|documentation|how to/)) projects.add('Educational Content');
+  if (textLower.match(/translation|translate|indonesian|chinese|japanese/)) projects.add('Community Translation');
+  if (textLower.match(/ritual forge|smart contract|github/)) projects.add('Technical Development');
+  if (textLower.match(/twitter|x\.com|tweet|share/)) projects.add('Social Advocacy');
   
-  breakdown.categories = Array.from(categoriesFound);
+  breakdown.projects = Array.from(projects);
 
-  // 3. Archetype Determination
+  // 3. Quality & Impact Scoring
+  let score = 0;
+  if (user.count > 100) score += 5;
+  if (samples.some(s => s.length > 300)) score += 10; // Long-form content
+  if (breakdown.projects.length > 2) score += 5;
+  if (textLower.match(/http/)) score += 2; // Real links
+  
+  breakdown.qualityScore = score;
+
+  // 4. Archetype Determination
   let maxScore = -1;
-  let bestArchetype = 'Inquisitor';
+  let bestArchetype = 'INITIATE';
 
   for (const [name, config] of Object.entries(ARCHETYPES)) {
-    let score = 0;
+    let aScore = 0;
     config.keywords.forEach(kw => {
-      if (text.includes(kw)) score += 2;
+      if (textLower.includes(kw)) aScore += 2;
     });
     
-    // Weight based on link types
-    if (name === 'AMBASSADOR' && breakdown.topLinks.some(l => l.includes('x.com') || l.includes('twitter'))) score += 5;
-    if (name === 'CURA_SPECIALIST' && breakdown.topLinks.some(l => l.includes('cura.network'))) score += 5;
+    if (name === 'AMBASSADOR' && breakdown.topLinks.some(l => l.includes('x.com') || l.includes('twitter'))) aScore += 5;
+    if (name === 'CURA_SPECIALIST' && breakdown.topLinks.some(l => l.includes('cura.network'))) aScore += 5;
 
-    if (score > maxScore) {
-      maxScore = score;
+    if (aScore > maxScore) {
+      maxScore = aScore;
       bestArchetype = name;
     }
   }
 
-  // If no clear evidence, but has many messages
-  if (maxScore <= 0 && user.count > 10) {
-    bestArchetype = 'STEADY_CONTRIBUTOR';
-  } else if (maxScore <= 0) {
-    bestArchetype = 'INITIATE';
-  }
-
+  if (maxScore <= 0 && user.count > 10) bestArchetype = 'STEADY_CONTRIBUTOR';
   breakdown.archetype = bestArchetype;
   
-  // 4. Style Insight
+  // 5. Impact Statement Generation
+  if (breakdown.archetype === 'AMBASSADOR') {
+    breakdown.impactStatement = `Vocal advocate amplifying Ritual pulse through ${breakdown.topLinks[0] || 'social channels'}.`;
+  } else if (breakdown.archetype === 'DEVELOPER') {
+    breakdown.impactStatement = `Technical builder contributing to the Ritual Forge infrastructure.`;
+  } else if (breakdown.projects.includes('Ritual Art')) {
+    breakdown.impactStatement = `Creative force visualizing the Ritual aesthetic.`;
+  } else if (user.count > 50) {
+    breakdown.impactStatement = `Dedicated Ritualist with consistent high-volume engagement.`;
+  } else {
+    breakdown.impactStatement = `Emerging contributor exploring the Ritual ecosystem.`;
+  }
+
+  // 6. Style Insight
   if (samples.some(s => s.length > 200)) breakdown.detectedStyle = 'Detailed/Explainer';
-  else if (samples.every(s => s.startsWith('http'))) breakdown.detectedStyle = 'Link-centric';
+  else if (samples.length > 0 && samples.every(s => s.startsWith('http'))) breakdown.detectedStyle = 'Link-centric';
   else breakdown.detectedStyle = 'Brief/Mixed';
 
   return breakdown;

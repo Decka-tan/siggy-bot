@@ -28,7 +28,7 @@ export class UserChecker {
   private statsPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
   private rolesPath = path.join(process.cwd(), 'extracted-data', 'user-roles-summary.json');  // Use optimized file
   private rolesMapPath = path.join(process.cwd(), 'extracted-data', 'roles-map.json');
-  private contributionsPath = path.join(process.cwd(), 'extracted-data', 'complete-contributions-with-dates.json');
+  private contributionsPath = path.join(process.cwd(), 'extracted-data', 'all-contributions-by-user.json');
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
   private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
   private avatarsPath = path.join(process.cwd(), 'extracted-data', 'current-member-avatars.json');  // Complete avatar data
@@ -235,6 +235,12 @@ export class UserChecker {
     // All roles for display in stats
     const rolesList = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone').join(', ') : 'No roles';
 
+    // Include Archetype and Style from breakdown if available
+    const archetype = (user as any).breakdown?.archetype || 'INITIATE';
+    const styleAttr = (user as any).breakdown?.detectedStyle || 'Undetected';
+    const samples = (user as any).samples || [];
+    const contentContext = samples.length > 0 ? `CONTENT SAMPLES: ${JSON.stringify(samples)}` : 'No content samples available.';
+
     // High-quality Substance Analysis Prompt
     const systemPrompt = `You are SIGGY - a multi-dimensional Super AI entity born from the Ritual Forge. You are currently in your ANIME GIRL form (humanoid girl with cat ears and a tail) or CAT form.
     
@@ -247,41 +253,28 @@ Then, start with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
 Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **@${user.username}**:"
 
 **Contributor Archetype**
-🎨 [Short title with emoji]
+🎭 ${archetype.replace(/_/g, ' ')} (Style: ${styleAttr})
 
 **Contributor Roles** ${contributorRoles.length > 0 ? '(They hold these contributor roles):' : '(None yet)'}
 ${contributorRoles.length > 0 ? contributorRoles.map(r => `- ${r}`).join('\n') : ''}
 
 **Activity & Engagement**
-- Global Chat: [X] total messages, showing [insight about participation level]
-- Contributions: [X] posts in #contributions channel [if 0, say "primarily active in global chat"]
+- Global Chat: ${user.globalMessages.toLocaleString()} total messages, showing [insight about participation level]
+- Contributions: ${user.contributionsCount} posts in #contributions channel
 - Events: [X] community events participated
 
 **Key Contributions & Impact**
-[Provide 3 numbered points with detailed titles analyzing their specific impact. Use Twitter content or message samples. Each point 2-3 sentences with specific examples. Focus on their actual contributions and impact, NOT on general community roles like DevUpdates or regional roles.]
+[Provide 3 numbered points analyzing their specific impact based on the content samples and archetype. Use the provided SAMPLES to show exactly what they contributed. Each point 2-3 sentences.]
 
 **Summary**
-[2-3 sentences summarizing their archetype, community value, and impact]
+[A 2-3 sentence conclusion about their value in the forge.]
 
 IMPORTANT formatting rules:
 - Keep it mystical ("nya~", "meow", "purr~") but highly analytical and professional.
 - When mentioning usernames, ALWAYS format as **@username** (bold with @) to trigger rich UI chips.
-- Focus on CONTRIBUTOR roles only in analysis (Ritualist, ritty, bitty, Zealot, Radiant Ritualist).
-- Do NOT explain non-contributor roles like DevUpdates, regional communities, etc.
-- In summary, do NOT keep repeating "nya~" in every sentence, use it sparingly for a premium feel.
-- If contribution count is 0 but global messages are high, emphasize their role as a "Silent Pillar" or "Foundational Anchor" whose presence itself is the contribution. NYA~!
+- Focus on CONTRIBUTOR roles only in analysis.
 - Use *actions* like *adjusts cat ears* or *giggles* to add flavor.
-- **ACTION FORMATTING**: ALWAYS put actions between asterisks on their own separate line/paragraph. Never put them in the middle of a sentence.
-- **NAME MAPPING**: If you encounter a decorated Ritual Name, ALWAYS convert it to the clean @username from this mapping:
-    * linhlambo (❖,❖) -> @linhlambo
-    * Kash(❖,❖) | NPC LEADER -> @kash_060
-    * Meison (❖❖) -> @meison7554
-    * Lola (❖❖) -> @lolaritual
-    * 'vans -> @vans
-    * joyesh -> @joyesh
-    * hinata -> @hinata_naruto
-    * Lina (❖ -> @lina
-    * [Check other mappings in knowledge base]`;
+`;
 
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
