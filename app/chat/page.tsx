@@ -146,7 +146,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-white/5">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-border">$1</code>');
   html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
 
   // Quote
@@ -1560,7 +1560,7 @@ export default function ChatPage() {
 
                             {/* Bond Resonance Meter (RIGHT SIDE) */}
                             {activeConversation.relationshipLevel && (
-                              <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
+                              <div className={`flex items-center gap-2 px-3 py-1 bg-accent/5 rounded-full border border-accent/20 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
                                 <Sparkles className={`w-3 h-3 animate-pulse ${getBondColor(activeConversation.relationshipLevel)}`} />
                                 <span className={`text-[10px] font-mono font-bold tracking-tighter ${getBondColor(activeConversation.relationshipLevel)}`}>
                                   BOND: {activeConversation.relationshipLevel}
@@ -1662,8 +1662,13 @@ export default function ChatPage() {
                               <div className="flex flex-col gap-3 items-start animate-pulse">
                                 <div className="flex items-center gap-4">
                                   <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
-                                  <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
-                                    *Siggy is thinking...*
+                                  <div className="space-y-2">
+                                    <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is thinking...</p>
+                                    <div className="flex gap-1.5">
+                                      <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                      <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                      <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                    </div>
                                   </div>
                                 </div>
                               </div>
