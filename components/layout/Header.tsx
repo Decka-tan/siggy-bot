@@ -222,9 +222,9 @@ export function Header() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative bg-black/90 backdrop-blur-2xl border border-white/20 p-6 rounded-2xl shadow-2xl w-full max-w-sm text-white max-h-[85vh] overflow-y-auto signature-scroll pointer-events-auto"
+              className="relative bg-black/90 backdrop-blur-2xl border border-border p-6 rounded-2xl shadow-2xl w-full max-w-sm text-white max-h-[85vh] overflow-y-auto signature-scroll pointer-events-auto"
             >
-            <div className="flex justify-between items-center mb-6 border-b border-white/20 pb-3">
+            <div className="flex justify-between items-center mb-6 border-b border-border pb-3">
               <h3 className="font-display text-xl tracking-wider text-accent text-left">Settings</h3>
               <button 
                 onClick={() => setShowSettings(false)}
@@ -263,7 +263,7 @@ export function Header() {
                   </div>
 
                   {/* BGM Toggle */}
-                  <div className="flex items-start justify-between pt-2 border-t border-white/10">
+                  <div className="flex items-start justify-between pt-2 border-t border-border">
                     <div>
                       <label className="text-sm font-bold block mb-1">Background Music</label>
                     </div>
@@ -304,7 +304,7 @@ export function Header() {
                         <button
                           key={speed.label}
                           onClick={() => setTextSpeed(speed.value)}
-                          className={`py-1.5 px-1 text-[10px] sm:text-xs font-mono rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-border text-accent' : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'}`}
+                          className={`py-1.5 px-1 text-[10px] sm:text-xs font-mono rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-border text-accent' : 'bg-black/40 border-border text-gray-400 hover:border-accent/30'}`}
                         >
                           {speed.label}
                         </button>

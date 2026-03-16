@@ -578,6 +578,8 @@ export default function ChatPage() {
       setActiveConversationId(newConv.id);
     }
 
+    if (isLoading || isAnalyzing) return;
+    
     setIsLoading(true);
     setIsAnalyzing(true);
     setAnalyzingContributor(contributor.userId);
@@ -1647,18 +1649,18 @@ export default function ChatPage() {
                             
                             {/* Starting Topic Buttons for VN Mode */}
                             <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
-                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent/40 rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
                                  <BookOpen className="w-3 h-3" />
                                  What are your cosmic origins?
                                </button>
-                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
                                <Sparkles className="w-3 h-3" />
                                Tell me a weird dimension you visited.
                              </button>
-                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
                                <MessageSquare className="w-3 h-3" />
                                What is your favorite Earth food?
                              </button>
@@ -1737,18 +1739,18 @@ export default function ChatPage() {
                               
                               {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
                                 <div className="grid grid-cols-2 gap-3 mb-2">
-                                  <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                                  <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent/40 rounded-lg transition-all text-left">
                                     {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                   </button>
-                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
                                      <BookOpen className="w-3 h-3" />
                                      What are your cosmic origins?
                                    </button>
-                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
                                      <Sparkles className="w-3 h-3" />
                                      Tell me a weird dimension you visited.
                                    </button>
-                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
                                      <MessageSquare className="w-3 h-3" />
                                      What is your favorite Earth food?
                                    </button>
@@ -1829,9 +1831,9 @@ export default function ChatPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100] pointer-events-auto"
                                   >
-                                    <div className="p-2 border-b border-border/10 bg-accent/5">
+                                    <div className="p-2 border-b border-border bg-accent/5">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Terminal className="w-3 h-3" />
                                         Matching Commands
@@ -1847,7 +1849,7 @@ export default function ChatPage() {
                                             setInput(`/${cmd.name} `);
                                             setShowCommandDropdown(false);
                                           }}
-                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-border/10 last:border-0"
+                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-border last:border-0"
                                         >
                                           <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs font-bold text-accent">/{cmd.name}</span>
@@ -1868,9 +1870,9 @@ export default function ChatPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100] pointer-events-auto"
                                   >
-                                    <div className="p-2 border-b border-border/10 bg-accent/5 flex items-center justify-between">
+                                    <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Search className="w-3 h-3" />
                                         Select Contributor
@@ -1884,9 +1886,9 @@ export default function ChatPage() {
                                         <button
                                           key={contributor.userId}
                                           onClick={() => analyzeContributor(contributor)}
-                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-border/10 last:border-0"
+                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-border last:border-0"
                                         >
-                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-border/10 shrink-0">
+                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-border shrink-0">
                                             <img
                                               src={contributor.avatar}
                                               alt={contributor.username}
@@ -2140,10 +2142,10 @@ export default function ChatPage() {
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border/40 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                            exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100] pointer-events-auto"
                           >
-                            <div className="p-2 border-b border-border/20 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                 <Search className="w-3 h-3" />
                                 Select Contributor
@@ -2156,11 +2158,11 @@ export default function ChatPage() {
                               {contributorResults.map((contributor, idx) => (
                                 <button
                                   key={contributor.userId}
-                                  onClick={() => analyzeContributor(contributor)}
+                                  onClick={() => !isLoading && analyzeContributor(contributor)}
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border/20'}`}>
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}
