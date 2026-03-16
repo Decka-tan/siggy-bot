@@ -1710,7 +1710,7 @@ export default function ChatPage() {
                             className="overflow-hidden"
                           >
                             <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-4">
-                              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                              <div className="flex items-center justify-between pb-3 border-b border-accent/20 mb-4">
                                 <div className="font-mono text-[10px] text-text-secondary">
                                   Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
                                 </div>
@@ -1812,7 +1812,7 @@ export default function ChatPage() {
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-white/5 bg-accent/5">
+                                    <div className="p-2 border-b border-accent/20 bg-accent/5">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Terminal className="w-3 h-3" />
                                         Matching Commands
@@ -1828,7 +1828,7 @@ export default function ChatPage() {
                                             setInput(`/${cmd.name} `);
                                             setShowCommandDropdown(false);
                                           }}
-                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-accent/10 last:border-0"
                                         >
                                           <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs font-bold text-accent">/{cmd.name}</span>
@@ -1851,7 +1851,7 @@ export default function ChatPage() {
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                                    <div className="p-2 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Search className="w-3 h-3" />
                                         Select Contributor
@@ -1865,7 +1865,7 @@ export default function ChatPage() {
                                         <button
                                           key={contributor.userId}
                                           onClick={() => analyzeContributor(contributor)}
-                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-accent/10 last:border-0"
                                         >
                                           <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
                                             <img
@@ -1892,7 +1892,7 @@ export default function ChatPage() {
                                 )}
                               </AnimatePresence>
 
-                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
+                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-accent/20 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
                               <textarea
