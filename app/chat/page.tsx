@@ -1650,14 +1650,17 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
-                                 Cosmic origins
+                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                 <BookOpen className="w-3 h-3" />
+                                 What are your cosmic origins?
                                </button>
-                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
-                               Weird dimensions
+                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                               <Sparkles className="w-3 h-3" />
+                               Tell me a weird dimension you visited.
                              </button>
-                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
-                               Earth food
+                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                               <MessageSquare className="w-3 h-3" />
+                               What is your favorite Earth food?
                              </button>
                             </div>
                           </div>
@@ -1729,14 +1732,17 @@ export default function ChatPage() {
                                   <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                     {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                   </button>
-                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
-                                     Cosmic origins
+                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                     <BookOpen className="w-3 h-3" />
+                                     What are your cosmic origins?
                                    </button>
-                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
-                                     Weird dimensions
+                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                     <Sparkles className="w-3 h-3" />
+                                     Tell me a weird dimension you visited.
                                    </button>
-                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
-                                     Earth food
+                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                     <MessageSquare className="w-3 h-3" />
+                                     What is your favorite Earth food?
                                    </button>
                                 </div>
                               )}
@@ -2057,7 +2063,7 @@ export default function ChatPage() {
                           <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
                         <div className="flex flex-col gap-3 items-start animate-pulse mb-6">
-                          <div className="flex items-center gap-4 bg-surface border border-accent/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
+                          <div className="flex items-center gap-4 bg-surface border border-border/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
                             <div className="w-10 h-10 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                             <div className="space-y-2">
                               <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
@@ -2198,9 +2204,9 @@ export default function ChatPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-accent/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2.5 border-b border-border/20 bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
                                 <Terminal className="w-3.5 h-3.5" />
                                 Matching Commands
@@ -2216,9 +2222,9 @@ export default function ChatPage() {
                                     setSelectedCommandIndex(0);
                                   }}
                                   onMouseEnter={() => setSelectedCommandIndex(idx)}
-                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-accent/40'}`}>
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-border/40'}`}>
                                     <span className="font-display font-black text-lg">/</span>
                                   </div>
                                   <div className="flex-1 min-w-0">

@@ -943,7 +943,7 @@ export default function StoryModePage() {
                             onClick={() => jumpToChapter(ch)}
                             className={`w-full text-left px-5 py-4 rounded-xl font-mono text-sm transition-all ${
                               isUnlocked 
-                                ? 'bg-surface/50 border border-white/5 hover:border-accent/40 text-text-primary hover:bg-accent/10 hover:shadow-[0_0_20px_rgba(255,215,0,0.1)] hover:scale-[1.02]' 
+                                ? 'bg-surface/50 border border-white/5 hover:border-border/40 text-text-primary hover:bg-accent/10 hover:shadow-[0_0_20px_rgba(255,215,0,0.1)] hover:scale-[1.02]' 
                                 : 'bg-black/20 border border-transparent text-text-secondary/30 cursor-not-allowed hidden'
                             }`}
                           >
