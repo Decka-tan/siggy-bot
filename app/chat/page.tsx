@@ -132,21 +132,21 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/@([\w.]+)/g, (match, username) => {
     const data = contributorMap[username.toLowerCase()];
     if (data) {
-      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-border rounded-md px-1.5 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-4 h-4 rounded-full border border-border" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-1.5 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-4 h-4 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
     }
-    return `<span class="text-accent border border-border bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
+    return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
   });
 
   // Bold
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
   html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
 
-  // Italic (but not when part of ** already) - muted color for actions - INLINE
-  html = html.replace(/\*([^*]+)\*/g, '<span class="inline-block my-1 text-gray-400 italic">$1</span>');
+  // Italic (but not when part of ** already) - muted color for actions - FORCE BLOCK FOR ACTIONS
+  html = html.replace(/\*([^*]+)\*/g, '<div class="block my-1 text-text-secondary/60 italic text-[11px] leading-tight">* $1 *</div>');
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-border">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-white/5">$1</code>');
   html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
 
   // Quote
@@ -261,7 +261,6 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResearching, setIsResearching] = useState(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [contextInfo, setContextInfo] = useState<ContextInfo | null>(null);
   const [userAvatar, setUserAvatar] = useState<string | null>(() => {
@@ -560,7 +559,7 @@ export default function ChatPage() {
   // Analyze contributor with DeepSeek
   const analyzeContributor = async (contributor: ContributorSearchResult) => {
     let targetConvId = activeConversationId;
-
+    
     // Create conversation if none exists
     if (!targetConvId) {
       const newConv: Conversation = {
@@ -578,7 +577,6 @@ export default function ChatPage() {
       setActiveConversationId(newConv.id);
     }
 
-    setIsAnalyzing(true);
     setAnalyzingContributor(contributor.userId);
     setShowContributorDropdown(false);
     setContributorResults([]); // Clear results
@@ -691,7 +689,6 @@ export default function ChatPage() {
       }));
     } finally {
       setAnalyzingContributor(null);
-      setIsAnalyzing(false);
     }
   };
 
@@ -1258,7 +1255,7 @@ export default function ChatPage() {
                     onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                     autoFocus
-                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
+                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
                   />
                 ) : (
                   <div className="flex flex-col items-center">
@@ -1356,7 +1353,7 @@ export default function ChatPage() {
                             onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                             autoFocus
-                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
+                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
                           />
                         ) : (
                           <h3 
@@ -1563,7 +1560,7 @@ export default function ChatPage() {
 
                             {/* Bond Resonance Meter (RIGHT SIDE) */}
                             {activeConversation.relationshipLevel && (
-                              <div className={`flex items-center gap-2 px-3 py-1 bg-accent/5 rounded-full border border-border mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
+                              <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
                                 <Sparkles className={`w-3 h-3 animate-pulse ${getBondColor(activeConversation.relationshipLevel)}`} />
                                 <span className={`text-[10px] font-mono font-bold tracking-tighter ${getBondColor(activeConversation.relationshipLevel)}`}>
                                   BOND: {activeConversation.relationshipLevel}
@@ -1648,13 +1645,13 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-text-secondary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                  Cosmic origins
                                </button>
-                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-text-secondary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                Weird dimensions
                              </button>
-                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-text-secondary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                Earth food
                              </button>
                             </div>
@@ -1664,16 +1661,9 @@ export default function ChatPage() {
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
                               <div className="flex flex-col gap-3 items-start animate-pulse">
                                 <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
-                                  <div className="space-y-2">
-                                    <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
-                                      {isResearching ? 'Siggy is researching...' : isAnalyzing ? 'Siggy is analyzing...' : 'Siggy is thinking...'}
-                                    </p>
-                                    <div className="flex gap-1.5">
-                                      <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                      <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                      <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                    </div>
+                                  <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                                  <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
+                                    *Siggy is thinking...*
                                   </div>
                                 </div>
                               </div>
@@ -1681,7 +1671,7 @@ export default function ChatPage() {
                               <div className="relative flex flex-col items-start mt-2 w-full">
                                 {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
-                                    className="text-base leading-tight font-mono italic text-text-secondary w-full"
+                                    className="text-sm md:text-base lg:text-base leading-relaxed font-mono italic text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
                                       __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
                                     }}
@@ -1690,7 +1680,7 @@ export default function ChatPage() {
                                   <TypewriterText 
                                     text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content} 
                                     isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
-                                    className="text-base leading-tight font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
+                                    className="text-sm md:text-base lg:text-base leading-relaxed font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
                                     alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
                                     onAnimationComplete={() => {
                                       if (vnHistoryIndex === -1) {
@@ -1720,7 +1710,7 @@ export default function ChatPage() {
                             className="overflow-hidden"
                           >
                             <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-4">
-                              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
+                              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
                                 <div className="font-mono text-[10px] text-text-secondary">
                                   Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
                                 </div>
@@ -1734,13 +1724,13 @@ export default function ChatPage() {
                                   <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                     {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                   </button>
-                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-text-secondary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                      Cosmic origins
                                    </button>
-                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-text-secondary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                      Weird dimensions
                                    </button>
-                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-text-secondary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
                                      Earth food
                                    </button>
                                 </div>
@@ -1820,39 +1810,31 @@ export default function ChatPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
-                                        <Terminal className="w-3.5 h-3.5" />
+                                    <div className="p-2 border-b border-white/5 bg-accent/5">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                        <Terminal className="w-3 h-3" />
                                         Matching Commands
                                       </span>
                                     </div>
-                                    <div className="max-h-48 overflow-y-auto p-1.5 space-y-1">
+                                    <div className="max-h-48 overflow-y-auto">
                                       {availableCommands
                                         .filter(cmd => cmd.name.includes(commandQuery))
-                                        .map((cmd, idx) => (
+                                        .map((cmd) => (
                                         <button
                                           key={cmd.name}
                                           onClick={() => {
                                             setInput(`/${cmd.name} `);
                                             setShowCommandDropdown(false);
                                           }}
-                                          className="w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border bg-transparent border-transparent hover:bg-white/5"
+                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
                                         >
-                                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-surface border border-border text-accent group-hover:border-accent/40">
-                                            <span className="font-display font-black text-lg">/</span>
+                                          <div className="flex items-center justify-between mb-1">
+                                            <span className="text-xs font-bold text-accent">/{cmd.name}</span>
+                                            <span className="text-[10px] text-text-secondary font-mono">{cmd.usage}</span>
                                           </div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                              <span className="text-sm font-bold tracking-wide text-text-primary group-hover:text-accent/80">
-                                                /{cmd.name}
-                                              </span>
-                                            </div>
-                                            <div className="text-xs font-mono text-text-secondary group-hover:text-text-primary/70">
-                                              {cmd.description}
-                                            </div>
-                                          </div>
+                                          <div className="text-[10px] text-text-secondary">{cmd.description}</div>
                                         </button>
                                       ))}
                                     </div>
@@ -1861,35 +1843,31 @@ export default function ChatPage() {
                               </AnimatePresence>
 
                               {/* Contributor Search Dropdown */}
-                              <AnimatePresence mode="wait">
+                              <AnimatePresence>
                                 {showContributorDropdown && contributorResults.length > 0 && (
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
-                                    onClick={(e) => e.stopPropagation()}
+                                    exit={{ opacity: 0, y: 10 }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-2 font-bold">
-                                        <Search className="w-3.5 h-3.5" />
+                                    <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                        <Search className="w-3 h-3" />
                                         Select Contributor
                                       </span>
                                       {isSearchingContributors && (
                                         <RefreshCw className="w-3 h-3 text-accent animate-spin" />
                                       )}
                                     </div>
-                                    <div className="max-h-48 overflow-y-auto p-1.5 space-y-1">
-                                      {contributorResults.map((contributor, idx) => (
+                                    <div className="max-h-48 overflow-y-auto">
+                                      {contributorResults.map((contributor) => (
                                         <button
                                           key={contributor.userId}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            analyzeContributor(contributor);
-                                          }}
-                                          className="w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border bg-transparent border-transparent hover:bg-white/5"
+                                          onClick={() => analyzeContributor(contributor)}
+                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
                                         >
-                                          <div className="w-12 h-12 rounded-xl overflow-hidden border border-border shrink-0">
+                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
                                             <img
                                               src={contributor.avatar}
                                               alt={contributor.username}
@@ -1901,14 +1879,8 @@ export default function ChatPage() {
                                             />
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                              <span className="text-sm font-bold tracking-wide text-text-primary group-hover:text-accent/80">
-                                                {contributor.displayName}
-                                              </span>
-                                            </div>
-                                            <div className="text-xs font-mono text-text-secondary group-hover:text-text-primary/70">
-                                              @{contributor.username}
-                                            </div>
+                                            <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
+                                            <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
                                           </div>
                                           <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
                                             {contributor.messageCount} msgs
@@ -1920,7 +1892,7 @@ export default function ChatPage() {
                                 )}
                               </AnimatePresence>
 
-                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-border hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
+                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
                               <textarea
@@ -1933,7 +1905,7 @@ export default function ChatPage() {
                                 }}
                                 onKeyDown={handleInputKeyDown}
                                 placeholder="What will you say? (type /check to analyze username)"
-                                disabled={isLoading || analyzingContributor !== null || isAnalyzing}
+                                disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
                                 className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/50 ring-2 ring-accent border-accent' : 'bg-black/40'}`}
                                 style={{ minHeight: '40px', height: 'auto' }}
@@ -2032,9 +2004,9 @@ export default function ChatPage() {
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
                             {message.role === 'assistant' ? (
-                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-base font-mono whitespace-pre-wrap leading-tight text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
-                              <p className="text-base font-mono whitespace-pre-wrap leading-tight text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
+                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
                             )}
 
                             {message.role === 'assistant' && (
@@ -2080,12 +2052,10 @@ export default function ChatPage() {
                           <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
                         <div className="flex flex-col gap-3 items-start animate-pulse mb-6">
-                          <div className="flex items-center gap-4 bg-surface border border-border px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
-                            <div className="w-10 h-10 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                          <div className="flex items-center gap-4 bg-surface border border-accent/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
+                            <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                             <div className="space-y-2">
-                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
-                                {isResearching ? 'Siggy is researching...' : isAnalyzing ? 'Siggy is analyzing...' : 'Siggy is thinking...'}
-                              </p>
+                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is thinking...</p>
                               <div className="flex gap-1.5">
                                 <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                                 <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -2143,16 +2113,15 @@ export default function ChatPage() {
                     {/* Input Area (Standard) */}
                     <div className="space-y-3 relative z-20 pt-2">
                        {/* Contributor Search Dropdown */}
-                       <AnimatePresence mode="wait">
-                        {showContributorDropdown && contributorResults.length > 0 && (
+                       <AnimatePresence>
+                        {showContributorDropdown && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
-                            onClick={(e) => e.stopPropagation()}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/40 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
+                            <div className="p-2 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                 <Search className="w-3 h-3" />
                                 Select Contributor
@@ -2165,14 +2134,11 @@ export default function ChatPage() {
                               {contributorResults.map((contributor, idx) => (
                                 <button
                                   key={contributor.userId}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    analyzeContributor(contributor);
-                                  }}
+                                  onClick={() => analyzeContributor(contributor)}
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-accent/20'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}
@@ -2225,9 +2191,9 @@ export default function ChatPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-accent/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                            <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
                                 <Terminal className="w-3.5 h-3.5" />
                                 Matching Commands
@@ -2243,7 +2209,7 @@ export default function ChatPage() {
                                     setSelectedCommandIndex(0);
                                   }}
                                   onMouseEnter={() => setSelectedCommandIndex(idx)}
-                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
                                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-accent/40'}`}>
                                     <span className="font-display font-black text-lg">/</span>
@@ -2293,7 +2259,7 @@ export default function ChatPage() {
                           }}
                           onKeyDown={handleInputKeyDown}
                           placeholder="What will you say? (type /check to analyze username)"
-                          disabled={isLoading || analyzingContributor !== null || isAnalyzing}
+                          disabled={isLoading || analyzingContributor !== null}
                           rows={1}
                           className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
                           style={{ minHeight: '44px', height: 'auto' }}
