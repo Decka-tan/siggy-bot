@@ -588,14 +588,19 @@ client.on('interactionCreate', async (interaction: Interaction) => {
 
           // Generate AI response with research context
           const state = getChannelState(interaction.channelId);
-          const messages = [
-            { role: 'system', content: buildSiggyPrompt(state.moodSystem.getCurrentMood()) },
-            { role: 'user', content: enhancedPrompt }
-          ];
+          const prompt = buildSiggyPrompt(
+            query,
+            state.conversationHistory,
+            state.moodSystem,
+            state.isFirstMessage
+          );
 
           const completion = await openai.chat.completions.create({
             model: 'gpt-4o',
-            messages,
+            messages: [
+              { role: 'system', content: prompt },
+              { role: 'user', content: enhancedPrompt }
+            ],
             max_tokens: 1500,
             temperature: 0.8,
           });
