@@ -244,6 +244,9 @@ function handleCommand(message: DiscordMessage): string | null {
       '`!compare @user1 @user2` — Compare two users',
       '`!overall` — Server-wide stats',
       '',
+      '**Slash Commands (use / in Discord):**',
+      '`/research <query>` — Web search with Exa AI 🔍',
+      '',
       'Or just talk to me! Mention me or say my name~ 💜',
     ].join('\n');
   }
