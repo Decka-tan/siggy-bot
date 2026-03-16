@@ -810,6 +810,8 @@ export default function ChatPage() {
             const searchRes = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
             const searchData = await searchRes.json();
 
+            if (searchData.success && searchData.contributors.length > 0) {
+              const exactMatch = searchData.contributors.find(c =>
                 c.username.toLowerCase() === query.toLowerCase() ||
                 c.displayName.toLowerCase() === query.toLowerCase()
               ) || searchData.contributors[0];
@@ -824,18 +826,6 @@ export default function ChatPage() {
           } finally {
             setIsLoading(false);
           }
-        }
-      }
-    }
-
-    // Intercept /research commands
-    if (textToSend.toLowerCase().startsWith('/research')) {
-      const parts = textToSend.split(' ');
-      if (parts.length > 1) {
-        const query = parts.slice(1).join(' ').trim();
-        if (query) {
-          // Just send it to the API, let the backend handle research
-          // Don't intercept, let normal flow handle it
         }
       }
     }
