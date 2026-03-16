@@ -112,8 +112,6 @@ function loadData(): ExtractionData {
           // Add new entry from roles data
           const currentAvatar = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
           membersMap.set(m.username.toLowerCase(), {
-          membersMap.set(m.username, {
->>>>>>> 8a831b5 (fix: resolve duplicate username avatar mapping issue)
             userId: m.userId,
             username: m.username,
             displayName: currentAvatar?.displayName || m.displayName,
