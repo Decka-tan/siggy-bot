@@ -126,28 +126,28 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
 
   // Preserve paragraph breaks (double newlines)
-  html = html.replace(/\n\n/g, '</p><p class="mt-2 text-xs font-mono leading-relaxed">');
+  html = html.replace(/\n\n/g, '</p><p class="mt-2 leading-relaxed">');
 
   // Usernames with rich formatting (Avatar + Name)
   html = html.replace(/@([\w.]+)/g, (match, username) => {
     const data = contributorMap[username.toLowerCase()];
     if (data) {
-      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-1.5 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-4 h-4 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-1.5 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-4 h-4 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="font-bold text-accent">${data.displayName || data.username}</span></span>`;
     }
     return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
   });
 
   // Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent text-sm md:text-base font-bold">$1</strong>');
-  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong class="text-sm md:text-base font-bold">$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent text-sm md:text-base lg:text-base font-bold">$1</strong>');
+  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong class="text-sm md:text-base lg:text-base font-bold">$1</strong>');
 
   // Italic (but not when part of ** already) - muted color for actions - INLINE
   html = html.replace(/\*([^*]+)\*/g, '<span class="inline-block my-1 text-text-secondary/60 italic">$1</span>');
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-sm md:text-base font-mono border border-white/5">$1</code>');
-  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm md:text-base">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-sm md:text-base lg:text-base font-mono border border-white/5">$1</code>');
+  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm md:text-base lg:text-base">$1</code>');
 
   // Quote
   html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2 opacity-90">$1</blockquote>');
@@ -578,6 +578,7 @@ export default function ChatPage() {
       setActiveConversationId(newConv.id);
     }
 
+    setIsLoading(true);
     setIsAnalyzing(true);
     setAnalyzingContributor(contributor.userId);
     setShowContributorDropdown(false);
@@ -692,6 +693,7 @@ export default function ChatPage() {
     } finally {
       setAnalyzingContributor(null);
       setIsAnalyzing(false);
+      setIsLoading(false);
     }
   };
 
