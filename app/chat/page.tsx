@@ -1851,10 +1851,15 @@ export default function ChatPage() {
                                       {filteredCommands.map((command, idx) => (
                                         <button
                                           key={command.name}
-                                          onClick={() => {
+                                          onClick={(e) => {
+                                            e.stopPropagation();
                                             setInput(`/${command.name} `);
                                             setShowCommandDropdown(false);
                                             setSelectedCommandIndex(0);
+                                            // Focus input after selecting command
+                                            setTimeout(() => {
+                                              document.querySelector('textarea')?.focus();
+                                            }, 50);
                                           }}
                                           onMouseEnter={() => setSelectedCommandIndex(idx)}
                                           className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
@@ -1914,7 +1919,10 @@ export default function ChatPage() {
                                       {contributorResults.map((contributor, idx) => (
                                         <button
                                           key={contributor.userId}
-                                          onClick={() => !isLoading && analyzeContributor(contributor)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            !isLoading && analyzeContributor(contributor);
+                                          }}
                                           onMouseEnter={() => setSelectedContributorIndex(idx)}
                                           className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                         >
@@ -2288,10 +2296,15 @@ export default function ChatPage() {
                               {filteredCommands.map((command, idx) => (
                                 <button
                                   key={command.name}
-                                  onClick={() => {
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     setInput(`/${command.name} `);
                                     setShowCommandDropdown(false);
                                     setSelectedCommandIndex(0);
+                                    // Focus input after selecting command
+                                    setTimeout(() => {
+                                      document.querySelector('textarea')?.focus();
+                                    }, 50);
                                   }}
                                   onMouseEnter={() => setSelectedCommandIndex(idx)}
                                   className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
