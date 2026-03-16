@@ -147,12 +147,15 @@ ${answer ? `Summary: ${answer}\n\n` : ''}${sources}
 
 Please answer the user's question using BOTH your existing knowledge AND this recent ${typeContext[researchType]}. If there's conflicting information, prioritize the recent sources and mention any discrepancies. Keep Siggy's personality - mystical, witty, slightly unhinged cosmic cat girl!
 
-IMPORTANT FORMATTING RULES:
+CRITICAL FORMATTING RULES - FOLLOW EXACTLY:
 - Use NORMAL sentence case - NO ALL CAPS
 - Do NOT use **bold** or __underline__ for emphasis
 - Do NOT use headers (# ## ###)
-- Write naturally with normal text, no special formatting
-- Keep font size normal throughout
+- Do NOT use asterisks * for bullet points or any formatting
+- When mentioning sources in your answer, use plain text "Source 1", "Source 2", etc.
+- A References section will be added automatically at the end - DO NOT create your own
+- Do NOT add any special characters like •, *, _, or emojis in headers
+- Keep all text the same normal size - no special formatting whatsoever
   `.trim();
 }
 
@@ -169,5 +172,5 @@ export function formatResponseWithSources(
 
   const sources = researchResult.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n');
 
-  return `${aiResponse}\n\n---\n📚 Sources:\n${sources}`;
+  return `${aiResponse}\n\n---\nReferences:\n${sources}`;
 }
