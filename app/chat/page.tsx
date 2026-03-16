@@ -1838,8 +1838,19 @@ export default function ChatPage() {
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                                    exit={{
+                                      opacity: 0,
+                                      y: 10,
+                                      pointerEvents: { from: 'auto', to: 'none' }
+                                    }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                                    onClick={(e) => {
+                                      // Prevent clicks during exit animation
+                                      if (!showCommandDropdown) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                      }
+                                    }}
                                   >
                                     <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
@@ -2283,7 +2294,11 @@ export default function ChatPage() {
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
+                            exit={{
+                              opacity: 0,
+                              y: 10,
+                              pointerEvents: { from: 'auto', to: 'none' }
+                            }}
                             className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
                             <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
