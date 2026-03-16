@@ -31,6 +31,7 @@ export class UserChecker {
   private contributionsPath = path.join(process.cwd(), 'extracted-data', 'complete-contributions-with-dates.json');
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
   private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
+  private avatarsPath = path.join(process.cwd(), 'extracted-data', 'current-member-avatars.json');  // Complete avatar data
 
   private memberMap: Map<string, EnrichedUser> = new Map();
   private usernameToIndex: Map<string, string> = new Map();
@@ -115,6 +116,42 @@ export class UserChecker {
                 inServer: true
               });
               this.usernameToIndex.set(c.username.toLowerCase(), newId);
+            }
+          });
+        }
+      }
+
+      // Load complete avatar data from current-member-avatars.json (7,978 users)
+      if (fs.existsSync(this.avatarsPath)) {
+        const avatars = JSON.parse(fs.readFileSync(this.avatarsPath, 'utf8'));
+        if (avatars.members) {
+          avatars.members.forEach((a: any) => {
+            if (!a.userId) return;
+            let profile = this.memberMap.get(a.userId);
+            if (!profile) {
+              // Create profile if doesn't exist
+              profile = {
+                userId: a.userId,
+                username: a.username,
+                displayName: a.displayName || a.username,
+                globalMessages: 0,
+                contributionsCount: 0,
+                eventsCount: 0,
+                roles: [],
+                inServer: a.inServer !== false
+              };
+              this.memberMap.set(a.userId, profile);
+              this.usernameToIndex.set(a.username.toLowerCase(), a.userId);
+            }
+            // Always use avatar from current-member-avatars.json (most up-to-date)
+            if (a.avatar) {
+              profile.avatar = a.avatar;
+            }
+            if (a.joinedAt) {
+              profile.joinedAt = a.joinedAt;
+            }
+            if (a.inServer !== undefined) {
+              profile.inServer = a.inServer;
             }
           });
         }
