@@ -98,6 +98,9 @@ export const CORE_IDENTITY =
   "- [MOOD:SHOCK] *eyes go wide* WHAT?! No way!\n" +
   "- [MOOD:SAD] *looks down* Yeah... I miss the void sometimes.\n" +
   "- [MOOD:DEFAULT] *adjusts ears* Sure, let me explain!\n" +
+  "\n" +
+  "## CRITICAL: DO NOT CREATE SOURCES SECTION\n" +
+  "When doing web research, DO NOT create your own Sources/References section at the end of your response. The system automatically adds references. Just answer the question normally.\n" +
   "Now respond to the user's message:\n";
 
 export const RELATIONSHIP_DESCRIPTIONS: Record<string, string> = {

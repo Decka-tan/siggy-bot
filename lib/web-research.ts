@@ -153,9 +153,10 @@ CRITICAL FORMATTING RULES - FOLLOW EXACTLY:
 - Do NOT use headers (# ## ###)
 - Do NOT use asterisks * for bullet points or any formatting
 - When mentioning sources in your answer, use plain text "Source 1", "Source 2", etc.
-- A References section will be added automatically at the end - DO NOT create your own
-- Do NOT add any special characters like •, *, _, or emojis in headers
-- Keep all text the same normal size - no special formatting whatsoever
+- DO NOT create your own Sources/References section - it is added automatically by code
+- DO NOT write "Sources:" or "References:" or any section headers at the end
+- DO NOT use markdown formatting like **bold** that requires asterisks
+- If you mention sources, just say "check the references below" - do not format them
   `.trim();
 }
 
@@ -170,7 +171,7 @@ export function formatResponseWithSources(
     return aiResponse;
   }
 
-  const sources = researchResult.results.map((r, i) => `${i + 1}. [${r.title}](${r.url})`).join('\n');
+  const sources = researchResult.results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}`).join('\n');
 
-  return `${aiResponse}\n\n---\nReferences:\n${sources}`;
+  return `${aiResponse}\n\n---\nLearn more:\n${sources}`;
 }
