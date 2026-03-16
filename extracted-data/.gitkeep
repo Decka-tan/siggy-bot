@@ -1,0 +1,30 @@
+# Antigravity Extractor Data Files
+
+Folder ini menyimpan data hasil antigravity extractor:
+- name analyzer
+- Discord PFP + name ritual extractor
+
+## File Structure
+
+```
+extracted-data/
+├── antigravity-name-analyzer.json      # Data analisis nama
+├── antigravity-ritual-extractor.json   # Data Discord Ritual
+└── antigravity-status.json             # Status extraction progress
+```
+
+## Cara Update
+
+```bash
+# Setelah run antigravity extractor
+git add extracted-data/antigravity-*.json
+git commit -m "update: antigravity data [timestamp]"
+git push origin main
+```
+
+## Cara Pull di PC Lain
+
+```bash
+git pull origin main
+# Data siap digunakan
+```
