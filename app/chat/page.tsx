@@ -1668,7 +1668,18 @@ export default function ChatPage() {
                           </div>
                         ) : (
                           <div className="relative">
-                            {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? null : (
+                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
+                               <div className="flex items-center gap-3 mt-4 opacity-70">
+                                 <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent/80 italic">
+                                   {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                                 </span>
+                                 <div className="flex gap-1">
+                                   <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                   <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                   <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                 </div>
+                               </div>
+                             ) : (
                               <div className="relative flex flex-col items-start mt-2 w-full">
                                 {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
@@ -2093,29 +2104,29 @@ export default function ChatPage() {
                       ))
                     )}
 
-                    {isLoading && (
-                      <div className="flex justify-start gap-3 items-end mb-6">
-                        <div className="shrink-0 mb-3">
-                          <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
-                        </div>
-                        <div className="flex flex-col gap-1 items-start">
-                          <div className="max-w-[100%] rounded-2xl rounded-bl-none bg-surface border border-border p-4 shadow-sm min-w-[200px]">
-                            <div className="flex items-center gap-3 mb-2">
-                              <span className="font-display text-sm md:text-base font-bold uppercase tracking-widest text-accent">SIGGY</span>
-                              <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-neutral-500/20 text-neutral-400 animate-pulse italic">typing on phone...</span>
-                            </div>
-                            <p className="text-[10px] font-mono text-neutral-400 italic mb-4">
-                              {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
-                            </p>
-                            <div className="flex gap-1.5 ml-1">
-                              <span className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                              <span className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                              <span className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {isLoading && activeConversation?.messages[activeConversation.messages.length - 1].role === 'user' && (
+                       <div className="flex justify-start gap-3 items-end animate-in fade-in slide-in-from-bottom-2 duration-300">
+                         <div className="shrink-0 mb-3">
+                           <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
+                         </div>
+                         <div className="flex flex-col gap-1 items-start">
+                           <div className="max-w-[100%] rounded-xl rounded-bl-none bg-surface border border-border px-4 py-3 shadow-sm min-w-[200px]">
+                             <div className="flex items-center gap-3 mb-2">
+                               <span className="font-display text-sm md:text-base font-bold uppercase tracking-widest text-accent">SIGGY</span>
+                               <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-neutral-500/20 text-neutral-400 animate-pulse italic">typing on phone...</span>
+                             </div>
+                             <p className="text-[10px] font-mono text-neutral-400 italic mb-4">
+                               {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                             </p>
+                             <div className="flex gap-1.5 ml-1 mt-1">
+                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     )}
                     <div ref={messagesEndRef} />
                   </div>
 
