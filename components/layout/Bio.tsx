@@ -61,7 +61,7 @@ export function Bio() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex items-center gap-4"
           >
-            <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full border border-border hover:border-accent hover:text-accent transition-colors duration-300">
+            <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full border border-border hover:border-border hover:text-accent transition-colors duration-300">
               <Github size={20} />
             </a>
           </motion.div>

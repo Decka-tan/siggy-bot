@@ -1240,7 +1240,7 @@ export default function ChatPage() {
           {/* Profile Section */}
           <div className={`border-b border-border shrink-0 ${(!vnMode && sidebarCollapsed) ? 'py-4 flex flex-col items-center gap-2' : 'p-4 pt-6'}`}>
             {/* Avatar */}
-            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-accent transition-colors shrink-0 ${(!vnMode && sidebarCollapsed) ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
+            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-border transition-colors shrink-0 ${(!vnMode && sidebarCollapsed) ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
               {userAvatar ? (
                 <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -1260,7 +1260,7 @@ export default function ChatPage() {
                     onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                     autoFocus
-                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
                   />
                 ) : (
                   <div className="flex flex-col items-center">
@@ -1290,7 +1290,7 @@ export default function ChatPage() {
           {/* Reset Current Chat Button */}
           {activeConversation && (
             <div className={`shrink-0 ${(!vnMode && sidebarCollapsed) ? 'p-1' : 'px-3 pb-3'}`}>
-              <button onClick={() => { resetCurrentConversation(); if (vnMode) setSidebarCollapsed(true); }} className={`w-full flex items-center ${(!vnMode && sidebarCollapsed) ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-surface border border-border text-text-secondary hover:text-accent hover:border-accent rounded-lg font-mono text-sm uppercase tracking-wider transition-colors`} title="Reset current conversation">
+              <button onClick={() => { resetCurrentConversation(); if (vnMode) setSidebarCollapsed(true); }} className={`w-full flex items-center ${(!vnMode && sidebarCollapsed) ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-surface border border-border text-text-secondary hover:text-accent hover:border-border rounded-lg font-mono text-sm uppercase tracking-wider transition-colors`} title="Reset current conversation">
                 <RefreshCw className="w-4 h-4" />
                 {(!sidebarCollapsed || vnMode) && 'Reset Chat'}
               </button>
@@ -1339,7 +1339,7 @@ export default function ChatPage() {
 
                     <div className="flex flex-col items-center gap-4">
                       <div 
-                        className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] hover:border-accent transition-all cursor-pointer group"
+                        className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] hover:border-border transition-all cursor-pointer group"
                         onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}
                         title="Change Avatar"
                       >
@@ -1358,7 +1358,7 @@ export default function ChatPage() {
                             onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                             autoFocus
-                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
                           />
                         ) : (
                           <h3 
@@ -1382,7 +1382,7 @@ export default function ChatPage() {
                     New Chat
                   </button>
                   {activeConversation && (
-                    <button onClick={() => { resetCurrentConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-surface border border-border text-text-secondary hover:text-accent hover:border-accent rounded-xl font-mono text-sm uppercase tracking-wider transition-all" title="Reset current conversation">
+                    <button onClick={() => { resetCurrentConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-surface border border-border text-text-secondary hover:text-accent hover:border-border rounded-xl font-mono text-sm uppercase tracking-wider transition-all" title="Reset current conversation">
                       <RefreshCw className="w-4 h-4" />
                       Reset Chat
                     </button>
@@ -1650,13 +1650,13 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                  Cosmic origins
                                </button>
-                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                Weird dimensions
                              </button>
-                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                Earth food
                              </button>
                             </div>
@@ -1666,7 +1666,7 @@ export default function ChatPage() {
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
                               <div className="flex flex-col gap-3 items-start animate-pulse">
                                 <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                                  <div className="w-12 h-12 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                                   <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
                                     *Siggy is thinking...*
                                   </div>
@@ -1729,13 +1729,13 @@ export default function ChatPage() {
                                   <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                     {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                   </button>
-                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                      Cosmic origins
                                    </button>
-                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                      Weird dimensions
                                    </button>
-                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-accent/20 text-white hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                      Earth food
                                    </button>
                                 </div>
@@ -1897,7 +1897,7 @@ export default function ChatPage() {
                                 )}
                               </AnimatePresence>
 
-                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
+                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
                               <textarea
@@ -1912,7 +1912,7 @@ export default function ChatPage() {
                                 placeholder="What will you say? (type /check to analyze username)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
-                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/50 ring-2 ring-accent border-accent' : 'bg-black/40'}`}
+                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/50 ring-2 ring-accent border-border' : 'bg-black/40'}`}
                                 style={{ minHeight: '40px', height: 'auto' }}
                               />
                             <button
@@ -1958,7 +1958,7 @@ export default function ChatPage() {
                             </p>
                             <div className="max-w-md mx-auto space-y-2 mb-8">
                               {conversations.filter(c => c.messages.length > 0).slice(0, 4).map(conv => (
-                                <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className="w-full text-left px-4 py-3 bg-surface border border-border rounded-lg hover:border-accent hover:text-accent transition-all flex items-center gap-3">
+                                <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className="w-full text-left px-4 py-3 bg-surface border border-border rounded-lg hover:border-border hover:text-accent transition-all flex items-center gap-3">
                                   <MessageSquare className="w-4 h-4 text-text-secondary shrink-0" />
                                   <span className="text-sm font-mono truncate">{conv.title}</span>
                                   <span className="text-xs text-text-secondary ml-auto shrink-0">{conv.messages.length} msgs</span>
@@ -1982,13 +1982,13 @@ export default function ChatPage() {
                           <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                             {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                           </button>
-                          <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                          <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
                             Cosmic origins
                           </button>
-                          <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                          <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
                             Weird dimensions
                           </button>
-                          <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                          <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
                             Earth food
                           </button>
                         </div>
@@ -2058,7 +2058,7 @@ export default function ChatPage() {
                         </div>
                         <div className="flex flex-col gap-3 items-start animate-pulse mb-6">
                           <div className="flex items-center gap-4 bg-surface border border-accent/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
-                            <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                            <div className="w-10 h-10 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                             <div className="space-y-2">
                               <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
                                 {isResearching ? 'Siggy is researching...' : isAnalyzing ? 'Siggy is analyzing...' : 'Siggy is thinking...'}
@@ -2102,13 +2102,13 @@ export default function ChatPage() {
                                 <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                 Cosmic origins
                               </button>
-                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                 Weird dimensions
                               </button>
-                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
+                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
                                 Earth food
                               </button>
                             </div>
@@ -2145,7 +2145,7 @@ export default function ChatPage() {
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
                                   className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-accent/20'}`}>
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-accent/20'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}
