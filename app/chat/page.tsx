@@ -1662,9 +1662,8 @@ export default function ChatPage() {
                               <div className="flex flex-col gap-3 items-start animate-pulse">
                                 <div className="flex items-center gap-4">
                                   <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
-                                  <div className="space-y-2">
-                                    <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">{isResearching ? 'Searching Knowledge Base...' : 'Siggy is analyzing...'}</p>
-                                    <p className="text-text-secondary font-mono text-xs italic">*Peering through various dimensions... nya~*</p>
+                                  <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
+                                    *Siggy is thinking...*
                                   </div>
                                 </div>
                               </div>
@@ -2056,7 +2055,7 @@ export default function ChatPage() {
                           <div className="flex items-center gap-4 bg-surface border border-accent/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
                             <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                             <div className="space-y-2">
-                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is analyzing...</p>
+                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is thinking...</p>
                               <div className="flex gap-1.5">
                                 <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                                 <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
