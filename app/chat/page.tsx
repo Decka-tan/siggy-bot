@@ -141,8 +141,8 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
   html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
 
-  // Italic (but not when part of ** already) - muted color for actions - FORCE BLOCK FOR ACTIONS
-  html = html.replace(/\*([^*]+)\*/g, '<div class="block my-1 text-text-secondary/60 italic text-[11px] leading-tight">* $1 *</div>');
+  // Italic (but not when part of ** already) - muted color for actions - INLINE
+  html = html.replace(/\*([^*]+)\*/g, '<span class="inline-block my-1 text-text-secondary/60 italic">$1</span>');
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
@@ -2004,9 +2004,9 @@ export default function ChatPage() {
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
                             {message.role === 'assistant' ? (
-                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
-                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
+                              <p className="text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
                             )}
 
                             {message.role === 'assistant' && (
@@ -2055,7 +2055,9 @@ export default function ChatPage() {
                           <div className="flex items-center gap-4 bg-surface border border-accent/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
                             <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                             <div className="space-y-2">
-                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is thinking...</p>
+                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
+                                {isResearching ? 'Siggy is researching...' : isAnalyzing ? 'Siggy is analyzing...' : 'Siggy is thinking...'}
+                              </p>
                               <div className="flex gap-1.5">
                                 <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                                 <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
