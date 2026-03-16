@@ -83,6 +83,18 @@ const commands = [
     name: 'help',
     description: 'Show all available commands',
   },
+  {
+    name: 'research',
+    description: 'Research a topic using web search (Tavily)',
+    options: [
+      {
+        name: 'query',
+        description: 'What do you want to research?',
+        type: 3, // STRING
+        required: true,
+      },
+    ],
+  },
 ];
 
 /**

@@ -448,8 +448,8 @@ client.on('interactionCreate', async (interaction: Interaction) => {
   const { commandName } = interaction;
 
   try {
-    // Defer reply if command might take time (AI analysis)
-    if (commandName === 'check') {
+    // Defer reply if command might take time (AI analysis or research)
+    if (commandName === 'check' || commandName === 'research') {
       await interaction.deferReply();
     }
 
@@ -553,12 +553,64 @@ client.on('interactionCreate', async (interaction: Interaction) => {
           '`/top [count]` — Show top contributors',
           '`/stats` — Server-wide statistics',
           '`/compare @user1 @user2` — Compare two users',
+          '`/research <query>` — Web search research (Exa AI)',
           '`/mood` — Check my current mood',
           '`/reset` — Reset our conversation',
           '',
           '**Or just talk to me!** Mention me or say my name~ 💜',
         ].join('\n');
         await interaction.reply(helpText);
+        break;
+      }
+
+      case 'research': {
+        const query = interaction.options.getString('query', true);
+        const { searchWeb, buildEnhancedPrompt } = require('./lib/exa-research');
+
+        try {
+          // Perform web search using Exa
+          const searchResult = await searchWeb(query, {
+            numResults: 10,
+            useAutoprompt: true,
+            type: 'auto',
+          });
+
+          if (!searchResult) {
+            await interaction.editReply('❌ Search failed or EXA_API_KEY not configured. *taps paw* Try again later nya~!');
+            break;
+          }
+
+          // Build prompt with research results
+          const enhancedPrompt = buildEnhancedPrompt(query, searchResult, 'general');
+
+          // Generate AI response with research context
+          const state = getChannelState(interaction.channelId);
+          const messages = [
+            { role: 'system', content: buildSiggyPrompt(state.moodSystem.getCurrentMood()) },
+            { role: 'user', content: enhancedPrompt }
+          ];
+
+          const completion = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages,
+            max_tokens: 1500,
+            temperature: 0.8,
+          });
+
+          const aiResponse = completion.choices[0]?.message?.content || 'No response found meow...';
+
+          // Add sources to response
+          const sources = searchResult.results.length > 0
+            ? '\n\n📚 **Sources:**\n' + searchResult.results.map(r =>
+                `• [${r.title}](${r.url})`
+              ).join('\n')
+            : '';
+
+          await interaction.editReply(aiResponse + sources);
+        } catch (error) {
+          console.error('Research command error:', error);
+          await interaction.editReply('❌ Research failed! *glitches* The dimensional connection is unstable... Try again? 😿');
+        }
         break;
       }
 
