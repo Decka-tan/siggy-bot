@@ -2143,13 +2143,14 @@ export default function ChatPage() {
                     {/* Input Area (Standard) */}
                     <div className="space-y-3 relative z-20 pt-2">
                        {/* Contributor Search Dropdown */}
-                       <AnimatePresence>
-                        {showContributorDropdown && (
+                       <AnimatePresence mode="wait">
+                        {showContributorDropdown && contributorResults.length > 0 && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 10 }}
+                            exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
                             className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
@@ -2164,7 +2165,10 @@ export default function ChatPage() {
                               {contributorResults.map((contributor, idx) => (
                                 <button
                                   key={contributor.userId}
-                                  onClick={() => analyzeContributor(contributor)}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    analyzeContributor(contributor);
+                                  }}
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
                                   className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
