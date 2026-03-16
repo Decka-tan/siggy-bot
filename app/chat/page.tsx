@@ -571,148 +571,6 @@ export default function ChatPage() {
     return () => clearTimeout(timer);
   }, [input, analyzingContributor]);
 
-  // Quick check contributor - sends immediately without blocking input
-  const quickCheckContributor = async (contributor: ContributorSearchResult) => {
-    if (isLoading || isAnalyzing) return;
-
-    // Fill input and send immediately
-    const checkCommand = `/check @${contributor.username}`;
-    setInput(checkCommand);
-
-    // Use the existing analyzeContributor but don't set analyzingContributor
-    let targetConvId = activeConversationId;
-
-    // Create conversation if none exists
-    if (!targetConvId) {
-      const newConv: Conversation = {
-        id: Date.now().toString(),
-        title: `Analyzing @${contributor.username}`,
-        messages: [],
-        currentMood: 'DEFAULT' as MoodState,
-        messageCount: 0,
-        timestamp: Date.now(),
-        relationshipLevel: globalRelationshipLevel || 'ACQUAINTANCE',
-        relationshipScore: globalRelationshipScore || 0,
-      };
-      setConversations(prev => [newConv, ...prev]);
-      targetConvId = newConv.id;
-      setActiveConversationId(newConv.id);
-    }
-
-    setIsLoading(true);
-    setIsAnalyzing(true);
-    setShowContributorDropdown(false);
-    setContributorResults([]);
-    setInput('');
-
-    // Add user message with contributor element
-    const userMessage: Message = {
-      role: 'user',
-      content: checkCommand,
-      contributor: {
-        userId: contributor.userId,
-        username: contributor.username,
-        displayName: contributor.displayName,
-        avatar: contributor.avatar,
-        globalMessages: 0,
-        contributionsCount: 0,
-        eventsCount: 0,
-        roles: [],
-      },
-    };
-
-    setConversations(prev => prev.map(conv => {
-      if (conv.id === targetConvId) {
-        const updatedMessages = [...conv.messages, userMessage];
-        return { ...conv, messages: updatedMessages };
-      }
-      return conv;
-    }));
-
-    const activeId = targetConvId;
-
-    try {
-      const analyzeRes = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contributorId: contributor.userId }),
-      });
-
-      const analyzeData = await analyzeRes.json();
-
-      if (!analyzeData.success) {
-        const errorMsg: Message = {
-          role: 'assistant',
-          content: `*ears flatten* Myuh... 😿\n\nSorry nya~! Analysis failed: **${analyzeData.error || 'Unknown error'}**`,
-          mood: 'SAD',
-        };
-        setConversations(prev => prev.map(conv => {
-          if (conv.id === activeId) {
-            return { ...conv, messages: [...conv.messages, errorMsg] };
-          }
-          return conv;
-        }));
-        return;
-      }
-
-      if (analyzeData.user) {
-        setConversations(prev => prev.map(conv => {
-          if (conv.id === activeId) {
-            const updatedMessages = conv.messages.map(msg => {
-              if (msg.role === 'user' && msg.contributor?.userId === contributor.userId) {
-                return {
-                  ...msg,
-                  contributor: {
-                    ...msg.contributor,
-                    ...analyzeData.user,
-                    avatar: analyzeData.user.avatar || msg.contributor.avatar
-                  }
-                };
-              }
-              return msg;
-            });
-            return { ...conv, messages: updatedMessages };
-          }
-          return conv;
-        }));
-      }
-
-      if (analyzeData.analysis) {
-        const { mood, cleanedResponse } = extractMoodFromResponse(analyzeData.analysis);
-
-        const siggyMessage: Message = {
-          role: 'assistant',
-          content: cleanedResponse,
-          mood: mood,
-        };
-
-        setConversations(prev => prev.map(conv => {
-          if (conv.id === activeId) {
-            return { ...conv, messages: [...conv.messages, siggyMessage] };
-          }
-          return conv;
-        }));
-      }
-    } catch (error) {
-      console.error('Quick check error:', error);
-      const errorMsg: Message = {
-        role: 'assistant',
-        content: '*glitches* My dimensional connection is unstable... Try again? 😿',
-        mood: 'SAD',
-      };
-      setConversations(prev => prev.map(conv => {
-        if (conv.id === activeId) {
-          return { ...conv, messages: [...conv.messages, errorMsg] };
-        }
-        return conv;
-      }));
-    } finally {
-      setIsLoading(false);
-      setIsAnalyzing(false);
-      // Note: NOT setting analyzingContributor, so textarea stays enabled
-    }
-  };
-
   // Analyze contributor with DeepSeek
   const analyzeContributor = async (contributor: ContributorSearchResult) => {
     let targetConvId = activeConversationId;
@@ -2027,7 +1885,7 @@ export default function ChatPage() {
                                               <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
                                             </div>
                                           )}
-                                        </div>
+                                        </button>
                                       ))}
                                     </div>
                                   </motion.div>
@@ -2054,10 +1912,11 @@ export default function ChatPage() {
                                     </div>
                                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
                                       {contributorResults.map((contributor, idx) => (
-                                        <div
+                                        <button
                                           key={contributor.userId}
+                                          onClick={() => !isLoading && analyzeContributor(contributor)}
                                           onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                          className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border cursor-pointer ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                          className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                         >
                                           <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
                                             <img
@@ -2081,10 +1940,7 @@ export default function ChatPage() {
                                                 </motion.span>
                                               )}
                                             </div>
-                                            <div
-                                              onClick={() => !isLoading && quickCheckContributor(contributor)}
-                                              className={`text-xs font-mono transition-colors cursor-pointer hover:underline ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}
-                                            >
+                                            <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
                                               @{contributor.username}
                                             </div>
                                             <div className="mt-1.5 flex items-center gap-3">
@@ -2101,7 +1957,7 @@ export default function ChatPage() {
                                               <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
                                             </div>
                                           )}
-                                        </div>
+                                        </button>
                                       ))}
                                     </div>
                                   </motion.div>
@@ -2111,7 +1967,7 @@ export default function ChatPage() {
                               <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
-                              <div className={`flex-1 flex items-center gap-2 ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent rounded-lg p-1' : ''}`}>
+                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
                                 <textarea
                                   value={input}
                                   onChange={(e) => setInput(e.target.value)}
@@ -2361,10 +2217,11 @@ export default function ChatPage() {
                             </div>
                             <div className="max-h-80 overflow-y-auto custom-scrollbar p-1.5 space-y-1">
                               {contributorResults.map((contributor, idx) => (
-                                <div
+                                <button
                                   key={contributor.userId}
+                                  onClick={() => !isLoading && analyzeContributor(contributor)}
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border cursor-pointer ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
                                   <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
                                     <img
@@ -2388,10 +2245,7 @@ export default function ChatPage() {
                                         </motion.span>
                                       )}
                                     </div>
-                                    <div
-                                      onClick={() => !isLoading && quickCheckContributor(contributor)}
-                                      className={`text-xs font-mono transition-colors cursor-pointer hover:underline ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}
-                                    >
+                                    <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
                                       @{contributor.username}
                                     </div>
                                     <div className="mt-1.5 flex items-center gap-3">
@@ -2480,7 +2334,7 @@ export default function ChatPage() {
                         <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
                           {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                         </button>
-                        <div className={`flex-1 flex items-center gap-2 ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent rounded-lg p-1' : ''}`}>
+                        <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
                           <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
