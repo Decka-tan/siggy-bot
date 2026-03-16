@@ -172,5 +172,5 @@ export function formatResponseWithSources(
 
   const sources = researchResult.results.map(r => `• [${r.title}](${r.url})`).join('\n');
 
-  return `${aiResponse}\n\n---\n📚 **Sources:**\n${sources}`;
+  return `${aiResponse}\n\n---\n📚 Sources:\n${sources}`;
 }
