@@ -92,7 +92,7 @@ export default function LandingPage() {
               >
                 <div className="flex flex-row gap-2 sm:gap-4 w-full">
                   <Link href="/story" className="flex-1 min-w-[120px]">
-                    <button className="w-full cursor-pointer bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:shadow-accent/20">
+                    <button className="w-full cursor-pointer bg-surface border border-border hover:border-border text-text-primary hover:text-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:shadow-accent/20">
                       <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                       Story Mode
                     </button>
@@ -190,7 +190,7 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
+                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-border/30 transition-colors"
                   >
                     <div className="w-24 h-24 relative mb-3">
                       <Image src={mood.img} alt={`Cat ${mood.name}`} fill className="object-contain drop-shadow-md" />
@@ -221,7 +221,7 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-accent/30 transition-colors"
+                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-border/30 transition-colors"
                   >
                     <div className="w-24 h-24 relative mb-3">
                       <Image src={mood.img} alt={`Girl ${mood.name}`} fill className="object-contain drop-shadow-md" />
@@ -285,7 +285,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-border/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
             >
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
                 <BookOpen className="w-8 h-8 text-accent" />
@@ -297,32 +297,32 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-3 text-sm text-text-secondary mb-10">
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span><strong>Chapter 1:</strong> The Awakening</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span><strong>Chapter 2:</strong> The Descent → Transformed</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span><strong>Chapter 3:</strong> First Contact → Meeting the Summoner</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span><strong>Chapter 4:</strong> A New Era → Blockchain + AI</span>
                 </li>
               </ul>
               <Link href="/story">
-                <button className="w-full px-6 py-4 bg-surface border border-border hover:border-accent hover:text-accent font-mono text-xs uppercase tracking-widest rounded-xl transition-all shadow-inner">
+                <button className="w-full px-6 py-4 bg-surface border border-border hover:border-border hover:text-accent font-mono text-xs uppercase tracking-widest rounded-xl transition-all shadow-inner">
                   Start Story
                 </button>
               </Link>
@@ -334,7 +334,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-border/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
             >
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
                 <MessageSquare className="w-8 h-8 text-accent" />
@@ -346,25 +346,25 @@ export default function LandingPage() {
               </p>
               <ul className="space-y-3 text-sm text-text-secondary mb-10">
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span>Unlimited personalized conversations</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span>Dynamic system with 6 emotional states</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span>Hidden Ritual Forge easter eggs</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
                     <span className="text-accent text-[10px]">✓</span>
                   </div>
                   <span>Discover her true cosmic feline origins</span>
@@ -433,7 +433,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl font-display text-accent">6</span>
@@ -450,7 +450,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl font-display text-accent">R</span>
@@ -467,7 +467,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-accent/40 shadow-xl transition-all"
+              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
                 <span className="text-2xl font-display text-accent">A</span>
@@ -550,7 +550,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col md:flex-row gap-4 justify-start md:justify-center pt-2">
             <Link href="/story" className="w-full md:w-auto">
-              <button className="w-full px-8 py-4 bg-surface border border-border hover:border-accent text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-3">
+              <button className="w-full px-8 py-4 bg-surface border border-border hover:border-border text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-3">
                 <BookOpen className="w-5 h-5" />
                 Read Story
               </button>

@@ -1815,7 +1815,7 @@ export default function ChatPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
                                     <div className="p-2 border-b border-white/5 bg-accent/5">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
@@ -1854,7 +1854,7 @@ export default function ChatPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
                                     <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
@@ -2121,14 +2121,14 @@ export default function ChatPage() {
                     <div className="space-y-3 relative z-20 pt-2">
                        {/* Contributor Search Dropdown */}
                        <AnimatePresence>
-                        {showContributorDropdown && (
+                        {showContributorDropdown && contributorResults.length > 0 && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 10 }}
-                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/40 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border/40 rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2 border-b border-border/20 bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                 <Search className="w-3 h-3" />
                                 Select Contributor
@@ -2143,9 +2143,9 @@ export default function ChatPage() {
                                   key={contributor.userId}
                                   onClick={() => analyzeContributor(contributor)}
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-accent/20'}`}>
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border/20'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}

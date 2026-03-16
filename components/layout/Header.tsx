@@ -98,7 +98,7 @@ export function Header() {
           )}
           <button
             onClick={() => { playHeavyClick(); setShowSettings(!showSettings); }}
-            className="p-2 bg-surface hover:bg-accent/20 border border-border hover:border-accent rounded-full transition-all text-text-secondary hover:text-accent"
+            className="p-2 bg-surface hover:bg-accent/20 border border-border hover:border-border rounded-full transition-all text-text-secondary hover:text-accent"
             title="Settings"
             aria-label="Settings"
           >
@@ -237,7 +237,7 @@ export function Header() {
             <div className="space-y-8 text-left">
               {/* Audio Section */}
               <div>
-                <h4 className="font-mono text-sm uppercase text-gray-400 mb-4 tracking-widest pl-2 border-l-2 border-accent">Audio</h4>
+                <h4 className="font-mono text-sm uppercase text-gray-400 mb-4 tracking-widest pl-2 border-l-2 border-border">Audio</h4>
                 <div className="space-y-5 pl-2">
                   {/* SFX Toggle */}
                   <div className="flex items-start justify-between">
@@ -288,7 +288,7 @@ export function Header() {
 
               {/* Text & Display Section */}
               <div>
-                <h4 className="font-mono text-sm uppercase text-gray-400 mb-4 tracking-widest pl-2 border-l-2 border-accent">Text & Display</h4>
+                <h4 className="font-mono text-sm uppercase text-gray-400 mb-4 tracking-widest pl-2 border-l-2 border-border">Text & Display</h4>
                 <div className="space-y-5 pl-2">
                   {/* Text Speed */}
                   <div>
@@ -304,7 +304,7 @@ export function Header() {
                         <button
                           key={speed.label}
                           onClick={() => setTextSpeed(speed.value)}
-                          className={`py-1.5 px-1 text-[10px] sm:text-xs font-mono rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-accent text-accent' : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'}`}
+                          className={`py-1.5 px-1 text-[10px] sm:text-xs font-mono rounded transition-colors border ${textSpeed === speed.value ? 'bg-accent/20 border-border text-accent' : 'bg-black/40 border-white/10 text-gray-400 hover:border-white/30'}`}
                         >
                           {speed.label}
                         </button>
