@@ -1255,7 +1255,7 @@ export default function ChatPage() {
                     onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                     autoFocus
-                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
                   />
                 ) : (
                   <div className="flex flex-col items-center">
@@ -1353,7 +1353,7 @@ export default function ChatPage() {
                             onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                             autoFocus
-                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
                           />
                         ) : (
                           <h3 
@@ -1661,7 +1661,7 @@ export default function ChatPage() {
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
                               <div className="flex flex-col gap-3 items-start animate-pulse">
                                 <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                                  <div className="w-12 h-12 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                                   <div className="space-y-2">
                                     <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is thinking...</p>
                                     <div className="flex gap-1.5">
@@ -1715,7 +1715,7 @@ export default function ChatPage() {
                             className="overflow-hidden"
                           >
                             <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-4">
-                              <div className="flex items-center justify-between pb-3 border-b border-accent/20 mb-4">
+                              <div className="flex items-center justify-between pb-3 border-b border-border mb-4">
                                 <div className="font-mono text-[10px] text-text-secondary">
                                   Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
                                 </div>
@@ -1817,7 +1817,7 @@ export default function ChatPage() {
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
                                         <Terminal className="w-3.5 h-3.5" />
                                         Matching Commands
@@ -1864,7 +1864,7 @@ export default function ChatPage() {
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-2 font-bold">
                                         <Search className="w-3.5 h-3.5" />
                                         Select Contributor
@@ -2072,7 +2072,7 @@ export default function ChatPage() {
                         </div>
                         <div className="flex flex-col gap-3 items-start animate-pulse mb-6">
                           <div className="flex items-center gap-4 bg-surface border border-border px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
-                            <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
+                            <div className="w-10 h-10 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
                             <div className="space-y-2">
                               <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">Siggy is thinking...</p>
                               <div className="flex gap-1.5">
@@ -2140,7 +2140,7 @@ export default function ChatPage() {
                             exit={{ opacity: 0, y: 10 }}
                             className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                 <Search className="w-3 h-3" />
                                 Select Contributor
@@ -2212,7 +2212,7 @@ export default function ChatPage() {
                             exit={{ opacity: 0, y: 10 }}
                             className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                           >
-                            <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                            <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
                               <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
                                 <Terminal className="w-3.5 h-3.5" />
                                 Matching Commands
