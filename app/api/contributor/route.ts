@@ -51,6 +51,7 @@ function loadData(): ExtractionData {
     let avatarsMap = new Map<string, { avatar: string; displayName: string }>();
 
     // Load current avatars first (highest priority for avatar data)
+    // Use userId as key to handle duplicate usernames, plus case-insensitive username lookup
     if (fs.existsSync(avatarsPath)) {
       const data = JSON.parse(fs.readFileSync(avatarsPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
@@ -59,7 +60,7 @@ function loadData(): ExtractionData {
           avatar: m.avatar,
           displayName: m.displayName,
         });
-        // Also store by userId if available
+        // Also store by userId if available (prioritized for duplicate usernames)
         if (m.userId) {
           avatarsMap.set(m.userId, {
             avatar: m.avatar,
@@ -74,7 +75,8 @@ function loadData(): ExtractionData {
     if (fs.existsSync(activityPath)) {
       const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
-        const avatarData = avatarsMap.get(m.username.toLowerCase()) || avatarsMap.get(m.userId);
+        // Prioritize userId lookup to handle duplicate usernames correctly
+        const avatarData = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
         membersMap.set(m.username.toLowerCase(), {
           userId: m.userId,
           username: m.username,
@@ -91,21 +93,31 @@ function loadData(): ExtractionData {
       const data = JSON.parse(fs.readFileSync(rolesPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
         const existing = membersMap.get(m.username.toLowerCase());
-        const avatarData = avatarsMap.get(m.username.toLowerCase()) || avatarsMap.get(m.userId);
+        const avatarData = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
 
         if (existing) {
           // Merge: keep activity data, add roles/joinedAt, use current avatar
           existing.roles = m.roleNames || [];
           existing.joinedAt = m.joinedAt;
-          // Use current avatar if available, otherwise use roles avatar, otherwise fallback
-          existing.avatar = avatarData?.avatar || m.avatar || existing.avatar;
+          // Use current avatar from avatarsMap (by userId) if available
+          const currentAvatar = avatarsMap.get(m.userId);
+          if (currentAvatar?.avatar) {
+            existing.avatar = currentAvatar.avatar;
+            existing.displayName = currentAvatar.displayName || existing.displayName;
+          } else if (m.avatar && !existing.avatar) {
+            // Fallback to roles avatar if no avatar set yet
+            existing.avatar = m.avatar;
+          }
         } else {
           // Add new entry from roles data
+          const currentAvatar = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
           membersMap.set(m.username.toLowerCase(), {
+          membersMap.set(m.username, {
+>>>>>>> 8a831b5 (fix: resolve duplicate username avatar mapping issue)
             userId: m.userId,
             username: m.username,
-            displayName: avatarData?.displayName || m.displayName,
-            avatar: avatarData?.avatar || m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+            displayName: currentAvatar?.displayName || m.displayName,
+            avatar: currentAvatar?.avatar || m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
             messageCount: 0,
             roles: m.roleNames || [],
             joinedAt: m.joinedAt,
