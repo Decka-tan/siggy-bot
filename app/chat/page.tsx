@@ -2027,7 +2027,7 @@ export default function ChatPage() {
                                               <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
                                             </div>
                                           )}
-                                        </button>
+                                        </div>
                                       ))}
                                     </div>
                                   </motion.div>
@@ -2101,7 +2101,7 @@ export default function ChatPage() {
                                               <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
                                             </div>
                                           )}
-                                        </button>
+                                        </div>
                                       ))}
                                     </div>
                                   </motion.div>
