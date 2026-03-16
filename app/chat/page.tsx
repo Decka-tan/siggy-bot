@@ -1824,36 +1824,57 @@ export default function ChatPage() {
                             <div className="flex-1 w-full flex items-center gap-2 relative">
                               {/* Slash Command Dropdown */}
                               <AnimatePresence>
-                                {showCommandDropdown && (
+                                {showCommandDropdown && filteredCommands.length > 0 && (
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100] pointer-events-auto"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-border bg-accent/5">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                                        <Terminal className="w-3 h-3" />
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                        <Terminal className="w-3.5 h-3.5" />
                                         Matching Commands
                                       </span>
                                     </div>
-                                    <div className="max-h-48 overflow-y-auto">
-                                      {availableCommands
-                                        .filter(cmd => cmd.name.includes(commandQuery))
-                                        .map((cmd) => (
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                                      {filteredCommands.map((command, idx) => (
                                         <button
-                                          key={cmd.name}
+                                          key={command.name}
                                           onClick={() => {
-                                            setInput(`/${cmd.name} `);
+                                            setInput(`/${command.name} `);
                                             setShowCommandDropdown(false);
+                                            setSelectedCommandIndex(0);
                                           }}
-                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-border last:border-0"
+                                          onMouseEnter={() => setSelectedCommandIndex(idx)}
+                                          className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                         >
-                                          <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs font-bold text-accent">/{cmd.name}</span>
-                                            <span className="text-[10px] text-text-secondary font-mono">{cmd.usage}</span>
+                                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-border/40'}`}>
+                                            <span className="font-display font-black text-lg">/</span>
                                           </div>
-                                          <div className="text-[10px] text-text-secondary">{cmd.description}</div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedCommandIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                                /{command.name}
+                                              </span>
+                                              {idx === selectedCommandIndex && (
+                                                <motion.span layoutId="vn-active-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                                  Active
+                                                </motion.span>
+                                              )}
+                                            </div>
+                                            <div className={`text-xs font-mono transition-colors ${idx === selectedCommandIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                              {command.description}
+                                            </div>
+                                            <div className="mt-1.5 text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest group-hover:text-accent/30 transition-colors">
+                                              Usage: {command.usage}
+                                            </div>
+                                          </div>
+                                          {idx === selectedCommandIndex && (
+                                            <div className="shrink-0 flex items-center self-center pr-1">
+                                              <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                            </div>
+                                          )}
                                         </button>
                                       ))}
                                     </div>
@@ -1868,25 +1889,26 @@ export default function ChatPage() {
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100] pointer-events-auto"
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                                        <Search className="w-3 h-3" />
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                        <Search className="w-3.5 h-3.5" />
                                         Select Contributor
                                       </span>
                                       {isSearchingContributors && (
-                                        <RefreshCw className="w-3 h-3 text-accent animate-spin" />
+                                        <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin" />
                                       )}
                                     </div>
-                                    <div className="max-h-48 overflow-y-auto">
-                                      {contributorResults.map((contributor) => (
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                                      {contributorResults.map((contributor, idx) => (
                                         <button
                                           key={contributor.userId}
-                                          onClick={() => analyzeContributor(contributor)}
-                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-border last:border-0"
+                                          onClick={() => !isLoading && analyzeContributor(contributor)}
+                                          onMouseEnter={() => setSelectedContributorIndex(idx)}
+                                          className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                         >
-                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-border shrink-0">
+                                          <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
                                             <img
                                               src={contributor.avatar}
                                               alt={contributor.username}
@@ -1898,12 +1920,33 @@ export default function ChatPage() {
                                             />
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
-                                            <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedContributorIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                                {contributor.displayName}
+                                              </span>
+                                              {idx === selectedContributorIndex && (
+                                                <motion.span layoutId="vn-active-contributor-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                                  Select
+                                                </motion.span>
+                                              )}
+                                            </div>
+                                            <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                              @{contributor.username}
+                                            </div>
+                                            <div className="mt-1.5 flex items-center gap-3">
+                                              <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                {contributor.messageCount.toLocaleString()} messages
+                                              </div>
+                                              <div className="text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest">
+                                                ID: {contributor.userId}
+                                              </div>
+                                            </div>
                                           </div>
-                                          <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
-                                            {contributor.messageCount} msgs
-                                          </div>
+                                          {idx === selectedContributorIndex && (
+                                            <div className="shrink-0 flex items-center self-center pr-1">
+                                              <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                            </div>
+                                          )}
                                         </button>
                                       ))}
                                     </div>
