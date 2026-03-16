@@ -126,7 +126,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
 
   // Preserve paragraph breaks (double newlines)
-  html = html.replace(/\n\n/g, '</p><p class="mt-2 leading-snug">');
+  html = html.replace(/\n\n/g, '</p><p class="mt-2 leading-normal">');
 
   // Usernames with rich formatting (Avatar + Name)
   html = html.replace(/@([\w.]+)/g, (match, username) => {
@@ -156,7 +156,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   // Single line breaks (but not in code/quote)
   html = html.replace(/\n/g, '<br />');
 
-  return '<p class="whitespace-pre-wrap leading-snug">' + html + '</p>';
+  return '<p class="whitespace-pre-wrap leading-normal">' + html + '</p>';
 };
 
 // Typewriter Text Component
