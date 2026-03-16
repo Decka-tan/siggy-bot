@@ -1672,7 +1672,7 @@ export default function ChatPage() {
                               <div className="relative flex flex-col items-start mt-2 w-full">
                                 {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
-                                    className="text-lg md:text-xl lg:text-2xl leading-relaxed font-mono italic text-text-secondary w-full"
+                                    className="text-sm md:text-base lg:text-base leading-relaxed font-mono italic text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
                                       __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
                                     }}
@@ -1681,7 +1681,7 @@ export default function ChatPage() {
                                   <TypewriterText 
                                     text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content} 
                                     isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
-                                    className="text-lg md:text-xl lg:text-2xl leading-relaxed font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
+                                    className="text-sm md:text-base lg:text-base leading-relaxed font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
                                     alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
                                     onAnimationComplete={() => {
                                       if (vnHistoryIndex === -1) {
