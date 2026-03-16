@@ -141,8 +141,8 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
   html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
 
-  // Italic (but not when part of ** already) - muted color for actions - FORCE BLOCK FOR ACTIONS
-  html = html.replace(/\*([^*]+)\*/g, '<div class="block my-1 text-text-secondary/60 italic text-[11px] leading-tight">* $1 *</div>');
+  // Italic (but not when part of ** already) - muted color for actions - INLINE
+  html = html.replace(/\*([^*]+)\*/g, '<span class="inline-block my-1 text-text-secondary/60 italic text-[11px] leading-tight">* $1 *</span>');
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
