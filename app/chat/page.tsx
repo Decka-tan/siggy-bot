@@ -829,26 +829,6 @@ export default function ChatPage() {
         }
       }
     }
-            
-            if (searchData.success && searchData.contributors.length > 0) {
-              const exactMatch = searchData.contributors.find((c: any) => 
-                c.username.toLowerCase() === query.toLowerCase() || 
-                c.displayName.toLowerCase() === query.toLowerCase()
-              ) || searchData.contributors[0];
-              
-              await analyzeContributor(exactMatch);
-              return; // Exit handleSendMessage early
-            } else {
-              // Fallback: Just let the normal chat handle the "not found" message
-            }
-          } catch (error) {
-            console.error('Manual /check interception error:', error);
-          } finally {
-            setIsLoading(false);
-          }
-        }
-      }
-    }
 
     try {
       const response = await fetch('/api/chat', {
