@@ -1967,30 +1967,32 @@ export default function ChatPage() {
                               <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
-                              <textarea
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onInput={(e) => {
-                                  const target = e.target as HTMLTextAreaElement;
-                                  target.style.height = 'auto';
-                                  target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
-                                }}
-                                onKeyDown={handleInputKeyDown}
-                                placeholder="What will you say? (type /check or /research)"
-                                disabled={isLoading || analyzingContributor !== null}
-                                rows={1}
-                                className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/50 ring-2 ring-accent border-border text-black' : 'bg-black/40 text-text-primary'}`}
-                                style={{ minHeight: '40px', height: 'auto' }}
-                              />
-                            <button
-                              onClick={() => handleSendMessage()}
-                              disabled={isLoading || !input.trim()}
-                              className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
-                              style={{ height: '40px' }}
-                            >
-                              {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
-                            </button>
-                          </div>
+                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
+                                <textarea
+                                  value={input}
+                                  onChange={(e) => setInput(e.target.value)}
+                                  onInput={(e) => {
+                                    const target = e.target as HTMLTextAreaElement;
+                                    target.style.height = 'auto';
+                                    target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
+                                  }}
+                                  onKeyDown={handleInputKeyDown}
+                                  placeholder="What will you say? (type /check or /research)"
+                                  disabled={isLoading || analyzingContributor !== null}
+                                  rows={1}
+                                  className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-black/40 text-text-primary'}`}
+                                  style={{ minHeight: '40px', height: 'auto' }}
+                                />
+                                <button
+                                  onClick={() => handleSendMessage()}
+                                  disabled={isLoading || !input.trim()}
+                                  className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
+                                  style={{ height: '40px' }}
+                                >
+                                  {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
+                                </button>
+                              </div>
+                            </div>
                         </div>
                       </div>
                     </div>
@@ -2332,24 +2334,26 @@ export default function ChatPage() {
                         <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
                           {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                         </button>
-                        <textarea
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          onInput={(e) => {
-                            const target = e.target as HTMLTextAreaElement;
-                            target.style.height = 'auto';
-                            target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
-                          }}
-                          onKeyDown={handleInputKeyDown}
-                          placeholder="What will you say? (type /check or /research)"
-                          disabled={isLoading || analyzingContributor !== null}
-                          rows={1}
-                          className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/50 ring-2 ring-accent border-border text-black' : 'bg-surface text-text-primary'}`}
-                          style={{ minHeight: '44px', height: 'auto' }}
-                        />
-                        <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
-                          {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
-                        </button>
+                        <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
+                          <textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onInput={(e) => {
+                              const target = e.target as HTMLTextAreaElement;
+                              target.style.height = 'auto';
+                              target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
+                            }}
+                            onKeyDown={handleInputKeyDown}
+                            placeholder="What will you say? (type /check or /research)"
+                            disabled={isLoading || analyzingContributor !== null}
+                            rows={1}
+                            className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
+                            style={{ minHeight: '44px', height: 'auto' }}
+                          />
+                          <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
+                            {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

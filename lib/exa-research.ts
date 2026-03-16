@@ -170,7 +170,13 @@ export function formatResponseWithSources(
     return aiResponse;
   }
 
+  // Remove any existing sources section from AI response to avoid duplicates
+  const cleanedResponse = aiResponse
+    .replace(/---\n\n📚 \*\*Sources\*\*:[\s\S]*$/gi, '')
+    .replace(/---\n\n📚 Sources:\n[\s\S]*$/gi, '')
+    .trim();
+
   const sources = researchResult.results.map(r => `• [${r.title}](${r.url})`).join('\n');
 
-  return `${aiResponse}\n\n---\n📚 Sources:\n${sources}`;
+  return `${cleanedResponse}\n\n---\n📚 **Sources**\n${sources}`;
 }
