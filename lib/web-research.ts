@@ -155,8 +155,9 @@ CRITICAL FORMATTING RULES - FOLLOW EXACTLY:
 - Do NOT use *single asterisks* for italic either
 - ALL text must be the SAME normal size - no markdown formatting whatsoever
 - Do NOT add emojis or special characters to section headers
-- DO NOT create your own Sources/References section - it is added automatically by code
-- Write in plain text with normal capitalization and spacing
+- DO NOT create your own Sources/References/Works Cited section - the system adds it automatically
+- Do NOT write "Sources:", "References:", or any similar headers
+- Just answer the question and STOP - do not add a references section yourself
   `.trim();
 }
 
