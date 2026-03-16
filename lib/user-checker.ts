@@ -32,97 +32,109 @@ export class UserChecker {
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
   private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
 
-  private statsData: any = null;
-  private rolesData: any = null;
-  private rolesMap: Record<string, string> = {};
-  private contributionsData: any = null;
+  private memberMap: Map<string, EnrichedUser> = new Map();
+  private usernameToIndex: Map<string, string> = new Map();
 
   constructor() {
-    this.loadData();
+    this.refreshData();
   }
 
-  private loadData(): void {
+  private refreshData(): void {
+    this.memberMap.clear();
+    this.usernameToIndex.clear();
+
     try {
-      if (fs.existsSync(this.statsPath)) this.statsData = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
-      if (fs.existsSync(this.rolesPath)) this.rolesData = JSON.parse(fs.readFileSync(this.rolesPath, 'utf-8'));
-      if (fs.existsSync(this.rolesMapPath)) this.rolesMap = JSON.parse(fs.readFileSync(this.rolesMapPath, 'utf-8'));
-      if (fs.existsSync(this.contributionsPath)) {
-        this.contributionsData = JSON.parse(fs.readFileSync(this.contributionsPath, 'utf-8'));
+      if (fs.existsSync(this.statsPath)) {
+        const stats = JSON.parse(fs.readFileSync(this.statsPath, 'utf8'));
+        if (stats.members) {
+          stats.members.forEach((m: any) => {
+            if (!m.userId) return;
+            const profile: EnrichedUser = {
+              userId: m.userId,
+              username: m.username,
+              displayName: m.displayName || m.username,
+              globalMessages: m.globalMessages || 0,
+              contributionsCount: m.contributionsCount || 0,
+              eventsCount: m.eventsCount || 0,
+              roles: m.roles || [],
+              inServer: true
+            };
+            this.memberMap.set(m.userId, profile);
+            this.usernameToIndex.set(m.username.toLowerCase(), m.userId);
+          });
+        }
       }
+
+      if (fs.existsSync(this.rolesPath)) {
+        const roles = JSON.parse(fs.readFileSync(this.rolesPath, 'utf8'));
+        if (roles.members) {
+          roles.members.forEach((r: any) => {
+            if (!r.userId) return;
+            let profile = this.memberMap.get(r.userId);
+            if (!profile) {
+              profile = {
+                userId: r.userId,
+                username: r.username,
+                displayName: r.displayName || r.username,
+                globalMessages: 0,
+                contributionsCount: 0,
+                eventsCount: 0,
+                roles: [],
+                inServer: true
+              };
+              this.memberMap.set(r.userId, profile);
+              this.usernameToIndex.set(r.username.toLowerCase(), r.userId);
+            }
+            profile.displayName = r.displayName || profile.displayName;
+            profile.avatar = r.avatar || profile.avatar;
+            profile.joinedAt = r.joinedAt || profile.joinedAt;
+            const existingRoles = new Set([...profile.roles, ...(r.roleNames || [])]);
+            profile.roles = Array.from(existingRoles);
+          });
+        }
+      }
+
+      if (fs.existsSync(this.contributionsPath)) {
+        const contribs = JSON.parse(fs.readFileSync(this.contributionsPath, 'utf8'));
+        if (contribs.leaderboard) {
+          contribs.leaderboard.forEach((c: any) => {
+            const userId = c.userId || this.usernameToIndex.get(c.username.toLowerCase());
+            if (userId) {
+              const profile = this.memberMap.get(userId);
+              if (profile) profile.contributionsCount = Math.max(profile.contributionsCount, c.messages || 0);
+            } else {
+              const newId = c.userId || `temp_${c.username.toLowerCase()}`;
+              this.memberMap.set(newId, {
+                userId: newId,
+                username: c.username,
+                displayName: c.displayName || c.username,
+                globalMessages: 0,
+                contributionsCount: c.messages || 0,
+                eventsCount: 0,
+                roles: [],
+                inServer: true
+              });
+              this.usernameToIndex.set(c.username.toLowerCase(), newId);
+            }
+          });
+        }
+      }
+
+      this.memberMap.forEach(profile => {
+        profile.roles = this.sortRolesByPriority(profile.roles);
+      });
     } catch (e) {}
   }
 
   public findUser(query: string): EnrichedUser | null {
-    this.loadData();
-    const q = query.toLowerCase().replace('@', '');
-
-    const findInArray = (arr: any[]) => {
-      const matches = arr.filter((m: any) => m.username?.toLowerCase() === q || m.userId === q || m.displayName?.toLowerCase().includes(q));
-      if (matches.length === 0) return null;
-      if (matches.length === 1) return matches[0];
-      // If duplicates, prioritize: has contributions > has globalMessages > has roles > first
-      const withContribs = matches.find((m: any) => m.contributionsCount > 0);
-      if (withContribs) return withContribs;
-      const withMessages = matches.find((m: any) => m.globalMessages > 0);
-      if (withMessages) return withMessages;
-      const withRoles = matches.find((m: any) => (m.roles?.length || m.roleNames?.length) > 0);
-      if (withRoles) return withRoles;
-      return matches[0];
-    };
-
-    const s = this.statsData?.members ? findInArray(this.statsData.members) : null;
-    const r = this.rolesData?.members ? findInArray(this.rolesData.members) : null;
-
-    if (!s && !r) return null;
-
-    // Merge by username - prioritize stats from s, roles/joinedAt from r
-    const username = s?.username || r?.username || q;
-    const userId = s?.userId || r?.userId;
-
-    // Load extra substance
-    let twitterContent = [];
-    let messageSamples = [];
-    let contributionsCount = s?.contributionsCount || 0;
-
-    try {
-      if (fs.existsSync(this.twitterCachePath)) {
-        const cache = JSON.parse(fs.readFileSync(this.twitterCachePath, 'utf-8'));
-        const entry = cache[userId] || Object.values(cache).find((e: any) => e.username === username);
-        if (entry?.tweets) twitterContent = entry.tweets;
-      }
-      if (fs.existsSync(this.contentsPath)) {
-        const contents = JSON.parse(fs.readFileSync(this.contentsPath, 'utf-8'));
-        const entry = contents[userId] || contents[username] || Object.values(contents).find((e: any) => e.userId === userId || e.username === username);
-        if (entry?.messages) messageSamples = entry.messages.map((m: any) => typeof m === 'string' ? m : m.content || "").slice(0, 20);
-      }
-
-      // Load contributions from leaderboard (match by username优先)
-      if (this.contributionsData?.leaderboard) {
-        const contribEntry = this.contributionsData.leaderboard.find((e: any) => e.username === username || e.userId === userId);
-        if (contribEntry && contribEntry.messages > 0) {
-          contributionsCount = contribEntry.messages;
-        }
-      }
-    } catch (e) {}
-
-    // Use roleNames from optimized file, or fallback to roles
-    const allRoles = r?.roleNames || r?.roles || s?.roles || [];
-    const prioritizedRoles = this.sortRolesByPriority(allRoles);
-
-    return {
-      userId,
-      username,
-      displayName: s?.displayName || r?.displayName || username,
-      avatar: r?.avatar || s?.avatar,  // Include avatar from rolesData first!
-      globalMessages: s?.globalMessages || 0,
-      contributionsCount,
-      eventsCount: s?.eventsCount || 0,
-      roles: prioritizedRoles,
-      joinedAt: r?.joinedAt,
-      inServer: r?.inServer ?? true,
-      twitterContent,
-      messageSamples
-    };
+    const q = query.toLowerCase().replace('@', '').trim();
+    if (this.memberMap.has(q)) return this.memberMap.get(q)!;
+    const userIdByUsername = this.usernameToIndex.get(q);
+    if (userIdByUsername) return this.memberMap.get(userIdByUsername)!;
+    for (const profile of this.memberMap.values()) {
+      if (profile.displayName.toLowerCase().includes(q)) return profile;
+    }
+    return null;
   }
 
   private sortRolesByPriority(roles: string[]): string[] {
@@ -262,9 +274,9 @@ ${user.messageSamples?.join('\n') || "(No message samples)"}`;
   }
 
   public getTopContributors(limit: number = 10): string {
-    this.loadData();
-    if (!this.statsData?.members) return 'No data found nya~';
-    const sorted = [...this.statsData.members].sort((a, b) => b.globalMessages - a.globalMessages).slice(0, limit);
+    const sorted = Array.from(this.memberMap.values())
+      .sort((a, b) => b.globalMessages - a.globalMessages)
+      .slice(0, limit);
     let output = `🏆 **GLOBAL MESSAGE LEADERBOARD** (Top ${limit})\n\n`;
     sorted.forEach((m, i) => {
       const icon = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '🔹';

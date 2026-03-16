@@ -2086,6 +2086,11 @@ export default function ChatPage() {
                                     <RefreshCw className="w-3.5 h-3.5" />
                                   </button>
                                 )}
+                                <div className="ml-auto flex items-center gap-1.5 px-2">
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-text-secondary/60 border border-white/10 px-1.5 py-0.5 rounded whitespace-nowrap">HISTORY: 53/53</span>
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-green-400 border border-green-400/20 px-1.5 py-0.5 rounded animate-pulse">LATEST</span>
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-yellow-400 border border-yellow-400/20 px-1.5 py-0.5 rounded whitespace-nowrap">BOND: BESTIE</span>
+                                </div>
                               </div>
                             )}
                           </div>
