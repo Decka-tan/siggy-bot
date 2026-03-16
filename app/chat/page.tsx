@@ -2093,7 +2093,7 @@ export default function ChatPage() {
                                   {index === activeConversation.messages.length - 1 && (
                                     <span className="text-[8px] sm:text-[9px] font-mono text-green-400 border border-green-400/20 px-1.5 py-0.5 rounded animate-pulse">LATEST</span>
                                   )}
-                                  <span className="text-[8px] sm:text-[9px] font-mono text-yellow-400 border border-yellow-400/20 px-1.5 py-0.5 rounded whitespace-nowrap">
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-yellow-400 border border-yellow-400/20 px-1.5 py-0.5 rounded truncate max-w-[80px]">
                                     BOND: {activeConversation.messages.length > 20 ? 'BESTIE' : activeConversation.messages.length > 10 ? 'FRIEND' : 'ACQUAINTANCE'}
                                   </span>
                                 </div>
