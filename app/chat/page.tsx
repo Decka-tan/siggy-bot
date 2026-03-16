@@ -213,7 +213,7 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, isLatest, alreadyAnimated, speed]);
 
-  return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText, contributorMap) }} />;
+  return <p className={className || "text-sm md:text-base leading-tight font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText, contributorMap) }} />;
 };
 
 
@@ -1676,7 +1676,7 @@ export default function ChatPage() {
                               <div className="relative flex flex-col items-start mt-2 w-full">
                                 {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
                                   <p
-                                    className="text-base md:text-lg lg:text-lg leading-relaxed font-mono italic text-text-secondary w-full"
+                                    className="text-base leading-tight font-mono italic text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
                                       __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
                                     }}
@@ -1685,7 +1685,7 @@ export default function ChatPage() {
                                   <TypewriterText 
                                     text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content} 
                                     isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
-                                    className="text-base md:text-lg lg:text-lg leading-relaxed font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
+                                    className="text-base leading-tight font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
                                     alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
                                     onAnimationComplete={() => {
                                       if (vnHistoryIndex === -1) {
