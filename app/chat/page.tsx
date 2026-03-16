@@ -1667,11 +1667,19 @@ export default function ChatPage() {
                         ) : (
                           <div className="relative">
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
-                              <div className="flex flex-col gap-3 items-start animate-pulse">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-12 h-12 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
-                                  <div className="flex items-center gap-2 text-sm text-text-secondary italic font-mono">
-                                    *Siggy is thinking...*
+                              <div className="flex flex-col gap-1 items-start mt-2">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-display text-sm uppercase tracking-widest text-accent">SIGGY</span>
+                                  <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
+                                </div>
+                                <div className="bg-surface/40 border border-border p-4 rounded-2xl rounded-tl-none shadow-[0_0_20px_rgba(255,215,0,0.05)]">
+                                  <p className="text-sm font-mono text-neutral-400 italic mb-3">
+                                    {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                                  </p>
+                                  <div className="flex gap-1.5 ml-1">
+                                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                   </div>
                                 </div>
                               </div>
@@ -1820,10 +1828,10 @@ export default function ChatPage() {
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-white/5 bg-accent/5">
+                                    <div className="p-2 border-b border-border/10 bg-accent/5">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Terminal className="w-3 h-3" />
                                         Matching Commands
@@ -1839,7 +1847,7 @@ export default function ChatPage() {
                                             setInput(`/${cmd.name} `);
                                             setShowCommandDropdown(false);
                                           }}
-                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-border/10 last:border-0"
                                         >
                                           <div className="flex items-center justify-between mb-1">
                                             <span className="text-xs font-bold text-accent">/{cmd.name}</span>
@@ -1859,10 +1867,10 @@ export default function ChatPage() {
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
+                                    <div className="p-2 border-b border-border/10 bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
                                         <Search className="w-3 h-3" />
                                         Select Contributor
@@ -1876,9 +1884,9 @@ export default function ChatPage() {
                                         <button
                                           key={contributor.userId}
                                           onClick={() => analyzeContributor(contributor)}
-                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
+                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-border/10 last:border-0"
                                         >
-                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-border/10 shrink-0">
                                             <img
                                               src={contributor.avatar}
                                               alt={contributor.username}
@@ -2058,22 +2066,23 @@ export default function ChatPage() {
                     )}
 
                     {isLoading && (
-                      <div className="flex justify-start gap-3 items-end">
+                      <div className="flex justify-start gap-3 items-end mb-6">
                         <div className="shrink-0 mb-3">
                           <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
-                        <div className="flex flex-col gap-3 items-start animate-pulse mb-6">
-                          <div className="flex items-center gap-4 bg-surface border border-border/30 px-6 py-4 rounded-2xl rounded-bl-none shadow-[0_0_20px_rgba(255,215,0,0.1)]">
-                            <div className="w-10 h-10 rounded-full border-2 border-border border-t-transparent animate-spin shadow-[0_0_15px_rgba(255,215,0,0.4)]" />
-                            <div className="space-y-2">
-                              <p className="text-accent font-display text-sm uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
-                                {isResearching ? 'Siggy is researching...' : isAnalyzing ? 'Siggy is analyzing...' : 'Siggy is thinking...'}
-                              </p>
-                              <div className="flex gap-1.5">
-                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                              </div>
+                        <div className="flex flex-col gap-1 items-start">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-display text-sm md:text-base font-bold uppercase tracking-widest text-accent">SIGGY</span>
+                            <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
+                          </div>
+                          <div className="max-w-[80%] rounded-2xl rounded-bl-none bg-surface border border-border p-4 shadow-sm">
+                            <p className="text-[10px] font-mono text-neutral-400 italic mb-4">
+                              {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                            </p>
+                            <div className="flex gap-1.5 ml-1">
+                              <span className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                              <span className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                              <span className="w-2.5 h-2.5 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                           </div>
                         </div>
