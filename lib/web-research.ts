@@ -149,14 +149,14 @@ Please answer the user's question using BOTH your existing knowledge AND this re
 
 CRITICAL FORMATTING RULES - FOLLOW EXACTLY:
 - Use NORMAL sentence case - NO ALL CAPS
-- Do NOT use **bold** or __underline__ for emphasis
-- Do NOT use headers (# ## ###)
-- Do NOT use asterisks * for bullet points or any formatting
-- When mentioning sources in your answer, use plain text "Source 1", "Source 2", etc.
+- NEVER use **double asterisks** for bold - this makes text HUGE
+- NEVER use __single underscores__ for underline
+- NEVER use headers like # ## ### which make text ENORMOUS
+- Do NOT use *single asterisks* for italic either
+- ALL text must be the SAME normal size - no markdown formatting whatsoever
+- Do NOT add emojis or special characters to section headers
 - DO NOT create your own Sources/References section - it is added automatically by code
-- DO NOT write "Sources:" or "References:" or any section headers at the end
-- DO NOT use markdown formatting like **bold** that requires asterisks
-- If you mention sources, just say "check the references below" - do not format them
+- Write in plain text with normal capitalization and spacing
   `.trim();
 }
 
