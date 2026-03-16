@@ -13,6 +13,8 @@ interface ContributorData {
   displayName: string;
   avatar?: string;
   messageCount: number;
+  contributionsCount?: number;
+  eventsCount?: number;
   firstPost?: string;
   lastPost?: string;
   roles?: string[];
@@ -82,6 +84,10 @@ function loadData(): ExtractionData {
           username: m.username,
           displayName: avatarData?.displayName || m.displayName,
           messageCount: m.globalMessages || 0,
+          contributionsCount: m.contributionsCount || 0,
+          eventsCount: m.eventsCount || 0,
+          firstPost: m.firstPost,
+          lastPost: m.lastPost,
           avatar: avatarData?.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
         });
       });
@@ -169,6 +175,12 @@ export async function GET(req: NextRequest) {
             displayName: m.displayName,
             avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
             messageCount: m.messageCount || 0,
+            contributionsCount: m.contributionsCount || 0,
+            eventsCount: m.eventsCount || 0,
+            firstPost: m.firstPost,
+            lastPost: m.lastPost,
+            roles: m.roles,
+            joinedAt: m.joinedAt,
           }))
         });
       }
@@ -186,6 +198,12 @@ export async function GET(req: NextRequest) {
           displayName: m.displayName,
           avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId || '0') % 5}.png`,
           messageCount: m.messageCount || 0,
+          contributionsCount: m.contributionsCount || 0,
+          eventsCount: m.eventsCount || 0,
+          firstPost: m.firstPost,
+          lastPost: m.lastPost,
+          roles: m.roles,
+          joinedAt: m.joinedAt,
         }));
 
       return NextResponse.json({
@@ -209,6 +227,12 @@ export async function GET(req: NextRequest) {
           displayName: m.displayName,
           avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
           messageCount: m.messageCount || 0,
+          contributionsCount: m.contributionsCount || 0,
+          eventsCount: m.eventsCount || 0,
+          firstPost: m.firstPost,
+          lastPost: m.lastPost,
+          roles: m.roles,
+          joinedAt: m.joinedAt,
         }))
       });
     }
