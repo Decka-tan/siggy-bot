@@ -811,7 +811,7 @@ export default function ChatPage() {
             const searchData = await searchRes.json();
 
             if (searchData.success && searchData.contributors.length > 0) {
-              const exactMatch = searchData.contributors.find(c =>
+              const exactMatch = searchData.contributors.find((c: any) =>
                 c.username.toLowerCase() === query.toLowerCase() ||
                 c.displayName.toLowerCase() === query.toLowerCase()
               ) || searchData.contributors[0];
