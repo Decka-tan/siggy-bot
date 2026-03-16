@@ -500,7 +500,7 @@ export default function ChatPage() {
       const cmd = parts[0].toLowerCase();
 
       // Don't show command dropdown if we're already in a specific command flow
-      if (cmd === 'check' || cmd === 'analysis') {
+      if (cmd === 'check' || cmd === 'analysis' || cmd === 'research') {
         setShowCommandDropdown(false);
         return;
       }
@@ -755,8 +755,17 @@ export default function ChatPage() {
 
   const handleSendMessage = async (overrideInput?: string) => {
     playHeavyClick();
-    const textToSend = typeof overrideInput === 'string' ? overrideInput : input;
+    let textToSend = typeof overrideInput === 'string' ? overrideInput : input;
     if (!textToSend.trim() || isLoading) return;
+
+    // Handle /research command explicitly
+    if (textToSend.toLowerCase().startsWith('/research ')) {
+      const researchQuery = textToSend.slice(9).trim(); // Remove "/research " prefix
+      if (researchQuery) {
+        // Override with research marker for API
+        textToSend = `[RESEARCH_MODE: ${researchQuery}]`;
+      }
+    }
 
     let targetConvId = activeConversationId;
     if (!targetConvId) {

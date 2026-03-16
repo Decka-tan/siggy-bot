@@ -39,6 +39,41 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // === EXPLICIT /RESEARCH COMMAND HANDLER ===
+    // Detect [RESEARCH_MODE: query] marker from frontend
+    let researchQuery = null;
+    if (message.includes('[RESEARCH_MODE:')) {
+      const match = message.match(/\[RESEARCH_MODE: (.+)\]/);
+      if (match && match[1]) {
+        researchQuery = match[1].trim();
+        console.log(`[Web Research] Explicit /research command: "${researchQuery}"`);
+
+        // Override message for display (remove the marker)
+        message = message.replace(/\[RESEARCH_MODE: .+\]/, researchQuery);
+
+        // Perform web search immediately
+        try {
+          const webResearchResult = await searchWeb(researchQuery, {
+            maxResults: 5,
+            searchDepth: 'basic',
+            includeAnswer: true,
+            includeRawContent: false,
+          });
+
+          if (webResearchResult) {
+            console.log(`[Web Research] Found ${webResearchResult.results.length} sources for /research command`);
+            // Enhance the message with web research
+            message = buildEnhancedPrompt(message, webResearchResult, 'research');
+
+            // Store result for later formatting
+            (global as any).currentWebResearchResult = webResearchResult;
+          }
+        } catch (error) {
+          console.error('[Web Research] Error:', error);
+        }
+      }
+    }
+
     // Create mood system with current state from frontend (fixes serverless reset issue)
     const moodSystem = new SiggyMoodSystem();
 
@@ -250,9 +285,16 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
     moodSystem.setMood(mood);
 
     // Format response with sources if web research was used
-    const finalResponse = usedWebResearch && webResearchResult
-      ? formatResponseWithSources(cleanedResponse, webResearchResult)
+    // Check both implicit research and explicit /research command
+    const explicitResearchResult = (global as any).currentWebResearchResult;
+    const finalResponse = (usedWebResearch && webResearchResult) || explicitResearchResult
+      ? formatResponseWithSources(cleanedResponse, explicitResearchResult || webResearchResult)
       : cleanedResponse;
+
+    // Clear the global research result
+    if ((global as any).currentWebResearchResult) {
+      delete (global as any).currentWebResearchResult;
+    }
 
     // Return response with extracted mood
     return NextResponse.json({
@@ -266,7 +308,7 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
       },
       relationshipLevel: managedContext.relationshipLevel,
       relationshipScore: managedContext.relationshipScore,
-      usedWebResearch, // Flag to indicate web research was used
+      usedWebResearch: usedWebResearch || !!explicitResearchResult, // Include explicit /research
     });
 
   } catch (error) {
