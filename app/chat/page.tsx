@@ -2087,14 +2087,11 @@ export default function ChatPage() {
                                   </button>
                                 )}
                                 <div className="ml-auto flex items-center gap-1.5 px-2">
-                                  <span className="text-[8px] sm:text-[9px] font-mono text-text-secondary/60 border border-white/10 px-1.5 py-0.5 rounded truncate max-w-[60px]">
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-text-secondary/60 border border-white/10 px-1.5 py-0.5 rounded">
                                     HISTORY: {Math.floor(index / 2) + 1}/{Math.floor(activeConversation.messages.length / 2)}
                                   </span>
-                                  {index === activeConversation.messages.length - 1 && (
-                                    <span className="text-[8px] sm:text-[9px] font-mono text-green-400 border border-green-400/20 px-1.5 py-0.5 rounded animate-pulse">LATEST</span>
-                                  )}
-                                  <span className="text-[8px] sm:text-[9px] font-mono text-yellow-400 border border-yellow-400/20 px-1.5 py-0.5 rounded truncate max-w-[80px]">
-                                    BOND: {activeConversation.messages.length > 20 ? 'BESTIE' : activeConversation.messages.length > 10 ? 'FRIEND' : 'ACQUAINTANCE'}
+                                  <span className={`text-[8px] sm:text-[9px] font-mono border border-yellow-400/20 px-1.5 py-0.5 rounded ${getBondColor(activeConversation.relationshipLevel)}`}>
+                                    {activeConversation.relationshipLevel || 'ACQUAINTANCE'}
                                   </span>
                                 </div>
                               </div>
