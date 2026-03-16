@@ -512,6 +512,12 @@ export default function ChatPage() {
       setShowCommandDropdown(false);
       setCommandQuery('');
     }
+
+    // Hide command dropdown when continuing to type command with space
+    if (input.toLowerCase().startsWith('/check ') || input.toLowerCase().startsWith('/research ')) {
+      setShowCommandDropdown(false);
+      setCommandQuery('');
+    }
   }, [input]);
 
   // Contributor Search Effect
@@ -1973,7 +1979,7 @@ export default function ChatPage() {
                                 placeholder="What will you say? (type /check or /research)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
-                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/50 ring-2 ring-accent border-border' : 'bg-black/40'}`}
+                                className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/50 ring-2 ring-accent border-border text-black' : 'bg-black/40 text-text-primary'}`}
                                 style={{ minHeight: '40px', height: 'auto' }}
                               />
                             <button
@@ -2335,10 +2341,10 @@ export default function ChatPage() {
                             target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                           }}
                           onKeyDown={handleInputKeyDown}
-                          placeholder="What will you say? (type /check to analyze username)"
+                          placeholder="What will you say? (type /check or /research)"
                           disabled={isLoading || analyzingContributor !== null}
                           rows={1}
-                          className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
+                          className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/50 ring-2 ring-accent border-border text-black' : 'bg-surface text-text-primary'}`}
                           style={{ minHeight: '44px', height: 'auto' }}
                         />
                         <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
