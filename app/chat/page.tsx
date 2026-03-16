@@ -1812,29 +1812,37 @@ export default function ChatPage() {
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-accent/20 bg-accent/5">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                                        <Terminal className="w-3 h-3" />
+                                    <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                        <Terminal className="w-3.5 h-3.5" />
                                         Matching Commands
                                       </span>
                                     </div>
-                                    <div className="max-h-48 overflow-y-auto">
+                                    <div className="max-h-48 overflow-y-auto p-1.5 space-y-1">
                                       {availableCommands
                                         .filter(cmd => cmd.name.includes(commandQuery))
-                                        .map((cmd) => (
+                                        .map((cmd, idx) => (
                                         <button
                                           key={cmd.name}
                                           onClick={() => {
                                             setInput(`/${cmd.name} `);
                                             setShowCommandDropdown(false);
                                           }}
-                                          className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-accent/10 last:border-0"
+                                          className="w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border bg-transparent border-transparent hover:bg-white/5"
                                         >
-                                          <div className="flex items-center justify-between mb-1">
-                                            <span className="text-xs font-bold text-accent">/{cmd.name}</span>
-                                            <span className="text-[10px] text-text-secondary font-mono">{cmd.usage}</span>
+                                          <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-surface border border-border text-accent group-hover:border-accent/40">
+                                            <span className="font-display font-black text-lg">/</span>
                                           </div>
-                                          <div className="text-[10px] text-text-secondary">{cmd.description}</div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className="text-sm font-bold tracking-wide text-text-primary group-hover:text-accent/80">
+                                                /{cmd.name}
+                                              </span>
+                                            </div>
+                                            <div className="text-xs font-mono text-text-secondary group-hover:text-text-primary/70">
+                                              {cmd.description}
+                                            </div>
+                                          </div>
                                         </button>
                                       ))}
                                     </div>
@@ -1851,23 +1859,23 @@ export default function ChatPage() {
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
                                   >
-                                    <div className="p-2 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                                        <Search className="w-3 h-3" />
+                                    <div className="p-2.5 border-b border-accent/20 bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-2 font-bold">
+                                        <Search className="w-3.5 h-3.5" />
                                         Select Contributor
                                       </span>
                                       {isSearchingContributors && (
                                         <RefreshCw className="w-3 h-3 text-accent animate-spin" />
                                       )}
                                     </div>
-                                    <div className="max-h-48 overflow-y-auto">
-                                      {contributorResults.map((contributor) => (
+                                    <div className="max-h-48 overflow-y-auto p-1.5 space-y-1">
+                                      {contributorResults.map((contributor, idx) => (
                                         <button
                                           key={contributor.userId}
                                           onClick={() => analyzeContributor(contributor)}
-                                          className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-accent/10 last:border-0"
+                                          className="w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border bg-transparent border-transparent hover:bg-white/5"
                                         >
-                                          <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
+                                          <div className="w-12 h-12 rounded-xl overflow-hidden border border-accent/20 shrink-0">
                                             <img
                                               src={contributor.avatar}
                                               alt={contributor.username}
@@ -1879,8 +1887,14 @@ export default function ChatPage() {
                                             />
                                           </div>
                                           <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
-                                            <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className="text-sm font-bold tracking-wide text-text-primary group-hover:text-accent/80">
+                                                {contributor.displayName}
+                                              </span>
+                                            </div>
+                                            <div className="text-xs font-mono text-text-secondary group-hover:text-text-primary/70">
+                                              @{contributor.username}
+                                            </div>
                                           </div>
                                           <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
                                             {contributor.messageCount} msgs
