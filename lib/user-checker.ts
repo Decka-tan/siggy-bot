@@ -102,7 +102,7 @@ export class UserChecker {
             const userId = c.userId || this.usernameToIndex.get(c.username.toLowerCase());
             if (userId) {
               const profile = this.memberMap.get(userId);
-              if (profile) profile.contributionsCount = Math.max(profile.contributionsCount, c.messages || 0);
+              if (profile) profile.contributionsCount = Math.max(profile.contributionsCount, c.count || 0);
             } else {
               const newId = c.userId || `temp_${c.username.toLowerCase()}`;
               this.memberMap.set(newId, {
@@ -110,7 +110,7 @@ export class UserChecker {
                 username: c.username,
                 displayName: c.displayName || c.username,
                 globalMessages: 0,
-                contributionsCount: c.messages || 0,
+                contributionsCount: c.count || 0,
                 eventsCount: 0,
                 roles: [],
                 inServer: true
