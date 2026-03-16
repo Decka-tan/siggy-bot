@@ -1861,13 +1861,14 @@ export default function ChatPage() {
                               </AnimatePresence>
 
                               {/* Contributor Search Dropdown */}
-                              <AnimatePresence>
+                              <AnimatePresence mode="wait">
                                 {showContributorDropdown && contributorResults.length > 0 && (
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: 10 }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
                                     <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
                                       <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-2 font-bold">
@@ -1882,7 +1883,10 @@ export default function ChatPage() {
                                       {contributorResults.map((contributor, idx) => (
                                         <button
                                           key={contributor.userId}
-                                          onClick={() => analyzeContributor(contributor)}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            analyzeContributor(contributor);
+                                          }}
                                           className="w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border bg-transparent border-transparent hover:bg-white/5"
                                         >
                                           <div className="w-12 h-12 rounded-xl overflow-hidden border border-border shrink-0">
@@ -2028,9 +2032,9 @@ export default function ChatPage() {
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
                             </div>
                             {message.role === 'assistant' ? (
-                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-base font-mono whitespace-pre-wrap leading-tight text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
-                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
+                              <p className="text-base font-mono whitespace-pre-wrap leading-tight text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
                             )}
 
                             {message.role === 'assistant' && (
@@ -2162,9 +2166,9 @@ export default function ChatPage() {
                                   key={contributor.userId}
                                   onClick={() => analyzeContributor(contributor)}
                                   onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-accent/20'}`}>
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
                                     <img
                                       src={contributor.avatar}
                                       alt={contributor.username}
@@ -2235,7 +2239,7 @@ export default function ChatPage() {
                                     setSelectedCommandIndex(0);
                                   }}
                                   onMouseEnter={() => setSelectedCommandIndex(idx)}
-                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
                                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-accent/40'}`}>
                                     <span className="font-display font-black text-lg">/</span>
