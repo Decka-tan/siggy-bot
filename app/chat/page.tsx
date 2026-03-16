@@ -213,7 +213,7 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, isLatest, alreadyAnimated, speed]);
 
-  return <p className={className || "text-sm md:text-base leading-tight font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText, contributorMap) }} />;
+  return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText, contributorMap) }} />;
 };
 
 
@@ -1866,7 +1866,7 @@ export default function ChatPage() {
                                   <motion.div
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10 }}
+                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
                                     className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-2xl overflow-hidden z-[100]"
                                     onClick={(e) => e.stopPropagation()}
                                   >
