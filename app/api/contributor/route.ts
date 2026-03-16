@@ -54,10 +54,18 @@ function loadData(): ExtractionData {
     if (fs.existsSync(avatarsPath)) {
       const data = JSON.parse(fs.readFileSync(avatarsPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
-        avatarsMap.set(m.username, {
+        // Store by both lowercase and original username for case-insensitive lookup
+        avatarsMap.set(m.username.toLowerCase(), {
           avatar: m.avatar,
           displayName: m.displayName,
         });
+        // Also store by userId if available
+        if (m.userId) {
+          avatarsMap.set(m.userId, {
+            avatar: m.avatar,
+            displayName: m.displayName,
+          });
+        }
       });
       console.log(`✅ Loaded current-member-avatars: ${avatarsMap.size} users`);
     }
@@ -66,8 +74,8 @@ function loadData(): ExtractionData {
     if (fs.existsSync(activityPath)) {
       const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
-        const avatarData = avatarsMap.get(m.username);
-        membersMap.set(m.username, {
+        const avatarData = avatarsMap.get(m.username.toLowerCase()) || avatarsMap.get(m.userId);
+        membersMap.set(m.username.toLowerCase(), {
           userId: m.userId,
           username: m.username,
           displayName: avatarData?.displayName || m.displayName,
@@ -82,8 +90,8 @@ function loadData(): ExtractionData {
     if (fs.existsSync(rolesPath)) {
       const data = JSON.parse(fs.readFileSync(rolesPath, 'utf-8'));
       (data.members || []).forEach((m: any) => {
-        const existing = membersMap.get(m.username);
-        const avatarData = avatarsMap.get(m.username);
+        const existing = membersMap.get(m.username.toLowerCase());
+        const avatarData = avatarsMap.get(m.username.toLowerCase()) || avatarsMap.get(m.userId);
 
         if (existing) {
           // Merge: keep activity data, add roles/joinedAt, use current avatar
@@ -93,7 +101,7 @@ function loadData(): ExtractionData {
           existing.avatar = avatarData?.avatar || m.avatar || existing.avatar;
         } else {
           // Add new entry from roles data
-          membersMap.set(m.username, {
+          membersMap.set(m.username.toLowerCase(), {
             userId: m.userId,
             username: m.username,
             displayName: avatarData?.displayName || m.displayName,
@@ -158,14 +166,15 @@ export async function GET(req: NextRequest) {
       const matches = data.allMembers
         .filter((m: any) =>
           m.username?.toLowerCase().includes(query) ||
-          m.displayName?.toLowerCase().includes(query)
+          m.displayName?.toLowerCase().includes(query) ||
+          m.userId?.toLowerCase().includes(query)
         )
         .slice(0, 8)
         .map((m: any) => ({
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
-          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
+          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId || '0') % 5}.png`,
           messageCount: m.messageCount || 0,
         }));
 

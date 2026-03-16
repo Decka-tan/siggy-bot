@@ -303,6 +303,7 @@ export default function ChatPage() {
 
   const availableCommands = [
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
+    { name: 'research', description: 'Research a topic using web search', usage: '/research query' },
   ];
 
   const filteredCommands = commandQuery 
@@ -517,6 +518,13 @@ export default function ChatPage() {
   useEffect(() => {
     // Dropdown triggers on typing "/check "
     if (!input.toLowerCase().startsWith('/check') || analyzingContributor) {
+      setContributorResults([]);
+      setShowContributorDropdown(false);
+      return;
+    }
+
+    // Hide contributor dropdown if typing /research
+    if (input.toLowerCase().startsWith('/research')) {
       setContributorResults([]);
       setShowContributorDropdown(false);
       return;
@@ -801,6 +809,36 @@ export default function ChatPage() {
             // First find the user to get their actual ID
             const searchRes = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
             const searchData = await searchRes.json();
+
+                c.username.toLowerCase() === query.toLowerCase() ||
+                c.displayName.toLowerCase() === query.toLowerCase()
+              ) || searchData.contributors[0];
+
+              await analyzeContributor(exactMatch);
+              return; // Exit handleSendMessage early
+            } else {
+              // Fallback: Just let the normal chat handle the "not found" message
+            }
+          } catch (error) {
+            console.error('Manual /check interception error:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }
+      }
+    }
+
+    // Intercept /research commands
+    if (textToSend.toLowerCase().startsWith('/research')) {
+      const parts = textToSend.split(' ');
+      if (parts.length > 1) {
+        const query = parts.slice(1).join(' ').trim();
+        if (query) {
+          // Just send it to the API, let the backend handle research
+          // Don't intercept, let normal flow handle it
+        }
+      }
+    }
             
             if (searchData.success && searchData.contributors.length > 0) {
               const exactMatch = searchData.contributors.find((c: any) => 
@@ -1962,10 +2000,10 @@ export default function ChatPage() {
                                   target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                                 }}
                                 onKeyDown={handleInputKeyDown}
-                                placeholder="What will you say? (type /check to analyze username)"
+                                placeholder="What will you say? (type /check or /research)"
                                 disabled={isLoading || analyzingContributor !== null}
                                 rows={1}
-                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/50 ring-2 ring-accent border-border' : 'bg-black/40'}`}
+                                className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/50 ring-2 ring-accent border-border' : 'bg-black/40'}`}
                                 style={{ minHeight: '40px', height: 'auto' }}
                               />
                             <button
