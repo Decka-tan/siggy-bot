@@ -160,7 +160,7 @@ Please answer the user's question using BOTH your existing knowledge AND this re
 }
 
 /**
- * Format response with sources
+ * Format response with sources - Tallify style
  */
 export function formatResponseWithSources(
   aiResponse: string,

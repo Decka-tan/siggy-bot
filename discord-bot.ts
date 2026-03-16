@@ -568,7 +568,7 @@ client.on('interactionCreate', async (interaction: Interaction) => {
 
       case 'research': {
         const query = interaction.options.getString('query', true);
-        const { searchWeb, buildEnhancedPrompt } = require('./lib/exa-research');
+        const { searchWeb, buildEnhancedPrompt, formatResponseWithSources } = require('./lib/exa-research');
 
         try {
           // Perform web search using Exa
@@ -602,14 +602,10 @@ client.on('interactionCreate', async (interaction: Interaction) => {
 
           const aiResponse = completion.choices[0]?.message?.content || 'No response found meow...';
 
-          // Add sources to response
-          const sources = searchResult.results.length > 0
-            ? '\n\n📚 **Sources:**\n' + searchResult.results.map(r =>
-                `• [${r.title}](${r.url})`
-              ).join('\n')
-            : '';
+          // Format with sources (Tallify style)
+          const formattedResponse = formatResponseWithSources(aiResponse, searchResult);
 
-          await interaction.editReply(aiResponse + sources);
+          await interaction.editReply(formattedResponse);
         } catch (error) {
           console.error('Research command error:', error);
           await interaction.editReply('❌ Research failed! *glitches* The dimensional connection is unstable... Try again? 😿');
