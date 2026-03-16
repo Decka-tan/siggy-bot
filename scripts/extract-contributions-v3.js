@@ -13,7 +13,6 @@ const USER_TOKEN = process.env.DISCORD_USER_TOKEN || '';
 const CHANNEL_ID = '1314448920633413673'; // #contribution (User Provided)
 const OUTPUT_DIR = path.join(process.cwd(), 'extracted-data');
 const RESULTS_PATH = path.join(OUTPUT_DIR, 'all-contributions-by-user.json');
-const LOGS_PATH = path.join(OUTPUT_DIR, 'contribution-logs-raw.json');
 const STATE_PATH = path.join(OUTPUT_DIR, 'extraction-state.json');
 
 if (!USER_TOKEN) {

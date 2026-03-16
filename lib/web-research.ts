@@ -25,7 +25,7 @@ interface SearchOptions {
  */
 export function detectResearchIntent(message: string): {
   needed: boolean;
-  type: 'twitter' | 'news' | 'general';
+  type: 'twitter' | 'news' | 'general' | 'research';
   confidence: number;
 } {
   const lower = message.toLowerCase();
@@ -120,7 +120,7 @@ export async function searchWeb(
 export function buildEnhancedPrompt(
   originalMessage: string,
   researchResult: TavilySearchResult,
-  researchType: 'twitter' | 'news' | 'general'
+  researchType: 'twitter' | 'news' | 'general' | 'research'
 ): string {
   const { answer, results } = researchResult;
 
@@ -136,6 +136,7 @@ export function buildEnhancedPrompt(
     twitter: 'Twitter/X posts and discussions',
     news: 'recent news and announcements',
     general: 'web search results',
+    research: 'in-depth research data',
   };
 
   return `
