@@ -647,7 +647,7 @@ export default function ChatPage() {
                   contributor: {
                     ...msg.contributor,
                     ...analyzeData.user,
-                    avatar: msg.contributor.avatar || analyzeData.user.avatar // Preserve original avatar!
+                    avatar: analyzeData.user.avatar || msg.contributor.avatar // Use UserChecker avatar (complete data)
                   }
                 };
               }
