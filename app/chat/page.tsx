@@ -138,16 +138,16 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   });
 
   // Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
-  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent text-sm md:text-base font-bold">$1</strong>');
+  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong class="text-sm md:text-base font-bold">$1</strong>');
 
   // Italic (but not when part of ** already) - muted color for actions - INLINE
   html = html.replace(/\*([^*]+)\*/g, '<span class="inline-block my-1 text-text-secondary/60 italic">$1</span>');
   html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary opacity-80 not-italic">$1</em>');
 
   // Code
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-white/5">$1</code>');
-  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-sm md:text-base font-mono border border-white/5">$1</code>');
+  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm md:text-base">$1</code>');
 
   // Quote
   html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2 opacity-90">$1</blockquote>');
@@ -293,6 +293,7 @@ export default function ChatPage() {
   const [isSearchingContributors, setIsSearchingContributors] = useState(false);
   const [selectedContributorIndex, setSelectedContributorIndex] = useState(0);
   const [contributorMap, setContributorMap] = useState<Record<string, ContributorSearchResult>>({});
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const pendingMentions = useRef<Set<string>>(new Set());
 
   // Slash Command States
@@ -577,6 +578,7 @@ export default function ChatPage() {
       setActiveConversationId(newConv.id);
     }
 
+    setIsAnalyzing(true);
     setAnalyzingContributor(contributor.userId);
     setShowContributorDropdown(false);
     setContributorResults([]); // Clear results
@@ -689,6 +691,7 @@ export default function ChatPage() {
       }));
     } finally {
       setAnalyzingContributor(null);
+      setIsAnalyzing(false);
     }
   };
 
@@ -1677,10 +1680,10 @@ export default function ChatPage() {
                                     }}
                                   />
                                 ) : (
-                                  <TypewriterText 
-                                    text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content} 
-                                    isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1} 
-                                    className="text-sm md:text-base lg:text-base leading-relaxed font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
+                                  <TypewriterText
+                                    text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content}
+                                    isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1}
+                                    className="text-sm md:text-base lg:text-base leading-relaxed font-mono italic text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
                                     alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
                                     onAnimationComplete={() => {
                                       if (vnHistoryIndex === -1) {
