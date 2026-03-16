@@ -1670,19 +1670,17 @@ export default function ChatPage() {
                           <div className="relative">
                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
                               <div className="flex flex-col gap-1 items-start mt-2">
-                                <div className="bg-surface border border-border p-4 rounded-2xl rounded-tl-none shadow-[0_0_20px_rgba(255,215,0,0.05)] w-full">
-                                  <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/10">
-                                    <span className="font-display text-xs uppercase tracking-widest text-accent">SIGGY</span>
-                                    <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
-                                  </div>
-                                  <p className="text-sm font-mono text-neutral-400 italic mb-4">
-                                    {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
-                                  </p>
-                                  <div className="flex gap-1.5 ml-1">
-                                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                    <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                  </div>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="font-display text-xs uppercase tracking-widest text-accent">SIGGY</span>
+                                  <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
+                                </div>
+                                <p className="text-sm font-mono text-neutral-400 italic mb-3">
+                                  {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                                </p>
+                                <div className="flex gap-1.5 ml-1">
+                                  <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                  <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                  <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                 </div>
                               </div>
                             ) : (
@@ -2073,11 +2071,11 @@ export default function ChatPage() {
                           <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                         </div>
                         <div className="flex flex-col gap-1 items-start">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-display text-sm md:text-base font-bold uppercase tracking-widest text-accent">SIGGY</span>
-                            <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
-                          </div>
-                          <div className="max-w-[80%] rounded-2xl rounded-bl-none bg-surface border border-border p-4 shadow-sm">
+                          <div className="max-w-[100%] rounded-2xl rounded-bl-none bg-surface border border-border p-4 shadow-sm min-w-[200px]">
+                            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-border/10">
+                              <span className="font-display text-xs uppercase tracking-widest text-accent">SIGGY</span>
+                              <span className="text-[10px] font-mono text-neutral-500 animate-pulse italic">typing on phone...</span>
+                            </div>
                             <p className="text-[10px] font-mono text-neutral-400 italic mb-4">
                               {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
                             </p>
