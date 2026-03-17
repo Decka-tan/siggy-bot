@@ -304,17 +304,12 @@ ${rolesList}
 **Impact Summary**
 [A 2-3 sentence executive summary of their essence. Why do they matter to Ritual? Focus on their specific contribution project: ${breakdown.projects?.join(', ') || 'General Forge activity'}.]
 
-<<<<<<< HEAD
 IMPORTANT:
 - DO NOT use placeholders.
-=======
-IMPORTANT: 
-- DO NOT use placeholders. 
->>>>>>> 617b1e854edd9794ab5ac4e2993cd97c8c512b5f
 - USE THE SAMPLES: ${JSON.stringify(samples)}
 - If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
 - When mentioning usernames, ALWAYS format as **@username**.
-- Do NOT include any [MOOD:...] tags. Just the raw intelligence report.
+- **CRITICAL**: Do NOT include any [MOOD:...] tags anywhere in your response. Just the raw intelligence report.
 `;
 
     const userPrompt = `Analyze this contributor nya~!
@@ -337,9 +332,15 @@ Provide a detailed, evidence-based report.`;
         { role: 'user', content: userPrompt }
       ], { maxTokens: 1500 });
 
-      const rawResponse = response.choices[0]?.message?.content || 'No analysis available meow!';
-      const cleanResponse = rawResponse.replace(/\[MOOD:[^\]]+\]\s*/g, '');
-      return `${basicStats}\n\n${cleanResponse}`;
+      let rawResponse = response.choices[0]?.message?.content || 'No analysis available meow!';
+
+      // Remove ALL [MOOD:...] tags (they can appear multiple times)
+      rawResponse = rawResponse.replace(/\[MOOD:[^\]]+\]\s*/g, '');
+
+      // Also remove any standalone MOOD tags that might have different formatting
+      rawResponse = rawResponse.replace(/\[MOOD:\s*[A-Z]+\]/gi, '');
+
+      return `${basicStats}\n\n${rawResponse}`;
     } catch (e: any) {
       console.error('DeepSeek analysis error:', e?.message || e);
       return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched (${e?.message || 'unknown error'}), but your stats are looking grit nyann~! 🐱`;
