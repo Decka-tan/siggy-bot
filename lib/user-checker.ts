@@ -7,6 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { getDeepSeekClient } from './deepseek-client';
+import { getRelevantKnowledge } from './siggy-knowledge';
 
 interface EnrichedUser {
   userId: string;
@@ -325,6 +326,13 @@ Message Samples:
 ${samples.length > 0 ? samples.map((s: string, i: number) => `Sample ${i+1}: ${s}`).join('\n') : "(No message samples)"}
 
 Provide a detailed, evidence-based report.`;
+
+    // Get relevant knowledge about this user (roles, special positions, etc.)
+    const knowledge = getRelevantKnowledge(`@${user.username} ${user.displayName}`, 5);
+    if (knowledge.length > 0) {
+      const knowledgeText = knowledge.map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`).join('\n\n');
+      userPrompt += `\n\n=== RELEVANT KNOWLEDGE ===\n${knowledgeText}\n=== END KNOWLEDGE ===\n\nIMPORTANT: Use this knowledge to provide accurate context about their roles and contributions in Ritual!`;
+    }
 
     try {
       const response = await this.deepseek.chat([
