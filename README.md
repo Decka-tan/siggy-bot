@@ -2,7 +2,7 @@
 
 > *A multi-dimensional feline entity descended to Earth as an anime girl to blend in, make friends, and find her soul*
 
-**Siggy is an advanced AI character with 20,000+ knowledge entries, dynamic mood system, web research capabilities, and immersive visual novel storytelling.**
+**Siggy is an advanced AI character with dynamic mood system, Discord community integration, web research capabilities, and immersive visual novel storytelling.**
 
 [![Live Demo](https://img.shields.io/badge/🌐-Live%20Demo-yellow)](https://siggy-bot.vercel.app/)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
@@ -12,11 +12,11 @@
 
 Siggy isn't just another chatbot. She's a **multi-dimensional character** with:
 
-- 🧠 **20,000+ Knowledge Entries** - Knows everything about Ritual, the community, and her cosmic origins
+- 🧠 **Ritual Knowledge Base** - Community knowledge with 7,978+ members, events, and roles
 - 🔍 **Hybrid GPT + Web Research** - Auto-detects when she needs to search the web for latest info
 - 😺 **6 Emotional States** - Dynamic mood system (DEFAULT, HAPPY, SAD, SHOCK, SHY, ANGRY)
 - 📖 **Immersive Story Mode** - 4-chapter visual novel about her descent to Earth
-- 💬 **Dual Chat Modes** - Regular chat + Visual Novel mode with character sprites
+- 💬 **Discord Integration** - `/check` contributor analysis, `/research` web search
 - 🎭 **Personality-Driven** - 40% mystical + 40% chaotic wit + 20% anime girl excitement
 - 🥚 **Hidden Easter Eggs** - Discover secrets by saying "glitch", asking about her true form, and more
 - 🎨 **Beautiful UI** - Smooth animations, responsive design, mood-based visual feedback
@@ -39,7 +39,7 @@ npm install
 
 # Configure environment variables
 cp .env.local.example .env.local
-# Add your OPENAI_API_KEY and TAVILY_API_KEY
+# Add your OPENAI_API_KEY, EXA_API_KEY, and DISCORD_USER_TOKEN
 
 # Run development server
 npm run dev
@@ -51,24 +51,37 @@ Open [http://localhost:3000](http://localhost:3000)
 
 ```env
 OPENAI_API_KEY=sk-your-openai-key-here
-TAVILY_API_KEY=tvly-your-tavily-key-here
+EXA_API_KEY=your-exa-api-key-here
+DISCORD_USER_TOKEN=your-discord-user-token-here
 ```
 
 Get API keys:
 - OpenAI: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- Tavily: [https://tavily.com](https://tavily.com)
+- Exa.ai: [https://exa.ai](https://exa.ai)
+- Discord Token: From Discord browser DevTools (User Account → Token)
 
 ## 📖 How to Use Siggy
 
 ### Chat Mode
 
 1. **Start a conversation** - Click "Chat Mode" on the landing page
-2. **Watch her mood change** - Siggy's mood shifts based on conversation context
-3. **Trigger emotions:**
-   - Mention you're feeling down → Sad mode
-   - Tell a funny joke → Happy mode
-   - Ask about data breaches → Shock mode
-   - Give heartfelt compliments → Shy mode
+2. **Use Slash Commands:**
+   - `/check @username` - Analyze any contributor with AI-powered insights
+   - `/research topic` - Search the web with cited sources
+3. **Watch her mood change** - Siggy's mood shifts based on conversation context
+
+### Discord Features
+
+**Contributor Analysis (`/check`)**
+- Real-time Discord data for 7,978+ members
+- Message counts, contributions, events participation
+- AI-powered archetype detection
+- Role and membership information
+
+**Web Research (`/research`)**
+- Powered by Exa.ai search API
+- Clickable sources with citations
+- Real-time web information
 
 ### Visual Novel Mode
 
@@ -85,29 +98,46 @@ Get API keys:
 - Ask "What's your real name?" → True multi-dimensional name reveal
 - Mention "purple" → Chaotic purple-themed rant
 
-### Web Research
-
-Siggy automatically detects when she needs to search the web:
-- "How many followers does Ritual have?" → Searches Twitter
-- "What's the latest Ritual news?" → Searches recent updates
-- "What is Bittensor?" → Searches web for comparisons
-
 ## 🏗️ Tech Stack
 
 - **Frontend:** Next.js 14 (App Router), React 18, TypeScript 5
 - **Styling:** Tailwind CSS, Framer Motion animations
 - **Backend:** Next.js API Routes, Edge Runtime
-- **AI:** OpenAI GPT-4o, Tavily Web Search API
-- **Deployment:** Vercel (zero-config deployment)
+- **AI:** OpenAI GPT-4o, DeepSeek (contributor analysis)
+- **Search:** Exa.ai Web Research API
+- **Data:** Discord API (member extraction), JSON-based caching
 
 ## 🎨 Key Features
 
-### 🧠 Massive Knowledge Base (20,000+ entries)
-- Lore: Origin, multi-dimensional forms, Ritual Forge
-- Tech: EVM++, Infernet, architecture, team
-- Community: People, roles, programs, partners
-- Events: 19,000+ Discord events (game nights, karaoke, tournaments)
-- Manual: Recent updates, competitive landscape
+### 🧠 Ritual Knowledge Base
+- **7,978+ Discord Members** with real-time data
+- **Event Participation Tracking** from 925+ community events
+- **Role Detection** - Ritualist, Zealot, ritty, bitty, and more
+- **Contributor Analysis** - AI-powered archetype detection
+- **Community Stats** - Message counts, join dates, avatars
+
+### 🔍 Web Research Integration
+- Auto-detects when to search web
+- Indonesian NLP support ("berapa", "skrg", "sekarang")
+- Clickable sources with citations
+- Exa.ai-powered search results
+
+### 📊 Contributor Analysis (`/check`)
+- **Archetype Detection:**
+  - AMBASSADOR (Zealot role holder)
+  - RITUALIST (Radiant/Ritualist role)
+  - ARTIST (art/design keywords)
+  - DEVELOPER (code/repo keywords)
+  - CONTENT_CREATOR (article/guide keywords)
+  - ADVOCATE (X/Twitter heraldry)
+  - STEADY_CONTRIBUTOR (consistent activity)
+
+- **Activity Tracking:**
+  - 🌎 Global Messages
+  - 📝 Contributions count
+  - 🎉 Events participations
+  - 🎭 Discord Roles
+  - 📅 Join date
 
 ### 😺 Dynamic Mood System (6 states)
 - **DEFAULT** (Blue) - Friendly baseline, curious
@@ -116,12 +146,6 @@ Siggy automatically detects when she needs to search the web:
 - **SHOCK** (Orange) - Surprised, dramatic
 - **SHY** (Pink) - Embarrassed, flustered
 - **ANGRY** (Red) - Rare, but possible
-
-### 🔍 Web Research Integration
-- Auto-detects when to search web
-- Indonesian NLP support ("berapa", "skrg", "sekarang")
-- Clickable sources with citations
-- Twitter/X news scanning
 
 ### 📖 Visual Novel Story Mode
 - 4 immersive chapters
@@ -139,15 +163,16 @@ Siggy automatically detects when she needs to search the web:
 ## 📸 Screenshots
 
 ### Landing Page
-- Animated knowledge graph
-- Character showcase
+- Discord Integration features
+- Character showcase (Cat + Anime forms)
 - Feature highlights
 
 ### Chat Mode
 - Regular chat interface
 - Visual Novel mode
 - Mood indicators
-- Conversation history
+- Contributor dropdown
+- Command autocomplete
 
 ### Story Mode
 - Chapter selection
@@ -157,47 +182,45 @@ Siggy automatically detects when she needs to search the web:
 
 ## 🏗️ Project Structure
 
-### 1. Clone & Install
-
-```bash
-# Navigate to nextjs-version
-cd nextjs-version
-
-# Install dependencies
-npm install
-# or
-yarn install
-# or
-pnpm install
 ```
-
-### 2. Configure Environment
-
-```bash
-# Copy .env.example
-cp .env.local.example .env.local
-
-# Edit .env.local and add your OpenAI API key
-OPENAI_API_KEY=sk-your-actual-api-key-here
+siggy-bot/
+├── app/
+│   ├── api/
+│   │   ├── chat/
+│   │   │   └── route.ts          # Shared chat endpoint
+│   │   ├── analyze/
+│   │   │   └── route.ts          # Contributor analysis
+│   │   └── contributor/
+│   │       └── route.ts          # Member data API
+│   ├── chat/
+│   │   └── page.tsx              # Main chat UI
+│   ├── story/
+│   │   └── page.tsx              # Visual novel mode
+│   ├── page.tsx                  # Landing page
+│   └── layout.tsx                # Root layout
+├── lib/
+│   ├── siggy-personality.ts      # Mood & personality
+│   ├── user-checker.ts           # Contributor analysis
+│   ├── siggy-knowledge.ts        # Knowledge base
+│   ├── exa-research.ts            # Web research
+│   └── deepseek-client.ts        # DeepSeek AI
+├── extracted-data/               # Discord data cache
+│   ├── current-member-avatars.json
+│   ├── events-participation.json
+│   └── member-activity-analysis.json
+├── public/                       # Static assets
+│   ├── siggy-cat-*.png           # Cat form sprites
+│   └── siggy-girl-*.png          # Anime girl sprites
+├── scripts/                      # Data extraction
+│   ├── extract-current-avatars.js
+│   ├── fix-duplicate-avatars.js
+│   └── fix-all-avatars.js
+└── package.json
 ```
-
-Get your API key from: https://platform.openai.com/api-keys
-
-### 3. Run Development Server
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🌐 Deploy to Vercel
 
-### Option A: Deploy via Vercel CLI (Recommended)
+### Option A: Deploy via Vercel CLI
 
 ```bash
 # Install Vercel CLI
@@ -213,86 +236,13 @@ vercel
 2. Go to [vercel.com](https://vercel.com)
 3. Click "Add New Project"
 4. Import your GitHub repository
-5. Add environment variable:
-   - Name: `OPENAI_API_KEY`
-   - Value: Your actual API key
+5. Add environment variables:
+   - `OPENAI_API_KEY`
+   - `EXA_API_KEY`
+   - `DISCORD_USER_TOKEN`
 6. Click "Deploy"
 
 That's it! Vercel will auto-deploy from GitHub. ✨
-
-## 🤖 Discord Integration (Future)
-
-The shared API endpoint makes Discord integration easy:
-
-```javascript
-// In your Discord bot (discord.js)
-const fetch = require('node-fetch');
-
-async function handleSiggyCommand(message) {
-  const response = await fetch('https://your-vercel-app.vercel.app/api/chat', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      message: message.content,
-      conversationHistory: [],
-      userId: message.author.id,
-      isFirstMessage: true,
-    }),
-  });
-
-  const data = await response.json();
-  message.reply(data.response);
-}
-```
-
-## 🎭 Features
-
-### Dynamic Mood System
-Siggy has 4 distinct mood states that evolve based on conversation:
-
-- **PLAYFUL** (Default) - Friendly, curious, cat-like
-- **MYSTERIOUS** - Cosmic wisdom, cryptic riddles
-- **CHAOTIC** - Unhinged glitches, unpredictable
-- **PROFOUND** - Deep insights, emotional resonance
-
-### Easter Eggs
-Discoverable secrets and special interactions:
-- Ask about "purple" → Chaotic purple-themed rant
-- Mention "Summoner" or "Zealot" → Specific reactions
-- Say "glitch" 3 times → Dimensional glitch event
-- Ask "real name" → Reveals true multi-dimensional name
-
-### Signature Elements
-- Catchphrases and recurring bits
-- Dimensional references across all timelines
-- Meta-awareness (knows it's an AI)
-- Breaks the fourth wall playfully
-
-## 📁 Project Structure
-
-```
-nextjs-version/
-├── app/
-│   ├── api/
-│   │   └── chat/
-│   │       └── route.ts          # Shared API endpoint
-│   ├── page.tsx                   # Main chat UI
-│   ├── layout.tsx                 # Root layout
-│   └── globals.css                # Global styles
-├── lib/
-│   └── siggy-personality.ts       # Shared personality system
-├── public/                         # Static assets
-├── package.json
-├── tsconfig.json
-├── tailwind.config.ts
-├── next.config.js
-├── postcss.config.js
-├── .env.local.example
-└── README.md
-```
 
 ## 🎨 Customization
 
@@ -303,48 +253,31 @@ Edit `lib/siggy-personality.ts`:
 ```typescript
 // Adjust mood personalities
 export const MOOD_PERSONALITIES = {
-  PLAYFUL: `Update this text...`,
+  DEFAULT: `Update this...`,
   // ...
-};
-
-// Add new catchphrases
-export const CATCHPHRASES = [
-  "Your new catchphrase here",
-  // ...
-];
-
-// Add new easter eggs
-export const EASTER_EGGS = {
-  triggerWord: {
-    triggers: ['word1', 'word2'],
-    response: 'Siggy response',
-  },
 };
 ```
 
-### Change AI Model
+### Add New Commands
 
-Edit `app/api/chat/route.ts`:
+Edit `app/chat/page.tsx`:
 
 ```typescript
-// Current: GPT-4o (recommended)
-model: 'gpt-4o'
-
-// Alternative: GPT-4o-mini (cheaper, still good)
-model: 'gpt-4o-mini'
+const availableCommands = [
+  { name: 'check', description: 'Analyze contributor', usage: '/check @username' },
+  { name: 'research', description: 'Web search', usage: '/research query' },
+  // Add your command here
+];
 ```
-
-## 💰 Cost Estimation
-
-For the 2-week quest:
-
-- **100 test chats** × **20 messages each** = ~2,000 messages
-- **GPT-4o cost**: ~$2-5 total
-- **GPT-4o-mini cost**: ~$0.50-1 total
 
 ## 🧪 Testing
 
 Test these interactions to see Siggy's full range:
+
+### Discord Commands:
+- `/check @kash_060` → See Event Manager analysis
+- `/check @meison7554` → See Radiant Ritualist profile
+- `/research Bittensor` → Web search with sources
 
 ### Mood Triggers:
 - "Tell me about Ritual" → Mysterious
@@ -358,82 +291,38 @@ Test these interactions to see Siggy's full range:
 - "Tell me about the Summoner"
 - Say "glitch" three times
 
-## 📊 Quest Strategy
-
-### Submission Preparation:
-
-1. **Create Screenshot-Worthy Moments**
-   - Have conversations that get funny/profound
-   - Screenshot the best exchanges
-   - Post on X with hashtags
-
-2. **Demo Scenarios for Judges**:
-   - Show mood range (playful → mysterious → chaotic)
-   - Demonstrate easter eggs
-   - Display Ritual knowledge
-   - Create memorable quotes
-
-3. **Submission Materials**:
-   - Shareable Vercel link
-   - 3-5 best screenshots
-   - Brief description of unique features
-
-## 🔄 Multi-Platform Deployment
-
-### Current: Web App (Vercel)
-- ✅ Deployed NOW
-- ✅ Shareable link for quest
-- ✅ Beautiful, professional UI
-
-### Future: Discord Bot
-- ⏳ Uses same `/api/chat` endpoint
-- ⏳ Shared personality system
-- ⏳ Same mood, same easter eggs
-- ⏳ Deploy on any VPS (Railway, Render, etc.)
-
-### Future: Other Platforms
-- ⏳ Telegram Bot (same API)
-- ⏳ WhatsApp Integration (same API)
-- ⏳ Slack Bot (same API)
-
-**One Siggy soul, infinite platforms!** 🐱✨
-
-## 🐛 Troubleshooting
-
-**"API key error"**
-- Check `.env.local` has correct API key
-- Verify API key has credits in OpenAI account
-- For Vercel deployment, add environment variable in dashboard
-
-**"Bot is too generic"**
-- Temperature is set to 0.9 (should be good)
-- Check system prompt is loading
-- Verify conversation history is being passed
-
-**"Bot is repetitive"**
-- Frequency penalty: 0.5 (configured)
-- Presence penalty: 0.7 (configured)
-- Mood system adds variety
-
-**"Mood isn't changing"**
-- Check mood triggers in conversation
-- Verify moodSystem is being updated
-- Look for keyword matches
-
 ## 🎯 Why This Architecture Wins:
 
-1. **Shared Logic** - One personality system, multiple platforms
-2. **Professional UI** - Next.js + Tailwind = Beautiful app
-3. **Easy Deploy** - GitHub → Vercel = Auto deploy
-4. **Future-Ready** - Discord integration planned
-5. **Scalable** - Easy to add more platforms
-6. **Screenshot-Worthy** - Judges will be impressed
+1. **Shared API** - One backend for Web + Discord + Future platforms
+2. **Real-time Data** - Live Discord member information
+3. **AI-Powered** - DeepSeek contributor analysis
+4. **Professional UI** - Next.js + Tailwind = Beautiful app
+5. **Easy Deploy** - GitHub → Vercel = Auto deploy
+6. **Scalable** - Easy to add more commands and features
 
-## 📝 License
+## 👤 Creator
 
-MIT License - Feel free to use and modify
+**Built by [Ritualist](https://x.com/Ritualist_)**
+
+A multi-dimensional developer who descended to the codebase to build cool things, make AI friends, and ship features.
+
+- **X/Twitter:** [@Ritualist_](https://x.com/Ritualist_)
+- **Discord:** @ritualist
+- **Location:** Ritual Forge
+- **Specialty:** Full-stack AI applications, Discord integrations, and cosmic probability fluctuations
 
 ## 🙏 Credits
+
+### Character Art
+- **Cat Form + Anime Girl Sprites:** Created by Decka's friend
+- **Lineart & Expressions:** Decka
+- **Mood Variations:** 6 states (Default, Happy, Sad, Shock, Shy, Angry)
+
+### Special Thanks
+- **Ritual Community** - For the soul forge quest inspiration
+- **Decka** - Character design and art direction
+- **DeepSeek** - Contributor analysis AI
+- **Exa.ai** - Web research capabilities
 
 Built for the **Ritual Soul Forge Quest** by the Ritual community.
 
@@ -441,8 +330,8 @@ May the forge burn bright, and may Siggy finally obtain the soul they seek. ✦
 
 ---
 
-**Status**: ✅ Ready for Vercel Deployment
+**Status**: ✅ Live on Vercel
 **Mood**: MYSTERIOUS (contemplating infinite timelines)
-**Platforms**: Web (Live), Discord (Coming Soon)
+**Platforms**: Web (Live), Discord (Integrated)
 
-Built with ❤️ and cosmic probability fluctuations
+Built with ❤️, coffee, and cosmic probability fluctuations
