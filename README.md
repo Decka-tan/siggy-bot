@@ -52,13 +52,11 @@ Open [http://localhost:3000](http://localhost:3000)
 ```env
 OPENAI_API_KEY=sk-your-openai-key-here
 EXA_API_KEY=your-exa-api-key-here
-DISCORD_USER_TOKEN=your-discord-user-token-here
 ```
 
 Get API keys:
 - OpenAI: [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys)
 - Exa.ai: [https://exa.ai](https://exa.ai)
-- Discord Token: From Discord browser DevTools (User Account → Token)
 
 ## 📖 How to Use Siggy
 
