@@ -176,11 +176,9 @@ export function formatResponseWithSources(
     .replace(/---\n\n📚 Sources:\n[\s\S]*$/gi, '')
     .trim();
 
-  // Compact CTA style: Title + short clickable link
+  // Standard markdown links format: [Title](url)
   const sources = researchResult.results.map((r, i) => {
-    // Truncate title if too long (max 60 chars)
-    const shortTitle = r.title.length > 60 ? r.title.slice(0, 57) + '...' : r.title;
-    return `${i + 1}. **${shortTitle}** - [Source](${r.url})`;
+    return `${i + 1}. [${r.title}](${r.url})`;
   }).join('\n');
 
   return `${cleanedResponse}\n\n---\n📚 **Sources**\n${sources}`;
