@@ -42,10 +42,12 @@ function loadData(): ExtractionData {
     // 1. member-activity-analysis.json - 787 users with globalMessages
     // 2. user-roles-summary.json - 7,978 users with roles/joinedAt/avatar (optimized, 1.87MB)
     // 3. current-member-avatars.json - Current avatar data with fallbacks
+    // 4. complete-contributions-with-dates.json - Contributions with firstPost/lastPost dates
 
     const activityPath = path.join(dataDir, 'member-activity-analysis.json');
     const rolesPath = path.join(dataDir, 'user-roles-summary.json');
     const avatarsPath = path.join(dataDir, 'current-member-avatars.json');
+    const contributionsPath = path.join(dataDir, 'complete-contributions-with-dates.json');
 
     let membersMap = new Map<string, any>();
     let avatarsMap = new Map<string, { avatar: string; displayName: string }>();
@@ -113,6 +115,20 @@ function loadData(): ExtractionData {
         }
       });
       console.log(`✅ Merged user-roles-summary`);
+    }
+
+    // Merge contributions data with firstPost/lastPost dates
+    if (fs.existsSync(contributionsPath)) {
+      const data = JSON.parse(fs.readFileSync(contributionsPath, 'utf-8'));
+      (data.leaderboard || []).forEach((m: any) => {
+        const existing = membersMap.get(m.username.toLowerCase());
+        if (existing) {
+          // Add firstPost/lastPost from contributions data
+          existing.firstPost = m.firstPost;
+          existing.lastPost = m.lastPost;
+        }
+      });
+      console.log(`✅ Merged contributions-with-dates`);
     }
 
     const finalMembers = Array.from(membersMap.values());

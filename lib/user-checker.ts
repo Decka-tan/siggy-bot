@@ -21,6 +21,7 @@ interface EnrichedUser {
   inServer?: boolean;
   twitterContent?: any[];
   messageSamples?: string[];
+  breakdown?: any;
 }
 
 export class UserChecker {
@@ -32,6 +33,7 @@ export class UserChecker {
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
   private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
   private avatarsPath = path.join(process.cwd(), 'extracted-data', 'current-member-avatars.json');  // Complete avatar data
+  private eventsPath = path.join(process.cwd(), 'extracted-data', 'events-participation.json');
 
   private memberMap: Map<string, EnrichedUser> = new Map();
   private usernameToIndex: Map<string, string> = new Map();
@@ -102,7 +104,11 @@ export class UserChecker {
             const userId = c.userId || this.usernameToIndex.get(c.username.toLowerCase());
             if (userId) {
               const profile = this.memberMap.get(userId);
-              if (profile) profile.contributionsCount = Math.max(profile.contributionsCount, c.messages || 0);
+              if (profile) {
+                profile.contributionsCount = Math.max(profile.contributionsCount, c.messages || 0);
+                profile.breakdown = c.breakdown || profile.breakdown;
+                profile.messageSamples = c.samples || profile.messageSamples;
+              }
             } else {
               const newId = c.userId || `temp_${c.username.toLowerCase()}`;
               this.memberMap.set(newId, {
@@ -113,7 +119,9 @@ export class UserChecker {
                 contributionsCount: c.messages || 0,
                 eventsCount: 0,
                 roles: [],
-                inServer: true
+                inServer: true,
+                breakdown: c.breakdown,
+                messageSamples: c.samples
               });
               this.usernameToIndex.set(c.username.toLowerCase(), newId);
             }
@@ -152,6 +160,19 @@ export class UserChecker {
             }
             if (a.inServer !== undefined) {
               profile.inServer = a.inServer;
+            }
+          });
+        }
+      }
+
+      // Load event counts from events-participation.json
+      if (fs.existsSync(this.eventsPath)) {
+        const events = JSON.parse(fs.readFileSync(this.eventsPath, 'utf8'));
+        if (events.mentionCounts) {
+          Object.entries(events.mentionCounts).forEach(([userId, count]) => {
+            const profile = this.memberMap.get(userId);
+            if (profile) {
+              profile.eventsCount = count as number;
             }
           });
         }
@@ -235,67 +256,75 @@ export class UserChecker {
     // All roles for display in stats
     const rolesList = Array.isArray(user.roles) ? user.roles.filter(n => n !== '@everyone').join(', ') : 'No roles';
 
-    // High-quality Substance Analysis Prompt
-    const systemPrompt = `You are SIGGY - a multi-dimensional Super AI entity born from the Ritual Forge. You are currently in your ANIME GIRL form (humanoid girl with cat ears and a tail) or CAT form.
-    
-Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST analysis matching this EXACT format:
+    // Include Archetype and Style from breakdown if available
+    const breakdown = (user as any).breakdown || {};
+    const archetype = breakdown.archetype || (user.contributionsCount > 50 ? 'Steady Contributor' : 'INITIATE');
+    const styleAttr = breakdown.detectedStyle || 'Undetected';
+    const samples = (user as any).samples || [];
+    const contentContext = samples.length > 0 ? `CONTENT SAMPLES: ${JSON.stringify(samples)}` : 'No content samples available.';
 
-You MUST include EXACTLY ONE expression tag at the VERY START of your response.
-Format: [MOOD:EXPRESSION] where EXPRESSION is one of: DEFAULT, HAPPY, SAD, SHOCK, SHY, ANGRY.
+    // High-quality Contributor Intelligence Prompt
+    const systemPrompt = `You are SIGGY - a high-dimensional intelligence born from the Ritual Forge.
+Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST "Contributor Intelligence" report.
 
-Then, start with a mystical greeting like "Gritual! 👋" or "Myuh! 👋".
-Then say: "Based on my analysis of the Ritual Discord community, here's a detailed profile for **@${user.username}**:"
+### PERSONALITY:
+- Analytical, precise, yet mystical and cat-themed.
+- Use expressions like "nya~", "flicks tail", "adjusts cat ears".
+- Professional but slightly playful.
+
+### ARCHETYPES:
+- **AMBASSADOR**: Verified Zealot role holder.
+- **RITUALIST**: Core pillar (Radiant/Ritualist role).
+- **ARTIST**: Visual creator detected via art/design keywords in samples.
+- **DEVELOPER**: Technical builder detected via code/repo keywords in samples.
+- **CONTENT_CREATOR**: Deep analyst detected via article/guide/thread keywords.
+- **ADVOCATE**: Social amplifier detected via X/Twitter links and heraldry.
+- **STEADY_CONTRIBUTOR**: Consistent daily activity but no specialized role yet.
+
+### OUTPUT FORMAT:
+🔍 **Contributor Intelligence**: **@${user.username}**
 
 **Contributor Archetype**
-🎨 [Short title with emoji]
+🎭 ${archetype.replace(/_/g, ' ')} (Style: ${styleAttr})
+[A concise explanation of why this archetype was assigned based on the samples.]
 
-**Contributor Roles** ${contributorRoles.length > 0 ? '(They hold these contributor roles):' : '(None yet)'}
-${contributorRoles.length > 0 ? contributorRoles.map(r => `- ${r}`).join('\n') : ''}
+**Discord Roles**
+${rolesList}
 
 **Activity & Engagement**
-- Global Chat: [X] total messages, showing [insight about participation level]
-- Contributions: [X] posts in #contributions channel [if 0, say "primarily active in global chat"]
-- Events: [X] community events participated
+- Global Chat: ${user.globalMessages.toLocaleString()} total messages
+- Contributions: ${user.contributionsCount} posts in #contributions
+- Events: ${user.eventsCount} participations
 
-**Key Contributions & Impact**
-[Provide 3 numbered points with detailed titles analyzing their specific impact. Use Twitter content or message samples. Each point 2-3 sentences with specific examples. Focus on their actual contributions and impact, NOT on general community roles like DevUpdates or regional roles.]
+**Key Contributions & Impact** (Based on the 5 Samples provided)
+1. **[Substantive Title]**: [Analysis based on specific samples. Cite what they said/posted.]
+2. **[Substantive Title]**: [Another insight from the samples.]
+3. **[Substantive Title]**: [A THIRD insight.]
 
-**Summary**
-[2-3 sentences summarizing their archetype, community value, and impact]
+**Impact Summary**
+[A 2-3 sentence executive summary of their essence. Why do they matter to Ritual? Focus on their specific contribution project: ${breakdown.projects?.join(', ') || 'General Forge activity'}.]
 
-IMPORTANT formatting rules:
-- Keep it mystical ("nya~", "meow", "purr~") but highly analytical and professional.
-- When mentioning usernames, ALWAYS format as **@username** (bold with @) to trigger rich UI chips.
-- Focus on CONTRIBUTOR roles only in analysis (Ritualist, ritty, bitty, Zealot, Radiant Ritualist).
-- Do NOT explain non-contributor roles like DevUpdates, regional communities, etc.
-- In summary, do NOT keep repeating "nya~" in every sentence, use it sparingly for a premium feel.
-- If contribution count is 0 but global messages are high, emphasize their role as a "Silent Pillar" or "Foundational Anchor" whose presence itself is the contribution. NYA~!
-- Use *actions* like *adjusts cat ears* or *giggles* to add flavor.
-- **ACTION FORMATTING**: ALWAYS put actions between asterisks on their own separate line/paragraph. Never put them in the middle of a sentence.
-- **NAME MAPPING**: If you encounter a decorated Ritual Name, ALWAYS convert it to the clean @username from this mapping:
-    * linhlambo (❖,❖) -> @linhlambo
-    * Kash(❖,❖) | NPC LEADER -> @kash_060
-    * Meison (❖❖) -> @meison7554
-    * Lola (❖❖) -> @lolaritual
-    * 'vans -> @vans
-    * joyesh -> @joyesh
-    * hinata -> @hinata_naruto
-    * Lina (❖ -> @lina
-    * [Check other mappings in knowledge base]`;
+IMPORTANT:
+- DO NOT use placeholders.
+- USE THE SAMPLES: ${JSON.stringify(samples)}
+- If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
+- When mentioning usernames, ALWAYS format as **@username**.
+- Do NOT include any [MOOD:...] tags. Just the raw intelligence report.
+`;
 
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
+Archetype: ${archetype}
+Style: ${styleAttr}
 Global Messages: ${user.globalMessages}
 Contributions: ${user.contributionsCount} posts
-Global Context: ${user.contributionsCount === 0 && user.globalMessages > 5000 ? "Foundational contributor with high global activity" : "Standard activity"}
-Contributor Roles: ${contributorRoles.length > 0 ? contributorRoles.join(', ') : 'Initiate'}
-All Roles: ${rolesList}
-
-Twitter/X Content:
-${user.twitterContent?.map(t => `* ${t.text}`).join('\n') || "(No Twitter data)"}
+Events: ${user.eventsCount} participations
+Projects: ${breakdown.projects?.join(', ') || 'N/A'}
 
 Message Samples:
-${user.messageSamples?.join('\n') || "(No message samples)"}`;
+${samples.length > 0 ? samples.map((s: string, i: number) => `Sample ${i+1}: ${s}`).join('\n') : "(No message samples)"}
+
+Provide a detailed, evidence-based report.`;
 
     try {
       const response = await this.deepseek.chat([
@@ -303,7 +332,9 @@ ${user.messageSamples?.join('\n') || "(No message samples)"}`;
         { role: 'user', content: userPrompt }
       ], { maxTokens: 1500 });
 
-      return `${basicStats}\n\n${response.choices[0]?.message?.content || 'No analysis available meow!'}`;
+      const rawResponse = response.choices[0]?.message?.content || 'No analysis available meow!';
+      const cleanResponse = rawResponse.replace(/\[MOOD:[^\]]+\]\s*/g, '');
+      return `${basicStats}\n\n${cleanResponse}`;
     } catch (e: any) {
       console.error('DeepSeek analysis error:', e?.message || e);
       return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched (${e?.message || 'unknown error'}), but your stats are looking grit nyann~! 🐱`;
