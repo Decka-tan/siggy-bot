@@ -25,7 +25,7 @@ interface SearchOptions {
  */
 export function detectResearchIntent(message: string): {
   needed: boolean;
-  type: 'twitter' | 'news' | 'general';
+  type: 'twitter' | 'news' | 'general' | 'research';
   confidence: number;
 } {
   const lower = message.toLowerCase();
@@ -120,7 +120,7 @@ export async function searchWeb(
 export function buildEnhancedPrompt(
   originalMessage: string,
   researchResult: TavilySearchResult,
-  researchType: 'twitter' | 'news' | 'general'
+  researchType: 'twitter' | 'news' | 'general' | 'research'
 ): string {
   const { answer, results } = researchResult;
 
@@ -136,6 +136,7 @@ export function buildEnhancedPrompt(
     twitter: 'Twitter/X posts and discussions',
     news: 'recent news and announcements',
     general: 'web search results',
+    research: 'in-depth research data',
   };
 
   return `
@@ -146,6 +147,18 @@ Recent ${typeContext[researchType]} findings:
 ${answer ? `Summary: ${answer}\n\n` : ''}${sources}
 
 Please answer the user's question using BOTH your existing knowledge AND this recent ${typeContext[researchType]}. If there's conflicting information, prioritize the recent sources and mention any discrepancies. Keep Siggy's personality - mystical, witty, slightly unhinged cosmic cat girl!
+
+CRITICAL FORMATTING RULES - FOLLOW EXACTLY:
+- Use NORMAL sentence case - NO ALL CAPS
+- NEVER use **double asterisks** for bold - this makes text HUGE
+- NEVER use __single underscores__ for underline
+- NEVER use headers like # ## ### which make text ENORMOUS
+- Do NOT use *single asterisks* for italic either
+- ALL text must be the SAME normal size - no markdown formatting whatsoever
+- Do NOT add emojis or special characters to section headers
+- DO NOT create your own Sources/References/Works Cited section - the system adds it automatically
+- Do NOT write "Sources:", "References:", or any similar headers
+- Just answer the question and STOP - do not add a references section yourself
   `.trim();
 }
 
@@ -160,7 +173,7 @@ export function formatResponseWithSources(
     return aiResponse;
   }
 
-  const sources = researchResult.results.map(r => `• [${r.title}](${r.url})`).join('\n');
+  const sources = researchResult.results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}`).join('\n');
 
-  return `${aiResponse}\n\n---\n📚 **Sources:**\n${sources}`;
+  return `${aiResponse}\n\n---\nLearn more:\n${sources}`;
 }

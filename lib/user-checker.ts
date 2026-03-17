@@ -29,7 +29,7 @@ export class UserChecker {
   private statsPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
   private rolesPath = path.join(process.cwd(), 'extracted-data', 'user-roles-summary.json');  // Use optimized file
   private rolesMapPath = path.join(process.cwd(), 'extracted-data', 'roles-map.json');
-  private contributionsPath = path.join(process.cwd(), 'extracted-data', 'complete-contributions-with-dates.json');
+  private contributionsPath = path.join(process.cwd(), 'extracted-data', 'all-contributions-by-user.json');
   private twitterCachePath = path.join(process.cwd(), 'extracted-data', 'twitter-content-cache.json');
   private contentsPath = path.join(process.cwd(), 'extracted-data', 'contributor-contents.json');
   private avatarsPath = path.join(process.cwd(), 'extracted-data', 'current-member-avatars.json');  // Complete avatar data
@@ -105,7 +105,7 @@ export class UserChecker {
             if (userId) {
               const profile = this.memberMap.get(userId);
               if (profile) {
-                profile.contributionsCount = Math.max(profile.contributionsCount, c.messages || 0);
+                profile.contributionsCount = Math.max(profile.contributionsCount, c.count || 0);
                 profile.breakdown = c.breakdown || profile.breakdown;
                 profile.messageSamples = c.samples || profile.messageSamples;
               }
@@ -116,7 +116,7 @@ export class UserChecker {
                 username: c.username,
                 displayName: c.displayName || c.username,
                 globalMessages: 0,
-                contributionsCount: c.messages || 0,
+                contributionsCount: c.count || 0,
                 eventsCount: 0,
                 roles: [],
                 inServer: true,
@@ -304,8 +304,13 @@ ${rolesList}
 **Impact Summary**
 [A 2-3 sentence executive summary of their essence. Why do they matter to Ritual? Focus on their specific contribution project: ${breakdown.projects?.join(', ') || 'General Forge activity'}.]
 
+<<<<<<< HEAD
 IMPORTANT:
 - DO NOT use placeholders.
+=======
+IMPORTANT: 
+- DO NOT use placeholders. 
+>>>>>>> 617b1e854edd9794ab5ac4e2993cd97c8c512b5f
 - USE THE SAMPLES: ${JSON.stringify(samples)}
 - If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
 - When mentioning usernames, ALWAYS format as **@username**.

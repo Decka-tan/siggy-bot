@@ -1,8 +1,10 @@
 {
-  "timestamp": "2026-03-15T23:20:56.810Z",
-  "state": "COMPLETED",
-  "totalProcessed": 7978,
-  "customAvatars": 6991,
-  "defaultAvatars": 987,
-  "errors": 0
+  "timestamp": "2026-03-16T15:13:03.751Z",
+  "state": "PROCESSING",
+  "currentUser": "sudais4pf",
+  "progress": "273/7978",
+  "totalProcessed": 272,
+  "customAvatars": 74,
+  "defaultAvatars": 198,
+  "errors": 29
 }

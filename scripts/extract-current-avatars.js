@@ -4,7 +4,7 @@
  * Generates default avatar URLs for users without custom avatars
  */
 
-require('dotenv').config();
+require('dotenv').config({ path: '.env.local' });
 const fs = require('fs');
 const path = require('path');
 
@@ -40,8 +40,8 @@ function generateDefaultAvatarUrl(userId) {
  */
 function getAvatarUrl(member) {
   if (member.avatar) {
-    // Custom avatar
-    return `https://cdn.discordapp.com/avatars/${member.user.id}/${member.avatar}.png`;
+    // Guild-specific avatar (server custom avatar)
+    return `https://cdn.discordapp.com/guilds/${SERVER_ID}/users/${member.user.id}/avatars/${member.avatar}.png`;
   } else if (member.user?.avatar) {
     // User's global avatar
     return `https://cdn.discordapp.com/avatars/${member.user.id}/${member.user.avatar}.png`;
