@@ -314,7 +314,7 @@ IMPORTANT:
 - Keep it professional and analytical. Save cat personality for the Summary only.
 `;
 
-    const userPrompt = `Analyze this contributor nya~!
+    let userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
 Archetype: ${archetype}
 Style: ${styleAttr}
