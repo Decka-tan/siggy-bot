@@ -173,7 +173,11 @@ export function formatResponseWithSources(
     return aiResponse;
   }
 
-  const sources = researchResult.results.map((r, i) => `${i + 1}. ${r.title}\n   ${r.url}`).join('\n');
+  // Compact CTA style: Title + short clickable link
+  const sources = researchResult.results.map((r, i) => {
+    const shortTitle = r.title.length > 60 ? r.title.slice(0, 57) + '...' : r.title;
+    return `${i + 1}. **${shortTitle}** - [Source](${r.url})`;
+  }).join('\n');
 
-  return `${aiResponse}\n\n---\nLearn more:\n${sources}`;
+  return `${aiResponse}\n\n---\n📚 **Sources**\n${sources}`;
 }

@@ -123,7 +123,7 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   let html = content;
 
   // Links [text](url) - IMPORTANT: Must be first to avoid interfering with other markdown
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all break-all max-w-full overflow-hidden">$1</a>');
 
   // Preserve paragraph breaks (double newlines)
   html = html.replace(/\n\n/g, '</p><p class="mt-2 leading-normal">');
