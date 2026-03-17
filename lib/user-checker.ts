@@ -289,14 +289,6 @@ Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST "Contributor Intelligence"
 🎭 ${archetype.replace(/_/g, ' ')} (Style: ${styleAttr})
 [A concise explanation of why this archetype was assigned based on the samples.]
 
-**Discord Roles**
-${rolesList}
-
-**Activity & Engagement**
-- Global Chat: ${user.globalMessages.toLocaleString()} total messages
-- Contributions: ${user.contributionsCount} posts in #contributions
-- Events: ${user.eventsCount} participations
-
 **Key Contributions & Impact** (Based on the samples provided)
 1. **[Substantive Title]**: [Analysis based on specific samples. Cite what they said/posted.]
 2. **[Substantive Title]**: [Another insight from the samples.]
@@ -306,6 +298,7 @@ ${rolesList}
 [A 2-3 sentence executive summary of their essence. Why do they matter to Ritual? Focus on their specific contribution project: ${breakdown.projects?.join(', ') || 'General Forge activity'}. OPTIONAL: Add subtle cat mannerisms like "*flicks tail*" or "nya~" here only.]
 
 IMPORTANT:
+- DO NOT repeat Discord Roles, Global Messages, Contributions, or Events - these are already shown in the stats block above!
 - DO NOT use placeholders.
 - USE THE SAMPLES: ${JSON.stringify(samples)}
 - If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
