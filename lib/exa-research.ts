@@ -160,7 +160,7 @@ Please answer the user's question using BOTH your existing knowledge AND this re
 }
 
 /**
- * Format response with sources - Tallify style
+ * Format response with sources - Plain text (no clickable links)
  */
 export function formatResponseWithSources(
   aiResponse: string,
@@ -176,7 +176,10 @@ export function formatResponseWithSources(
     .replace(/---\n\n📚 Sources:\n[\s\S]*$/gi, '')
     .trim();
 
-  const sources = researchResult.results.map(r => `• [${r.title}](${r.url})`).join('\n');
+  // Use plain text format (no markdown links) to prevent overflow
+  const sources = researchResult.results.map((r, i) => {
+    return `${i + 1}. ${r.title}\n   ${r.url}`;
+  }).join('\n\n');
 
-  return `${cleanedResponse}\n\n---\n📚 **Sources**\n${sources}`;
+  return `${cleanedResponse}\n\n---\nLearn more:\n${sources}`;
 }
