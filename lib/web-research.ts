@@ -178,5 +178,5 @@ export function formatResponseWithSources(
     return `${i + 1}. [${r.title}](${r.url})`;
   }).join('\n');
 
-  return `${aiResponse}\n\n---\n📚 **Sources**\n${sources}`;
+  return `${aiResponse}\n\n---\n📚 Sources\n${sources}`;
 }
