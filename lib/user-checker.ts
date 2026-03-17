@@ -314,15 +314,6 @@ IMPORTANT:
 - Keep it professional and analytical. Save cat personality for the Summary only.
 `;
 
-IMPORTANT:
-- DO NOT use placeholders.
-- USE THE SAMPLES: ${JSON.stringify(samples)}
-- If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
-- When mentioning usernames, ALWAYS format as **@username**.
-- **CRITICAL**: Do NOT include any [MOOD:...] tags anywhere in your response.
-- Make it feel like a CHAT MESSAGE, not a formal report!
-`;
-
     const userPrompt = `Analyze this contributor nya~!
 Name: ${user.displayName} (**@${user.username}**)
 Archetype: ${archetype}

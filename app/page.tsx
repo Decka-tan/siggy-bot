@@ -5,7 +5,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, ArrowRight, MessageSquare, BookOpen, Sparkles } from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
-import { KnowledgeGraph } from '@/components/KnowledgeGraph';
 
 export default function LandingPage() {
   const scrollToBio = () => {
@@ -380,7 +379,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Knowledge Graph Section */}
+      {/* Discord & Features Section */}
       <section className="py-24 px-8 border-t border-border bg-bg relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
 
@@ -394,23 +393,74 @@ export default function LandingPage() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-4">
-              Siggy&apos;s Knowledge
+              Discord Integration
             </h2>
             <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
-              Over 1,280 knowledge entries about Ritual, the community, and her cosmic origins.
-              Explore the connections between different domains of her intelligence.
+              Connect with the Ritual Discord community. Check contributors, research topics, and explore member data.
             </p>
           </motion.div>
 
-          {/* Knowledge Graph Component */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            <KnowledgeGraph />
-          </motion.div>
+          {/* Feature Cards */}
+          <div className="grid gap-8 sm:grid-cols-3">
+            {/* Contributor Check */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-accent/40 transition-all group"
+            >
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🔍</span>
+              </div>
+              <h3 className="font-display text-xl mb-3 text-text-primary">Contributor Analysis</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-5">
+                Use <code className="bg-bg/50 px-2 py-1 rounded text-accent">/check @username</code> to analyze any contributor with AI-powered insights about their activity and impact.
+              </p>
+              <div className="text-xs font-mono text-text-secondary border-t border-white/10 pt-4">
+                7,978+ members • Real-time data
+              </div>
+            </motion.div>
+
+            {/* Web Research */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-accent/40 transition-all group"
+            >
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">🌐</span>
+              </div>
+              <h3 className="font-display text-xl mb-3 text-text-primary">Web Research</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-5">
+                Use <code className="bg-bg/50 px-2 py-1 rounded text-accent">/research topic</code> to search the web and get instant answers with cited sources.
+              </p>
+              <div className="text-xs font-mono text-text-secondary border-t border-white/10 pt-4">
+                Powered by Exa.ai • Real-time results
+              </div>
+            </motion.div>
+
+            {/* Community Data */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-accent/40 transition-all group"
+            >
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
+                <span className="text-2xl">📊</span>
+              </div>
+              <h3 className="font-display text-xl mb-3 text-text-primary">Community Stats</h3>
+              <p className="text-text-secondary text-sm leading-relaxed mb-5">
+                Access member data including message counts, contributions, events participation, roles, and join dates.
+              </p>
+              <div className="text-xs font-mono text-text-secondary border-t border-white/10 pt-4">
+                7978+ members • Full activity history
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>
 
@@ -424,7 +474,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-4xl md:text-5xl font-display tracking-tight uppercase text-center mb-16"
           >
-            Why Chat With Siggy?
+            Powerful Features
           </motion.h2>
 
           <div className="grid gap-8 sm:grid-cols-3">
@@ -436,12 +486,12 @@ export default function LandingPage() {
               className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">6</span>
+                <span className="text-2xl font-display text-accent">AI</span>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">6 Emotional States</h3>
+              <h3 className="font-display text-xl mb-3 text-text-primary">AI Analysis</h3>
               <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                Experience real-time mood fluctuations optimized by Ritual neural nodes. 
-                Siggy reacts with Happy, Sad, Shocked, Shy, Angry, or Default states.
+                DeepSeek-powered contributor analysis with archetype detection,
+                contribution breakdown, and community impact assessment.
               </p>
             </motion.div>
 
@@ -453,12 +503,12 @@ export default function LandingPage() {
               className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">R</span>
+                <span className="text-2xl font-display text-accent">🔍</span>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Ritual Forge</h3>
+              <h3 className="font-display text-xl mb-3 text-text-primary">Knowledge Base</h3>
               <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                Discover hidden interactions regarding the Ritual Forge and why Siggy really 
-                chose her anime girl form across the infinite blockchain.
+                Context-aware responses using Ritual community knowledge,
+                event history, and member information for accurate answers.
               </p>
             </motion.div>
 
@@ -470,12 +520,12 @@ export default function LandingPage() {
               className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
             >
               <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">A</span>
+                <span className="text-2xl font-display text-accent">⚡</span>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Personal AI</h3>
+              <h3 className="font-display text-xl mb-3 text-text-primary">Real-time Data</h3>
               <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                Siggy recognizes you and personalizes her dialogue, creating a unique bond 
-                as she learns about Earth culture and human connections.
+                Live Discord data with member avatars, message counts,
+                contributions, events participation, and role management.
               </p>
             </motion.div>
           </div>
