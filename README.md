@@ -302,12 +302,12 @@ Test these interactions to see Siggy's full range:
 
 ## 👤 Creator
 
-**Built by [Ritualist](https://x.com/Ritualist_)**
+**Built by [Decka-tan](https://github.com/Decka-tan)**
 
 A multi-dimensional developer who descended to the codebase to build cool things, make AI friends, and ship features.
 
-- **X/Twitter:** [@Ritualist_](https://x.com/Ritualist_)
-- **Discord:** @ritualist
+- **GitHub:** [Decka-tan](https://github.com/Decka-tan)
+- **Discord:** @decka_tan | Decka (❖,❖)
 - **Location:** Ritual Forge
 - **Specialty:** Full-stack AI applications, Discord integrations, and cosmic probability fluctuations
 
