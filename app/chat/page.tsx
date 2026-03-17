@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
+import { extractMoodFromResponse } from '@/lib/siggy-personality';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
@@ -125,37 +126,37 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-accent hover:text-yellow-400 underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all">$1</a>');
 
   // Preserve paragraph breaks (double newlines)
-  html = html.replace(/\n\n/g, '</p><p class="mt-2 text-xs font-mono leading-relaxed">');
+  html = html.replace(/\n\n/g, '</p><p class="mt-2 leading-normal">');
 
   // Usernames with rich formatting (Avatar + Name)
   html = html.replace(/@([\w.]+)/g, (match, username) => {
     const data = contributorMap[username.toLowerCase()];
     if (data) {
-      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-accent/30 rounded-md px-2 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-6 h-6 rounded-full border border-accent/20" onerror="this.src='/Logo_RItual_White.png'" /><span class="text-xs font-bold text-accent">${data.displayName || data.username}</span></span>`;
+      return `<span class="inline-flex items-center gap-1.5 bg-accent/10 border border-border rounded-md px-1.5 py-0.5 mx-0.5 align-middle"><img src="${data.avatar}" class="w-4 h-4 rounded-full border border-border" onerror="this.src='/Logo_RItual_White.png'" /><span class="font-bold text-accent">${data.displayName || data.username}</span></span>`;
     }
-    return `<span class="text-accent border border-accent/40 bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
+    return `<span class="text-accent border border-border bg-accent/10 px-1.5 py-0.5 rounded-md font-bold mx-0.5">@${username}</span>`;
   });
 
   // Bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent">$1</strong>');
-  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong>$1</strong>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent font-bold">$1</strong>');
+  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong class="font-bold">$1</strong>');
 
-  // Italic (but not when part of ** already) - muted color for actions
-  html = html.replace(/\*([^*]+)\*/g, '<em class="text-text-secondary not-italic opacity-80">$1</em>');
-  html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-text-secondary not-italic">$1</em>');
+  // Italic (but not when part of ** already) - subtle neutral color
+  html = html.replace(/\*([^*]+)\*/g, '<span class="text-neutral-400 italic">$1</span>');
+  html = html.replace(/\[i\](.*?)\[\/i\]/gi, '<em class="text-neutral-400 italic">$1</em>');
 
   // Code
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-[11px] font-mono border border-white/5">$1</code>');
-  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm">$1</code>');
+  html = html.replace(/`([^`]+)`/g, '<code class="bg-bg px-1.5 py-0.5 rounded text-accent text-sm md:text-base lg:text-base font-mono border border-white/5">$1</code>');
+  html = html.replace(/\[code\](.*?)\[\/code\]/gi, '<code class="bg-bg px-1 py-0.5 rounded text-accent text-sm md:text-base lg:text-base">$1</code>');
 
   // Quote
-  html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2 opacity-90">$1</blockquote>');
-  html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-accent pl-3 italic text-text-secondary my-2">$1</blockquote>');
+  html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2 opacity-90">$1</blockquote>');
+  html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2">$1</blockquote>');
 
   // Single line breaks (but not in code/quote)
   html = html.replace(/\n/g, '<br />');
 
-  return '<p class="whitespace-pre-wrap leading-relaxed">' + html + '</p>';
+  return '<p class="whitespace-pre-wrap leading-normal">' + html + '</p>';
 };
 
 // Typewriter Text Component
@@ -178,7 +179,7 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
 
     setDisplayedText('');
     let i = 0;
-
+    
     // If speed is 0 or very low, show instantly
     if (speed <= 1) {
       if (playVoiceLine && personality) playVoiceLine(personality);
@@ -284,7 +285,7 @@ export default function ChatPage() {
   const [showStats, setShowStats] = useState(true);
   const [vnHistoryIndex, setVnHistoryIndex] = useState<number>(-1); // -1 means latest
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  
   // Contributor Search States
   const [contributorResults, setContributorResults] = useState<ContributorSearchResult[]>([]);
   const [showContributorDropdown, setShowContributorDropdown] = useState(false);
@@ -292,6 +293,7 @@ export default function ChatPage() {
   const [isSearchingContributors, setIsSearchingContributors] = useState(false);
   const [selectedContributorIndex, setSelectedContributorIndex] = useState(0);
   const [contributorMap, setContributorMap] = useState<Record<string, ContributorSearchResult>>({});
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const pendingMentions = useRef<Set<string>>(new Set());
 
   // Slash Command States
@@ -301,11 +303,10 @@ export default function ChatPage() {
 
   const availableCommands = [
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
-    { name: 'analysiscompare', description: 'Compare multiple contributors (vs) in a table', usage: '/analysiscompare @user1 vs @user2' },
-    { name: 'leaderboard', description: 'Show the global message leaderboard', usage: '/leaderboard' },
+    { name: 'research', description: 'Research a topic using web search', usage: '/research query' },
   ];
 
-  const filteredCommands = commandQuery
+  const filteredCommands = commandQuery 
     ? availableCommands.filter(c => c.name.toLowerCase().startsWith(commandQuery))
     : availableCommands;
 
@@ -467,7 +468,7 @@ export default function ChatPage() {
 
     if (toFetch.length > 0) {
       toFetch.forEach(u => pendingMentions.current.add(u));
-
+      
       const fetchBatch = async () => {
         try {
           const res = await fetch(`/api/contributor?action=get_batch&usernames=${toFetch.join(',')}`);
@@ -499,7 +500,7 @@ export default function ChatPage() {
       const cmd = parts[0].toLowerCase();
 
       // Don't show command dropdown if we're already in a specific command flow
-      if (cmd === 'check' || cmd === 'analysis' || cmd === 'analysiscompare') {
+      if (cmd === 'check' || cmd === 'analysis' || cmd === 'research') {
         setShowCommandDropdown(false);
         return;
       }
@@ -508,6 +509,12 @@ export default function ChatPage() {
       setCommandQuery(cmd);
       setShowCommandDropdown(true);
     } else {
+      setShowCommandDropdown(false);
+      setCommandQuery('');
+    }
+
+    // Hide command dropdown when continuing to type command with space
+    if (input.toLowerCase().startsWith('/check ') || input.toLowerCase().startsWith('/research ')) {
       setShowCommandDropdown(false);
       setCommandQuery('');
     }
@@ -522,9 +529,16 @@ export default function ChatPage() {
       return;
     }
 
+    // Hide contributor dropdown if typing /research
+    if (input.toLowerCase().startsWith('/research')) {
+      setContributorResults([]);
+      setShowContributorDropdown(false);
+      return;
+    }
+
     // Extract query: "/check [query]"
     const query = input.slice(6).trim();
-
+    
     // Immediate trigger as long as we have /check
     if (input.toLowerCase() === '/check' || input.toLowerCase() === '/check ') {
       // Trigger default or empty search
@@ -560,7 +574,7 @@ export default function ChatPage() {
   // Analyze contributor with DeepSeek
   const analyzeContributor = async (contributor: ContributorSearchResult) => {
     let targetConvId = activeConversationId;
-
+    
     // Create conversation if none exists
     if (!targetConvId) {
       const newConv: Conversation = {
@@ -578,6 +592,10 @@ export default function ChatPage() {
       setActiveConversationId(newConv.id);
     }
 
+    if (isLoading || isAnalyzing) return;
+    
+    setIsLoading(true);
+    setIsAnalyzing(true);
     setAnalyzingContributor(contributor.userId);
     setShowContributorDropdown(false);
     setContributorResults([]); // Clear results
@@ -643,7 +661,7 @@ export default function ChatPage() {
                   contributor: {
                     ...msg.contributor,
                     ...analyzeData.user,
-                    avatar: msg.contributor.avatar || analyzeData.user.avatar // Preserve original avatar!
+                    avatar: analyzeData.user.avatar || msg.contributor.avatar // Use UserChecker avatar (complete data)
                   }
                 };
               }
@@ -656,14 +674,22 @@ export default function ChatPage() {
       }
 
       if (analyzeData.analysis) {
+        const { mood, cleanedResponse } = extractMoodFromResponse(analyzeData.analysis);
+        
         const siggyMessage: Message = {
           role: 'assistant',
-          content: analyzeData.analysis,
+          content: cleanedResponse,
+          mood: mood,
         };
 
         setConversations(prev => prev.map(conv => {
           if (conv.id === activeConversationId) {
-            return { ...conv, messages: [...conv.messages, siggyMessage] };
+            return { 
+              ...conv, 
+              messages: [...conv.messages, siggyMessage],
+              currentMood: mood,
+              messageCount: conv.messageCount + 1
+            };
           }
           return conv;
         }));
@@ -682,13 +708,15 @@ export default function ChatPage() {
       }));
     } finally {
       setAnalyzingContributor(null);
+      setIsAnalyzing(false);
+      setIsLoading(false);
     }
   };
 
   const createNewConversation = () => {
     // Inherit relationship from newest existing conversation
     const lastConv = conversations[0];
-
+    
     const newConv: Conversation = {
       id: Date.now().toString(),
       title: 'New Chat',
@@ -727,8 +755,17 @@ export default function ChatPage() {
 
   const handleSendMessage = async (overrideInput?: string) => {
     playHeavyClick();
-    const textToSend = typeof overrideInput === 'string' ? overrideInput : input;
+    let textToSend = typeof overrideInput === 'string' ? overrideInput : input;
     if (!textToSend.trim() || isLoading) return;
+
+    // Handle /research command explicitly
+    if (textToSend.toLowerCase().startsWith('/research ')) {
+      const researchQuery = textToSend.slice(9).trim(); // Remove "/research " prefix
+      if (researchQuery) {
+        // Override with research marker for API
+        textToSend = `[RESEARCH_MODE: ${researchQuery}]`;
+      }
+    }
 
     let targetConvId = activeConversationId;
     if (!targetConvId) {
@@ -771,6 +808,10 @@ export default function ChatPage() {
     if (needsResearch) {
       setIsResearching(true);
     }
+
+    // Always clear search dropdown when sending
+    setShowContributorDropdown(false);
+    setContributorResults([]);
 
     // Intercept manual /check commands
     if (textToSend.toLowerCase().startsWith('/check') && !analyzingContributor) {
@@ -892,6 +933,66 @@ export default function ChatPage() {
     }
   };
 
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (showCommandDropdown) {
+      const currentFilteredCommands = availableCommands.filter(cmd => cmd.name.includes(commandQuery));
+      if (currentFilteredCommands.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setSelectedCommandIndex(prev => (prev + 1) % currentFilteredCommands.length);
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setSelectedCommandIndex(prev => (prev - 1 + currentFilteredCommands.length) % currentFilteredCommands.length);
+          return;
+        }
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const cmd = currentFilteredCommands[selectedCommandIndex];
+          setInput(`/${cmd.name} `);
+          setShowCommandDropdown(false);
+          setSelectedCommandIndex(0);
+          return;
+        }
+        if (e.key === 'Escape') {
+          setShowCommandDropdown(false);
+          return;
+        }
+      }
+    }
+
+    if (showContributorDropdown && contributorResults.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedContributorIndex(prev => (prev + 1) % contributorResults.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedContributorIndex(prev => (prev - 1 + contributorResults.length) % contributorResults.length);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        analyzeContributor(contributorResults[selectedContributorIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowContributorDropdown(false);
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+      // Reset height after sending (if it's a textarea)
+      const target = e.target as HTMLTextAreaElement;
+      setTimeout(() => target.style.height = 'auto', 10);
+    }
+  };
+
   const resetCurrentConversation = async () => {
     if (!activeConversationId) {
       createNewConversation();
@@ -910,10 +1011,10 @@ export default function ChatPage() {
 
     setConversations(prev => prev.map(conv => {
       if (conv.id === activeConversationId) {
-        return {
-          ...conv,
-          messages: [],
-          currentMood: 'DEFAULT' as MoodState,
+        return { 
+          ...conv, 
+          messages: [], 
+          currentMood: 'DEFAULT' as MoodState, 
           messageCount: 0,
           relationshipLevel: globalRelationshipLevel || 'ACQUAINTANCE',
           relationshipScore: globalRelationshipScore || 0
@@ -1004,7 +1105,7 @@ export default function ChatPage() {
       // Post-process response to add line breaks after actions
       let processedResponse = data.response || data.analysis;
       if (!processedResponse) throw new Error('Empty response from AI');
-
+      
       processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
       processedResponse = processedResponse.replace(/\n\s+/g, '\n');
 
@@ -1012,10 +1113,10 @@ export default function ChatPage() {
         if (conv.id === activeConversationId) {
           return {
             ...conv,
-            messages: [...messagesWithoutLast, {
-              role: 'assistant',
-              content: processedResponse,
-              mood: data.currentMood || 'DEFAULT'
+            messages: [...messagesWithoutLast, { 
+              role: 'assistant', 
+              content: processedResponse, 
+              mood: data.currentMood || 'DEFAULT' 
             }],
             currentMood: data.currentMood || conv.currentMood,
             messageCount: data.messageCount || conv.messageCount,
@@ -1164,7 +1265,7 @@ export default function ChatPage() {
           {/* Profile Section */}
           <div className={`border-b border-border shrink-0 ${(!vnMode && sidebarCollapsed) ? 'py-4 flex flex-col items-center gap-2' : 'p-4 pt-6'}`}>
             {/* Avatar */}
-            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-accent transition-colors shrink-0 ${(!vnMode && sidebarCollapsed) ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
+            <button onClick={() => setShowAvatarModal(true)} className={`rounded-full overflow-hidden border-2 border-border hover:border-border transition-colors shrink-0 ${(!vnMode && sidebarCollapsed) ? 'w-8 h-8' : 'w-16 h-16 mx-auto block'}`} title="Change Avatar">
               {userAvatar ? (
                 <img src={userAvatar} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
@@ -1184,13 +1285,13 @@ export default function ChatPage() {
                     onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                     autoFocus
-                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                    className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
                   />
                 ) : (
                   <div className="flex flex-col items-center">
-                    <button
-                      onClick={() => setEditingName(true)}
-                      className="flex items-center gap-2 text-sm font-mono font-semibold text-text-primary hover:text-accent transition-colors group"
+                    <button 
+                      onClick={() => setEditingName(true)} 
+                      className="flex items-center gap-2 text-sm font-mono font-semibold text-text-primary hover:text-accent transition-colors group" 
                       title="Edit Username"
                     >
                       {userName}
@@ -1214,7 +1315,7 @@ export default function ChatPage() {
           {/* Reset Current Chat Button */}
           {activeConversation && (
             <div className={`shrink-0 ${(!vnMode && sidebarCollapsed) ? 'p-1' : 'px-3 pb-3'}`}>
-              <button onClick={() => { resetCurrentConversation(); if (vnMode) setSidebarCollapsed(true); }} className={`w-full flex items-center ${(!vnMode && sidebarCollapsed) ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-surface border border-border text-text-secondary hover:text-accent hover:border-accent rounded-lg font-mono text-sm uppercase tracking-wider transition-colors`} title="Reset current conversation">
+              <button onClick={() => { resetCurrentConversation(); if (vnMode) setSidebarCollapsed(true); }} className={`w-full flex items-center ${(!vnMode && sidebarCollapsed) ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-surface border border-border text-text-secondary hover:text-accent hover:border-border rounded-lg font-mono text-sm uppercase tracking-wider transition-colors`} title="Reset current conversation">
                 <RefreshCw className="w-4 h-4" />
                 {(!sidebarCollapsed || vnMode) && 'Reset Chat'}
               </button>
@@ -1262,8 +1363,8 @@ export default function ChatPage() {
                     </button>
 
                     <div className="flex flex-col items-center gap-4">
-                      <div
-                        className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] hover:border-accent transition-all cursor-pointer group"
+                      <div 
+                        className="w-20 h-20 rounded-full border-2 border-border bg-bg overflow-hidden flex items-center justify-center shadow-[0_0_25px_rgba(255,215,0,0.1)] hover:border-border transition-all cursor-pointer group"
                         onClick={() => { setShowMobileSidebar(false); setShowAvatarModal(true); }}
                         title="Change Avatar"
                       >
@@ -1282,10 +1383,10 @@ export default function ChatPage() {
                             onBlur={() => { setEditingName(false); localStorage.setItem('siggy-user-name', userName); }}
                             onKeyDown={(e) => { if (e.key === 'Enter') { setEditingName(false); localStorage.setItem('siggy-user-name', userName); } }}
                             autoFocus
-                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-accent rounded px-2 py-1 focus:outline-none"
+                            className="w-full text-center text-sm font-mono font-semibold text-text-primary bg-bg border border-border rounded px-2 py-1 focus:outline-none"
                           />
                         ) : (
-                          <h3
+                          <h3 
                             className="font-mono text-base font-bold text-text-primary uppercase flex items-center justify-center gap-2 cursor-pointer hover:text-accent transition-colors group"
                             onClick={() => setEditingName(true)}
                             title="Edit Username"
@@ -1299,14 +1400,14 @@ export default function ChatPage() {
                     </div>
                   </div>
                 </div>
-
+                    
                 <div className="p-4 border-b border-border space-y-2">
                   <button onClick={() => { createNewConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)] active:scale-95">
                     <Plus className="w-4 h-4" />
                     New Chat
                   </button>
                   {activeConversation && (
-                    <button onClick={() => { resetCurrentConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-surface border border-border text-text-secondary hover:text-accent hover:border-accent rounded-xl font-mono text-sm uppercase tracking-wider transition-all" title="Reset current conversation">
+                    <button onClick={() => { resetCurrentConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-surface border border-border text-text-secondary hover:text-accent hover:border-border rounded-xl font-mono text-sm uppercase tracking-wider transition-all" title="Reset current conversation">
                       <RefreshCw className="w-4 h-4" />
                       Reset Chat
                     </button>
@@ -1334,8 +1435,8 @@ export default function ChatPage() {
             {/* Desktop Center-Top Sidebar Toggle */}
             {vnMode && (
               <div className="flex-1 flex justify-center pointer-events-none">
-                <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                <button 
+                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)} 
                   className="hidden lg:flex pointer-events-auto px-4 py-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg items-center gap-2 text-xs font-mono tracking-wider uppercase text-text-primary hover:text-accent transition-colors"
                   title="Toggle Sidebar"
                 >
@@ -1347,8 +1448,8 @@ export default function ChatPage() {
 
             {/* Mobile sidebar toggle (Right Aligned) */}
             <div className="flex flex-col gap-2 pointer-events-auto shrink-0 ml-auto z-[70] relative">
-              <button
-                onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              <button 
+                onClick={() => setShowMobileSidebar(!showMobileSidebar)} 
                 className="lg:hidden p-2 rounded-full bg-surface/80 backdrop-blur-sm border border-border hover:bg-surface shadow-lg"
                 title="Toggle Mobile Sidebar"
               >
@@ -1358,471 +1459,919 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Chat Area - fills remaining height */}
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
-          {/* VN Mode Background with rotation */}
-          {vnMode && (
-            <>
-              <div className="fixed inset-0 z-0">
-                {VN_BACKGROUNDS.map((bg, i) => (
-                  <img
-                    key={bg}
-                    src={bg}
-                    alt={`VN Background ${i + 1}`}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ${i === vnBgIndex ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                ))}
-                <div className="absolute inset-0 bg-black/30" />
-                {/* Ritual Logo Overlay - Black for VN Mode */}
-                <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
-                  <img
-                    src="/Logo_RItual_Black.png"
-                    alt="Ritual Logo"
-                    className="w-[50vh] h-[50vh] object-contain opacity-30"
-                  />
+          {/* Chat Area - fills remaining height */}
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0 relative">
+            {/* VN Mode Background with rotation */}
+            {vnMode && (
+              <>
+                <div className="fixed inset-0 z-0">
+                  {VN_BACKGROUNDS.map((bg, i) => (
+                    <img
+                      key={bg}
+                      src={bg}
+                      alt={`VN Background ${i + 1}`}
+                      className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-[2000ms] ${i === vnBgIndex ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                  ))}
+                  <div className="absolute inset-0 bg-black/30" />
+                  {/* Ritual Logo Overlay - Black for VN Mode */}
+                  <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+                    <img
+                      src="/Logo_RItual_Black.png"
+                      alt="Ritual Logo"
+                      className="w-[50vh] h-[50vh] object-contain opacity-30"
+                    />
+                  </div>
                 </div>
+              </>
+            )}
+
+            {/* Ritual Logo Overlay - White for Regular Chat Mode */}
+            {!vnMode && (
+              <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
+                <img
+                  src="/Logo_RItual_White.png"
+                  alt="Ritual Logo"
+                  className="w-[50vh] h-[50vh] object-contain opacity-30"
+                />
               </div>
-            </>
-          )}
+            )}
 
-          {/* Ritual Logo Overlay - White for Regular Chat Mode */}
-          {!vnMode && (
-            <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
-              <img
-                src="/Logo_RItual_White.png"
-                alt="Ritual Logo"
-                className="w-[50vh] h-[50vh] object-contain opacity-30"
-              />
-            </div>
-          )}
+            {/* Chat Content (with VN-aware styling) */}
+            <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 sm:px-6 pb-2 sm:pb-4'}`}>
+              {vnMode ? (
+                /* =========================================================
+                   VN MODE LAYOUT
+                   ========================================================= */
+                <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
 
-          {/* Chat Content (with VN-aware styling) */}
-          <div className={`flex-1 flex flex-col min-h-0 relative z-20 ${vnMode ? 'p-0' : 'px-4 sm:px-6 pb-2 sm:pb-4'}`}>
-            {vnMode ? (
-              /* =========================================================
-                 VN MODE LAYOUT
-                 ========================================================= */
-              <div className="w-full h-full flex flex-col justify-end z-20 overflow-hidden">
+                  {/* Sprites placed cleanly on top of dialogue box */}
+                  <div className="w-full max-w-7xl mx-auto px-8 relative z-10 flex justify-between items-end">
+                    {/* Siggy Sprite (Left Side) */}
+                    <div className="flex-1 flex justify-start">
+                      <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`${(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
+                      >
+                        <Image
+                          src={getSpriteForMood(personality, (vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.mood : activeConversation?.messages[vnHistoryIndex]?.mood) || activeConversation?.currentMood || 'DEFAULT')}
+                          alt="Siggy"
+                          width={260}
+                          height={360}
+                          className="object-contain drop-shadow-[0_0_30px_rgba(255,215,0,0.2)]"
+                          priority
+                        />
+                      </motion.div>
+                    </div>
 
-                {/* Sprites placed cleanly on top of dialogue box */}
-                <div className="w-full max-w-7xl mx-auto px-8 relative z-10 flex justify-between items-end">
-                  {/* Siggy Sprite (Left Side) */}
-                  <div className="flex-1 flex justify-start">
-                    <motion.div
-                      initial={{ opacity: 0, y: 50 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className={`${(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'opacity-50 brightness-50 scale-95' : 'opacity-100 brightness-110 scale-100'} transition-all duration-500 origin-bottom`}
-                    >
-                      <Image
-                        src={getSpriteForMood(personality, (vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.mood : activeConversation?.messages[vnHistoryIndex]?.mood) || activeConversation?.currentMood || 'DEFAULT')}
-                        alt="Siggy"
-                        width={260}
-                        height={360}
-                        className="object-contain drop-shadow-[0_0_30px_rgba(255,215,0,0.2)]"
-                        priority
-                      />
-                    </motion.div>
+                    {/* User Sprite (Right Side) */}
+                    <div className="flex-1 flex justify-end">
+                      <AnimatePresence>
+                        {(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' && userAvatar && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 50, x: 20 }}
+                            animate={{ opacity: 1, y: 0, x: 0 }}
+                            exit={{ opacity: 0, y: 50, x: 20 }}
+                            className="origin-bottom ml-8 mb-4 max-w-[200px] md:max-w-[260px]"
+                          >
+                            <img
+                              src={userAvatar}
+                              alt="You"
+                              className="object-contain drop-shadow-[0_0_30px_rgba(96,165,250,0.4)] max-h-[250px] md:max-h-[360px] w-auto rounded-3xl border-2 border-blue-400/30"
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
-
-                  {/* User Sprite (Right Side) */}
-                  <div className="flex-1 flex justify-end">
-                    <AnimatePresence>
-                      {(vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' && userAvatar && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 50, x: 20 }}
-                          animate={{ opacity: 1, y: 0, x: 0 }}
-                          exit={{ opacity: 0, y: 50, x: 20 }}
-                          className="origin-bottom ml-8 mb-4 max-w-[200px] md:max-w-[260px]"
-                        >
-                          <img
-                            src={userAvatar}
-                            alt="You"
-                            className="object-contain drop-shadow-[0_0_30px_rgba(96,165,250,0.4)] max-h-[250px] md:max-h-[360px] w-auto rounded-3xl border-2 border-blue-400/30"
-                          />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-                {/* Main Dialogue Box (Full Width) */}
-                <div className="w-full relative bg-black/80 backdrop-blur-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transition-all">
-                  <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 relative">
-                    {/* Box Header: Name + Mode Info */}
-                    {activeConversation && (
-                      <div className="mb-2 flex items-center justify-between pb-3 relative">
-                        <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
-                        <div className="flex items-center gap-3">
-                          <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${(vnHistoryIndex === -1 ? activeConversation?.messages[(activeConversation?.messages.length || 0) - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
-                            {(vnHistoryIndex === -1 ? activeConversation?.messages[(activeConversation?.messages.length || 0) - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'You' : 'Siggy'}
-                          </span>
-                          {/* MOOD BADGE - Mobile friendly, shown on all screens */}
-                          {vnMode && activeConversation && activeConversation.messages.length > 0 && (
-                            <span className={`text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full ${moodColors[(vnHistoryIndex === -1
-                                ? activeConversation.messages[activeConversation.messages.length - 1]?.mood
-                                : activeConversation.messages[vnHistoryIndex]?.mood) || activeConversation.currentMood] || moodColors.DEFAULT
-                              }`}>
-                              {(vnHistoryIndex === -1
-                                ? activeConversation.messages[activeConversation.messages.length - 1]?.mood
-                                : activeConversation.messages[vnHistoryIndex]?.mood) || activeConversation.currentMood || 'DEFAULT'}
+                  {/* Main Dialogue Box (Full Width) */}
+                  <div className="w-full relative bg-black/80 backdrop-blur-3xl shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transition-all">
+                    <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8 relative">
+                      {/* Box Header: Name + Mode Info */}
+                      {activeConversation && (
+                        <div className="mb-2 flex items-center justify-between pb-3 relative">
+                          <div className="absolute bottom-0 inset-x-0 h-px bg-gradient-to-r from-white/5 to-transparent" />
+                          <div className="flex items-center gap-3">
+                            <span className={`font-display uppercase tracking-wider text-xl md:text-2xl ${(vnHistoryIndex === -1 ? activeConversation?.messages[(activeConversation?.messages.length || 0) - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'text-text-secondary' : 'text-accent'}`}>
+                              {(vnHistoryIndex === -1 ? activeConversation?.messages[(activeConversation?.messages.length || 0) - 1]?.role : activeConversation?.messages[vnHistoryIndex]?.role) === 'user' ? 'You' : 'Siggy'}
                             </span>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          {/* History Status Pill (Moved next to Bond) - DESKTOP ONLY */}
-                          {activeConversation?.messages.length > 1 && (
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full transition-all duration-300">
-                              <Clock className="w-3 h-3 text-accent animate-pulse" />
-                              <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
-                                HISTORY: {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
+                            {/* MOOD BADGE - Mobile friendly, shown on all screens */}
+                            {vnMode && activeConversation && activeConversation.messages.length > 0 && (
+                              <span className={`text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                                moodColors[(vnHistoryIndex === -1
+                                  ? activeConversation.messages[activeConversation.messages.length - 1]?.mood
+                                  : activeConversation.messages[vnHistoryIndex]?.mood) || activeConversation.currentMood] || moodColors.DEFAULT
+                              }`}>
+                                {(vnHistoryIndex === -1
+                                  ? activeConversation.messages[activeConversation.messages.length - 1]?.mood
+                                  : activeConversation.messages[vnHistoryIndex]?.mood) || activeConversation.currentMood || 'DEFAULT'}
                               </span>
-                              <button
-                                onClick={() => setVnHistoryIndex(-1)}
-                                className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black' : 'text-accent/60 hover:text-accent'}`}
-                              >
-                                LATEST
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Bond Resonance Meter (RIGHT SIDE) */}
-                          {activeConversation.relationshipLevel && (
-                            <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
-                              <Sparkles className={`w-3 h-3 animate-pulse ${getBondColor(activeConversation.relationshipLevel)}`} />
-                              <span className={`text-[10px] font-mono font-bold tracking-tighter ${getBondColor(activeConversation.relationshipLevel)}`}>
-                                BOND: {activeConversation.relationshipLevel}
-                              </span>
-                              <div className="hidden md:flex gap-0.5 ml-1">
-                                {[...Array(5)].map((_, i) => (
-                                  <div
-                                    key={i}
-                                    className={`h-1.5 w-3 rounded-sm transition-all duration-500 ${(activeConversation.relationshipScore || 0) >= (i * 5)
-                                        ? `${getBondBarColor(activeConversation.relationshipLevel)} shadow-[0_0_5px_rgba(0,0,0,0.3)]`
-                                        : 'bg-white/10'
-                                      }`}
-                                  />
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {/* Mode indicator hidden in mobile VN mode to reduce clutter */}
-                          {!vnMode && (
-                            <>
-                              <div className="flex gap-1">
-                                <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
-                                <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
-                              </div>
-                              <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
-                                Mode: {personality === 'CAT' ? 'Cat' : 'Anime'}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-
-                    {/* Side Navigation Arrows - Positioned at EXTREME edges (DESKTOP ONLY) */}
-                    {vnMode && activeConversation && activeConversation.messages.length > 1 && (
-                      <>
-                        <button
-                          onClick={() => {
-                            const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
-                            if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
-                            playClick();
-                          }}
-                          disabled={vnHistoryIndex === 0}
-                          className="fixed left-4 sm:left-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] hidden sm:flex"
-                          title="Previous Message (Left Arrow)"
-                        >
-                          <ChevronLeft className="w-16 h-16 sm:w-20 sm:h-20" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
-                              setVnHistoryIndex(vnHistoryIndex + 1);
-                              playClick();
-                            } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
-                              setVnHistoryIndex(-1);
-                              playClick();
-                            }
-                          }}
-                          disabled={vnHistoryIndex === -1}
-                          className="fixed right-4 sm:right-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] hidden sm:flex"
-                          title="Next Message (Right Arrow)"
-                        >
-                          <ChevronRight className="w-16 h-16 sm:w-20 sm:h-20" />
-                        </button>
-                      </>
-                    )}
-
-                    <div className="min-h-[120px] sm:min-h-[180px] max-h-[180px] sm:max-h-[250px] overflow-y-auto mb-2 sm:mb-6 pr-4 signature-scroll flex items-start">
-                      {!activeConversation || activeConversation.messages.length === 0 ? (
-                        <div className="text-center w-full">
-                          <h2 className="text-xl font-display uppercase mb-2 text-accent">
-                            Welcome to Earth
-                          </h2>
-                          <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
-                            I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
-                          </p>
-
-                          {/* Starting Topic Buttons for VN Mode */}
-                          <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
-                            <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                              {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                            </button>
-                            <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                              Cosmic origins
-                            </button>
-                            <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                              Weird dimensions
-                            </button>
-                            <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                              Earth food
-                            </button>
+                            )}
                           </div>
-                        </div>
-                      ) : (
-                        <div className="relative">
-                          {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
-                            <div className="flex flex-col gap-3 items-start animate-pulse">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-                                <div className="space-y-2">
-                                  <p className="text-accent font-display text-sm uppercase tracking-widest">{isResearching ? 'Searching Knowledge Base...' : 'Siggy is analyzing...'}</p>
-                                  <p className="text-text-secondary font-mono text-xs italic">*Peering through various dimensions... nya~*</p>
+
+                          <div className="flex items-center gap-3">
+                            {/* History Status Pill (Moved next to Bond) - DESKTOP ONLY */}
+                            {activeConversation?.messages.length > 1 && (
+                              <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full transition-all duration-300">
+                                <Clock className="w-3 h-3 text-accent animate-pulse" />
+                                <span className="text-[10px] font-mono font-bold text-white tracking-tighter">
+                                  HISTORY: {(vnHistoryIndex === -1 ? activeConversation.messages.length : vnHistoryIndex + 1)}/{activeConversation.messages.length}
+                                </span>
+                                <button
+                                  onClick={() => setVnHistoryIndex(-1)}
+                                  className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all ${vnHistoryIndex === -1 ? 'bg-accent text-black' : 'text-accent/60 hover:text-accent'}`}
+                                >
+                                  LATEST
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Bond Resonance Meter (RIGHT SIDE) */}
+                            {activeConversation.relationshipLevel && (
+                              <div className={`flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 mr-2 transition-all duration-500 ${activeConversation.relationshipLevel === 'SOULBOUND' ? 'shadow-[0_0_15px_rgba(255,215,0,0.2)] border-yellow-500/30' : ''}`}>
+                                <Sparkles className={`w-3 h-3 animate-pulse ${getBondColor(activeConversation.relationshipLevel)}`} />
+                                <span className={`text-[10px] font-mono font-bold tracking-tighter ${getBondColor(activeConversation.relationshipLevel)}`}>
+                                  BOND: {activeConversation.relationshipLevel}
+                                </span>
+                                <div className="hidden md:flex gap-0.5 ml-1">
+                                  {[...Array(5)].map((_, i) => (
+                                    <div 
+                                      key={i} 
+                                      className={`h-1.5 w-3 rounded-sm transition-all duration-500 ${
+                                        (activeConversation.relationshipScore || 0) >= (i * 5) 
+                                          ? `${getBondBarColor(activeConversation.relationshipLevel)} shadow-[0_0_5px_rgba(0,0,0,0.3)]` 
+                                          : 'bg-white/10'
+                                      }`} 
+                                    />
+                                  ))}
                                 </div>
                               </div>
+                            )}
+                            {/* Mode indicator hidden in mobile VN mode to reduce clutter */}
+                            {!vnMode && (
+                              <>
+                                <div className="flex gap-1">
+                                  <div className={`h-1 w-6 rounded-full transition-all ${personality === 'CAT' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
+                                  <div className={`h-1 w-6 rounded-full transition-all ${personality === 'ANIME' ? 'bg-accent shadow-[0_0_8px_rgba(255,215,0,0.8)]' : 'bg-surface border border-border'}`} />
+                                </div>
+                                <span className="font-mono text-[10px] md:text-xs uppercase tracking-widest text-text-secondary hidden sm:inline-block">
+                                  Mode: {personality === 'CAT' ? 'Cat' : 'Anime'}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+
+                      {/* Side Navigation Arrows - Positioned at EXTREME edges (DESKTOP ONLY) */}
+                      {vnMode && activeConversation && activeConversation.messages.length > 1 && (
+                        <>
+                          <button 
+                            onClick={() => {
+                              const currentIdx = vnHistoryIndex === -1 ? (activeConversation?.messages.length || 0) - 1 : vnHistoryIndex;
+                              if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                              playClick();
+                            }}
+                            disabled={vnHistoryIndex === 0}
+                            className="fixed left-4 sm:left-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] hidden sm:flex"
+                            title="Previous Message (Left Arrow)"
+                          >
+                            <ChevronLeft className="w-16 h-16 sm:w-20 sm:h-20" />
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (activeConversation && vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                setVnHistoryIndex(vnHistoryIndex + 1);
+                                playClick();
+                              } else if (activeConversation && vnHistoryIndex === activeConversation.messages.length - 1) {
+                                setVnHistoryIndex(-1);
+                                playClick();
+                              }
+                            }}
+                            disabled={vnHistoryIndex === -1}
+                            className="fixed right-4 sm:right-10 top-1/2 -translate-y-1/2 z-40 p-2 text-white/20 hover:text-accent hover:scale-125 disabled:opacity-0 transition-all duration-300 drop-shadow-[0_0_15px_rgba(0,0,0,0.8)] hidden sm:flex"
+                            title="Next Message (Right Arrow)"
+                          >
+                            <ChevronRight className="w-16 h-16 sm:w-20 sm:h-20" />
+                          </button>
+                        </>
+                      )}
+
+                      <div className="min-h-[120px] sm:min-h-[180px] max-h-[180px] sm:max-h-[250px] overflow-y-auto mb-2 sm:mb-6 pr-4 signature-scroll flex items-start">
+                        {!activeConversation || activeConversation.messages.length === 0 ? (
+                          <div className="text-center w-full">
+                            <h2 className="text-xl font-display uppercase mb-2 text-accent">
+                              Welcome to Earth
+                            </h2>
+                            <p className="text-text-secondary text-sm max-w-xl mx-auto mb-6">
+                              I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Say hello!
+                            </p>
+                            
+                            {/* Starting Topic Buttons for VN Mode */}
+                            <div className="grid grid-cols-2 gap-3 max-w-lg mx-auto">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent/40 rounded-lg transition-all text-left">
+                                  {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                                </button>
+                               <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
+                                 <BookOpen className="w-3 h-3" />
+                                 What are your cosmic origins?
+                               </button>
+                             <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
+                               <Sparkles className="w-3 h-3" />
+                               Tell me a weird dimension you visited.
+                             </button>
+                             <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
+                               <MessageSquare className="w-3 h-3" />
+                               What is your favorite Earth food?
+                             </button>
                             </div>
-                          ) : (
-                            <div className="relative flex flex-col items-start mt-2 w-full">
-                              {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
-                                <p
-                                  className="text-xs md:text-sm leading-relaxed font-mono italic text-text-secondary w-full"
-                                  dangerouslySetInnerHTML={{
-                                    __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
+                          </div>
+                        ) : (
+                          <div className="relative">
+                             {isLoading && activeConversation.messages[activeConversation.messages.length - 1].role === 'user' ? (
+                               <div className="flex items-center gap-3 mt-4 opacity-70">
+                                 <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-accent/80 italic">
+                                   {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                                 </span>
+                                 <div className="flex gap-1">
+                                   <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                   <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                   <div className="w-1 h-1 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                 </div>
+                               </div>
+                             ) : (
+                              <div className="relative flex flex-col items-start mt-2 w-full">
+                                {(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].role : activeConversation.messages[vnHistoryIndex].role) === 'user' ? (
+                                  <p
+                                    className="text-sm md:text-base lg:text-base leading-snug font-mono text-text-secondary w-full"
+                                    dangerouslySetInnerHTML={{
+                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
+                                    }}
+                                  />
+                                ) : (
+                                  <TypewriterText
+                                    text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content}
+                                    isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1}
+                                    className="text-sm md:text-base lg:text-base leading-snug font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
+                                    alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
+                                    onAnimationComplete={() => {
+                                      if (vnHistoryIndex === -1) {
+                                        animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`);
+                                      }
+                                    }} 
+                                    speed={useSettings().textSpeed}
+                                    playTyping={playTyping}
+                                    playVoiceLine={playVoiceLine}
+                                    personality={personality as 'CAT' | 'ANIME'}
+                                    contributorMap={contributorMap}
+                                  />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Floating Action Buttons & Input Area */}
+                      <AnimatePresence>
+                        {showStats && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-4">
+                              <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+                                <div className="font-mono text-[10px] text-text-secondary">
+                                  Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
+                                </div>
+                              </div>
+                              
+                              {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
+                                <div className="grid grid-cols-2 gap-3 mb-2">
+                                  <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent/40 rounded-lg transition-all text-left">
+                                    {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                                  </button>
+                                   <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
+                                     <BookOpen className="w-3 h-3" />
+                                     What are your cosmic origins?
+                                   </button>
+                                   <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
+                                     <Sparkles className="w-3 h-3" />
+                                     Tell me a weird dimension you visited.
+                                   </button>
+                                   <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-border text-white hover:border-accent/40 rounded-lg transition-all text-left">
+                                     <MessageSquare className="w-3 h-3" />
+                                     What is your favorite Earth food?
+                                   </button>
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      <div className="max-w-7xl mx-auto flex flex-col pt-2 sm:pt-4 mt-1 sm:mt-2 border-t border-border">
+                        {/* Input Form & Action Controls integrated tightly */}
+                        <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
+                          <div className="flex items-center justify-between w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar gap-2">
+                            {/* Reinstated Floating Action Buttons (Left Aligned) */}
+                            {activeConversation && activeConversation.messages.length > 0 && activeConversation?.messages[activeConversation.messages.length - 1].role === 'assistant' && (
+                              <div className="flex items-center gap-1 pr-2 shrink-0">
+                                <button onClick={() => activeConversation && copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
+                                  <Copy className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => activeConversation && toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation?.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
+                                  <ThumbsUp className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => activeConversation && toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation?.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
+                                  <ThumbsDown className="w-4 h-4" />
+                                </button>
+                                <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
+                                  <RefreshCw className="w-4 h-4" />
+                                </button>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              {/* Mobile-specific history arrows (VN MODE ONLY - Main Row) */}
+                              {vnMode && activeConversation && activeConversation.messages.length > 1 && (
+                                <div className="flex gap-1.5 sm:hidden shrink-0">
+                                  <button
+                                    onClick={() => {
+                                      const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
+                                      if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
+                                      playClick();
+                                    }}
+                                    disabled={vnHistoryIndex === 0}
+                                    className="p-1.5 bg-surface border border-border rounded-lg text-accent disabled:opacity-30"
+                                    title="Previous"
+                                  >
+                                    <ChevronLeft className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
+                                        setVnHistoryIndex(vnHistoryIndex + 1);
+                                      } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
+                                        setVnHistoryIndex(-1);
+                                      }
+                                      playClick();
+                                    }}
+                                    disabled={vnHistoryIndex === -1}
+                                    className="p-1.5 bg-surface border border-border rounded-lg text-accent disabled:opacity-30"
+                                    title="Next"
+                                  >
+                                    <ChevronRight className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+
+                              <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
+                                {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
+                              </button>
+                            </div>
+                          </div>
+
+                            <div className="flex-1 w-full flex items-center gap-2 relative">
+                              {/* Slash Command Dropdown */}
+                              <AnimatePresence>
+                                {showCommandDropdown && filteredCommands.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{
+                                      opacity: 0,
+                                      y: 10,
+                                      pointerEvents: 'none'
+                                    }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                                    onClick={(e) => {
+                                      // Prevent clicks during exit animation
+                                      if (!showCommandDropdown) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                      }
+                                    }}
+                                  >
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                        <Terminal className="w-3.5 h-3.5" />
+                                        Matching Commands
+                                      </span>
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                                      {filteredCommands.map((command, idx) => (
+                                        <button
+                                          key={command.name}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setInput(`/${command.name} `);
+                                            setShowCommandDropdown(false);
+                                            setSelectedCommandIndex(0);
+                                            // Focus input after selecting command
+                                            setTimeout(() => {
+                                              document.querySelector('textarea')?.focus();
+                                            }, 50);
+                                          }}
+                                          onMouseEnter={() => setSelectedCommandIndex(idx)}
+                                          className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                        >
+                                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-border/40'}`}>
+                                            <span className="font-display font-black text-lg">/</span>
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedCommandIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                                /{command.name}
+                                              </span>
+                                              {idx === selectedCommandIndex && (
+                                                <motion.span layoutId="vn-active-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                                  Active
+                                                </motion.span>
+                                              )}
+                                            </div>
+                                            <div className={`text-xs font-mono transition-colors ${idx === selectedCommandIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                              {command.description}
+                                            </div>
+                                            <div className="mt-1.5 text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest group-hover:text-accent/30 transition-colors">
+                                              Usage: {command.usage}
+                                            </div>
+                                          </div>
+                                          {idx === selectedCommandIndex && (
+                                            <div className="shrink-0 flex items-center self-center pr-1">
+                                              <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                            </div>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+
+                              {/* Contributor Search Dropdown */}
+                              <AnimatePresence>
+                                {showContributorDropdown && contributorResults.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                                  >
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                        <Search className="w-3.5 h-3.5" />
+                                        Select Contributor
+                                      </span>
+                                      {isSearchingContributors && (
+                                        <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin" />
+                                      )}
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                                      {contributorResults.map((contributor, idx) => (
+                                        <button
+                                          key={contributor.userId}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            !isLoading && analyzeContributor(contributor);
+                                          }}
+                                          onMouseEnter={() => setSelectedContributorIndex(idx)}
+                                          className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                        >
+                                          <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
+                                            <img
+                                              src={contributor.avatar}
+                                              alt={contributor.username}
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
+                                              }}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedContributorIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                                {contributor.displayName}
+                                              </span>
+                                              {idx === selectedContributorIndex && (
+                                                <motion.span layoutId="vn-active-contributor-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                                  Select
+                                                </motion.span>
+                                              )}
+                                            </div>
+                                            <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                              @{contributor.username}
+                                            </div>
+                                            <div className="mt-1.5 flex items-center gap-3">
+                                              <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                {contributor.messageCount.toLocaleString()} messages
+                                              </div>
+                                              <div className="text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest">
+                                                ID: {contributor.userId}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          {idx === selectedContributorIndex && (
+                                            <div className="shrink-0 flex items-center self-center pr-1">
+                                              <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                            </div>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+
+                              <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
+                                {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                              </button>
+                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
+                                <textarea
+                                  value={input}
+                                  onChange={(e) => setInput(e.target.value)}
+                                  onInput={(e) => {
+                                    const target = e.target as HTMLTextAreaElement;
+                                    target.style.height = 'auto';
+                                    target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                                   }}
+                                  onKeyDown={handleInputKeyDown}
+                                  placeholder="What will you say? (type /check or /research)"
+                                  disabled={isLoading || analyzingContributor !== null}
+                                  rows={1}
+                                  className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-black/40 text-text-primary'}`}
+                                  style={{ minHeight: '40px', height: 'auto' }}
                                 />
+                                <button
+                                  onClick={() => handleSendMessage()}
+                                  disabled={isLoading || !input.trim()}
+                                  className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
+                                  style={{ height: '40px' }}
+                                >
+                                  {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
+                                </button>
+                              </div>
+                            </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* =========================================================
+                   STANDARD CHAT LAYOUT
+                   ========================================================= */
+                <div className="max-w-7xl mx-auto h-full flex flex-col min-h-0 w-full relative">
+                  {/* Messages - scrollable */}
+                  <div className="flex-1 overflow-y-auto space-y-3 py-3 px-4 sm:px-6 min-h-0 relative z-10">
+                    {!activeConversation || activeConversation.messages.length === 0 ? (
+                      <div className="text-center py-16">
+                        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 flex justify-center">
+                          <Image
+                            src={getSpriteForMood(personality, 'HAPPY')}
+                            alt="Siggy Avatar"
+                            width={96}
+                            height={96}
+                            className="rounded-full bg-black/50 border border-border object-cover shadow-2xl"
+                            priority
+                          />
+                        </motion.div>
+                        {conversations.filter(c => c.messages.length > 0).length > 0 ? (
+                          <>
+                            <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-2 text-accent">
+                              Welcome back, {userName}!
+                            </h2>
+                            <p className="text-sm text-text-secondary mb-6">
+                              Let&apos;s see where you left off~
+                            </p>
+                            <div className="max-w-md mx-auto space-y-2 mb-8">
+                              {conversations.filter(c => c.messages.length > 0).slice(0, 4).map(conv => (
+                                <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className="w-full text-left px-4 py-3 bg-surface border border-border rounded-lg hover:border-border hover:text-accent transition-all flex items-center gap-3">
+                                  <MessageSquare className="w-4 h-4 text-text-secondary shrink-0" />
+                                  <span className="text-sm font-mono truncate">{conv.title}</span>
+                                  <span className="text-xs text-text-secondary ml-auto shrink-0">{conv.messages.length} msgs</span>
+                                </button>
+                              ))}
+                            </div>
+                            <p className="text-xs text-text-secondary mb-4">Or start something new:</p>
+                          </>
+                        ) : (
+                          <>
+                            <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-4 text-accent">
+                              Welcome to Earth, {userName}!
+                            </h2>
+                            <p className="text-sm max-w-xl mx-auto text-text-secondary">
+                              I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
+                            </p>
+                          </>
+                        )}
+                        {/* Starting Topic Buttons */}
+                        <div className="grid grid-cols-2 gap-3 mt-8 max-w-lg mx-auto">
+                          <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                            {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
+                          </button>
+                          <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                            Cosmic origins
+                          </button>
+                          <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                            Weird dimensions
+                          </button>
+                          <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                            Earth food
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      activeConversation.messages.map((message, index) => (
+                        <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}>
+                          {message.role === 'assistant' && (
+                            <div className="shrink-0 mb-3">
+                              <Image src={getSpriteForMood(personality, message.mood || 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
+                            </div>
+                          )}
+                          <div className={`max-w-[80%] rounded-xl bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'} ${(message.content?.split('\n').length || 0) > 6 ? 'sm:px-4 sm:py-3 px-4 py-3 pb-6' : 'px-4 py-3'}`}>
+                            <div className="flex items-center gap-3 mb-2">
+                              <span className={`font-display text-sm md:text-base font-bold uppercase tracking-widest ${message.role === 'assistant' ? 'text-accent' : 'text-text-primary'}`}>
+                                {message.role === 'user' ? 'YOU' : 'SIGGY'}
+                              </span>
+                              {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
+                            </div>
+                            {message.role === 'assistant' ? (
+                              <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
+                            ) : (
+                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
+                            )}
+
+                            {message.role === 'assistant' && (
+                              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
+                                <button onClick={() => copyMessage(message.content)} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Copy">
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => toggleLike(index)} className={`p-1.5 rounded ${message.liked ? 'text-accent' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Like">
+                                  <ThumbsUp className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={() => toggleDislike(index)} className={`p-1.5 rounded ${message.disliked ? 'text-red-400' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Dislike">
+                                  <ThumbsDown className="w-3.5 h-3.5" />
+                                </button>
+                                <button onClick={shareConversation} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Share">
+                                  <Share2 className="w-3.5 h-3.5" />
+                                </button>
+                                {activeConversation && index === activeConversation.messages.length - 1 && (
+                                  <button onClick={regenerateResponse} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Regenerate">
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <div className="ml-auto flex items-center gap-1.5 px-2">
+                                  <span className="text-[8px] sm:text-[9px] font-mono text-text-secondary/60 border border-white/10 px-1.5 py-0.5 rounded">
+                                    HISTORY: {Math.floor(index / 2) + 1}/{Math.floor(activeConversation.messages.length / 2)}
+                                  </span>
+                                  <span className={`text-[8px] sm:text-[9px] font-mono border border-yellow-400/20 px-1.5 py-0.5 rounded ${getBondColor(activeConversation.relationshipLevel)}`}>
+                                    {activeConversation.relationshipLevel || 'ACQUAINTANCE'}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          {message.role === 'user' && (
+                            <div className="shrink-0 mb-3 ml-3">
+                              {userAvatar ? (
+                                <img src={userAvatar} alt="User" className="w-12 h-12 rounded-full bg-black/50 border-2 border-blue-400/50 object-cover" />
                               ) : (
-                                <TypewriterText
-                                  text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content}
-                                  isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1}
-                                  className="text-base md:text-lg leading-relaxed font-mono text-text-primary"
-                                  alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)}
-                                  onAnimationComplete={() => {
-                                    if (vnHistoryIndex === -1) {
-                                      animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`);
-                                    }
-                                  }}
-                                  speed={useSettings().textSpeed}
-                                  playTyping={playTyping}
-                                  playVoiceLine={playVoiceLine}
-                                  personality={personality as 'CAT' | 'ANIME'}
-                                  contributorMap={contributorMap}
-                                />
+                                <div className="w-12 h-12 rounded-full bg-surface border border-border flex items-center justify-center text-text-secondary">
+                                  <User className="w-6 h-6" />
+                                </div>
                               )}
                             </div>
                           )}
-                        </div>
-                      )}
-                    </div>
+                        </motion.div>
+                      ))
+                    )}
 
-                    {/* Floating Action Buttons & Input Area */}
+                    {isLoading && activeConversation?.messages[activeConversation.messages.length - 1].role === 'user' && (
+                       <div className="flex justify-start gap-3 items-end animate-in fade-in slide-in-from-bottom-2 duration-300">
+                         <div className="shrink-0 mb-3">
+                           <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
+                         </div>
+                         <div className="flex flex-col gap-1 items-start">
+                           <div className="max-w-[100%] rounded-xl rounded-bl-none bg-surface border border-border px-4 py-3 shadow-sm min-w-[200px]">
+                             <div className="flex items-center gap-3 mb-2">
+                               <span className="font-display text-sm md:text-base font-bold uppercase tracking-widest text-accent">SIGGY</span>
+                               <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-neutral-500/20 text-neutral-400 animate-pulse italic">typing on phone...</span>
+                             </div>
+                             <p className="text-[10px] font-mono text-neutral-400 italic mb-4">
+                               {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
+                             </p>
+                             <div className="flex gap-1.5 ml-1 mt-1">
+                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     )}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  {/* Controls - fixed at bottom */}
+                  <div className="shrink-0 space-y-3 relative">
+                    {/* Collapsible Stats and Suggestions */}
                     <AnimatePresence>
                       {showStats && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden"
+                          className="overflow-hidden pt-4"
                         >
-                          <div className="max-w-7xl mx-auto px-4 sm:px-8 mb-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
-                              <div className="font-mono text-[10px] text-text-secondary">
-                                Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
-                              </div>
-                              <div className="flex items-center gap-4">
-                                <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
-                              </div>
+                          <div className="flex items-center justify-between pb-3">
+                            <div className="font-mono text-[10px] text-text-secondary">
+                              Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
                             </div>
-
-                            {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
-                              <div className="grid grid-cols-2 gap-3 mb-2">
-                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
+                            <div className="flex items-center gap-4">
+                              <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
+                              {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? 'Summary: ' : 'Memory: '} {Math.round(contextInfo.estimatedTokens / 1000)}k keys</span>}
+                            </div>
+                          </div>
+                          {/* Suggestions Grid (2x2) */}
+                          {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
+                            <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
+                                <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
                                   {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
                                 </button>
-                                <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                  Cosmic origins
-                                </button>
-                                <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                  Weird dimensions
-                                </button>
-                                <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-[10px] uppercase tracking-wider bg-black/40 border border-white/10 text-white hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                                  Earth food
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                              <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                Cosmic origins
+                              </button>
+                              <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                Weird dimensions
+                              </button>
+                              <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-border hover:text-accent rounded-lg transition-all text-left">
+                                Earth food
+                              </button>
+                            </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
 
-                    <div className="max-w-7xl mx-auto flex flex-col pt-2 sm:pt-4 mt-1 sm:mt-2 border-t border-border">
-                      {/* Input Form & Action Controls integrated tightly */}
-                      <div className="flex-1 flex flex-col sm:flex-row gap-3 w-full items-start sm:items-center">
-                        <div className="flex items-center justify-between w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar gap-2">
-                          {/* Reinstated Floating Action Buttons (Left Aligned) */}
-                          {activeConversation && activeConversation.messages.length > 0 && activeConversation?.messages[activeConversation.messages.length - 1].role === 'assistant' && (
-                            <div className="flex items-center gap-1 pr-2 shrink-0">
-                              <button onClick={() => activeConversation && copyMessage(activeConversation.messages[activeConversation.messages.length - 1].content)} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Copy">
-                                <Copy className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => activeConversation && toggleLike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation?.messages[activeConversation.messages.length - 1].liked ? 'text-accent' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Like">
-                                <ThumbsUp className="w-4 h-4" />
-                              </button>
-                              <button onClick={() => activeConversation && toggleDislike(activeConversation.messages.length - 1)} className={`p-2 rounded-lg ${activeConversation?.messages[activeConversation.messages.length - 1].disliked ? 'text-red-400' : 'text-text-secondary hover:text-text-primary hover:bg-surface/50'} transition-colors`} title="Dislike">
-                                <ThumbsDown className="w-4 h-4" />
-                              </button>
-                              <button onClick={regenerateResponse} className="p-2 rounded-lg hover:bg-surface/50 text-text-secondary hover:text-text-primary transition-colors" title="Regenerate">
-                                <RefreshCw className="w-4 h-4" />
-                              </button>
+                    {/* Input Area (Standard) */}
+                    <div className="space-y-3 relative z-20 pt-2">
+                       {/* Contributor Search Dropdown */}
+                       <AnimatePresence>
+                        {showContributorDropdown && contributorResults.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-border rounded-xl shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden z-[100] pointer-events-auto"
+                          >
+                            <div className="p-2 border-b border-border bg-accent/5 flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
+                                <Search className="w-3 h-3" />
+                                Select Contributor
+                              </span>
+                              {isSearchingContributors && (
+                                <RefreshCw className="w-3 h-3 text-accent animate-spin" />
+                              )}
                             </div>
-                          )}
-
-                          <div className="flex items-center gap-2 shrink-0">
-                            {/* Mobile-specific history arrows (VN MODE ONLY - Main Row) */}
-                            {vnMode && activeConversation && activeConversation.messages.length > 1 && (
-                              <div className="flex gap-1.5 sm:hidden shrink-0">
+                            <div className="max-h-80 overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                              {contributorResults.map((contributor, idx) => (
                                 <button
-                                  onClick={() => {
-                                    const currentIdx = vnHistoryIndex === -1 ? activeConversation.messages.length - 1 : vnHistoryIndex;
-                                    if (currentIdx > 0) setVnHistoryIndex(currentIdx - 1);
-                                    playClick();
-                                  }}
-                                  disabled={vnHistoryIndex === 0}
-                                  className="p-1.5 bg-surface border border-border rounded-lg text-accent disabled:opacity-30"
-                                  title="Previous"
+                                  key={contributor.userId}
+                                  onClick={() => !isLoading && analyzeContributor(contributor)}
+                                  onMouseEnter={() => setSelectedContributorIndex(idx)}
+                                  className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
                                 >
-                                  <ChevronLeft className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    if (vnHistoryIndex !== -1 && vnHistoryIndex < activeConversation.messages.length - 1) {
-                                      setVnHistoryIndex(vnHistoryIndex + 1);
-                                    } else if (vnHistoryIndex === activeConversation.messages.length - 1) {
-                                      setVnHistoryIndex(-1);
-                                    }
-                                    playClick();
-                                  }}
-                                  disabled={vnHistoryIndex === -1}
-                                  className="p-1.5 bg-surface border border-border rounded-lg text-accent disabled:opacity-30"
-                                  title="Next"
-                                >
-                                  <ChevronRight className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            )}
-
-                            <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="shrink-0 px-3 py-2 bg-gradient-to-r from-accent to-yellow-400 hover:from-yellow-400 hover:to-accent text-black font-bold flex items-center justify-center rounded-lg uppercase tracking-wider transition-all text-[10px] shadow-[0_0_15px_rgba(255,215,0,0.2)]" title="Transform Form">
-                              {personality === 'CAT' ? 'Anime Form' : 'Cat Form'}
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="flex-1 w-full flex items-center gap-2 relative">
-                          {/* Slash Command Dropdown */}
-                          <AnimatePresence>
-                            {showCommandDropdown && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
-                              >
-                                <div className="p-2 border-b border-white/5 bg-accent/5">
-                                  <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                                    <Terminal className="w-3 h-3" />
-                                    Matching Commands
-                                  </span>
-                                </div>
-                                <div className="max-h-48 overflow-y-auto">
-                                  {availableCommands
-                                    .filter(cmd => cmd.name.includes(commandQuery))
-                                    .map((cmd) => (
-                                      <button
-                                        key={cmd.name}
-                                        onClick={() => {
-                                          setInput(`/${cmd.name} `);
-                                          setShowCommandDropdown(false);
-                                        }}
-                                        className="w-full p-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
-                                      >
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="text-xs font-bold text-accent">/{cmd.name}</span>
-                                          <span className="text-[10px] text-text-secondary font-mono">{cmd.usage}</span>
-                                        </div>
-                                        <div className="text-[10px] text-text-secondary">{cmd.description}</div>
-                                      </button>
-                                    ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-
-                          {/* Contributor Search Dropdown */}
-                          <AnimatePresence>
-                            {showContributorDropdown && contributorResults.length > 0 && (
-                              <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
-                              >
-                                <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
-                                  <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                                    <Search className="w-3 h-3" />
-                                    Select Contributor
-                                  </span>
-                                  {isSearchingContributors && (
-                                    <RefreshCw className="w-3 h-3 text-accent animate-spin" />
+                                  <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
+                                    <img
+                                      src={contributor.avatar}
+                                      alt={contributor.username}
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
+                                      }}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedContributorIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                        {contributor.displayName}
+                                      </span>
+                                      {idx === selectedContributorIndex && (
+                                        <motion.span layoutId="active-contributor-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                          Select
+                                        </motion.span>
+                                      )}
+                                    </div>
+                                    <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                      @{contributor.username}
+                                    </div>
+                                    <div className="mt-1.5 flex items-center gap-3">
+                                      <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                        {contributor.messageCount.toLocaleString()} messages
+                                      </div>
+                                      <div className="text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest">
+                                        ID: {contributor.userId}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {idx === selectedContributorIndex && (
+                                    <div className="shrink-0 flex items-center self-center pr-1">
+                                      <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                    </div>
                                   )}
-                                </div>
-                                <div className="max-h-48 overflow-y-auto">
-                                  {contributorResults.map((contributor) => (
-                                    <button
-                                      key={contributor.userId}
-                                      onClick={() => analyzeContributor(contributor)}
-                                      className="w-full p-2.5 flex items-center gap-3 hover:bg-accent/10 transition-colors text-left border-b border-white/5 last:border-0"
-                                    >
-                                      <div className="w-8 h-8 rounded-full overflow-hidden border border-white/10 shrink-0">
-                                        <img
-                                          src={contributor.avatar}
-                                          alt={contributor.username}
-                                          onError={(e) => {
-                                            const target = e.target as HTMLImageElement;
-                                            target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
-                                          }}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="text-xs font-bold text-text-primary truncate">@{contributor.username}</div>
-                                        <div className="text-[10px] text-text-secondary truncate">{contributor.displayName}</div>
-                                      </div>
-                                      <div className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded">
-                                        {contributor.messageCount} msgs
-                                      </div>
-                                    </button>
-                                  ))}
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
-                          <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-accent rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
-                            {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                          </button>
+                      {/* Slash Command Dropdown */}
+                      <AnimatePresence>
+                        {showCommandDropdown && filteredCommands.length > 0 && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{
+                              opacity: 0,
+                              y: 10,
+                              pointerEvents: 'none'
+                            }}
+                            className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                          >
+                            <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                              <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                <Terminal className="w-3.5 h-3.5" />
+                                Matching Commands
+                              </span>
+                            </div>
+                            <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                              {filteredCommands.map((command, idx) => (
+                                <button
+                                  key={command.name}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setInput(`/${command.name} `);
+                                    setShowCommandDropdown(false);
+                                    setSelectedCommandIndex(0);
+                                    // Focus input after selecting command
+                                    setTimeout(() => {
+                                      document.querySelector('textarea')?.focus();
+                                    }, 50);
+                                  }}
+                                  onMouseEnter={() => setSelectedCommandIndex(idx)}
+                                  className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                >
+                                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-border/40'}`}>
+                                    <span className="font-display font-black text-lg">/</span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-0.5">
+                                      <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedCommandIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                        /{command.name}
+                                      </span>
+                                      {idx === selectedCommandIndex && (
+                                        <motion.span layoutId="active-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                          Active
+                                        </motion.span>
+                                      )}
+                                    </div>
+                                    <div className={`text-xs font-mono transition-colors ${idx === selectedCommandIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                      {command.description}
+                                    </div>
+                                    <div className="mt-1.5 text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest group-hover:text-accent/30 transition-colors">
+                                      Usage: {command.usage}
+                                    </div>
+                                  </div>
+                                  {idx === selectedCommandIndex && (
+                                    <div className="shrink-0 flex items-center self-center pr-1">
+                                      <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                    </div>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+
+                      <div className="flex gap-2 items-center">
+                        <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
+                          {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                        </button>
+                        <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
                           <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
@@ -1831,438 +2380,25 @@ export default function ChatPage() {
                               target.style.height = 'auto';
                               target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                             }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage();
-                                // Reset height after sending
-                                const target = e.target as HTMLTextAreaElement;
-                                setTimeout(() => target.style.height = 'auto', 10);
-                              }
-                            }}
-                            placeholder="What will you say? (type /check to analyze username)"
+                            onKeyDown={handleInputKeyDown}
+                            placeholder="What will you say? (type /check or /research)"
                             disabled={isLoading || analyzingContributor !== null}
                             rows={1}
-                            className={`flex-1 px-3 py-2 border-none rounded-lg text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/check') ? 'bg-accent/50 ring-2 ring-accent border-accent' : 'bg-black/40'}`}
-                            style={{ minHeight: '40px', height: 'auto' }}
+                            className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
+                            style={{ minHeight: '44px', height: 'auto' }}
                           />
-                          <button
-                            onClick={() => handleSendMessage()}
-                            disabled={isLoading || !input.trim()}
-                            className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold rounded-lg uppercase tracking-wider hover:bg-yellow-300 disabled:opacity-50 transition-all flex items-center shadow-[0_0_15px_rgba(255,215,0,0.2)] text-xs"
-                            style={{ height: '40px' }}
-                          >
-                            {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : 'SAY'}
+                          <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
+                            {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                           </button>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              /* =========================================================
-                 STANDARD CHAT LAYOUT
-                 ========================================================= */
-              <div className="max-w-7xl mx-auto h-full flex flex-col min-h-0 w-full relative">
-                {/* Messages - scrollable */}
-                <div className="flex-1 overflow-y-auto space-y-3 py-3 px-4 sm:px-6 min-h-0 relative z-10">
-                  {!activeConversation || activeConversation.messages.length === 0 ? (
-                    <div className="text-center py-16">
-                      <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.5 }} className="mb-6 flex justify-center">
-                        <Image
-                          src={getSpriteForMood(personality, 'HAPPY')}
-                          alt="Siggy Avatar"
-                          width={96}
-                          height={96}
-                          className="rounded-full bg-black/50 border border-border object-cover shadow-2xl"
-                          priority
-                        />
-                      </motion.div>
-                      {conversations.filter(c => c.messages.length > 0).length > 0 ? (
-                        <>
-                          <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-2 text-accent">
-                            Welcome back, {userName}!
-                          </h2>
-                          <p className="text-sm text-text-secondary mb-6">
-                            Let&apos;s see where you left off~
-                          </p>
-                          <div className="max-w-md mx-auto space-y-2 mb-8">
-                            {conversations.filter(c => c.messages.length > 0).slice(0, 4).map(conv => (
-                              <button key={conv.id} onClick={() => setActiveConversationId(conv.id)} className="w-full text-left px-4 py-3 bg-surface border border-border rounded-lg hover:border-accent hover:text-accent transition-all flex items-center gap-3">
-                                <MessageSquare className="w-4 h-4 text-text-secondary shrink-0" />
-                                <span className="text-sm font-mono truncate">{conv.title}</span>
-                                <span className="text-xs text-text-secondary ml-auto shrink-0">{conv.messages.length} msgs</span>
-                              </button>
-                            ))}
-                          </div>
-                          <p className="text-xs text-text-secondary mb-4">Or start something new:</p>
-                        </>
-                      ) : (
-                        <>
-                          <h2 className="text-2xl md:text-4xl font-display tracking-wide uppercase mb-4 text-accent">
-                            Welcome to Earth, {userName}!
-                          </h2>
-                          <p className="text-sm max-w-xl mx-auto text-text-secondary">
-                            I&apos;m Siggy! I used to be a cosmic cat across infinite dimensions, but I descended to Earth and became an anime girl to blend in. Pretty clever, right? Anyway, nice to meet you!
-                          </p>
-                        </>
-                      )}
-                      {/* Starting Topic Buttons */}
-                      <div className="grid grid-cols-2 gap-3 mt-8 max-w-lg mx-auto">
-                        <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                          {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                        </button>
-                        <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                          Cosmic origins
-                        </button>
-                        <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                          Weird dimensions
-                        </button>
-                        <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                          Earth food
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    activeConversation.messages.map((message, index) => (
-                      <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}>
-                        {message.role === 'assistant' && (
-                          <div className="shrink-0 mb-3">
-                            <Image src={getSpriteForMood(personality, message.mood || 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
-                          </div>
-                        )}
-                        <div className={`max-w-[80%] rounded-xl bg-surface border border-border shadow-sm ${message.role === 'assistant' ? 'rounded-bl-none' : 'rounded-br-none'} ${(message.content?.split('\n').length || 0) > 6 ? 'sm:px-4 sm:py-3 px-4 py-3 pb-6' : 'px-4 py-3'}`}>
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className={`font-display text-sm md:text-base font-bold uppercase tracking-widest ${message.role === 'assistant' ? 'text-accent' : 'text-text-primary'}`}>
-                              {message.role === 'user' ? 'YOU' : 'SIGGY'}
-                            </span>
-                            {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
-                          </div>
-                          {message.role === 'assistant' ? (
-                            <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
-                          ) : (
-                            <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
-                          )}
-
-                          {message.role === 'assistant' && (
-                            <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
-                              <button onClick={() => copyMessage(message.content)} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Copy">
-                                <Copy className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => toggleLike(index)} className={`p-1.5 rounded ${message.liked ? 'text-accent' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Like">
-                                <ThumbsUp className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={() => toggleDislike(index)} className={`p-1.5 rounded ${message.disliked ? 'text-red-400' : vnMode ? 'text-gray-300 hover:text-white hover:bg-white/10' : 'text-text-secondary hover:text-text-primary hover:bg-surface'}`} title="Dislike">
-                                <ThumbsDown className="w-3.5 h-3.5" />
-                              </button>
-                              <button onClick={shareConversation} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Share">
-                                <Share2 className="w-3.5 h-3.5" />
-                              </button>
-                              {activeConversation && index === activeConversation.messages.length - 1 && (
-                                <button onClick={regenerateResponse} className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`} title="Regenerate">
-                                  <RefreshCw className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        {message.role === 'user' && (
-                          <div className="shrink-0 mb-3 ml-3">
-                            {userAvatar ? (
-                              <img src={userAvatar} alt="User" className="w-12 h-12 rounded-full bg-black/50 border-2 border-blue-400/50 object-cover" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-surface border border-border flex items-center justify-center text-text-secondary">
-                                <User className="w-6 h-6" />
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </motion.div>
-                    ))
-                  )}
-
-                  {isLoading && (
-                    <div className="flex justify-start gap-3 items-end">
-                      <div className="shrink-0 mb-3">
-                        <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={32} height={32} className="rounded-full bg-black/50 border border-border object-cover" />
-                      </div>
-                      <div className="bg-surface border border-border shadow-sm rounded-2xl rounded-bl-none px-6 py-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-xs font-mono font-semibold">SIGGY</span>
-                          <span className="text-xs text-text-secondary">*tapping on phone*</span>
-                        </div>
-                        <div className="flex gap-1">
-                          <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2 h-2 bg-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* Controls - fixed at bottom */}
-                <div className="shrink-0 space-y-3 relative">
-                  {/* Collapsible Stats and Suggestions */}
-                  <AnimatePresence>
-                    {showStats && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden pt-4"
-                      >
-                        <div className="flex items-center justify-between pb-3">
-                          <div className="font-mono text-[10px] text-text-secondary">
-                            Mood: <span className={`ml-2 px-2 py-1 rounded-full ${activeConversation ? moodColors[activeConversation.currentMood] : moodColors.DEFAULT}`}>{activeConversation?.currentMood || 'DEFAULT'}</span>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <span className="font-mono text-xs text-text-secondary">Messages: {activeConversation?.messageCount || 0}</span>
-                            {contextInfo && <span className={`font-mono text-xs ${contextInfo.estimatedTokens > 80000 ? 'text-red-400' : contextInfo.estimatedTokens > 50000 ? 'text-amber-400' : 'text-text-secondary'}`}>{contextInfo.hasSummary ? 'Summary: ' : 'Memory: '} {Math.round(contextInfo.estimatedTokens / 1000)}k keys</span>}
-                          </div>
-                        </div>
-                        {/* Suggestions Grid (2x2) */}
-                        {activeConversation && activeConversation.messages.length > 0 && !isLoading && (
-                          <div className="grid grid-cols-2 gap-3 mt-4 mb-2">
-                            <button onClick={() => handleTransform(personality === 'CAT' ? 'ANIME' : 'CAT')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-gradient-to-r from-accent to-yellow-400 text-black shadow-[0_0_15px_rgba(255,215,0,0.2)] hover:from-yellow-400 hover:to-accent rounded-lg transition-all text-left">
-                              {personality === 'CAT' ? 'Turn into Anime Form!' : 'Turn into Cat Form!'}
-                            </button>
-                            <button onClick={() => handleSendMessage('What are your cosmic origins?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                              Cosmic origins
-                            </button>
-                            <button onClick={() => handleSendMessage('Tell me a weird dimension you visited.')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                              Weird dimensions
-                            </button>
-                            <button onClick={() => handleSendMessage('What is your favorite Earth food?')} className="px-4 py-3 font-mono text-xs uppercase tracking-wider bg-surface border border-border text-text-primary hover:border-accent hover:text-accent rounded-lg transition-all text-left">
-                              Earth food
-                            </button>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* Input Area (Standard) */}
-                  <div className="space-y-3 relative z-20 pt-2">
-                    {/* Contributor Search Dropdown */}
-                    <AnimatePresence>
-                      {showContributorDropdown && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute bottom-full left-0 right-0 mb-2 bg-surface border border-accent/30 rounded-xl shadow-2xl overflow-hidden z-[100]"
-                        >
-                          <div className="p-2 border-b border-white/5 bg-accent/5 flex items-center justify-between">
-                            <span className="text-[10px] font-mono text-accent uppercase tracking-wider flex items-center gap-1.5">
-                              <Search className="w-3 h-3" />
-                              Select Contributor
-                            </span>
-                            {isSearchingContributors && (
-                              <RefreshCw className="w-3 h-3 text-accent animate-spin" />
-                            )}
-                          </div>
-                          <div className="max-h-80 overflow-y-auto custom-scrollbar p-1.5 space-y-1">
-                            {contributorResults.map((contributor, idx) => (
-                              <button
-                                key={contributor.userId}
-                                onClick={() => analyzeContributor(contributor)}
-                                onMouseEnter={() => setSelectedContributorIndex(idx)}
-                                className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedContributorIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
-                              >
-                                <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedContributorIndex ? 'border-accent shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-white/10'}`}>
-                                  <img
-                                    src={contributor.avatar}
-                                    alt={contributor.username}
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(contributor.userId) % 5}.png`;
-                                    }}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                    <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedContributorIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
-                                      {contributor.displayName}
-                                    </span>
-                                    {idx === selectedContributorIndex && (
-                                      <motion.span layoutId="active-contributor-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
-                                        Select
-                                      </motion.span>
-                                    )}
-                                  </div>
-                                  <div className={`text-xs font-mono transition-colors ${idx === selectedContributorIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
-                                    @{contributor.username}
-                                  </div>
-                                  <div className="mt-1.5 flex items-center gap-3">
-                                    <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                      {contributor.messageCount.toLocaleString()} messages
-                                    </div>
-                                    <div className="text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest">
-                                      ID: {contributor.userId}
-                                    </div>
-                                  </div>
-                                </div>
-                                {idx === selectedContributorIndex && (
-                                  <div className="shrink-0 flex items-center self-center pr-1">
-                                    <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-                    {/* Slash Command Dropdown */}
-                    <AnimatePresence>
-                      {showCommandDropdown && filteredCommands.length > 0 && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-accent/30 rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
-                        >
-                          <div className="p-2.5 border-b border-white/5 bg-accent/5 flex items-center justify-between">
-                            <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
-                              <Terminal className="w-3.5 h-3.5" />
-                              Matching Commands
-                            </span>
-                          </div>
-                          <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
-                            {filteredCommands.map((command, idx) => (
-                              <button
-                                key={command.name}
-                                onClick={() => {
-                                  setInput(`/${command.name} `);
-                                  setShowCommandDropdown(false);
-                                  setSelectedCommandIndex(0);
-                                }}
-                                onMouseEnter={() => setSelectedCommandIndex(idx)}
-                                className={`w-full group flex items-start gap-3.5 p-3 rounded-lg transition-all text-left border ${idx === selectedCommandIndex ? 'bg-accent/15 border-accent/40 shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
-                              >
-                                <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all ${idx === selectedCommandIndex ? 'bg-accent text-black rotate-3' : 'bg-surface border border-border text-accent group-hover:border-accent/40'}`}>
-                                  <span className="font-display font-black text-lg">/</span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-0.5">
-                                    <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedCommandIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
-                                      /{command.name}
-                                    </span>
-                                    {idx === selectedCommandIndex && (
-                                      <motion.span layoutId="active-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
-                                        Active
-                                      </motion.span>
-                                    )}
-                                  </div>
-                                  <div className={`text-xs font-mono transition-colors ${idx === selectedCommandIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
-                                    {command.description}
-                                  </div>
-                                  <div className="mt-1.5 text-[9px] font-mono text-text-secondary/40 uppercase tracking-widest group-hover:text-accent/30 transition-colors">
-                                    Usage: {command.usage}
-                                  </div>
-                                </div>
-                                {idx === selectedCommandIndex && (
-                                  <div className="shrink-0 flex items-center self-center pr-1">
-                                    <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
-                                  </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-
-
-                    <div className="flex gap-2 items-center">
-                      <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
-                        {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-                      </button>
-                      <textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onInput={(e) => {
-                          const target = e.target as HTMLTextAreaElement;
-                          target.style.height = 'auto';
-                          target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
-                        }}
-                        onKeyDown={(e) => {
-                          if (showCommandDropdown && filteredCommands.length > 0) {
-                            if (e.key === 'ArrowDown') {
-                              e.preventDefault();
-                              setSelectedCommandIndex(prev => (prev + 1) % filteredCommands.length);
-                              return;
-                            }
-                            if (e.key === 'ArrowUp') {
-                              e.preventDefault();
-                              setSelectedCommandIndex(prev => (prev - 1 + filteredCommands.length) % filteredCommands.length);
-                              return;
-                            }
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const cmd = filteredCommands[selectedCommandIndex];
-                              setInput(`/${cmd.name} `);
-                              setShowCommandDropdown(false);
-                              setSelectedCommandIndex(0);
-                              return;
-                            }
-                            if (e.key === 'Escape') {
-                              setShowCommandDropdown(false);
-                              return;
-                            }
-                          }
-
-                          if (showContributorDropdown && contributorResults.length > 0) {
-                            if (e.key === 'ArrowDown') {
-                              e.preventDefault();
-                              setSelectedContributorIndex(prev => (prev + 1) % contributorResults.length);
-                              return;
-                            }
-                            if (e.key === 'ArrowUp') {
-                              e.preventDefault();
-                              setSelectedContributorIndex(prev => (prev - 1 + contributorResults.length) % contributorResults.length);
-                              return;
-                            }
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              analyzeContributor(contributorResults[selectedContributorIndex]);
-                              return;
-                            }
-                            if (e.key === 'Escape') {
-                              setShowContributorDropdown(false);
-                              return;
-                            }
-                          }
-
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendMessage();
-                            const target = e.target as HTMLTextAreaElement;
-                            setTimeout(() => target.style.height = 'auto', 10);
-                          }
-                        }}
-                        placeholder="What will you say? (type /check to analyze username)"
-                        disabled={isLoading || analyzingContributor !== null}
-                        rows={1}
-                        className="flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs bg-surface text-text-primary placeholder:text-text-secondary/50 shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px]"
-                        style={{ minHeight: '44px', height: 'auto' }}
-                      />
-                      <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
-                        {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
       {/* User Avatar Upload Modal */}
       <AnimatePresence>
@@ -2300,9 +2436,9 @@ export default function ChatPage() {
                   ref={fileInputRef}
                   className="hidden"
                 />
-
+                
                 <div className="flex flex-col gap-2 w-full">
-                  <button
+                  <button 
                     onClick={() => fileInputRef.current?.click()}
                     className="w-full py-3 px-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-bold uppercase tracking-wider font-mono text-sm rounded-xl hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)]"
                   >
@@ -2310,7 +2446,7 @@ export default function ChatPage() {
                     Upload Image
                   </button>
                   {userAvatar && (
-                    <button
+                    <button 
                       onClick={() => { setUserAvatar(null); setShowAvatarModal(false); }}
                       className="w-full py-3 px-4 bg-bg border border-border text-text-secondary font-mono uppercase tracking-wider text-xs rounded-xl hover:text-red-400 hover:border-red-400/30 transition-colors"
                     >
