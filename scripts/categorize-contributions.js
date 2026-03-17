@@ -28,13 +28,12 @@ if (fs.existsSync(ROLES_PATH)) {
 }
 
 const ARCHETYPES = {
-  RADIANT_AMBASSADOR: { roles: ['Radiant Ritualist'], keywords: ['x.com', 'twitter.com'], description: 'Top-tier advocate with Radiant Ritualist status' },
-  ZEALOT_BUILDER: { roles: ['Zealot'], keywords: ['github.com', 'code', 'repo'], description: 'Dedicated technical contributor with Zealot status' },
-  RITUALIST: { roles: ['Ritualist'], keywords: [], description: 'Recognized Ritualist in the community' },
-  COMMUNITY_LEADER: { roles: ['Official', 'Mods'], keywords: [], description: 'Official community leader or moderator' },
-  AMBASSADOR: { keywords: ['x.com', 'twitter.com'], description: 'Shares Ritual content on Twitter/X' },
-  DEVELOPER: { keywords: ['github.com', 'gitlib', 'stack', 'code', 'repo'], description: 'Technical contributor' },
-  CONTENT_CREATOR: { keywords: ['medium.com', 'mirror.xyz', 'substack', 'article', 'blog'], description: 'Writes in-depth articles' },
+  AMBASSADOR: { roles: ['Zealot'], keywords: [], description: 'Official Ambassador (Zealot)' },
+  RITUALIST: { roles: ['Radiant Ritualist', 'Ritualist'], keywords: [], description: 'Recognized Core Pillar' },
+  ARTIST: { keywords: ['art', 'design', 'drawing', 'graphic', 'nfts', 'pfp', 'banner', 'original work'], description: 'Visual creator and designer' },
+  DEVELOPER: { keywords: ['github.com', 'code', 'repo', 'deployment', 'setup', 'bot', 'script', 'node'], description: 'Technical builder/engineer' },
+  CONTENT_CREATOR: { keywords: ['medium.com', 'mirror.xyz', 'substack', 'thread', 'written', 'article', 'video'], description: 'Writer and educator' },
+  ADVOCATE: { keywords: ['x.com', 'twitter.com', 'share', 'amplify', 'ritual to the moon', 'join us'], description: 'Social amplifier and herald' },
 };
 
 function analyzeUser(user) {
@@ -66,59 +65,82 @@ function analyzeUser(user) {
     .sort((a, b) => b[1] - a[1])
     .map(e => e[0]);
 
-  // 2. Project Detection (Simplified)
+  // 2. Project Detection (Content-Aware)
   const projects = new Set();
-  if (textLower.match(/cura|deployment|deploy/)) projects.add('Cura Deployment');
-  if (textLower.match(/ritual art|design|drawing|graphic/)) projects.add('Ritual Art');
-  if (textLower.match(/guide|tutorial|documentation/)) projects.add('Educational Content');
-  if (textLower.match(/twitter|x\.com|tweet|share/)) projects.add('Social Advocacy');
+  if (textLower.match(/cura|deployment|deploy|node|setup/)) projects.add('Infrastructure & Deployment');
+  if (textLower.match(/art|design|drawing|graphic|pfp|banner/)) projects.add('Ritual Art & Design');
+  if (textLower.match(/guide|tutorial|documentation|how to/)) projects.add('Community Education');
+  if (textLower.match(/siggy|bot|ai coordinator/)) projects.add('AI & Siggy Development');
+  if (textLower.match(/twitter|x\.com|tweet|share|herald/)) projects.add('Social Advocacy');
   breakdown.projects = Array.from(projects);
 
-  // 3. Archetype Determination (Role-Aware)
-  let maxScore = -1;
+  // 3. Archetype Determination (CONTENT-FIRST)
   let bestArchetype = 'INITIATE';
+  let maxScore = 0;
 
-  for (const [name, config] of Object.entries(ARCHETYPES)) {
-    let aScore = 0;
-    
-    // Role weight
-    if (config.roles) {
-      config.roles.forEach(role => {
-        if (userRoles.includes(role)) aScore += 10;
-      });
+  // Roles still give a massive base score boost
+  const roleBoosts = {
+    'Zealot': { archetype: 'AMBASSADOR', points: 100 },
+    'Radiant Ritualist': { archetype: 'RITUALIST', points: 50 },
+    'Ritualist': { archetype: 'RITUALIST', points: 30 }
+  };
+
+  const scores = {};
+  Object.keys(ARCHETYPES).forEach(a => scores[a] = 0);
+
+  // Apply Role Boosts
+  userRoles.forEach(role => {
+    if (roleBoosts[role]) {
+      scores[roleBoosts[role].archetype] += roleBoosts[role].points;
     }
+  });
 
-    // Content weight
+  // CONTENT ANALYSIS (Checking keywords in those 5 samples)
+  for (const [name, config] of Object.entries(ARCHETYPES)) {
     config.keywords.forEach(kw => {
-      if (textLower.includes(kw)) aScore += 2;
+      // Scale points by occurrences to reward depth
+      const count = (textLower.split(kw).length - 1);
+      scores[name] += count * 2;
     });
-    
-    if (name.includes('AMBASSADOR') && breakdown.topLinks.some(l => l.includes('x.com') || l.includes('twitter'))) aScore += 5;
 
-    if (aScore > maxScore) {
-      maxScore = aScore;
+    // Bonus for specific link types
+    if (name === 'ADVOCATE' && textLower.includes('x.com')) scores[name] += 5;
+    if (name === 'DEVELOPER' && textLower.includes('github.com')) scores[name] += 10;
+    if (name === 'CONTENT_CREATOR' && (textLower.includes('medium.com') || textLower.includes('mirror.xyz'))) scores[name] += 10;
+  }
+
+  // Find the winning archetype
+  for (const [name, score] of Object.entries(scores)) {
+    if (score > maxScore) {
+      maxScore = score;
       bestArchetype = name;
     }
   }
 
-  if (maxScore <= 0 && user.count > 10) bestArchetype = 'STEADY_CONTRIBUTOR';
+  // Activity threshold for non-specific contributors
+  if (maxScore < 5 && user.count > 10) {
+    bestArchetype = 'STEADY_CONTRIBUTOR';
+  } else if (maxScore < 5 && user.count <= 10) {
+    bestArchetype = 'INITIATE';
+  }
+  
   breakdown.archetype = bestArchetype;
   
-  // 4. Quality & Style
-  let qScore = Math.min(20, Math.floor(user.count / 10) + (samples.some(s => s.length > 200) ? 5 : 0));
-  breakdown.qualityScore = qScore;
-
-  if (samples.some(s => s.length > 200)) breakdown.detectedStyle = 'Detailed/Explainer';
-  else if (samples.length > 0 && samples.every(s => s.startsWith('http'))) breakdown.detectedStyle = 'Link-centric';
-  else breakdown.detectedStyle = 'Brief/Mixed';
+  // 4. Quality & Style (Depth Detection)
+  if (samples.some(s => s.length > 250)) breakdown.detectedStyle = 'Deep Analyst / Educator';
+  else if (samples.length >= 5 && samples.every(s => s.includes('http'))) breakdown.detectedStyle = 'Hyper-active Herald';
+  else if (textLower.match(/art|drawing|made|created/)) breakdown.detectedStyle = 'Creative Visionary';
+  else breakdown.detectedStyle = 'General Contributor';
 
   // 5. Impact Statement
-  if (breakdown.archetype === 'RADIANT_AMBASSADOR') breakdown.impactStatement = `Radiant force of advocacy, driving high-impact Ritual awareness.`;
-  else if (breakdown.archetype === 'ZEALOT_BUILDER') breakdown.impactStatement = `Technical Zealot building the future of the Ritual forge.`;
-  else if (breakdown.archetype === 'COMMUNITY_LEADER') breakdown.impactStatement = `Official pillar of the community, guiding the Ritual path.`;
-  else if (breakdown.archetype === 'AMBASSADOR') breakdown.impactStatement = `Vocal advocate amplifying Ritual pulse via social channels.`;
-  else if (user.count > 50) breakdown.impactStatement = `Dedicated Ritualist with consistent engagement and presence.`;
-  else breakdown.impactStatement = `Contributor exploring and growing within the Ritual ecosystem.`;
+  if (breakdown.archetype === 'AMBASSADOR') breakdown.impactStatement = `Official Ritual Zealot spearheading the network's global expansion.`;
+  else if (breakdown.archetype === 'RITUALIST') breakdown.impactStatement = `Venerated member of the forge, providing consistent high-level contribution.`;
+  else if (breakdown.archetype === 'ARTIST') breakdown.impactStatement = `Elevating the Ritual brand through exceptional visual storytelling and art.`;
+  else if (breakdown.archetype === 'DEVELOPER') breakdown.impactStatement = `Technical builder strengthening the Ritual ecosystem's infrastructure.`;
+  else if (breakdown.archetype === 'CONTENT_CREATOR') breakdown.impactStatement = `Clarifying the complex path of Ritual through high-quality educational content.`;
+  else if (breakdown.archetype === 'ADVOCATE') breakdown.impactStatement = `Vocal herald and amplifier of the Ritual signal across the social landscape.`;
+  else if (user.count > 20) breakdown.impactStatement = `Dedicated community member with a steady heartbeat of contribution.`;
+  else breakdown.impactStatement = `Emerging contributor finding their place and voice within the Ritual forge.`;
 
   return breakdown;
 }
@@ -143,7 +165,7 @@ data.analyzedAt = new Date().toISOString();
 
 fs.writeFileSync(OUTPUT_PATH, JSON.stringify(data, null, 2));
 
-console.log('\n✅ ARCHETYPE ANALYSIS COMPLETE!');
+console.log('\n✅ DEEP CONTENT ANALYSIS COMPLETE!');
 console.log(`📊 Stats:`);
 Object.entries(counts).forEach(([arc, count]) => {
   console.log(`   ${arc}: ${count}`);
