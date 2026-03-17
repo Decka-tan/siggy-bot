@@ -235,6 +235,7 @@ export class UserChecker {
     return `@${user.username}
 🌎 Global Messages: ${user.globalMessages.toLocaleString()}
 📝 Contributions: ${user.contributionsCount} msgs
+Events: ${user.eventsCount} participations
 🎭 Roles: ${rolesHeader}
 📅 Joined: ${user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Unknown'}`;
   }
