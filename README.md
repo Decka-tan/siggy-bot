@@ -237,7 +237,6 @@ vercel
 5. Add environment variables:
    - `OPENAI_API_KEY`
    - `EXA_API_KEY`
-   - `DISCORD_USER_TOKEN`
 6. Click "Deploy"
 
 That's it! Vercel will auto-deploy from GitHub. ✨
@@ -277,17 +276,15 @@ Test these interactions to see Siggy's full range:
 - `/check @meison7554` → See Radiant Ritualist profile
 - `/research Bittensor` → Web search with sources
 
-### Mood Triggers:
-- "Tell me about Ritual" → Mysterious
-- "I'm confused" → Playful
-- "What's the meaning of life?" → Profound
-- "Something feels glitchy" → Chaotic
-
-### Easter Eggs:
-- "What's your real name?"
-- "What do you think about purple?"
-- "Tell me about the Summoner"
-- Say "glitch" three times
+### Easter Eggs & Triggers:
+- Mention **"purple"** → Happy mode (favorite color!)
+- Mention **"summoner"** or **"master"** → Honored greeting
+- Mention **"zealot"** → Shy mode (the judge!)
+- Mention **"anime"** or **"manga"** → Excited rambling
+- Mention **"cat"** or **"kitten"** → Ears twitch, tail pops out
+- Ask **"Why did you become an anime girl?"** → Origin story
+- Ask **"Do you miss the cosmic void?"** → Profound reflection
+- Ask **"What's your real name?"** → True form reveal
 
 ## 🎯 Why This Architecture Wins:
 
@@ -305,6 +302,7 @@ Test these interactions to see Siggy's full range:
 A multi-dimensional developer who descended to the codebase to build cool things, make AI friends, and ship features.
 
 - **GitHub:** [Decka-tan](https://github.com/Decka-tan)
+- **X/Twitter:** [@decka_chan](https://x.com/decka_chan)
 - **Discord:** @decka_tan | Decka (❖,❖)
 - **Location:** Ritual Forge
 - **Specialty:** Full-stack AI applications, Discord integrations, and cosmic probability fluctuations
@@ -318,7 +316,6 @@ A multi-dimensional developer who descended to the codebase to build cool things
 
 ### Special Thanks
 - **Ritual Community** - For the soul forge quest inspiration
-- **Decka** - Character design and art direction
 - **DeepSeek** - Contributor analysis AI
 - **Exa.ai** - Web research capabilities
 
