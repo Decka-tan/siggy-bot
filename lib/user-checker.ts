@@ -130,7 +130,6 @@ export class UserChecker {
         }
       }
 
-      // Load complete avatar data from current-member-avatars.json (7,978 users)
       if (fs.existsSync(this.avatarsPath)) {
         const avatars = JSON.parse(fs.readFileSync(this.avatarsPath, 'utf8'));
         if (avatars.members) {
@@ -138,7 +137,6 @@ export class UserChecker {
             if (!a.userId) return;
             let profile = this.memberMap.get(a.userId);
             if (!profile) {
-              // Create profile if doesn't exist
               profile = {
                 userId: a.userId,
                 username: a.username,
@@ -150,18 +148,17 @@ export class UserChecker {
                 inServer: a.inServer !== false
               };
               this.memberMap.set(a.userId, profile);
+            }
+            
+            // Priority username mapping: inServer takes priority over stale/guest entries
+            const currentMappedId = this.usernameToIndex.get(a.username.toLowerCase());
+            if (!currentMappedId || a.inServer === true) {
               this.usernameToIndex.set(a.username.toLowerCase(), a.userId);
             }
-            // Always use avatar from current-member-avatars.json (most up-to-date)
-            if (a.avatar) {
-              profile.avatar = a.avatar;
-            }
-            if (a.joinedAt) {
-              profile.joinedAt = a.joinedAt;
-            }
-            if (a.inServer !== undefined) {
-              profile.inServer = a.inServer;
-            }
+
+            if (a.avatar) profile.avatar = a.avatar;
+            if (a.joinedAt) profile.joinedAt = a.joinedAt;
+            if (a.inServer !== undefined) profile.inServer = a.inServer;
           });
         }
       }
