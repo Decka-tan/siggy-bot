@@ -79,12 +79,29 @@ export async function POST(request: NextRequest) {
   // Read body once
   const rawBody = await request.text();
 
+  // Log for debugging
+  console.log('Discord request:', {
+    hasSignature: !!signature,
+    hasTimestamp: !!timestamp,
+    hasPublicKey: !!DISCORD_PUBLIC_KEY,
+    publicKeyPrefix: DISCORD_PUBLIC_KEY?.substring(0, 10) + '...',
+  });
+
   // Verify signature (check for null first)
   if (!signature || !timestamp) {
+    console.log('Missing signature headers');
     return NextResponse.json({ error: 'Missing signature headers' }, { status: 401 });
   }
 
-  const isValid = verifyKey(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY);
+  let isValid: boolean;
+  try {
+    isValid = verifyKey(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY);
+    console.log('Signature valid:', isValid);
+  } catch (e) {
+    console.error('Signature verification error:', e);
+    isValid = false;
+  }
+
   if (!isValid) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
