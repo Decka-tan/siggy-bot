@@ -22,8 +22,11 @@ function verifyKey(body: string, signature: string, timestamp: string, publicKey
     const sigBytes = Buffer.from(signature, 'hex');
     const keyBytes = Buffer.from(publicKey, 'hex');
 
-    return nacl.sign.detached.verify(msgBytes, sigBytes, keyBytes);
-  } catch (e) {
+    const result = nacl.sign.detached.verify(msgBytes, sigBytes, keyBytes);
+    console.log('=== VERIFY ===', { result, hasSig: !!signature, hasTs: !!timestamp, hasKey: !!publicKey, keyLen: publicKey.length });
+    return result;
+  } catch (e: any) {
+    console.log('=== VERIFY ERROR ===', e.message);
     return false;
   }
 }
@@ -114,7 +117,12 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  return NextResponse.json({ status: 'online' });
+  return NextResponse.json({
+    status: 'online',
+    hasPublicKey: !!DISCORD_PUBLIC_KEY,
+    publicKeyLength: DISCORD_PUBLIC_KEY?.length,
+    publicKeyPrefix: DISCORD_PUBLIC_KEY?.substring(0, 10) + '...',
+  });
 }
 
 export async function OPTIONS() {
