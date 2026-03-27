@@ -4,8 +4,6 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyKey } from 'discord-interactions';
-import { InteractionType, InteractionResponseType } from 'discord-interactions';
 
 // Discord Public Key from Discord Developer Portal
 const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY || '';
@@ -19,23 +17,75 @@ const API_BASE_URL = process.env.API_BASE_URL || 'https://siggy-bot.vercel.app';
 // OpenAI API Key for authorization
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
-/**
- * Verify Discord request with body
- */
-async function verifyDiscordRequest(request: NextRequest, body: string) {
-  const signature = request.headers.get('x-signature-ed25519');
-  const timestamp = request.headers.get('x-signature-timestamp');
+// Interaction types
+const InteractionType = {
+  PING: 1,
+  APPLICATION_COMMAND: 2,
+  MESSAGE_COMPONENT: 3,
+  AUTOCOMPLETE: 4,
+  MODAL_SUBMIT: 5,
+};
 
-  if (!signature || !timestamp) {
+// Interaction response types
+const InteractionResponseType = {
+  PONG: 2,
+  CHANNEL_MESSAGE_WITH_SOURCE: 4,
+  DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE: 5,
+};
+
+/**
+ * Verify Discord signature using native Web Crypto API
+ */
+async function verifyDiscordRequest(
+  body: string,
+  signature: string | null,
+  timestamp: string | null
+): Promise<boolean> {
+  if (!signature || !timestamp || !DISCORD_PUBLIC_KEY) {
     return false;
   }
 
-  return verifyKey(
-    body,
-    signature,
-    timestamp,
-    DISCORD_PUBLIC_KEY
-  );
+  try {
+    // Convert hex signature to ArrayBuffer
+    const signatureBytes = hexToBytes(signature);
+
+    // Create the message to verify: timestamp + body
+    const message = new TextEncoder().encode(timestamp + body);
+
+    // Import the public key
+    const publicKeyData = hexToBytes(DISCORD_PUBLIC_KEY);
+    const publicKey = await crypto.subtle.importKey(
+      'raw',
+      publicKeyData,
+      { name: 'Ed25519', namedCurve: 'Ed25519' as any },
+      false,
+      ['verify']
+    );
+
+    // Verify the signature
+    const isValid = await crypto.subtle.verify(
+      'Ed25519',
+      publicKey,
+      signatureBytes,
+      message
+    );
+
+    return isValid;
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
+}
+
+/**
+ * Convert hex string to Uint8Array
+ */
+function hexToBytes(hex: string): Uint8Array {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
 }
 
 /**
@@ -167,12 +217,17 @@ const SPRITES = {
  * POST - Handle Discord interactions
  */
 export async function POST(request: NextRequest) {
+  // Get signature headers
+  const signature = request.headers.get('x-signature-ed25519');
+  const timestamp = request.headers.get('x-signature-timestamp');
+
   // Read body ONCE (stream can only be read once)
   const rawBody = await request.text();
 
-  // Verify Discord signature with the raw body
-  const isValid = await verifyDiscordRequest(request, rawBody);
+  // Verify Discord signature
+  const isValid = await verifyDiscordRequest(rawBody, signature, timestamp);
   if (!isValid) {
+    console.log('Signature verification failed');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
@@ -187,6 +242,7 @@ export async function POST(request: NextRequest) {
 
   // PING - Discord verification
   if (type === InteractionType.PING) {
+    console.log('Received PING, responding with PONG');
     return NextResponse.json({
       type: InteractionResponseType.PONG,
     });
