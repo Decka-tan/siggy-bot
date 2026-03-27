@@ -308,13 +308,23 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ error: 'Unknown interaction type' }, { status: 400 });
 }
 
+// GET - Discord endpoint verification
+export async function GET() {
+  return NextResponse.json({
+    status: 'online',
+    bot: 'Siggy - Multi-Dimensional Cat Girl AI',
+    endpoint: 'Discord Interactions API',
+    version: '1.0.0',
+  });
+}
+
 // OPTIONS for CORS
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
       'Access-Control-Allow-Headers': 'content-type, x-signature-ed25519, x-signature-timestamp',
     },
   });
