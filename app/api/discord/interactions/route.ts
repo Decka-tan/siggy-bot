@@ -20,12 +20,11 @@ const API_BASE_URL = process.env.API_BASE_URL || 'https://siggy-bot.vercel.app';
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
 /**
- * Verify Discord request
+ * Verify Discord request with body
  */
-async function verifyDiscordRequest(request: NextRequest) {
+async function verifyDiscordRequest(request: NextRequest, body: string) {
   const signature = request.headers.get('x-signature-ed25519');
   const timestamp = request.headers.get('x-signature-timestamp');
-  const body = await request.text();
 
   if (!signature || !timestamp) {
     return false;
@@ -168,13 +167,22 @@ const SPRITES = {
  * POST - Handle Discord interactions
  */
 export async function POST(request: NextRequest) {
-  // Verify Discord signature
-  const isValid = await verifyDiscordRequest(request);
+  // Read body ONCE (stream can only be read once)
+  const rawBody = await request.text();
+
+  // Verify Discord signature with the raw body
+  const isValid = await verifyDiscordRequest(request, rawBody);
   if (!isValid) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  const body = await request.json();
+  // Parse JSON from the already-read body
+  let body;
+  try {
+    body = JSON.parse(rawBody);
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  }
   const { type, data, id, token } = body;
 
   // PING - Discord verification
