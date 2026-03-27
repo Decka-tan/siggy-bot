@@ -34,9 +34,17 @@ export async function POST(request: NextRequest) {
 
   const { type, data } = body;
 
-  // PING
+  // PING - Discord verification
   if (type === InteractionType.PING) {
-    return NextResponse.json({ type: InteractionResponseType.PONG });
+    return new NextResponse(
+      JSON.stringify({ type: InteractionResponseType.PONG }),
+      {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
   }
 
   // Slash commands
@@ -53,15 +61,21 @@ export async function POST(request: NextRequest) {
         });
         const result = await response.json();
 
-        return NextResponse.json({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            embeds: [{
-              color: 0xf1c40f,
-              description: result.analysis || 'No analysis',
-            }],
-          },
-        });
+        return new NextResponse(
+          JSON.stringify({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              embeds: [{
+                color: 0xf1c40f,
+                description: result.analysis || 'No analysis',
+              }],
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       case 'research': {
@@ -73,42 +87,63 @@ export async function POST(request: NextRequest) {
         });
         const result = await response.json();
 
-        return NextResponse.json({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            embeds: [{
-              color: 0x3498db,
-              description: result.response || 'No results',
-            }],
-          },
-        });
+        return new NextResponse(
+          JSON.stringify({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              embeds: [{
+                color: 0x3498db,
+                description: result.response || 'No results',
+              }],
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       case 'help': {
-        return NextResponse.json({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            embeds: [{
-              color: 0x9b59b6,
-              title: 'Siggy Commands',
-              fields: [
-                { name: '/check', value: 'Analyze contributor' },
-                { name: '/research', value: 'Web search' },
-              ],
-            }],
-          },
-        });
+        return new NextResponse(
+          JSON.stringify({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              embeds: [{
+                color: 0x9b59b6,
+                title: 'Siggy Commands',
+                fields: [
+                  { name: '/check', value: 'Analyze contributor' },
+                  { name: '/research', value: 'Web search' },
+                ],
+              }],
+            },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
       }
 
       default:
-        return NextResponse.json({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: { content: 'Unknown command' },
-        });
+        return new NextResponse(
+          JSON.stringify({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: { content: 'Unknown command' },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
     }
   }
 
-  return NextResponse.json({ error: 'Unknown type' }, { status: 400 });
+  return new NextResponse(
+    JSON.stringify({ error: 'Unknown type' }),
+    { status: 400, headers: { 'Content-Type': 'application/json' } }
+  );
 }
 
 // GET
