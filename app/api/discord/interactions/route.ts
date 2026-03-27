@@ -79,7 +79,11 @@ export async function POST(request: NextRequest) {
   // Read body once
   const rawBody = await request.text();
 
-  // Verify signature
+  // Verify signature (check for null first)
+  if (!signature || !timestamp) {
+    return NextResponse.json({ error: 'Missing signature headers' }, { status: 401 });
+  }
+
   const isValid = verifyKey(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY);
   if (!isValid) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
