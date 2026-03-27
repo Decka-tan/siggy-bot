@@ -46,7 +46,7 @@ async function verifyDiscordRequest(
   }
 
   try {
-    // Convert hex signature to ArrayBuffer
+    // Convert hex signature to Uint8Array
     const signatureBytes = hexToBytes(signature);
 
     // Create the message to verify: timestamp + body
@@ -56,17 +56,17 @@ async function verifyDiscordRequest(
     const publicKeyData = hexToBytes(DISCORD_PUBLIC_KEY);
     const publicKey = await crypto.subtle.importKey(
       'raw',
-      publicKeyData,
-      { name: 'Ed25519', namedCurve: 'Ed25519' as any },
+      publicKeyData.buffer,
+      { name: 'Ed25519' } as any,
       false,
       ['verify']
     );
 
     // Verify the signature
     const isValid = await crypto.subtle.verify(
-      'Ed25519',
+      'Ed25519' as any,
       publicKey,
-      signatureBytes,
+      signatureBytes.buffer as ArrayBuffer,
       message
     );
 
