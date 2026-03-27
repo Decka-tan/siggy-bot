@@ -241,6 +241,52 @@ vercel
 
 That's it! Vercel will auto-deploy from GitHub. ✨
 
+## 🤖 Discord Bot (Vercel Serverless)
+
+### Run Siggy on Discord Too!
+
+Deploy Siggy as a Discord bot using Vercel serverless functions:
+
+**Features:**
+- `/check @username` - Contributor analysis
+- `/research <query>` - Web search with sources
+- `/help` - Show all commands
+- Chat with `@Siggy` or just `siggy <message>`
+- Same personality as website (moods, easter eggs, knowledge)
+
+**Quick Setup:**
+
+1. **Create Discord Application**
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications)
+   - Create app → Enable Gateway Intents
+   - Copy Bot Token, Client ID, Public Key
+
+2. **Add Environment Variables to Vercel**
+   ```
+   DISCORD_BOT_TOKEN=xxx
+   DISCORD_CLIENT_ID=xxx
+   DISCORD_PUBLIC_KEY=xxx
+   ```
+
+3. **Set Interactions Endpoint URL**
+   ```
+   https://siggy-bot.vercel.app/api/discord/interactions
+   ```
+
+4. **Register Commands**
+   ```bash
+   node scripts/register-discord-commands.js
+   ```
+
+5. **Deploy**
+   ```bash
+   git push origin main
+   ```
+
+**Full Guide:** [DISCORD_VERCEL_SETUP.md](DISCORD_VERCEL_SETUP.md)
+
+---
+
 ## 🎨 Customization
 
 ### Modify Personality

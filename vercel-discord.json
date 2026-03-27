@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/discord/**/*.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/discord/(.*)",
+      "dest": "/api/discord/$1"
+    }
+  ],
+  "env": {
+    "DISCORD_BOT_TOKEN": "@discord-bot-token",
+    "DISCORD_CLIENT_ID": "@discord-client-id",
+    "DISCORD_PUBLIC_KEY": "@discord-public-key"
+  },
+  "functions": {
+    "api/discord/**/*.ts": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}
