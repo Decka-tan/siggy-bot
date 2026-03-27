@@ -1,49 +1,57 @@
 /**
  * DISCORD INTERACTIONS ENDPOINT (Vercel)
- * Using Node.js runtime instead of Edge
+ * Ed25519 signature verification with tweetnacl
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import nacl from 'tweetnacl';
 
-// Force Node.js runtime
 export const runtime = 'nodejs';
 
 const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY || '';
 const API_BASE_URL = process.env.API_BASE_URL || 'https://siggy-bot.vercel.app';
 
-const InteractionType = {
-  PING: 1,
-  APPLICATION_COMMAND: 2,
-};
+const InteractionType = { PING: 1, APPLICATION_COMMAND: 2 };
+const InteractionResponseType = { PONG: 2, CHANNEL_MESSAGE_WITH_SOURCE: 4 };
 
-const InteractionResponseType = {
-  PONG: 2,
-  CHANNEL_MESSAGE_WITH_SOURCE: 4,
-};
+// Verify Ed25519 signature
+function verifyKey(body: string, signature: string, timestamp: string, publicKey: string): boolean {
+  try {
+    const message = timestamp + body;
+    const msgBytes = Buffer.from(message, 'utf-8');
+    const sigBytes = Buffer.from(signature, 'hex');
+    const keyBytes = Buffer.from(publicKey, 'hex');
 
-// POST handler
+    return nacl.sign.detached.verify(msgBytes, sigBytes, keyBytes);
+  } catch (e) {
+    return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
+  const signature = request.headers.get('x-signature-ed25519');
+  const timestamp = request.headers.get('x-signature-timestamp');
   const rawBody = await request.text();
-  let body: any;
 
+  // Verify signature
+  if (!signature || !timestamp || !verifyKey(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY)) {
+    return new NextResponse('Invalid signature', { status: 401 });
+  }
+
+  let body: any;
   try {
     body = JSON.parse(rawBody);
-  } catch (e) {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  } catch {
+    return new NextResponse('Invalid JSON', { status: 400 });
   }
 
   const { type, data } = body;
 
-  // PING - Discord verification
+  // PING
   if (type === InteractionType.PING) {
     return new NextResponse(
       JSON.stringify({ type: InteractionResponseType.PONG }),
-      {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
   }
 
@@ -51,107 +59,64 @@ export async function POST(request: NextRequest) {
   if (type === InteractionType.APPLICATION_COMMAND) {
     const { name, options } = data;
 
-    switch (name) {
-      case 'check': {
-        const username = options?.[0]?.value;
-        const response = await fetch(`${API_BASE_URL}/api/analyze`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username }),
-        });
-        const result = await response.json();
+    if (name === 'check') {
+      const username = options?.[0]?.value;
+      const res = await fetch(`${API_BASE_URL}/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username }),
+      });
+      const result = await res.json();
+      return new NextResponse(
+        JSON.stringify({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { embeds: [{ color: 0xf1c40f, description: result.analysis || 'No data' }] },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-        return new NextResponse(
-          JSON.stringify({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              embeds: [{
-                color: 0xf1c40f,
-                description: result.analysis || 'No analysis',
-              }],
-            },
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
+    if (name === 'research') {
+      const query = options?.[0]?.value;
+      const res = await fetch(`${API_BASE_URL}/api/research`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query }),
+      });
+      const result = await res.json();
+      return new NextResponse(
+        JSON.stringify({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { embeds: [{ color: 0x3498db, description: result.response || 'No results' }] },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
-      case 'research': {
-        const query = options?.[0]?.value;
-        const response = await fetch(`${API_BASE_URL}/api/research`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
-        });
-        const result = await response.json();
-
-        return new NextResponse(
-          JSON.stringify({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              embeds: [{
-                color: 0x3498db,
-                description: result.response || 'No results',
-              }],
-            },
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      case 'help': {
-        return new NextResponse(
-          JSON.stringify({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              embeds: [{
-                color: 0x9b59b6,
-                title: 'Siggy Commands',
-                fields: [
-                  { name: '/check', value: 'Analyze contributor' },
-                  { name: '/research', value: 'Web search' },
-                ],
-              }],
-            },
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      default:
-        return new NextResponse(
-          JSON.stringify({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: 'Unknown command' },
-          }),
-          {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          }
-        );
+    if (name === 'help') {
+      return new NextResponse(
+        JSON.stringify({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            embeds: [{
+              color: 0x9b59b6,
+              title: 'Siggy Commands',
+              fields: [{ name: '/check', value: 'Analyze contributor' }, { name: '/research', value: 'Web search' }],
+            }],
+          },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
     }
   }
 
-  return new NextResponse(
-    JSON.stringify({ error: 'Unknown type' }),
-    { status: 400, headers: { 'Content-Type': 'application/json' } }
-  );
+  return new NextResponse('Unknown interaction', { status: 400 });
 }
 
-// GET
 export async function GET() {
   return NextResponse.json({ status: 'online' });
 }
 
-// OPTIONS
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
