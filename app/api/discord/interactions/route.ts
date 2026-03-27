@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyKey, InteractionType, InteractionResponseType } from 'discord-interactions';
 
 // Discord Public Key from Discord Developer Portal
 const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY || '';
@@ -11,173 +12,14 @@ const DISCORD_PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY || '';
 // Discord Bot Token for API calls
 const DISCORD_BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
 
+// Discord Client ID
+const DISCORD_CLIENT_ID = process.env.DISCORD_CLIENT_ID || '';
+
 // Your API base URL
 const API_BASE_URL = process.env.API_BASE_URL || 'https://siggy-bot.vercel.app';
 
 // OpenAI API Key for authorization
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-
-// Interaction types
-const InteractionType = {
-  PING: 1,
-  APPLICATION_COMMAND: 2,
-  MESSAGE_COMPONENT: 3,
-  AUTOCOMPLETE: 4,
-  MODAL_SUBMIT: 5,
-};
-
-// Interaction response types
-const InteractionResponseType = {
-  PONG: 2,
-  CHANNEL_MESSAGE_WITH_SOURCE: 4,
-  DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE: 5,
-};
-
-/**
- * Verify Discord signature using native Web Crypto API
- */
-async function verifyDiscordRequest(
-  body: string,
-  signature: string | null,
-  timestamp: string | null
-): Promise<boolean> {
-  if (!signature || !timestamp || !DISCORD_PUBLIC_KEY) {
-    return false;
-  }
-
-  try {
-    // Convert hex signature to Uint8Array
-    const signatureBytes = hexToBytes(signature);
-
-    // Create the message to verify: timestamp + body
-    const message = new TextEncoder().encode(timestamp + body);
-
-    // Import the public key
-    const publicKeyData = hexToBytes(DISCORD_PUBLIC_KEY);
-    const publicKey = await crypto.subtle.importKey(
-      'raw',
-      publicKeyData.buffer,
-      { name: 'Ed25519' } as any,
-      false,
-      ['verify']
-    );
-
-    // Verify the signature
-    const isValid = await crypto.subtle.verify(
-      'Ed25519' as any,
-      publicKey,
-      signatureBytes.buffer as ArrayBuffer,
-      message
-    );
-
-    return isValid;
-  } catch (error) {
-    console.error('Signature verification error:', error);
-    return false;
-  }
-}
-
-/**
- * Convert hex string to Uint8Array
- */
-function hexToBytes(hex: string): Uint8Array {
-  const bytes = new Uint8Array(hex.length / 2);
-  for (let i = 0; i < bytes.length; i++) {
-    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-  }
-  return bytes;
-}
-
-/**
- * Send Discord API follow-up message
- */
-async function sendFollowUp(message: string, interactionToken: string) {
-  const response = await fetch(
-    `https://discord.com/api/v10/webhooks/${process.env.DISCORD_CLIENT_ID}/${interactionToken}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bot ${DISCORD_BOT_TOKEN}`,
-      },
-      body: JSON.stringify({ content: message }),
-    }
-  );
-
-  return response.ok;
-}
-
-/**
- * Send follow-up with embed
- */
-async function sendFollowUpEmbed(embed: any, interactionToken: string) {
-  const response = await fetch(
-    `https://discord.com/api/v10/webhooks/${process.env.DISCORD_CLIENT_ID}/${interactionToken}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bot ${DISCORD_BOT_TOKEN}`,
-      },
-      body: JSON.stringify({ embeds: [embed] }),
-    }
-  );
-
-  return response.ok;
-}
-
-/**
- * Call Siggy Chat API
- */
-async function callSiggyAPI(message: string, conversationHistory: any[] = [], userId: string) {
-  const response = await fetch(`${API_BASE_URL}/api/chat`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      message,
-      conversationHistory,
-      userId,
-      isFirstMessage: conversationHistory.length === 0,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`API returned ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-/**
- * Call Contributor Check API
- */
-async function callCheckAPI(username: string) {
-  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username }),
-  });
-
-  return response.json();
-}
-
-/**
- * Parse mood from response
- */
-function parseMood(response: string): string {
-  const moodMatch = response.match(/\[MOOD:([A-Z]+)\]/i);
-  return moodMatch ? moodMatch[1].toUpperCase() : 'DEFAULT';
-}
-
-/**
- * Clean response
- */
-function cleanResponse(response: string): string {
-  return response.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
-}
 
 /**
  * Mood colors
@@ -214,35 +56,47 @@ const SPRITES = {
 };
 
 /**
+ * Call Contributor Check API
+ */
+async function callCheckAPI(username: string) {
+  const response = await fetch(`${API_BASE_URL}/api/analyze`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+
+  return response.json();
+}
+
+/**
  * POST - Handle Discord interactions
  */
 export async function POST(request: NextRequest) {
-  // Get signature headers
+  // Get headers before reading body
   const signature = request.headers.get('x-signature-ed25519');
   const timestamp = request.headers.get('x-signature-timestamp');
 
-  // Read body ONCE (stream can only be read once)
+  // Read body once
   const rawBody = await request.text();
 
-  // Verify Discord signature
-  const isValid = await verifyDiscordRequest(rawBody, signature, timestamp);
+  // Verify signature
+  const isValid = verifyKey(rawBody, signature, timestamp, DISCORD_PUBLIC_KEY);
   if (!isValid) {
-    console.log('Signature verification failed');
     return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
   }
 
-  // Parse JSON from the already-read body
-  let body;
+  // Parse body
+  let body: any;
   try {
     body = JSON.parse(rawBody);
   } catch (e) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
+
   const { type, data, id, token } = body;
 
   // PING - Discord verification
   if (type === InteractionType.PING) {
-    console.log('Received PING, responding with PONG');
     return NextResponse.json({
       type: InteractionResponseType.PONG,
     });
@@ -250,11 +104,10 @@ export async function POST(request: NextRequest) {
 
   // APPLICATION_COMMAND - Slash commands
   if (type === InteractionType.APPLICATION_COMMAND) {
-    const { name, options, guild_id, channel_id, member, user } = data;
+    const { name, options } = data;
 
     switch (name) {
       case 'check': {
-        // Contributor check command
         const username = options?.[0]?.value;
         if (!username) {
           return NextResponse.json({
@@ -284,13 +137,12 @@ export async function POST(request: NextRequest) {
         } catch (error: any) {
           return NextResponse.json({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: `❌ Error: ${error.message}` },
+            data: { content: `Error: ${error.message}` },
           });
         }
       }
 
       case 'research': {
-        // Research command
         const query = options?.[0]?.value;
         if (!query) {
           return NextResponse.json({
@@ -326,7 +178,7 @@ export async function POST(request: NextRequest) {
         } catch (error: any) {
           return NextResponse.json({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: `❌ Error: ${error.message}` },
+            data: { content: `Error: ${error.message}` },
           });
         }
       }
@@ -334,7 +186,7 @@ export async function POST(request: NextRequest) {
       case 'help': {
         const embed = {
           color: 0x9b59b6,
-          title: '🐱 Siggy - Multi-Dimensional Cat Girl AI',
+          title: 'Siggy - Multi-Dimensional Cat Girl AI',
           description: '*A multi-dimensional feline entity descended to Earth as an anime girl*',
           fields: [
             { name: 'Chat', value: 'Just send a message and talk to Siggy!', inline: false },
@@ -348,7 +200,7 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: { embeds: [embed], ephemeral: true },
+          data: { embeds: [embed] },
         });
       }
 
@@ -358,15 +210,6 @@ export async function POST(request: NextRequest) {
           data: { content: 'Unknown command' },
         });
     }
-  }
-
-  // MESSAGE_COMPONENT - Button clicks (for future)
-  if (type === InteractionType.MESSAGE_COMPONENT) {
-    // Handle button interactions
-    return NextResponse.json({
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: { content: 'Button clicked!' },
-    });
   }
 
   return NextResponse.json({ error: 'Unknown interaction type' }, { status: 400 });
