@@ -94,12 +94,22 @@ export function normalizeCoinId(input: string): string {
  */
 async function getTicker24h(symbol: string) {
   try {
-    const response = await fetch(`${BINANCE_API}/ticker/24hr?symbol=${symbol}USDT`);
+    const url = `${BINANCE_API}/ticker/24hr?symbol=${symbol}USDT`;
+    console.log(`[Crypto API] Fetching: ${url}`);
+    const response = await fetch(url);
+    console.log(`[Crypto API] Response status: ${response.status}`);
+
     if (!response.ok) {
-      if (response.status === 400) return null;
+      if (response.status === 400) {
+        console.log(`[Crypto API] 400 - Invalid symbol: ${symbol}USDT`);
+        return null;
+      }
       throw new Error(`Binance error: ${response.status}`);
     }
-    return await response.json();
+
+    const data = await response.json();
+    console.log(`[Crypto API] Success for ${symbol}: ${data.lastPrice}`);
+    return data;
   } catch (error) {
     console.error('[Crypto API] Ticker fetch error:', error);
     return null;
@@ -123,15 +133,23 @@ export async function getPrice(
   low24h: Record<string, number>;
   lastUpdated: string;
 } | null> {
+  console.log(`[Crypto API] getPrice called for: ${coin}`);
   const symbol = normalizeCoinId(coin);
+  console.log(`[Crypto API] Normalized symbol: ${symbol}`);
   const cacheKey = `price_${symbol}_${currencies.join(',')}`;
 
   const cached = getCached<PriceData>(cacheKey);
-  if (cached) return cached;
+  if (cached) {
+    console.log(`[Crypto API] Cache hit for ${symbol}`);
+    return cached;
+  }
 
   try {
     const ticker = await getTicker24h(symbol);
-    if (!ticker) return null;
+    if (!ticker) {
+      console.log(`[Crypto API] Ticker returned null for ${symbol}`);
+      return null;
+    }
 
     const currentPrice = parseFloat(ticker.lastPrice);
     const change24h = parseFloat(ticker.priceChangePercent);
