@@ -712,6 +712,33 @@ client.on('messageCreate', async (message) => {
   }
 });
 
+// ============ HEALTHCHECK SERVER (for Railway) ============
+const http = require('http');
+
+const PORT = process.env.PORT || 8080;
+
+const server = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      status: 'healthy',
+      uptime: process.uptime(),
+      discord: client.isReady() ? 'connected' : 'connecting',
+      guilds: client.guilds ? client.guilds.cache.size : 0,
+    }));
+  } else if (req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Siggy Discord Bot is running! 🐱');
+  } else {
+    res.writeHead(404);
+    res.end('Not found');
+  }
+});
+
+server.listen(PORT, () => {
+  console.log(`🏥 Healthcheck server running on port ${PORT}`);
+});
+
 // ============ START ============
 console.log('🚀 Starting Siggy Discord Bot (Enhanced)...');
 registerCommands().then(() => {
