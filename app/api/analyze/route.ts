@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserChecker } from '@/lib/user-checker';
+import { getUserCheckerAPI } from '@/lib/user-checker-api';
 
 /**
  * UNIFIED ANALYSIS API
- * Uses UserChecker for consistent contributor analysis
+ * Uses UserCheckerAPI (Discord API, no local files needed)
  */
 export async function POST(req: NextRequest) {
   try {
@@ -17,9 +17,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'Username or contributor ID is required' }, { status: 400 });
     }
 
-    const checker = getUserChecker();
+    const checker = getUserCheckerAPI();
     const analysis = await checker.getAIAnalysis(queryId);
-    const user = checker.findUser(queryId);
+    const user = await checker.findUser(queryId);
 
     return NextResponse.json({
       success: true,
