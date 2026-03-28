@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         response += `24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
         response += `Market Cap: ${data.marketCap}\n`;
         response += `Volume (24h): ${data.volume}\n`;
-        response += `\n_Data from CoinGecko • Updated every 5 min_`;
+        response += `\nData from CoinGecko • Updated every 5 min`;
 
         return NextResponse.json({
           response,
@@ -81,7 +81,7 @@ export async function POST(req: NextRequest) {
       const data = await getTrending();
       if (data) {
         let response = `🔥 Crypto Market Overview\n\n`;
-        response += `_Trending coins and top performers in the last 24 hours_\n\n`;
+        response += `Trending coins and top performers in the last 24 hours\n\n`;
 
         response += `🌟 Trending Now\n`;
         data.top7.slice(0, 5).forEach((c, i) => {
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
           response += `[b]${c.symbol}[/b] ${formatPrice(c.price)} ${c.change.toFixed(2)}%\n`;
         });
 
-        response += `\n_Data from CoinGecko • Updated every 5 min_`;
+        response += `\nData from CoinGecko • Updated every 5 min`;
 
         return NextResponse.json({
           response,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       const coin = lowerMsg.slice(7).trim();
       const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
       return NextResponse.json({
-        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\n_For interactive candlestick charts, use the Discord bot /chart command_`,
+        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\nFor interactive candlestick charts, use the Discord bot /chart command`,
         isRawCommand: true,
       });
     }
