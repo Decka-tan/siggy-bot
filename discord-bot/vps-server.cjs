@@ -370,11 +370,30 @@ async function handleCheck(interaction) {
   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
 
   if (cached) {
+    // Parse cached data - support both old format (string) and new format (JSON with avatar)
+    let analysisText = cached;
+    let avatarUrl = null;
+
+    try {
+      const parsed = JSON.parse(cached);
+      if (parsed.analysis) {
+        analysisText = parsed.analysis;
+        avatarUrl = parsed.avatar;
+      }
+    } catch {
+      // Old cache format - just use the string
+    }
+
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(cached)
-      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+      .setDescription(analysisText);
+
+    if (avatarUrl) {
+      embed.setThumbnail({ url: avatarUrl });
+    }
+
+    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
@@ -395,14 +414,20 @@ async function handleCheck(interaction) {
 
     const data = await response.json();
 
-    // Cache the result
-    setCache(cacheKey, data.analysis);
+    // Cache the result with avatar
+    setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar }));
 
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(data.analysis || 'No data available')
-      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+      .setDescription(data.analysis || 'No data available');
+
+    // Add user avatar as thumbnail if available
+    if (data.user?.avatar) {
+      embed.setThumbnail({ url: data.user.avatar });
+    }
+
+    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
