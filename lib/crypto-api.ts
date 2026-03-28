@@ -81,6 +81,49 @@ function setCached<T>(key: string, data: T): void {
   cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
 }
 
+// Type for price data
+type PriceData = {
+  coin: { id: string; symbol: string; name: string };
+  price: Record<string, number>;
+  change24h: Record<string, number>;
+  marketCap: string;
+  marketCapRank: number;
+  volume: string;
+  high24h: Record<string, number>;
+  low24h: Record<string, number>;
+  lastUpdated: string;
+};
+
+// Type for trending data
+type TrendingData = {
+  top7: Array<{
+    name: string;
+    symbol: string;
+    marketCapRank: number;
+    priceBtc: number;
+    score: number;
+  }>;
+  gainers: Array<{
+    name: string;
+    symbol: string;
+    change: number;
+    price: number;
+  }>;
+  losers: Array<{
+    name: string;
+    symbol: string;
+    change: number;
+    price: number;
+  }>;
+};
+
+// Type for search results
+type SearchResult = Array<{
+  id: string;
+  symbol: string;
+  name: string;
+}>;
+
 /**
  * Normalize coin symbol/ID to CoinGecko ID
  */
@@ -123,7 +166,7 @@ export async function getPrice(
   const coinId = normalizeCoinId(coin);
   const cacheKey = `price_${coinId}_${currencies.join(',')}`;
 
-  const cached = getCached(cacheKey);
+  const cached = getCached<PriceData>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -204,7 +247,7 @@ export async function getTrending(): Promise<{
   }>;
 } | null> {
   const cacheKey = 'trending';
-  const cached = getCached(cacheKey);
+  const cached = getCached<TrendingData>(cacheKey);
   if (cached) return cached;
 
   try {
@@ -309,7 +352,7 @@ export async function searchCoins(query: string): Promise<Array<{
   name: string;
 }> | null> {
   const cacheKey = `search_${query}`;
-  const cached = getCached(cacheKey);
+  const cached = getCached<SearchResult>(cacheKey);
   if (cached) return cached;
 
   try {
