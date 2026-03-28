@@ -31,6 +31,110 @@ const {
   handleChart,
 } = require('./commands/crypto.cjs');
 
+// Leaderboard commands
+const {
+  handleLeaderboardCreate,
+  handleLeaderboardAdd,
+  handleLeaderboardUpdate,
+  handleLeaderboardRemove,
+  handleLeaderboardShow,
+  handleLeaderboardList,
+  handleLeaderboardDelete,
+} = require('./commands/leaderboard.cjs');
+
+// Leaderboard command definitions
+const leaderboardCommands = [
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'create',
+      description: 'Create a new leaderboard',
+      type: 1, // SUB_COMMAND
+      options: [{
+        name: 'name',
+        description: 'Leaderboard name',
+        type: 3,
+        required: true,
+      }],
+    }],
+  },
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'add',
+      description: 'Add a participant',
+      type: 1,
+      options: [
+        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+        { name: 'user', description: 'User to add', type: 6, required: true },
+        { name: 'score', description: 'Score to assign', type: 4, required: true },
+      ],
+    }],
+  },
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'update',
+      description: 'Update a participant score',
+      type: 1,
+      options: [
+        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+        { name: 'user', description: 'User to update', type: 6, required: true },
+        { name: 'score', description: 'New score', type: 4, required: true },
+      ],
+    }],
+  },
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'remove',
+      description: 'Remove a participant',
+      type: 1,
+      options: [
+        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+        { name: 'user', description: 'User to remove', type: 6, required: true },
+      ],
+    }],
+  },
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'show',
+      description: 'Display leaderboard',
+      type: 1,
+      options: [
+        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+      ],
+    }],
+  },
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'list',
+      description: 'List all leaderboards',
+      type: 1,
+    }],
+  },
+  {
+    name: 'leaderboard',
+    description: 'Manage custom leaderboards',
+    options: [{
+      name: 'delete',
+      description: 'Delete a leaderboard',
+      type: 1,
+      options: [
+        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+      ],
+    }],
+  },
+];
+
 // ============ CONFIG ============
 const CONFIG = {
   token: process.env.DISCORD_BOT_TOKEN,
@@ -563,20 +667,13 @@ async function handleHelp(interaction) {
     .setTitle('🐱 Siggy - Multi-Dimensional Cat Girl AI')
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
-      { name: '/check @username', value: 'Analyze a Ritual contributor', inline: false },
-      { name: '/research <query>', value: 'Search the web with sources', inline: false },
-      { name: '/price <coin>', value: 'Check cryptocurrency price (btc, eth, sol...)', inline: false },
-      { name: '/trending', value: 'Show trending cryptocurrencies and gainers/losers', inline: false },
-      { name: '/chart <coin>', value: 'Get TradingView chart for a coin', inline: false },
-      { name: '/transform [cat|anime]', value: 'Switch forms (auto-toggles if not specified)', inline: false },
-      { name: '/mood', value: 'Check your current relationship status', inline: false },
-      { name: '/reset', value: 'Reset conversation and relationship', inline: false },
-      { name: '/stats', value: 'Show global bot statistics', inline: false },
-      { name: '/top', value: 'Show top users leaderboard', inline: false },
-      { name: '💬 @Siggy <message>', value: 'Chat with me directly!', inline: false },
+      { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
+      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart`', inline: false },
+      { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
+      { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
+      { name: '💬 Chat', value: '@Siggy <message> - Chat with me directly!', inline: false },
       { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "realName", "dekka"', inline: false },
       { name: '⚡ Rate Limits', value: '3 commands per 5 seconds per user', inline: false },
-      { name: '💾 Data Persistence', value: 'Your data is saved! Chat history survives restarts.', inline: false },
     )
     .setFooter({ text: 'Built by Decka-tan • Ritual Soul Forge Quest' })
     .setTimestamp();
@@ -615,6 +712,7 @@ async function registerCommands() {
       }],
     },
     ...cryptoCommands, // Spread crypto commands here
+    ...leaderboardCommands, // Spread leaderboard commands here
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -697,6 +795,23 @@ client.on('interactionCreate', async (interaction) => {
       case 'stats': await handleStats(interaction); break;
       case 'top': await handleTop(interaction); break;
       case 'help': await handleHelp(interaction); break;
+      // Crypto commands
+      case 'price': await handlePrice(interaction); break;
+      case 'trending': await handleTrending(interaction); break;
+      case 'chart': await handleChart(interaction); break;
+      // Leaderboard commands
+      case 'leaderboard':
+        const subcommand = interaction.options.getSubcommand();
+        switch (subcommand) {
+          case 'create': await handleLeaderboardCreate(interaction); break;
+          case 'add': await handleLeaderboardAdd(interaction); break;
+          case 'update': await handleLeaderboardUpdate(interaction); break;
+          case 'remove': await handleLeaderboardRemove(interaction); break;
+          case 'show': await handleLeaderboardShow(interaction); break;
+          case 'list': await handleLeaderboardList(interaction); break;
+          case 'delete': await handleLeaderboardDelete(interaction); break;
+        }
+        break;
       // Crypto commands
       case 'price': await handlePrice(interaction); break;
       case 'trending': await handleTrending(interaction); break;
