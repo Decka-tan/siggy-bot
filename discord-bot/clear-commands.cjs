@@ -1,6 +1,6 @@
 /**
  * CLEAR ALL DISCORD COMMANDS
- * Run this to reset all commands, then restart bot to re-register
+ * Run: node discord-bot/clear-commands.cjs
  */
 
 require('dotenv').config();
@@ -15,18 +15,18 @@ const rest = new REST({ version: '10' }).setToken(token);
 async function clearCommands() {
   try {
     if (guildId) {
-      console.log('🗑️ Clearing guild commands...');
+      console.log('Clearing guild commands...');
       await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
-      console.log('✅ Guild commands cleared!');
+      console.log('Guild commands cleared!');
     }
 
-    console.log('🗑️ Clearing global commands...');
+    console.log('Clearing global commands...');
     await rest.put(Routes.applicationCommands(clientId), { body: [] });
-    console.log('✅ Global commands cleared!');
+    console.log('Global commands cleared!');
 
-    console.log('\n✨ Done! Now restart the bot to re-register all commands.');
+    console.log('\nDone! Restart bot to re-register commands.');
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
   }
 }
 
