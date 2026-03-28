@@ -1,1 +1,1 @@
-worker: node discord-bot/index.js
+worker: node discord-bot/vps-server.cjs

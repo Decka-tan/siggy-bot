@@ -5,10 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "node index.js",
-    "dev": "node --watch index.js",
-    "deploy-commands": "node deploy-commands.js",
-    "register": "node index.js"
+    "start": "node vps-server.cjs",
+    "dev": "node --watch vps-server.cjs",
+    "deploy-commands": "node vps-server.cjs"
   },
   "dependencies": {
     "discord.js": "^14.14.1",
