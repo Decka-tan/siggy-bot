@@ -20,10 +20,18 @@ import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
 import { detectResearchIntent, searchWeb, buildEnhancedPrompt, formatResponseWithSources } from '@/lib/web-research';
 
-// Initialize OpenAI client
+// Initialize AI client - DeepSeek for chat, OpenAI as fallback
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || '';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+
+const useDeepSeek = !!DEEPSEEK_API_KEY;
+
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '',
+  apiKey: useDeepSeek ? DEEPSEEK_API_KEY : OPENAI_API_KEY,
+  baseURL: useDeepSeek ? 'https://api.deepseek.com' : undefined,
 });
+
+const CHAT_MODEL = useDeepSeek ? 'deepseek-chat' : 'gpt-4o';
 
 export async function POST(req: NextRequest) {
   try {
@@ -264,9 +272,9 @@ DO NOT invent events, roles, or information that isn't explicitly provided above
       temperature = Math.max(0.3, temperature - 0.2);
     }
 
-    // Call OpenAI API
+    // Call AI API (DeepSeek or OpenAI)
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: CHAT_MODEL,
       messages: [
         { role: 'system', content: prompt },
         { role: 'user', content: message }

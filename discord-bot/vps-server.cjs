@@ -334,7 +334,6 @@ client.on('messageCreate', async (message) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${CONFIG.apiKey}`,
       },
       body: JSON.stringify({
         message: cleanMessage,
