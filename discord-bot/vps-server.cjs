@@ -736,6 +736,23 @@ async function registerCommands() {
 
   const rest = new REST({ version: '10' }).setToken(CONFIG.token);
 
+  // Auto-clear commands if CLEAR_COMMANDS env var is set (one-time reset)
+  if (process.env.CLEAR_COMMANDS === 'true') {
+    try {
+      console.log('🗑️ CLEAR_COMMANDS is set - clearing all existing commands...');
+      if (CONFIG.guildId) {
+        await rest.put(Routes.applicationGuildCommands(CONFIG.clientId, CONFIG.guildId), { body: [] });
+        console.log('✅ Guild commands cleared!');
+      }
+      await rest.put(Routes.applicationCommands(CONFIG.clientId), { body: [] });
+      console.log('✅ Global commands cleared!');
+      console.log('⚠️ Remove CLEAR_COMMANDS=true from environment and redeploy to register new commands.');
+      process.exit(0); // Exit after clearing
+    } catch (error) {
+      console.error('❌ Clear commands error:', error);
+    }
+  }
+
   try {
     // Guild commands for instant update
     if (CONFIG.guildId) {
