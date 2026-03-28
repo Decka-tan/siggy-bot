@@ -5,6 +5,8 @@
   },
   "deploy": {
     "startCommand": "node discord-bot/vps-server.cjs",
-    "healthcheckPath": "/"
+    "healthcheckPath": null,
+    "healthcheckTimeout": 300,
+    "restartPolicyType": "on_failure"
   }
 }
