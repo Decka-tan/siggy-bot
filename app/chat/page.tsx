@@ -138,8 +138,8 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   });
 
   // Bold
+  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong class="text-accent font-bold">$1</strong>');
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-accent font-bold">$1</strong>');
-  html = html.replace(/\[b\](.*?)\[\/b\]/gi, '<strong class="font-bold">$1</strong>');
 
   // Italic (but not when part of ** already) - subtle neutral color
   html = html.replace(/\*([^*]+)\*/g, '<span class="text-neutral-400 italic">$1</span>');
