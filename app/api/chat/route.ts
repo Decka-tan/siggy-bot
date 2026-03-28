@@ -115,8 +115,9 @@ export async function POST(req: NextRequest) {
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim();
       const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
+      const note = 'For interactive charts with candlesticks, use the Discord bot /chart command.';
       return NextResponse.json({
-        response: `📈 **Chart for ${coin.toUpperCase()}**\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\n*Note: For interactive charts with candlesticks, use the Discord bot `/chart` command.*`,
+        response: `📈 **Chart for ${coin.toUpperCase()}**\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\n*Note: ${note}*`,
         isRawCommand: true,
       });
     }
