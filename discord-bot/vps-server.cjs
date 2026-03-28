@@ -769,7 +769,11 @@ client.on('messageCreate', async (message) => {
     }
 
     // Clean the response
-    const cleanResponse = botResponse.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
+    let cleanResponse = botResponse.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
+
+    // Format italic actions to be on their own line
+    // If *action* is not followed by a newline, add one
+    cleanResponse = cleanResponse.replace(/\*([^*]+)\*([^\n])/g, '*$1*\n$2');
 
     // Update user state from API (mood updated, count already tracked)
     state.mood = mood;
