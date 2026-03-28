@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
 
     // Convert to simplified OHLC format
     // [time, open, high, low, close, volume]
-    const ohlcData = klines.map((k: any[]) => ({
+    const ohlcData = klines.map((k: any) => ({
       time: k[0],
       open: parseFloat(k[1]),
       high: parseFloat(k[2]),
@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`
     );
 
-    let ticker = null;
+    let ticker: any = null;
     if (tickerResponse.ok) {
       const t = await tickerResponse.json();
       ticker = {
