@@ -105,7 +105,7 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 
     // Draw price labels on Y-axis
     ctx.fillStyle = '#b2b5be';
-    ctx.font = '12px Arial';
+    ctx.font = '12px sans-serif';
     ctx.textAlign = 'left';
 
     for (let i = 0; i < 5; i++) {
@@ -132,18 +132,18 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     ctx.fillStyle = lineColor;
     ctx.fillRect(width - 75, currentY - 12, 75, 24);
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 12px Arial';
+    ctx.font = 'bold 12px sans-serif';
     ctx.fillText(formatPriceLabel(currentPrice), width - 70, currentY + 5);
   }
 
   // Title and symbol
   ctx.fillStyle = '#d1d4dc';
-  ctx.font = 'bold 20px Arial';
+  ctx.font = 'bold 20px sans-serif';
   ctx.textAlign = 'left';
   ctx.fillText(`${symbol}/USDT 15m`, 15, 28);
 
   // Price info
-  ctx.font = '16px Arial';
+  ctx.font = '16px sans-serif';
   ctx.fillStyle = '#ffffff';
   ctx.fillText(formatPriceLabel(currentPrice), 160, 28);
 
@@ -154,7 +154,7 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 
   // Time labels (for 15m timeframe - show hours)
   ctx.fillStyle = '#787b86';
-  ctx.font = '11px Arial';
+  ctx.font = '11px sans-serif';
   const timeLabels = ['-24h', '-18h', '-12h', '-6h', 'Now'];
   timeLabels.forEach((label, i) => {
     const x = 60 + (i / (timeLabels.length - 1)) * (width - 160);
@@ -163,7 +163,7 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 
   // TradingView watermark
   ctx.fillStyle = '#2a2e39';
-  ctx.font = 'bold 14px Arial';
+  ctx.font = 'bold 14px sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText('TradingView', width - 10, height - 10);
 
