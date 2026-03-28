@@ -32,6 +32,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# siggy-bot database
+discord-bot/data/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

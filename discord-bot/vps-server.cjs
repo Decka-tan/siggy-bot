@@ -5,7 +5,23 @@
  * Commands count as messages for relationship tracking
  */
 
+// Load environment variables FIRST
+require('dotenv').config();
+
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const {
+  getUserState,
+  saveUserState,
+  updateUserState,
+  deleteUserState,
+  getConversationHistory,
+  addConversationMessage,
+  setConversationHistory,
+  clearConversationHistory,
+  getGlobalStats,
+  getTopUsers,
+  getUserRank,
+} = require('./db.cjs');
 
 // ============ CONFIG ============
 const CONFIG = {
@@ -181,36 +197,17 @@ setInterval(() => {
   }
 }, 60000);
 
-// ============ USER STATE PERSISTENCE ============
-// Per-user state for mood, form, relationship, etc.
-const userStates = new Map(); // userId -> { mood, form, relationshipScore, messageCount, lastInteraction }
-
-function getUserState(userId) {
-  if (!userStates.has(userId)) {
-    userStates.set(userId, {
-      mood: 'DEFAULT',
-      form: 'ANIME',
-      relationshipScore: 0,
-      messageCount: 0,
-      lastInteraction: Date.now(),
-    });
-  }
-  return userStates.get(userId);
-}
-
-function updateUserState(userId, updates) {
+// ============ USER STATE TRACKING ============
+// Track command as message for relationship (now with DB persistence)
+function trackCommandAsMessage(userId, userName, commandName) {
   const state = getUserState(userId);
-  Object.assign(state, updates);
-  state.lastInteraction = Date.now();
-  return state;
-}
-
-// Track command as message for relationship
-function trackCommandAsMessage(userId, commandName) {
-  const state = getUserState(userId);
+  // Update username if changed
+  state.userName = userName;
   state.messageCount = (state.messageCount || 0) + 1;
   // Commands give small relationship boost
   state.relationshipScore = (state.relationshipScore || 0) + 1;
+  state.lastInteraction = Date.now();
+  saveUserState(state);
   return state;
 }
 
@@ -258,7 +255,7 @@ async function handleCheck(interaction) {
   const cached = getCache(cacheKey);
 
   // Track this command as a message for relationship
-  const state = trackCommandAsMessage(userId, 'check');
+  const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
 
   if (cached) {
     const embed = new EmbedBuilder()
@@ -323,7 +320,7 @@ async function handleResearch(interaction) {
   const cached = getCache(cacheKey);
 
   // Track this command as a message for relationship
-  const state = trackCommandAsMessage(userId, 'research');
+  const state = trackCommandAsMessage(userId, interaction.user.username, 'research');
 
   if (cached) {
     const embed = new EmbedBuilder()
@@ -449,9 +446,9 @@ async function handleMood(interaction) {
 async function handleReset(interaction) {
   const userId = interaction.user.id;
 
-  // Reset user state
-  userStates.delete(userId);
-  conversationHistory.delete(userId);
+  // Reset user state in database
+  deleteUserState(userId);
+  clearConversationHistory(userId);
 
   const embed = new EmbedBuilder()
     .setColor(0x9b59b6)
@@ -462,6 +459,81 @@ async function handleReset(interaction) {
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
+}
+
+async function handleStats(interaction) {
+  await interaction.deferReply();
+
+  try {
+    const stats = getGlobalStats();
+
+    // Format mood distribution
+    const moodFields = stats.moodDistribution.map(m => {
+      const emoji = getMoodEmoji(m.mood);
+      return `${emoji} ${m.mood}: ${m.count}`;
+    }).join('\n') || 'No data yet';
+
+    // Format form distribution
+    const formFields = stats.formDistribution.map(f => {
+      const icon = f.form === 'CAT' ? '🐱' : '👧';
+      return `${icon} ${f.form}: ${f.count}`;
+    }).join('\n') || 'No data yet';
+
+    const embed = new EmbedBuilder()
+      .setColor(0x9b59b6)
+      .setAuthor({ name: 'Siggy Global Statistics', iconURL: SPRITES.CAT.DEFAULT })
+      .addFields(
+        { name: '👥 Total Users', value: `${stats.totalUsers}`, inline: true },
+        { name: '💬 Total Messages', value: `${stats.totalMessages}`, inline: true },
+        { name: '💕 Avg Relationship', value: `${stats.avgRelationship}`, inline: true },
+        { name: '😺 Mood Distribution', value: moodFields, inline: false },
+        { name: '🎭 Form Distribution', value: formFields, inline: false },
+      )
+      .setFooter({ text: 'Multi-dimensional Cat Girl AI • Data persists across restarts!' })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Stats command error:', error);
+    await interaction.editReply(`❌ Error: ${error.message}`);
+  }
+}
+
+async function handleTop(interaction) {
+  await interaction.deferReply();
+
+  try {
+    const topUsers = getTopUsers(10);
+    const userRank = getUserRank(interaction.user.id);
+
+    if (topUsers.length === 0) {
+      return interaction.editReply('No users yet! Be the first to chat with me! 🐱');
+    }
+
+    // Format leaderboard
+    const medals = ['🥇', '🥈', '🥉'];
+    const leaderboard = topUsers.map((user, index) => {
+      const medal = index < 3 ? medals[index] : `${index + 1}.`;
+      const level = getRelationshipLevel(user.relationship_score);
+      return `${medal} **${user.user_name}** - ${user.message_count} msgs • ${level}`;
+    }).join('\n');
+
+    const embed = new EmbedBuilder()
+      .setColor(0xf1c40f)
+      .setAuthor({ name: '🏆 Top Siggy Fans', iconURL: SPRITES.CAT.HAPPY })
+      .setDescription(leaderboard)
+      .addFields({
+        name: 'Your Rank',
+        value: userRank ? `#${userRank}` : 'Not ranked yet',
+      })
+      .setFooter({ text: 'Multi-dimensional Cat Girl AI • Chat more to rank up!' })
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Top command error:', error);
+    await interaction.editReply(`❌ Error: ${error.message}`);
+  }
 }
 
 async function handleHelp(interaction) {
@@ -475,9 +547,12 @@ async function handleHelp(interaction) {
       { name: '/transform <cat|anime>', value: 'Switch between CAT and ANIME forms', inline: false },
       { name: '/mood', value: 'Check your current relationship status', inline: false },
       { name: '/reset', value: 'Reset conversation and relationship', inline: false },
+      { name: '/stats', value: 'Show global bot statistics', inline: false },
+      { name: '/top', value: 'Show top users leaderboard', inline: false },
       { name: '💬 @Siggy <message>', value: 'Chat with me directly!', inline: false },
       { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "realName", "dekka"', inline: false },
       { name: '⚡ Rate Limits', value: '3 commands per 5 seconds per user', inline: false },
+      { name: '💾 Data Persistence', value: 'Your data is saved! Chat history survives restarts.', inline: false },
     )
     .setFooter({ text: 'Built by Decka-tan • Ritual Soul Forge Quest' })
     .setTimestamp();
@@ -531,6 +606,8 @@ async function registerCommands() {
     },
     { name: 'mood', description: 'Check your current relationship and mood status' },
     { name: 'reset', description: 'Reset conversation and relationship progress' },
+    { name: 'stats', description: 'Show global bot statistics' },
+    { name: 'top', description: 'Show top users by message count' },
     { name: 'help', description: 'Show commands and features' },
   ];
 
@@ -583,6 +660,8 @@ client.on('interactionCreate', async (interaction) => {
       case 'transform': await handleTransform(interaction); break;
       case 'mood': await handleMood(interaction); break;
       case 'reset': await handleReset(interaction); break;
+      case 'stats': await handleStats(interaction); break;
+      case 'top': await handleTop(interaction); break;
       case 'help': await handleHelp(interaction); break;
     }
   } catch (error) {
@@ -591,8 +670,7 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ============ MESSAGE HANDLING (@Mentions) ============
-// Store conversation history per user
-const conversationHistory = new Map();
+// Conversation history is now stored in SQLite database (db.js)
 
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
@@ -613,10 +691,12 @@ client.on('messageCreate', async (message) => {
   // Defer reply (API calls can be slow)
   await message.channel.sendTyping();
 
-  // Get user state and history
+  // Get user state and history from database
   const userId = message.author.id;
   const state = getUserState(userId);
-  const history = conversationHistory.get(userId) || [];
+  state.userName = message.author.username; // Update username
+  saveUserState(state);
+  const history = getConversationHistory(userId, 10);
   const isFirstMessage = history.length === 0;
 
   // Check for easter eggs
@@ -674,12 +754,12 @@ client.on('messageCreate', async (message) => {
     // Clean the response
     const cleanResponse = botResponse.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
 
-    // Update user state from API (increment message count, update relationship)
-    updateUserState(userId, {
-      mood,
-      relationshipScore: data.relationshipScore || (state.relationshipScore || 0) + 1,
-      messageCount: (state.messageCount || 0) + 1,
-    });
+    // Update user state from API (mood updated, count already tracked)
+    state.mood = mood;
+    if (data.relationshipScore) {
+      state.relationshipScore = data.relationshipScore;
+    }
+    saveUserState(state);
 
     // Get sprite and color for mood
     const spriteUrl = SPRITES[state.form][mood] || SPRITES[state.form].DEFAULT;
@@ -713,12 +793,9 @@ client.on('messageCreate', async (message) => {
 
     await message.reply({ embeds: [embed], components: [row] });
 
-    // Update history (keep last 10)
-    conversationHistory.set(userId, [
-      ...history.slice(-10),
-      { role: 'user', content: cleanMessage },
-      { role: 'assistant', content: cleanResponse },
-    ]);
+    // Save conversation to database
+    addConversationMessage(userId, 'user', cleanMessage);
+    addConversationMessage(userId, 'assistant', cleanResponse);
 
   } catch (error) {
     console.error('Chat error:', error);
@@ -751,6 +828,12 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, () => {
   console.log(`🏥 Healthcheck server running on port ${PORT}`);
+}).on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`⚠️ Port ${PORT} already in use, skipping healthcheck server`);
+  } else {
+    console.error('Healthcheck server error:', err);
+  }
 });
 
 // ============ START ============

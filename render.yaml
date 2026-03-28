@@ -16,3 +16,9 @@ services:
         sync: false
       - key: API_BASE_URL
         value: https://siggy-bot.vercel.app
+      - key: DATA_DIR
+        value: /opt/render/project/data
+    disk:
+      name: data
+      mountPath: /opt/render/project/data
+      sizeGB: 1

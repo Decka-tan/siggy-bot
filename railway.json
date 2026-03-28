@@ -1,11 +1,11 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "dockerfile": "Dockerfile"
+    "buildCommand": "cd discord-bot && npm install"
   },
   "deploy": {
     "startCommand": "node discord-bot/vps-server.cjs",
-    "healthcheckPath": null,
+    "healthcheckPath": "/health",
     "healthcheckTimeout": 300,
     "restartPolicyType": "on_failure"
   }
