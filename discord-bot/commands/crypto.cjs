@@ -254,7 +254,7 @@ async function handleTrending(interaction) {
       });
     }
 
-    embed.setFooter({ text: 'Data from CoinGecko • Updated every 5 min' }).setTimestamp();
+    embed.setFooter({ text: 'Data from Binance • Top 100 by volume' }).setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
@@ -371,40 +371,42 @@ async function getBinanceOHLC(coin) {
 }
 
 /**
- * Fetch OHLC candlestick data - tries multiple APIs
+ * Fetch OHLC candlestick data from Binance (primary, no rate limit)
  */
-async function getCoinGeckoOHLC(coinId, days = 1) {
-  // Try Kraken first (15m candles)
-  console.log(`[Chart] Trying Kraken for ${coinId}...`);
-  const krakenData = await getKrakenOHLC(coinId);
+async function getBinanceOHLCData(coin) {
+  try {
+    const symbol = (symbolMaps.binance[coin.toLowerCase()] || coin.toUpperCase()) + 'USDT';
+    console.log(`[Chart] Fetching Binance ${symbol} 15m...`);
+
+    const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=96`);
+    if (!response.ok) {
+      console.log(`[Chart] Binance error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log(`[Chart] Binance SUCCESS: ${data.length} candles`);
+
+    // Convert to our format: [time, open, high, low, close]
+    return data.map(k => [k[0], parseFloat(k[1]), parseFloat(k[2]), parseFloat(k[3]), parseFloat(k[4])]);
+  } catch (error) {
+    console.error('Binance OHLC error:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Fetch OHLC - tries Kraken first, then Binance
+ */
+async function getOHLCData(coin) {
+  // Try Kraken first (good for BTC/ETH)
+  const krakenData = await getKrakenOHLC(coin);
   if (krakenData && krakenData.length > 0) {
-    console.log(`[Chart] Kraken SUCCESS: ${krakenData.length} candles`);
     return krakenData;
   }
 
-  // Try Binance (15m candles) - may be blocked
-  console.log(`[Chart] Trying Binance for ${coinId}...`);
-  const binanceData = await getBinanceOHLC(coinId);
-  if (binanceData) {
-    console.log(`[Chart] Binance SUCCESS: ${binanceData.length} candles`);
-    return binanceData;
-  }
-
-  // Fallback to CoinGecko (hourly)
-  console.log(`[Chart] Falling back to CoinGecko hourly...`);
-  try {
-    const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}/ohlc?vs_currency=usd&days=${days}`);
-    if (!response.ok) {
-      console.log(`[Chart] CoinGecko failed: ${response.status}`);
-      return null;
-    }
-    const data = await response.json();
-    console.log(`[Chart] CoinGecko SUCCESS: ${data.length} candles (hourly)`);
-    return data;
-  } catch (error) {
-    console.error('OHLC data error:', error);
-    return null;
-  }
+  // Fallback to Binance (works for most coins)
+  return await getBinanceOHLCData(coin);
 }
 
 /**
@@ -416,32 +418,19 @@ async function handleChart(interaction) {
   try {
     const coin = interaction.options.getString('coin').toLowerCase();
 
-    // CoinGecko ID map
-    const coinIdMap = {
-      btc: 'bitcoin', eth: 'ethereum', sol: 'solana',
-      bnb: 'binancecoin', xrp: 'ripple', ada: 'cardano',
-      doge: 'dogecoin', dot: 'polkadot', matic: 'matic-network',
-      shib: 'shiba-inu', ltc: 'litecoin', avax: 'avalanche-2',
-      link: 'chainlink', atom: 'cosmos', uni: 'uniswap',
-      pepe: 'pepe', bonk: 'bonk', near: 'near', op: 'optimism',
-      arb: 'arbitrum', apt: 'aptos', sui: 'sui', render: 'render-token',
-    };
-
-    const coinId = coinIdMap[coin] || coin;
-
-    // Fetch price data first
+    // Fetch price data first (using Binance API)
     const priceData = await getPrice(coin, ['usd']);
 
     if (!priceData) {
       await interaction.editReply({
-        content: `❌ Couldn't find coin "**${coin}**". Try a common symbol like \`btc\`, \`eth\`, \`sol\`, etc.`,
+        content: `❌ Couldn't find coin "**${coin}**". Try: \`btc\`, \`eth\`, \`sol\`, \`bnb\`, \`xrp\`, \`ada\`, \`doge\`, etc.`,
         ephemeral: true,
       });
       return;
     }
 
-    // Fetch OHLC data for candlestick chart
-    const ohlcData = await getCoinGeckoOHLC(coinId, 1);
+    // Fetch OHLC data for candlestick chart (Binance/Kraken)
+    const ohlcData = await getOHLCData(coin);
     console.log(`[Chart] Got ${ohlcData?.length || 0} OHLC candles`);
 
     // Generate candlestick chart image
@@ -457,7 +446,7 @@ async function handleChart(interaction) {
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    const fileName = `c.png`; // Short filename
+    const fileName = `c.png`;
     const imagePath = path.join(tempDir, fileName);
     fs.writeFileSync(imagePath, imageBuffer);
 
@@ -479,7 +468,7 @@ async function handleChart(interaction) {
         value: `[📈 Open on TradingView](${tradingViewUrl})`,
         inline: false,
       })
-      .setFooter({ text: 'Generated with real CoinGecko data' })
+      .setFooter({ text: 'Data from Binance • 15m candles' })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed], files: [attachment] });
