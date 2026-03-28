@@ -123,7 +123,7 @@ export async function getPrice(
   const coinId = normalizeCoinId(coin);
   const cacheKey = `price_${coinId}_${currencies.join(',')}`;
 
-  const cached = getCached<typeof data>(cacheKey);
+  const cached = getCached(cacheKey);
   if (cached) return cached;
 
   try {
@@ -204,7 +204,7 @@ export async function getTrending(): Promise<{
   }>;
 } | null> {
   const cacheKey = 'trending';
-  const cached = getCached<typeof data>(cacheKey);
+  const cached = getCached(cacheKey);
   if (cached) return cached;
 
   try {
@@ -309,7 +309,7 @@ export async function searchCoins(query: string): Promise<Array<{
   name: string;
 }> | null> {
   const cacheKey = `search_${query}`;
-  const cached = getCached<typeof data>(cacheKey);
+  const cached = getCached(cacheKey);
   if (cached) return cached;
 
   try {
