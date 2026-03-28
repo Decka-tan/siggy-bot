@@ -284,12 +284,70 @@ const EnhancedTypewriterText = ({ text, isLatest, className, alreadyAnimated, on
     if (!isLatest || alreadyAnimated) return text;
     return '';
   });
+  const hasAnimatedRef = useRef(false);
 
-  const tradingViewMatch = text.match(/\[TRADINGVIEW:([^\]]+)\]/);
-  const hasTradingView = !!tradingViewMatch;
-  const tradingViewSymbol = tradingViewMatch ? tradingViewMatch[1] : null;
-  const textWithoutTradingView = hasTradingView ? text.replace(/\[TRADINGVIEW:[^\]]+\]\n?/g, '') : text;
+  useEffect(() => {
+    if (!isLatest || hasAnimatedRef.current || alreadyAnimated) {
+      setDisplayedText(text);
+      if (!hasAnimatedRef.current) {
+        hasAnimatedRef.current = true;
+        onAnimationComplete?.();
+      }
+      return;
+    }
 
+    setDisplayedText('');
+    let i = 0;
+
+    if (speed <= 1) {
+      if (playVoiceLine && personality) playVoiceLine(personality);
+      setDisplayedText(text);
+      hasAnimatedRef.current = true;
+      onAnimationComplete?.();
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if ((window as any).forceSkipAnimation) {
+        setDisplayedText(text);
+        clearInterval(interval);
+        onAnimationComplete?.();
+        return;
+      }
+
+      if (i === 0 && playVoiceLine && personality) playVoiceLine(personality);
+      setDisplayedText(text.substring(0, i + 1));
+      if (i % 3 === 0 && playTyping) playTyping();
+      i++;
+      if (i >= text.length) {
+        clearInterval(interval);
+        hasAnimatedRef.current = true;
+        onAnimationComplete?.();
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [text, isLatest, alreadyAnimated, speed, playVoiceLine, playTyping, personality, onAnimationComplete]);
+
+  const parsed = parseMessageContent(displayedText, contributorMap);
+  return (
+    <>
+      <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parsed.html }} />
+      {parsed.hasChart && parsed.chartSymbol && (
+        <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+          <iframe
+            src={`https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(parsed.chartSymbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`}
+            width="100%"
+            height="450"
+            frameBorder="0"
+            allowFullScreen
+            className="rounded-lg"
+          />
+        </div>
+      )}
+    </>
+  );
+};
 
 const generateTitle = (firstMessage: string): string => {
   const truncated = firstMessage.slice(0, 30);
