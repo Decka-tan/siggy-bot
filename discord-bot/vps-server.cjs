@@ -302,6 +302,102 @@ client.on('interactionCreate', async (interaction) => {
   }
 });
 
+// ============ MESSAGE HANDLING (@Mentions) ============
+// Store conversation history per user
+const conversationHistory = new Map();
+
+client.on('messageCreate', async (message) => {
+  // Ignore bot messages
+  if (message.author.bot) return;
+
+  // Only respond if @mentioned
+  if (!message.mentions.has(client.user)) return;
+
+  // Remove @Siggy from message
+  const cleanMessage = message.content
+    .replace(/<@!?(\d+)>/, '')
+    .trim();
+
+  if (!cleanMessage) {
+    return message.reply('Nya? You called me? *tilts head* 🐱');
+  }
+
+  // Defer reply (API calls can be slow)
+  await message.channel.sendTyping();
+
+  // Get user history
+  const userId = message.author.id;
+  const history = conversationHistory.get(userId) || [];
+
+  try {
+    const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.apiKey}`,
+      },
+      body: JSON.stringify({
+        message: cleanMessage,
+        conversationHistory: history,
+        userId,
+        isFirstMessage: history.length === 0,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const botResponse = data.response || data.message || 'Nya? Something went wrong...';
+
+    // Parse mood from response
+    const moodMatch = botResponse.match(/\[MOOD:([A-Z]+)\]/i);
+    const mood = moodMatch ? moodMatch[1].toUpperCase() : 'DEFAULT';
+    const cleanResponse = botResponse.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
+
+    // Get sprite and color for mood
+    const moodSprites = {
+      DEFAULT: SPRITES.DEFAULT,
+      HAPPY: 'https://siggy-bot.vercel.app/siggy-girl-happy.png',
+      SAD: 'https://siggy-bot.vercel.app/siggy-girl-sad.png',
+      SHOCK: 'https://siggy-bot.vercel.app/siggy-girl-shock.png',
+      SHY: 'https://siggy-bot.vercel.app/siggy-girl-shy.png',
+      ANGRY: 'https://siggy-bot.vercel.app/siggy-girl-angry.png',
+    };
+
+    const moodColors = {
+      DEFAULT: 0x3498db,
+      HAPPY: 0xf1c40f,
+      SAD: 0x5dade2,
+      SHOCK: 0xe67e22,
+      SHY: 0xff69b4,
+      ANGRY: 0xe74c3c,
+    };
+
+    const embed = new EmbedBuilder()
+      .setColor(moodColors[mood] || moodColors.DEFAULT)
+      .setAuthor({ name: 'Siggy', iconURL: SPRITES.cat })
+      .setDescription(cleanResponse)
+      .setThumbnail(moodSprites[mood] || moodSprites.DEFAULT)
+      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${mood}` })
+      .setTimestamp();
+
+    await message.reply({ embeds: [embed] });
+
+    // Update history (keep last 10)
+    conversationHistory.set(userId, [
+      ...history.slice(-10),
+      { role: 'user', content: cleanMessage },
+      { role: 'assistant', content: cleanResponse },
+    ]);
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    await message.reply(`*flicks tail nervously* 😿 My cosmic connection glitched! Error: ${error.message}`);
+  }
+});
+
 // ============ START ============
 console.log('🚀 Starting Siggy Discord Bot...');
 registerCommands().then(() => {
