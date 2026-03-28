@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     // === CRYPTO COMMANDS - RETURN RAW DATA (bypass AI) ===
     const lowerMsg = message.toLowerCase().trim();
 
-    // /price <coin> command - clean format no italic
+    // /price <coin> command - clean format no markdown
     if (lowerMsg.startsWith('/price ')) {
       const coin = lowerMsg.slice(7).trim();
       const data = await getPrice(coin, ['usd', 'idr']);
@@ -55,15 +55,15 @@ export async function POST(req: NextRequest) {
         const change = data.change24h.usd;
         const emoji = change >= 5 ? '🚀' : change >= 2 ? '📈' : change > 0 ? '🟢' : change <= -5 ? '💀' : change <= -2 ? '📉' : '🔴';
 
-        let response = `${emoji} **${data.coin.name} (${data.coin.symbol})**\n\n`;
-        response += `[Market Cap Rank: #${data.marketCapRank}]\n\n`;
-        response += `💰 **Price (USD):** ${formatPrice(data.price.usd, 'usd')}\n`;
-        response += `📈 **24h Change:** ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
-        response += `📊 **24h High:** ${formatPrice(data.high24h.usd, 'usd')}\n`;
-        response += `📊 **24h Low:** ${formatPrice(data.low24h.usd, 'usd')}\n`;
-        response += `💎 **Market Cap:** ${data.marketCap}\n`;
-        response += `📦 **Volume (24h):** ${data.volume}\n`;
-        response += `\n[Data from CoinGecko • Updated every 5 min]`;
+        let response = `${emoji} ${data.coin.name} (${data.coin.symbol})\n\n`;
+        response += `Market Cap Rank: #${data.marketCapRank}\n\n`;
+        response += `💰 Price (USD): ${formatPrice(data.price.usd, 'usd')}\n`;
+        response += `📈 24h Change: ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
+        response += `📊 24h High: ${formatPrice(data.high24h.usd, 'usd')}\n`;
+        response += `📊 24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
+        response += `💎 Market Cap: ${data.marketCap}\n`;
+        response += `📦 Volume (24h): ${data.volume}\n`;
+        response += `\nData from CoinGecko • Updated every 5 min`;
 
         return NextResponse.json({
           response,
@@ -71,34 +71,34 @@ export async function POST(req: NextRequest) {
         });
       }
       return NextResponse.json({
-        response: `❌ Couldn't find coin "**${coin}**". Try: btc, eth, sol, bnb, xrp, ada, doge, dot, matic, etc.`,
+        response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, dot, matic, etc.`,
         isRawCommand: true,
       });
     }
 
-    // /trending command - clean format no italic
+    // /trending command - clean format no markdown
     if (lowerMsg === '/trending') {
       const data = await getTrending();
       if (data) {
-        let response = `🔥 **Crypto Market Overview**\n\n`;
-        response += `[Trending coins and top performers in the last 24 hours]\n\n`;
+        let response = `🔥 Crypto Market Overview\n\n`;
+        response += `Trending coins and top performers in the last 24 hours\n\n`;
 
-        response += `**🌟 Trending Now**\n`;
+        response += `🌟 Trending Now\n`;
         data.top7.slice(0, 5).forEach((c, i) => {
-          response += `${i + 1}. **${c.symbol}** ${c.name}\n`;
+          response += `${i + 1}. ${c.symbol} ${c.name}\n`;
         });
 
-        response += `\n**🚀 Top Gainers (24h)**\n`;
+        response += `\n🚀 Top Gainers (24h)\n`;
         data.gainers.forEach(c => {
-          response += `**${c.symbol}** ${formatPrice(c.price)} 📈 +${c.change.toFixed(2)}%\n`;
+          response += `${c.symbol} ${formatPrice(c.price)} 📈 +${c.change.toFixed(2)}%\n`;
         });
 
-        response += `\n**💀 Top Losers (24h)**\n`;
+        response += `\n💀 Top Losers (24h)\n`;
         data.losers.forEach(c => {
-          response += `**${c.symbol}** ${formatPrice(c.price)} 📉 ${c.change.toFixed(2)}%\n`;
+          response += `${c.symbol} ${formatPrice(c.price)} 📉 ${c.change.toFixed(2)}%\n`;
         });
 
-        response += `\n[Data from CoinGecko • Updated every 5 min]`;
+        response += `\nData from CoinGecko • Updated every 5 min`;
 
         return NextResponse.json({
           response,
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
       const coin = lowerMsg.slice(7).trim();
       const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
       return NextResponse.json({
-        response: `📈 **Chart for ${coin.toUpperCase()}**\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\n[For interactive candlestick charts, use the Discord bot /chart command]`,
+        response: `📈 Chart for ${coin.toUpperCase()}\n\n🔗 Open on TradingView: ${tradingViewUrl}\n\nFor interactive candlestick charts, use the Discord bot /chart command`,
         isRawCommand: true,
       });
     }
