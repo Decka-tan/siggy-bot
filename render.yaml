@@ -1,0 +1,18 @@
+services:
+  # Web Service (required for Render free tier)
+  - type: web
+    name: siggy-discord-bot
+    runtime: node
+    buildCommand: cd discord-bot && npm install
+    startCommand: node discord-bot/vps-server.cjs
+    envVars:
+      - key: DISCORD_BOT_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: API_BASE_URL
+        value: https://siggy-bot.vercel.app
