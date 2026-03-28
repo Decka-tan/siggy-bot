@@ -517,7 +517,8 @@ export default function ChatPage() {
     }
 
     // Hide command dropdown when continuing to type command with space
-    if (input.toLowerCase().startsWith('/check ') || input.toLowerCase().startsWith('/research ')) {
+    if (input.toLowerCase().startsWith('/check ') || input.toLowerCase().startsWith('/research ') ||
+        input.toLowerCase().startsWith('/price ') || input.toLowerCase().startsWith('/chart ')) {
       setShowCommandDropdown(false);
       setCommandQuery('');
     }
@@ -532,8 +533,9 @@ export default function ChatPage() {
       return;
     }
 
-    // Hide contributor dropdown if typing /research
-    if (input.toLowerCase().startsWith('/research')) {
+    // Hide contributor dropdown if typing other commands
+    if (input.toLowerCase().startsWith('/research') || input.toLowerCase().startsWith('/price') ||
+        input.toLowerCase().startsWith('/chart') || input.toLowerCase().startsWith('/trending')) {
       setContributorResults([]);
       setShowContributorDropdown(false);
       return;
