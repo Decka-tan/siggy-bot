@@ -94,17 +94,17 @@ export async function POST(req: NextRequest) {
         response += `Trending coins and top performers in the last 24 hours\n\n`;
 
         response += `🌟 Trending Now\n`;
-        data.top7.slice(0, 5).forEach((c, i) => {
+        data.top7.slice(0, 5).forEach((c: any, i: number) => {
           response += `${i + 1}. [b]${c.symbol}[/b] ${c.name}\n`;
         });
 
         response += `\n🚀 Top Gainers (24h)\n`;
-        data.gainers.forEach(c => {
+        data.gainers.forEach((c: any) => {
           response += `[b]${c.symbol}[/b] ${formatPrice(c.price)} +${c.change.toFixed(2)}%\n`;
         });
 
         response += `\n💀 Top Losers (24h)\n`;
-        data.losers.forEach(c => {
+        data.losers.forEach((c: any) => {
           response += `[b]${c.symbol}[/b] ${formatPrice(c.price)} ${c.change.toFixed(2)}%\n`;
         });
 
