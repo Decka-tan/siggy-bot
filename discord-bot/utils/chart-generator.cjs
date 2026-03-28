@@ -163,11 +163,11 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 
       // Resistance label background
       ctx.fillStyle = 'rgba(239, 83, 80, 0.2)';
-      ctx.fillRect(paddingLeft + 10, resistanceY - 10, 70, 18);
+      ctx.fillRect(paddingLeft + 10, resistanceY - 10, 90, 18);
       ctx.fillStyle = '#ef5350';
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('RES ' + formatPrice(resistance), paddingLeft + 14, resistanceY + 3);
+      ctx.fillText('RES ' + formatPriceReal(resistance), paddingLeft + 14, resistanceY + 3);
 
       // Draw support line (dashed green at bottom)
       ctx.strokeStyle = 'rgba(38, 166, 154, 0.5)';
@@ -179,20 +179,20 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 
       // Support label background
       ctx.fillStyle = 'rgba(38, 166, 154, 0.2)';
-      ctx.fillRect(paddingLeft + 10, supportY - 8, 70, 18);
+      ctx.fillRect(paddingLeft + 10, supportY - 8, 90, 18);
       ctx.fillStyle = '#26a69a';
       ctx.font = '11px sans-serif';
-      ctx.fillText('SUP ' + formatPrice(support), paddingLeft + 14, supportY + 4);
+      ctx.fillText('SUP ' + formatPriceReal(support), paddingLeft + 14, supportY + 4);
     }
 
-    // Price scale on right side
+    // Price scale on right side (real numbers, no K/M/B)
     const priceLevels = 8;
     for (let i = 0; i < priceLevels; i++) {
       const price = paddedMax - (paddedRange * i / (priceLevels - 1));
       const y = paddingTop + (i / (priceLevels - 1)) * chartHeight;
 
       // Price label background
-      const label = formatPriceLabel(price);
+      const label = formatPriceReal(price);
       ctx.font = '11px sans-serif';
       const labelWidth = ctx.measureText(label).width + 8;
 
@@ -222,8 +222,8 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     ctx.globalAlpha = 1;
     ctx.setLineDash([]);
 
-    // Current price label bubble (right side)
-    const priceLabel = formatPriceLabel(currentPrice);
+    // Current price label bubble (right side) - real number
+    const priceLabel = formatPriceReal(currentPrice);
     ctx.font = 'bold 12px sans-serif';
     const bubbleWidth = ctx.measureText(priceLabel).width + 12;
 
@@ -251,11 +251,11 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
   ctx.font = '12px sans-serif';
   ctx.fillText('15m', 135, 30);
 
-  // Current price (big)
+  // Current price (big) - real number
   const priceColor = change >= 0 ? colors.green : colors.red;
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 18px sans-serif';
-  ctx.fillText(formatPriceLabel(currentPrice), 180, 30);
+  ctx.fillText(formatPriceReal(currentPrice), 180, 30);
 
   // Change percentage
   const changeText = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
@@ -263,7 +263,7 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
   ctx.font = 'bold 14px sans-serif';
   ctx.fillText(changeText, 310, 30);
 
-  // High/Low info
+  // High/Low info - real numbers
   if (ohlcData && ohlcData.length > 0) {
     const allHighs = ohlcData.map(c => Array.isArray(c) ? c[2] : c.high);
     const allLows = ohlcData.map(c => Array.isArray(c) ? c[3] : c.low);
@@ -274,19 +274,34 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     ctx.font = '11px sans-serif';
     ctx.fillText('H:', 400, 30);
     ctx.fillStyle = colors.green;
-    ctx.fillText(formatPriceLabel(high24h), 425, 30);
+    ctx.fillText(formatPriceReal(high24h), 425, 30);
 
     ctx.fillStyle = colors.textDim;
     ctx.fillText('L:', 500, 30);
     ctx.fillStyle = colors.red;
-    ctx.fillText(formatPriceLabel(low24h), 525, 30);
+    ctx.fillText(formatPriceReal(low24h), 525, 30);
   }
 
-  // Time labels (bottom)
+  // Time labels (bottom) - real time
   ctx.fillStyle = colors.textDim;
   ctx.font = '11px sans-serif';
   ctx.textAlign = 'center';
-  const timeLabels = ['-24h', '-18h', '-12h', '-6h', 'Now'];
+
+  // Generate real time labels based on current time (15m intervals, going back 24h)
+  const now = new Date();
+  const timeLabels = [];
+
+  // Show 5 time points: 24h ago, 18h ago, 12h ago, 6h ago, now
+  for (let i = 0; i < 5; i++) {
+    const hoursBack = 24 - (i * 6);
+    const time = new Date(now.getTime() - hoursBack * 60 * 60 * 1000);
+
+    // Format as HH:MM (24-hour format)
+    const hours = time.getHours().toString().padStart(2, '0');
+    const minutes = time.getMinutes().toString().padStart(2, '0');
+    timeLabels.push(`${hours}:${minutes}`);
+  }
+
   timeLabels.forEach((label, i) => {
     const x = paddingLeft + (i / (timeLabels.length - 1)) * chartWidth;
     ctx.fillText(label, x, height - 15);
@@ -310,26 +325,36 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 }
 
 /**
- * Format price for display on chart
+ * Format price for display on chart (real numbers, no K/M/B)
  */
 function formatPriceLabel(price) {
+  return formatPriceReal(price);
+}
+
+/**
+ * Format price with real numbers (no suffixes)
+ */
+function formatPriceReal(price) {
   if (price >= 1000) {
-    if (price >= 1e9) return `${(price / 1e9).toFixed(2)}B`;
-    if (price >= 1e6) return `${(price / 1e6).toFixed(2)}M`;
-    if (price >= 1e3) return `${(price / 1e3).toFixed(2)}K`;
+    return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-  if (price >= 1) return price.toFixed(2);
-  if (price >= 0.01) return price.toFixed(4);
-  return price.toFixed(6);
+  if (price >= 1) {
+    return price.toFixed(2);
+  }
+  if (price >= 0.01) {
+    return price.toFixed(4);
+  }
+  if (price >= 0.0001) {
+    return price.toFixed(6);
+  }
+  return price.toFixed(8);
 }
 
 /**
  * Simple format without suffix
  */
 function formatPrice(price) {
-  if (price >= 1) return `$${price.toFixed(2)}`;
-  if (price >= 0.0001) return `$${price.toFixed(6)}`;
-  return `$${price.toFixed(8)}`;
+  return formatPriceReal(price);
 }
 
 module.exports = {
