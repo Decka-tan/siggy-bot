@@ -2,6 +2,7 @@
  * SIGGY DISCORD BOT - VPS Production (Enhanced)
  * For 100k+ member servers
  * Features: Rate limiting, Caching, Error handling, Mood system, Form switching, Easter eggs
+ * Commands count as messages for relationship tracking
  */
 
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
@@ -204,6 +205,15 @@ function updateUserState(userId, updates) {
   return state;
 }
 
+// Track command as message for relationship
+function trackCommandAsMessage(userId, commandName) {
+  const state = getUserState(userId);
+  state.messageCount = (state.messageCount || 0) + 1;
+  // Commands give small relationship boost
+  state.relationshipScore = (state.relationshipScore || 0) + 1;
+  return state;
+}
+
 // ============ CLIENT ============
 const client = new Client({
   intents: [
@@ -247,13 +257,15 @@ async function handleCheck(interaction) {
   const cacheKey = `check_${username}`;
   const cached = getCache(cacheKey);
 
+  // Track this command as a message for relationship
+  const state = trackCommandAsMessage(userId, 'check');
+
   if (cached) {
-    const state = getUserState(userId);
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
       .setDescription(cached)
-      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Cached` })
+      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
@@ -267,7 +279,9 @@ async function handleCheck(interaction) {
     });
 
     if (!response.ok) {
-      throw new Error(`API ${response.status}`);
+      const errorText = await response.text();
+      console.error('API Error:', response.status, errorText);
+      throw new Error(`API ${response.status}: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -275,18 +289,17 @@ async function handleCheck(interaction) {
     // Cache the result
     setCache(cacheKey, data.analysis);
 
-    const state = getUserState(userId);
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
       .setDescription(data.analysis || 'No data available')
-      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood}` })
+      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     console.error('Check command error:', error);
-    await interaction.editReply(`❌ Error: ${error.message}`);
+    await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This uses local Ritual community data, not live Discord API.*`);
   }
 }
 
@@ -309,21 +322,22 @@ async function handleResearch(interaction) {
   const cacheKey = `research_${query.toLowerCase()}`;
   const cached = getCache(cacheKey);
 
+  // Track this command as a message for relationship
+  const state = trackCommandAsMessage(userId, 'research');
+
   if (cached) {
-    const state = getUserState(userId);
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || 0x3498db)
       .setAuthor({ name: 'Siggy Web Research', iconURL: SPRITES.CAT.DEFAULT })
       .setDescription(cached)
-      .setFooter({ text: 'Powered by Tavily • Cached' })
+      .setFooter({ text: 'Powered by Exa • Cached' })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
   }
 
   try {
-    // Use [RESEARCH_MODE: query] pattern with chat API instead of non-existent /api/research
-    const state = getUserState(userId);
+    // Use [RESEARCH_MODE: query] pattern with chat API
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -367,7 +381,7 @@ async function handleResearch(interaction) {
       .setColor(MOOD_COLORS[mood] || 0x3498db)
       .setAuthor({ name: 'Siggy Web Research', iconURL: SPRITES.CAT.DEFAULT })
       .setDescription(cleanResult.substring(0, 4000)) // Discord embed limit
-      .setFooter({ text: `Powered by Tavily • Mood: ${mood}` })
+      .setFooter({ text: `Powered by Exa • Mood: ${mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     if (sources) {
@@ -408,7 +422,7 @@ async function handleTransform(interaction) {
         ? '*A literal cosmic cat with four legs, fur, and a tail. Nyan~*'
         : '*An anime girl with cat ears and a tail. Human-shaped but still very feline!*'))
     .setThumbnail(spriteUrl)
-    .setFooter({ text: `Multi-dimensional Cat Girl AI • Form: ${state.form} • Mood: ${state.mood}` })
+    .setFooter({ text: `Multi-dimensional Cat Girl AI • Form: ${state.form} • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -660,10 +674,10 @@ client.on('messageCreate', async (message) => {
     // Clean the response
     const cleanResponse = botResponse.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
 
-    // Update user state from API
+    // Update user state from API (increment message count, update relationship)
     updateUserState(userId, {
       mood,
-      relationshipScore: data.relationshipScore || state.relationshipScore,
+      relationshipScore: data.relationshipScore || (state.relationshipScore || 0) + 1,
       messageCount: (state.messageCount || 0) + 1,
     });
 
