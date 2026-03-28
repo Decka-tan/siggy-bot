@@ -1,22 +1,11 @@
 {
   "name": "siggy-discord-bot",
   "version": "1.0.0",
-  "description": "Siggy Multi-Dimensional Cat Girl AI for Discord",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "start": "node vps-server.cjs",
-    "dev": "node --watch vps-server.cjs",
-    "deploy-commands": "node vps-server.cjs",
-    "clear-commands": "node clear-commands.cjs",
-    "register-commands": "node -e \"require('./vps-server.cjs'); const {registerCommands}=require('./vps-server.cjs'); registerCommands();\""
-  },
+  "private": true,
   "dependencies": {
-    "discord.js": "^14.14.1",
-    "dotenv": "^16.4.5",
-    "node-fetch": "^3.3.2"
-  },
-  "engines": {
-    "node": "20.x"
+    "canvas": "^3.2.2",
+    "discord.js": "^14.25.1",
+    "discord-interactions": "^4.4.0",
+    "dotenv": "^17.3.1"
   }
 }
