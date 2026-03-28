@@ -19,6 +19,7 @@ import {
 import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
 import { detectResearchIntent, searchWeb, buildEnhancedPrompt, formatResponseWithSources } from '@/lib/web-research';
+import { getPrice, getTrending, formatPrice } from '@/lib/crypto-api';
 
 // Initialize AI client - OpenAI for CHAT only
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
@@ -75,6 +76,53 @@ export async function POST(req: NextRequest) {
         } catch (error) {
           console.error('[Web Research] Error:', error);
         }
+      }
+    }
+
+    // === CRYPTO QUERY DETECTION ===
+    // Detect crypto price queries like "how much is btc", "btc price", "bitcoin price"
+    const cryptoPatterns = [
+      /(?:price|how much|worth|value)\s+(?:of\s+)?(?:\$?)([a-z]{2,10})(?:\s+(?:in\s+)?(\w{3}))?/i,
+      /^([a-z]{2,10})(?:\s+(?:price|to\s+\w+))?$/i,
+      /(?:what'?s|whats)\s+(?:the\s+)?price\s+(?:of\s+)?(?:\$?)([a-z]{2,10})/i,
+    ];
+
+    let cryptoData = null;
+    for (const pattern of cryptoPatterns) {
+      const match = message.match(pattern);
+      if (match) {
+        const coin = match[1];
+        const currency = match[2] || 'usd';
+        console.log(`[Crypto] Detected price query for: ${coin}`);
+
+        try {
+          const data = await getPrice(coin, [currency, 'usd']);
+          if (data) {
+            cryptoData = data;
+            // Add crypto info to the prompt
+            const change = data.change24h[currency] || data.change24h.usd;
+            const emoji = change > 0 ? '📈' : change < 0 ? '📉' : '➡️';
+            message = `[CRYPTO_PRICE_QUERY: The user is asking about ${data.coin.name} (${data.coin.symbol}). Current price: ${formatPrice(data.price[currency], currency)}. 24h change: ${change > 0 ? '+' : ''}${change.toFixed(2)}% ${emoji}. Market cap: ${data.marketCap}. Rank: #${data.marketCapRank}.]\n\nUser message: ${message}`;
+          }
+        } catch (error) {
+          console.error('[Crypto] Error fetching price:', error);
+        }
+        break;
+      }
+    }
+
+    // Detect trending queries
+    if (/trending|gainers?|losers?|pump(ing)?|moon(ing)?|hot coins/i.test(message) && !message.includes('research')) {
+      console.log(`[Crypto] Detected trending query`);
+      try {
+        const trendData = await getTrending();
+        if (trendData) {
+          const gainers = trendData.gainers.slice(0, 3).map(g => `${g.symbol} +${g.change.toFixed(1)}%`).join(', ');
+          const losers = trendData.losers.slice(0, 3).map(l => `${l.symbol} ${l.change.toFixed(1)}%`).join(', ');
+          message = `[CRYPTO_TRENDING_QUERY: Top gainers: ${gainers}. Top losers: ${losers}.]\n\nUser message: ${message}`;
+        }
+      } catch (error) {
+        console.error('[Crypto] Error fetching trending:', error);
       }
     }
 

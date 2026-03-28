@@ -23,6 +23,14 @@ const {
   getUserRank,
 } = require('./db.cjs');
 
+// Crypto commands
+const {
+  cryptoCommands,
+  handlePrice,
+  handleTrending,
+  handleChart,
+} = require('./commands/crypto.cjs');
+
 // ============ CONFIG ============
 const CONFIG = {
   token: process.env.DISCORD_BOT_TOKEN,
@@ -544,6 +552,9 @@ async function handleHelp(interaction) {
     .addFields(
       { name: '/check @username', value: 'Analyze a Ritual contributor', inline: false },
       { name: '/research <query>', value: 'Search the web with sources', inline: false },
+      { name: '/price <coin>', value: 'Check cryptocurrency price (btc, eth, sol...)', inline: false },
+      { name: '/trending', value: 'Show trending cryptocurrencies and gainers/losers', inline: false },
+      { name: '/chart <coin>', value: 'Get TradingView chart for a coin', inline: false },
       { name: '/transform <cat|anime>', value: 'Switch between CAT and ANIME forms', inline: false },
       { name: '/mood', value: 'Check your current relationship status', inline: false },
       { name: '/reset', value: 'Reset conversation and relationship', inline: false },
@@ -590,6 +601,7 @@ async function registerCommands() {
         required: true,
       }],
     },
+    ...cryptoCommands, // Spread crypto commands here
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms',
@@ -664,6 +676,10 @@ client.on('interactionCreate', async (interaction) => {
       case 'stats': await handleStats(interaction); break;
       case 'top': await handleTop(interaction); break;
       case 'help': await handleHelp(interaction); break;
+      // Crypto commands
+      case 'price': await handlePrice(interaction); break;
+      case 'trending': await handleTrending(interaction); break;
+      case 'chart': await handleChart(interaction); break;
     }
   } catch (error) {
     console.error('Command error:', error);
@@ -763,7 +779,6 @@ client.on('messageCreate', async (message) => {
     saveUserState(state);
 
     // Get sprite and color for mood
-    const instanceId = process.env.RENDER_SERVICE_ID || process.env.RAILWAY_SERVICE_NAME || 'LOCAL';
     const spriteUrl = SPRITES[state.form][mood] || SPRITES[state.form].DEFAULT;
     const embedColor = MOOD_COLORS[mood] || MOOD_COLORS.DEFAULT;
     const moodEmoji = getMoodEmoji(mood);
@@ -776,7 +791,7 @@ client.on('messageCreate', async (message) => {
       .setDescription(cleanResponse)
       .setThumbnail(spriteUrl)
       .setFooter({
-        text: `Multi-dimensional Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount} • [${instanceId.slice(-6)}]`
+        text: `Multi-dimensional Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount}`
       })
       .setTimestamp();
 
