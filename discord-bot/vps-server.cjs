@@ -402,32 +402,45 @@ async function handleResearch(interaction) {
 
 async function handleTransform(interaction) {
   const userId = interaction.user.id;
-  const form = interaction.options.getString('form').toUpperCase();
+  const state = getUserState(userId);
+  const currentForm = state.form;
 
-  if (form !== 'CAT' && form !== 'ANIME') {
+  // Get the form option (optional)
+  let targetForm = interaction.options.getString('form');
+
+  // If no form specified, toggle to opposite form
+  if (!targetForm) {
+    targetForm = currentForm === 'CAT' ? 'ANIME' : 'CAT';
+  } else {
+    targetForm = targetForm.toUpperCase();
+  }
+
+  // Check if trying to transform to the same form
+  if (targetForm === currentForm) {
     return interaction.reply({
-      content: '❌ Invalid form! Choose `cat` or `anime`.',
+      content: `❌ You're already in **${targetForm}** form! Choose the other one to transform.`,
       ephemeral: true,
     });
   }
 
-  const state = updateUserState(userId, { form });
+  // Update to new form
+  const newState = updateUserState(userId, { form: targetForm });
 
-  const spriteUrl = SPRITES[state.form][state.mood] || SPRITES[state.form].DEFAULT;
+  const spriteUrl = SPRITES[newState.form][newState.mood] || SPRITES[newState.form].DEFAULT;
   const moodEmoji = {
     HAPPY: '😊', SAD: '😢', SHOCK: '😲', SHY: '😳', ANGRY: '😠', DEFAULT: '😺'
-  }[state.mood] || '😺';
+  }[newState.mood] || '😺';
 
   const embed = new EmbedBuilder()
-    .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
+    .setColor(MOOD_COLORS[newState.mood] || MOOD_COLORS.DEFAULT)
     .setAuthor({ name: 'Siggy Transformation', iconURL: SPRITES.CAT.DEFAULT })
-    .setDescription(`*${form === 'CAT' ? 'POOF' : 'SHWING'}* ${moodEmoji}\n\n` +
-      `You are now talking to **Siggy in ${form} FORM**!\n\n` +
-      (form === 'CAT'
+    .setDescription(`*${targetForm === 'CAT' ? 'POOF' : 'SHWING'}* ${moodEmoji}\n\n` +
+      `You are now talking to **Siggy in ${targetForm} FORM**!\n\n` +
+      (targetForm === 'CAT'
         ? '*A literal cosmic cat with four legs, fur, and a tail. Nyan~*'
         : '*An anime girl with cat ears and a tail. Human-shaped but still very feline!*'))
     .setThumbnail(spriteUrl)
-    .setFooter({ text: `Multi-dimensional Cat Girl AI • Form: ${state.form} • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    .setFooter({ text: `Multi-dimensional Cat Girl AI • Form: ${newState.form} • Mood: ${newState.mood} • Bond: ${getRelationshipLevel(newState.relationshipScore)}` })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -555,7 +568,7 @@ async function handleHelp(interaction) {
       { name: '/price <coin>', value: 'Check cryptocurrency price (btc, eth, sol...)', inline: false },
       { name: '/trending', value: 'Show trending cryptocurrencies and gainers/losers', inline: false },
       { name: '/chart <coin>', value: 'Get TradingView chart for a coin', inline: false },
-      { name: '/transform <cat|anime>', value: 'Switch between CAT and ANIME forms', inline: false },
+      { name: '/transform [cat|anime]', value: 'Switch forms (auto-toggles if not specified)', inline: false },
       { name: '/mood', value: 'Check your current relationship status', inline: false },
       { name: '/reset', value: 'Reset conversation and relationship', inline: false },
       { name: '/stats', value: 'Show global bot statistics', inline: false },
@@ -604,12 +617,12 @@ async function registerCommands() {
     ...cryptoCommands, // Spread crypto commands here
     {
       name: 'transform',
-      description: 'Switch between CAT and ANIME forms',
+      description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
       options: [{
         name: 'form',
-        description: 'cat or anime',
+        description: 'cat or anime (optional - auto-toggles if not specified)',
         type: 3,
-        required: true,
+        required: false,
         choices: [
           { name: 'cat', value: 'CAT' },
           { name: 'anime', value: 'ANIME' },
