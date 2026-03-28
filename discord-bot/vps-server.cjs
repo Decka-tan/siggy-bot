@@ -653,7 +653,15 @@ client.on('interactionCreate', async (interaction) => {
 
   const { customId } = interaction;
 
-  if (customId.startsWith('like_') || customId.startsWith('dislike_')) {
+  if (customId.startsWith('copy_')) {
+    // Get the original message from the embed
+    const embed = interaction.message.embeds[0];
+    const content = embed ? embed.description : 'No content';
+    await interaction.reply({
+      content: `📋 **Message copied!**\n\`\`\`\n${content.slice(0, 1900)}\n\`\`\``,
+      ephemeral: true,
+    });
+  } else if (customId.startsWith('like_') || customId.startsWith('dislike_')) {
     await interaction.reply({
       content: customId.startsWith('like_') ? '👍 You liked this message!' : '👎 You disliked this message.',
       ephemeral: true,
@@ -799,9 +807,13 @@ client.on('messageCreate', async (message) => {
       })
       .setTimestamp();
 
-    // Add like/dislike buttons
+    // Add action buttons
     const row = new ActionRowBuilder()
       .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`copy_${message.id}`)
+          .setLabel('📋 Copy')
+          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId(`like_${message.id}`)
           .setLabel('👍')
