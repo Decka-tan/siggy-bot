@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         response += `24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
         response += `Market Cap: ${data.marketCap}\n`;
         response += `Volume (24h): ${data.volume}\n`;
-        response += `\nData from CoinGecko • Updated every 5 min`;
+        response += `\n_Data from Binance • Updated every 2 min_`;
 
         return NextResponse.json({
           response,
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
           response += `[b]${c.symbol}[/b] ${formatPrice(c.price)} ${c.change.toFixed(2)}%\n`;
         });
 
-        response += `\nData from CoinGecko • Updated every 5 min`;
+        response += `\n_Data from Binance • Top 100 by volume_`;
 
         return NextResponse.json({
           response,
@@ -111,12 +111,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // /chart <coin> command
+    // /chart <coin> command - returns chart data JSON
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim();
+      const baseUrl = process.env.VERCEL_URL || process.env.API_BASE_URL || 'https://siggy-bot.vercel.app';
+      const chartUrl = `${baseUrl}/api/chart?coin=${coin}&interval=15m&limit=96`;
       const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
+
       return NextResponse.json({
-        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\nFor interactive candlestick charts, use the Discord bot /chart command`,
+        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\n_Chart data available at: ${chartUrl}_`,
+        chartData: { url: chartUrl },
         isRawCommand: true,
       });
     }

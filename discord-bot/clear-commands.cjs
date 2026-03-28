@@ -1,51 +1,32 @@
 /**
  * CLEAR ALL DISCORD COMMANDS
- * Run this to remove duplicate commands before fresh registration
+ * Run this to reset all commands, then restart bot to re-register
  */
 
+require('dotenv').config();
 const { REST, Routes } = require('discord.js');
 
-const CONFIG = {
-  token: process.env.DISCORD_BOT_TOKEN,
-  clientId: process.env.DISCORD_CLIENT_ID,
-  guildId: process.env.DISCORD_GUILD_ID,
-};
+const token = process.env.DISCORD_BOT_TOKEN;
+const clientId = process.env.DISCORD_CLIENT_ID;
+const guildId = process.env.DISCORD_GUILD_ID;
 
-const rest = new REST({ version: '10' }).setToken(CONFIG.token);
+const rest = new REST({ version: '10' }).setToken(token);
 
 async function clearCommands() {
   try {
-    // Clear GUILD commands (instant)
-    if (CONFIG.guildId) {
-      const guildCommands = await rest.get(
-        Routes.applicationGuildCommands(CONFIG.clientId, CONFIG.guildId)
-      );
-      console.log(`Found ${guildCommands.length} guild commands`);
-
-      for (const cmd of guildCommands) {
-        await rest.delete(
-          Routes.applicationGuildCommand(CONFIG.clientId, CONFIG.guildId, cmd.id)
-        );
-        console.log(`Deleted guild command: ${cmd.name}`);
-      }
+    if (guildId) {
+      console.log('🗑️ Clearing guild commands...');
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body: [] });
+      console.log('✅ Guild commands cleared!');
     }
 
-    // Clear GLOBAL commands (can take up to 1 hour)
-    const globalCommands = await rest.get(
-      Routes.applicationCommands(CONFIG.clientId)
-    );
-    console.log(`Found ${globalCommands.length} global commands`);
+    console.log('🗑️ Clearing global commands...');
+    await rest.put(Routes.applicationCommands(clientId), { body: [] });
+    console.log('✅ Global commands cleared!');
 
-    for (const cmd of globalCommands) {
-      await rest.delete(
-        Routes.applicationCommand(CONFIG.clientId, cmd.id)
-      );
-      console.log(`Deleted global command: ${cmd.name}`);
-    }
-
-    console.log('✅ All commands cleared!');
+    console.log('\n✨ Done! Now restart the bot to re-register all commands.');
   } catch (error) {
-    console.error('Error clearing commands:', error);
+    console.error('❌ Error:', error);
   }
 }
 
