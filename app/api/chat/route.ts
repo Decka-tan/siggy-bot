@@ -215,8 +215,8 @@ export async function POST(req: NextRequest) {
       try {
         const trendData = await getTrending();
         if (trendData) {
-          const gainers = trendData.gainers.slice(0, 3).map(g => `${g.symbol} +${g.change.toFixed(1)}%`).join(', ');
-          const losers = trendData.losers.slice(0, 3).map(l => `${l.symbol} ${l.change.toFixed(1)}%`).join(', ');
+          const gainers = trendData.gainers.slice(0, 3).map((g: any) => `${g.symbol} +${g.change.toFixed(1)}%`).join(', ');
+          const losers = trendData.losers.slice(0, 3).map((l: any) => `${l.symbol} ${l.change.toFixed(1)}%`).join(', ');
           message = `[CRYPTO_TRENDING_QUERY: Top gainers: ${gainers}. Top losers: ${losers}.]\n\nUser message: ${message}`;
         }
       } catch (error) {
@@ -299,7 +299,7 @@ export async function POST(req: NextRequest) {
       }
 
       const knowledgeText = relevantKnowledge
-        .map(k => `[KNOWLEDGE: ${k.category}] ${k.content}`)
+        .map((k: any) => `[KNOWLEDGE: ${k.category}] ${k.content}`)
         .join('\n\n');
 
       prompt += `${contextInstruction}\n\n=== RELEVANT KNOWLEDGE ===\n${knowledgeText}\n=== END KNOWLEDGE ===`;
