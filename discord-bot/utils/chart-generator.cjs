@@ -171,10 +171,15 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 }
 
 /**
- * Format price for display on chart
+ * Format price for display on chart (no locale-specific chars)
  */
 function formatPriceLabel(price) {
-  if (price >= 1000) return `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  if (price >= 1000) {
+    // Simple K/M/B suffix without locale
+    if (price >= 1e9) return `$${(price / 1e9).toFixed(2)}B`;
+    if (price >= 1e6) return `$${(price / 1e6).toFixed(2)}M`;
+    if (price >= 1e3) return `$${(price / 1e3).toFixed(2)}K`;
+  }
   if (price >= 1) return `$${price.toFixed(2)}`;
   if (price >= 0.01) return `$${price.toFixed(4)}`;
   return `$${price.toFixed(6)}`;

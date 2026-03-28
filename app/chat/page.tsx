@@ -304,6 +304,9 @@ export default function ChatPage() {
   const availableCommands = [
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
     { name: 'research', description: 'Research a topic using web search', usage: '/research query' },
+    { name: 'price', description: 'Check cryptocurrency price', usage: '/price <coin>' },
+    { name: 'trending', description: 'Show trending cryptocurrencies', usage: '/trending' },
+    { name: 'chart', description: 'Get TradingView chart for a coin', usage: '/chart <coin>' },
   ];
 
   const filteredCommands = commandQuery 
@@ -1995,7 +1998,7 @@ export default function ChatPage() {
                               <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
-                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
+                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research') || input.toLowerCase().startsWith('/price') || input.toLowerCase().startsWith('/trending') || input.toLowerCase().startsWith('/chart')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
                                 <textarea
                                   value={input}
                                   onChange={(e) => setInput(e.target.value)}
@@ -2005,10 +2008,10 @@ export default function ChatPage() {
                                     target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                                   }}
                                   onKeyDown={handleInputKeyDown}
-                                  placeholder="What will you say? (type /check or /research)"
+                                  placeholder="What will you say? (type /check, /research, /price, /trending, /chart)"
                                   disabled={isLoading || analyzingContributor !== null}
                                   rows={1}
-                                  className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-black/40 text-text-primary'}`}
+                                  className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research') || input.toLowerCase().startsWith('/price') || input.toLowerCase().startsWith('/trending') || input.toLowerCase().startsWith('/chart')) ? 'bg-accent text-black font-bold' : 'bg-black/40 text-text-primary'}`}
                                   style={{ minHeight: '40px', height: 'auto' }}
                                 />
                                 <button
@@ -2381,7 +2384,7 @@ export default function ChatPage() {
                               target.style.height = `${Math.min(target.scrollHeight, 80)}px`;
                             }}
                             onKeyDown={handleInputKeyDown}
-                            placeholder="What will you say? (type /check or /research)"
+                            placeholder="What will you say? (type /check, /research, /price, /trending, /chart)"
                             disabled={isLoading || analyzingContributor !== null}
                             rows={1}
                             className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
