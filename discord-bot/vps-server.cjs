@@ -629,7 +629,8 @@ async function registerCommands() {
 
 // ============ EVENTS ============
 client.once('ready', () => {
-  console.log(`✅ ${client.user.tag} is online!`);
+  const instanceId = process.env.RENDER_SERVICE_ID || process.env.RAILWAY_SERVICE_NAME || 'LOCAL-' + Math.random().toString(36).substr(2, 5);
+  console.log(`✅ ${client.user.tag} is online! [Instance: ${instanceId}]`);
   console.log(`📊 Serving ${client.guilds.cache.size} servers`);
   client.user.setActivity('/help | @Siggy to chat!', { type: 0 });
 });
@@ -762,6 +763,7 @@ client.on('messageCreate', async (message) => {
     saveUserState(state);
 
     // Get sprite and color for mood
+    const instanceId = process.env.RENDER_SERVICE_ID || process.env.RAILWAY_SERVICE_NAME || 'LOCAL';
     const spriteUrl = SPRITES[state.form][mood] || SPRITES[state.form].DEFAULT;
     const embedColor = MOOD_COLORS[mood] || MOOD_COLORS.DEFAULT;
     const moodEmoji = getMoodEmoji(mood);
@@ -774,7 +776,7 @@ client.on('messageCreate', async (message) => {
       .setDescription(cleanResponse)
       .setThumbnail(spriteUrl)
       .setFooter({
-        text: `Multi-dimensional Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount}`
+        text: `Multi-dimensional Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount} • [${instanceId.slice(-6)}]`
       })
       .setTimestamp();
 
