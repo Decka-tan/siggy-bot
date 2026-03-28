@@ -1,70 +1,92 @@
 /**
- * CRYPTO API - CoinGecko Wrapper (CommonJS for Discord Bot)
- * Free API, no key required
- * Rate limit: 10-50 calls/minute (varies)
+ * CRYPTO API - Binance API Wrapper (CommonJS for Discord Bot)
+ * Free API, no key required, no rate limit issues
+ * More reliable than CoinGecko free tier
  */
 
-const COINGECKO_API = 'https://api.coingecko.com/api/v3';
+const BINANCE_API = 'https://api.binance.com/api/v3';
 
-// Coin symbol to ID mapping for common coins
+// Coin symbol to Binance symbol mapping
 const COIN_MAP = {
-  btc: 'bitcoin',
-  eth: 'ethereum',
-  sol: 'solana',
-  bnb: 'binancecoin',
-  xrp: 'ripple',
-  ada: 'cardano',
-  doge: 'dogecoin',
-  dot: 'polkadot',
-  matic: 'matic-network',
-  shib: 'shiba-inu',
-  ltc: 'litecoin',
-  tron: 'tron',
-  avax: 'avalanche-2',
-  link: 'chainlink',
-  atom: 'cosmos',
-  uni: 'uniswap',
-  pepe: 'pepe',
-  bonk: 'bonk',
-  floki: 'floki',
-  bome: 'bome',
-  wif: 'dogwifcoin',
-  render: 'render-token',
-  rndr: 'render-token',
-  fet: 'fetch-ai',
-  near: 'near',
-  op: 'optimism',
-  arb: 'arbitrum',
-  imx: 'immutable-x',
-  gmx: 'gmx',
-  aave: 'aave',
-  sushi: 'sushi',
-  cake: 'pancakeswap-token',
-  xlm: 'stellar',
-  algo: 'algorand',
-  vet: 'vechain',
-  etc: 'ethereum-classic',
-  xtz: 'tezos',
-  eos: 'eos',
-  fil: 'filecoin',
-  icp: 'internet-computer',
-  hbar: 'hedera-hashgraph',
-  flow: 'flow',
-  mana: 'decentraland',
-  sand: 'the-sandbox',
-  axie: 'axie-infinity',
-  gmt: 'stepn',
-  apt: 'aptos',
-  sui: 'sui',
-  sei: 'sei-network',
-  jup: 'jupiter-exchange-solana',
-  orca: 'orca',
-  ray: 'raydium',
+  btc: 'BTC',
+  eth: 'ETH',
+  sol: 'SOL',
+  bnb: 'BNB',
+  xrp: 'XRP',
+  ada: 'ADA',
+  doge: 'DOGE',
+  dot: 'DOT',
+  matic: 'MATIC',
+  shib: 'SHIB',
+  ltc: 'LTC',
+  tron: 'TRX',
+  avax: 'AVAX',
+  link: 'LINK',
+  atom: 'ATOM',
+  uni: 'UNI',
+  pepe: 'PEPE',
+  bonk: 'BONK',
+  floki: 'FLOKI',
+  bome: 'BOME',
+  wif: 'WIF',
+  render: 'RNDR',
+  rndr: 'RNDR',
+  fet: 'FET',
+  near: 'NEAR',
+  op: 'OP',
+  arb: 'ARB',
+  imx: 'IMX',
+  gmx: 'GMX',
+  aave: 'AAVE',
+  sushi: 'SUSHI',
+  cake: 'CAKE',
+  xlm: 'XLM',
+  algo: 'ALGO',
+  vet: 'VET',
+  etc: 'ETC',
+  xtz: 'XTZ',
+  eos: 'EOS',
+  fil: 'FIL',
+  icp: 'ICP',
+  hbar: 'HBAR',
+  flow: 'FLOW',
+  mana: 'MANA',
+  sand: 'SAND',
+  apt: 'APT',
+  sui: 'SUI',
+  sei: 'SEI',
+  jup: 'JUP',
+  orca: 'ORCA',
+  ray: 'RAY',
+  ton: 'TON',
+  not: 'NOT',
+  bsv: 'BSV',
+  neo: 'NEO',
+  xmr: 'XMR',
+  dash: 'DASH',
+  etc: 'ETC',
+  zec: 'ZEC',
+  kava: 'KAVA',
+  band: 'BAND',
+  comp: 'COMP',
+  mkr: 'MKR',
+  snx: 'SNX',
+  zrx: 'ZRX',
+  bat: 'BAT',
+  ens: 'ENS',
+  gmt: 'GMT',
+  apecoin: 'APE',
+  ape: 'APE',
+  sand: 'SAND',
+  mana: 'MANA',
+  gala: 'GALA',
+  axie: 'AXS',
+  stepn: 'GMT',
 };
 
 // Simple in-memory cache
 const cache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutes (Binance data is fresher)
 
 function getCached(key) {
   const cached = cache.get(key);
@@ -79,79 +101,88 @@ function setCached(key, data) {
 }
 
 /**
- * Normalize coin symbol/ID to CoinGecko ID
+ * Normalize coin symbol to Binance symbol
  */
-function normalizeCoinId(input) {
-  const normalized = input.toLowerCase().trim();
+function normalizeCoinSymbol(input) {
+  const normalized = input.toUpperCase().trim();
 
   // Direct match in COIN_MAP
-  if (COIN_MAP[normalized]) {
-    return COIN_MAP[normalized];
+  const lowerInput = input.toLowerCase().trim();
+  if (COIN_MAP[lowerInput]) {
+    return COIN_MAP[lowerInput];
   }
 
-  // Check if input already matches a value (full ID)
-  for (const [symbol, id] of Object.entries(COIN_MAP)) {
-    if (id === normalized || symbol === normalized) {
-      return id;
-    }
-  }
-
-  // Return as-is (might be a valid CoinGecko ID)
+  // Return as-is (might be a valid Binance symbol)
   return normalized;
+}
+
+/**
+ * Get 24hr ticker statistics for a symbol
+ */
+async function getTicker24h(symbol) {
+  try {
+    const response = await fetch(`${BINANCE_API}/ticker/24hr?symbol=${symbol}USDT`);
+    if (!response.ok) {
+      if (response.status === 400) {
+        return null; // Invalid symbol
+      }
+      throw new Error(`Binance error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('[Crypto API] Ticker fetch error:', error);
+    return null;
+  }
 }
 
 /**
  * Get price data for a coin
  */
 async function getPrice(coin, currencies = ['usd', 'idr']) {
-  const coinId = normalizeCoinId(coin);
-  const cacheKey = `price_${coinId}_${currencies.join(',')}`;
+  const symbol = normalizeCoinSymbol(coin);
+  const cacheKey = `price_${symbol}_${currencies.join(',')}`;
 
   const cached = getCached(cacheKey);
   if (cached) return cached;
 
   try {
-    const url = `${COINGECKO_API}/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false&sparkline=false`;
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      if (response.status === 429) {
-        throw new Error('Rate limited. Please wait a moment.');
-      }
-      if (response.status === 404) {
-        return null;
-      }
-      throw new Error(`CoinGecko error: ${response.status}`);
+    // Get 24h ticker data
+    const ticker = await getTicker24h(symbol);
+    if (!ticker) {
+      return null;
     }
 
-    const data = await response.json();
+    // Get current price
+    const currentPrice = parseFloat(ticker.lastPrice);
+    const change24h = parseFloat(ticker.priceChangePercent);
 
-    const price = {};
-    const change24h = {};
-    const high24h = {};
-    const low24h = {};
-
-    for (const curr of currencies) {
-      price[curr] = data.market_data.current_price[curr] || 0;
-      change24h[curr] = data.market_data.price_change_percentage_24h_in_currency[curr] || data.market_data.price_change_percentage_24h || 0;
-      high24h[curr] = data.market_data.high_24h[curr] || 0;
-      low24h[curr] = data.market_data.low_24h[curr] || 0;
-    }
-
+    // Build result object matching CoinGecko format
     const result = {
       coin: {
-        id: data.id,
-        symbol: data.symbol.toUpperCase(),
-        name: data.name,
+        id: coin.toLowerCase(),
+        symbol: symbol,
+        name: symbol, // Binance doesn't provide name, use symbol
       },
-      price,
-      change24h,
-      marketCap: formatNumber(data.market_data.market_cap?.usd || 0),
-      marketCapRank: data.market_cap_rank || 0,
-      volume: formatNumber(data.market_data.total_volume?.usd || 0),
-      high24h,
-      low24h,
-      lastUpdated: data.last_updated,
+      price: {
+        usd: currentPrice,
+        idr: currentPrice * 16500, // Approximate IDR conversion (can be improved)
+      },
+      change24h: {
+        usd: change24h,
+        idr: change24h,
+      },
+      high24h: {
+        usd: parseFloat(ticker.highPrice),
+        idr: parseFloat(ticker.highPrice) * 16500,
+      },
+      low24h: {
+        usd: parseFloat(ticker.lowPrice),
+        idr: parseFloat(ticker.lowPrice) * 16500,
+      },
+      marketCap: formatNumber(parseFloat(ticker.quoteVolume) * 2), // Approximate
+      marketCapRank: 0, // Binance doesn't provide rank
+      volume: formatNumber(parseFloat(ticker.quoteVolume)),
+      lastUpdated: new Date(ticker.closeTime).toISOString(),
     };
 
     setCached(cacheKey, result);
@@ -163,7 +194,7 @@ async function getPrice(coin, currencies = ['usd', 'idr']) {
 }
 
 /**
- * Get trending coins (top gainers/losers)
+ * Get top gainers and losers from Binance (top traded pairs)
  */
 async function getTrending() {
   const cacheKey = 'trending';
@@ -171,51 +202,57 @@ async function getTrending() {
   if (cached) return cached;
 
   try {
-    // Get trending coins
-    const trendingResponse = await fetch(`${COINGECKO_API}/search/trending`);
-    if (!trendingResponse.ok) throw new Error('Failed to fetch trending');
+    // Get top traded USDT pairs (by volume)
+    const response = await fetch(`${BINANCE_API}/ticker/24hr`);
+    if (!response.ok) throw new Error('Failed to fetch tickers');
 
-    const trendingData = await trendingResponse.json();
+    const tickers = await response.json();
 
-    // Get top coins by market cap for gainers/losers
-    const marketResponse = await fetch(
-      `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false&price_change_percentage=24h`
-    );
-    if (!marketResponse.ok) throw new Error('Failed to fetch markets');
+    // Filter only USDT pairs with significant volume
+    const usdtPairs = tickers
+      .filter((t) => t.symbol.endsWith('USDT'))
+      .filter((t) => parseFloat(t.quoteVolume) > 10000000) // $10M+ volume
+      .map((t) => ({
+        symbol: t.symbol.replace('USDT', ''),
+        name: t.symbol.replace('USDT', ''),
+        price: parseFloat(t.lastPrice),
+        change: parseFloat(t.priceChangePercent),
+        volume: parseFloat(t.quoteVolume),
+      }))
+      .sort((a, b) => b.volume - a.volume)
+      .slice(0, 100); // Top 100 by volume
 
-    const marketData = await marketResponse.json();
-
-    // Process top 7 trending
-    const top7 = trendingData.coins.slice(0, 7).map((item) => ({
-      name: item.item.name,
-      symbol: item.item.symbol.toUpperCase(),
-      marketCapRank: item.item.market_cap_rank || 0,
-      priceBtc: item.item.price_btc,
-      score: item.item.score,
+    // Top 7 by volume (trending)
+    const top7 = usdtPairs.slice(0, 7).map((c) => ({
+      name: c.name,
+      symbol: c.symbol,
+      marketCapRank: 0,
+      priceBtc: 0, // Not available from Binance
+      score: c.volume,
     }));
 
-    // Process gainers (top 5 with highest positive change)
-    const gainers = marketData
-      .filter((c) => c.price_change_percentage_24h > 0)
-      .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+    // Top 5 gainers
+    const gainers = [...usdtPairs]
+      .filter((c) => c.change > 0)
+      .sort((a, b) => b.change - a.change)
       .slice(0, 5)
       .map((c) => ({
         name: c.name,
-        symbol: c.symbol.toUpperCase(),
-        change: c.price_change_percentage_24h,
-        price: c.current_price,
+        symbol: c.symbol,
+        change: c.change,
+        price: c.price,
       }));
 
-    // Process losers (top 5 with lowest negative change)
-    const losers = marketData
-      .filter((c) => c.price_change_percentage_24h < 0)
-      .sort((a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h)
+    // Top 5 losers
+    const losers = [...usdtPairs]
+      .filter((c) => c.change < 0)
+      .sort((a, b) => a.change - b.change)
       .slice(0, 5)
       .map((c) => ({
         name: c.name,
-        symbol: c.symbol.toUpperCase(),
-        change: c.price_change_percentage_24h,
-        price: c.current_price,
+        symbol: c.symbol,
+        change: c.change,
+        price: c.price,
       }));
 
     const result = { top7, gainers, losers };
@@ -231,31 +268,16 @@ async function getTrending() {
  * Get chart embed URL for TradingView
  */
 function getChartEmbed(coin) {
-  const coinId = normalizeCoinId(coin);
+  const symbol = normalizeCoinSymbol(coin);
 
-  // Map common coins to TradingView symbols
-  const tvSymbolMap = {
-    bitcoin: 'BINANCE:BTCUSDT',
-    ethereum: 'BINANCE:ETHUSDT',
-    solana: 'BINANCE:SOLUSDT',
-    binancecoin: 'BINANCE:BNBUSDT',
-    ripple: 'BINANCE:XRPUSDT',
-    cardano: 'BINANCE:ADAUSDT',
-    dogecoin: 'BINANCE:DOGEUSDT',
-    polkadot: 'BINANCE:DOTUSDT',
-    'matic-network': 'BINANCE:MATICUSDT',
-    'shiba-inu': 'BINANCE:SHIBUSDT',
-    pepe: 'BINANCE:PEPEUSDT',
-    bonk: 'BONK:USDT',
-  };
-
-  const symbol = tvSymbolMap[coinId] || `BINANCE:${coin.toUpperCase()}USDT`;
-  const encoded = encodeURIComponent(symbol);
+  // Direct Binance TradingView symbols
+  const tvSymbol = `BINANCE:${symbol}USDT`;
+  const encoded = encodeURIComponent(tvSymbol);
 
   return {
     chartUrl: `https://tvdn.dev/widget/embed/?symbol=${encoded}`,
     tradingViewUrl: `https://www.tradingview.com/chart/?symbol=${encoded}`,
-    symbol,
+    symbol: tvSymbol,
   };
 }
 
@@ -328,5 +350,5 @@ module.exports = {
   formatPrice,
   getPriceChangeEmoji,
   getPriceChangeColor,
-  normalizeCoinId,
+  normalizeCoinId: normalizeCoinSymbol, // Alias for compatibility
 };
