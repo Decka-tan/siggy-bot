@@ -350,9 +350,8 @@ client.on('messageCreate', async (message) => {
     const data = await response.json();
     const botResponse = data.response || data.message || 'Nya? Something went wrong...';
 
-    // Parse mood from response
-    const moodMatch = botResponse.match(/\[MOOD:([A-Z]+)\]/i);
-    const mood = moodMatch ? moodMatch[1].toUpperCase() : 'DEFAULT';
+    // Get mood from API response (API already detects mood for us!)
+    const mood = (data.currentMood || 'DEFAULT').toUpperCase();
     const cleanResponse = botResponse.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
 
     // Get sprite and color for mood
