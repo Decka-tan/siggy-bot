@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
           response += `24h High: ${formatPrice(data.high24h.usd, 'usd')}\n`;
           response += `24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
           response += `Volume (24h): ${data.volume}\n`;
-          response += `\n_Data from Binance • Updated every 2 min_`;
+          response += `\n[b]Data from CoinGecko • Updated every 5 min[/b]`;
 
           return NextResponse.json({
             response,
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           response += `[b]${c.symbol}[/b] ${formatPrice(c.price)} ${c.change.toFixed(2)}%\n`;
         });
 
-        response += `\n_Data from Binance • Top 100 by volume_`;
+        response += `\n[b]Data from CoinGecko • Top gainers & losers[/b]`;
 
         return NextResponse.json({
           response,
