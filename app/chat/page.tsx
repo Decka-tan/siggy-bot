@@ -153,25 +153,39 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2 opacity-90">$1</blockquote>');
   html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2">$1</blockquote>');
 
-  // TradingView chart embed
+  // TradingView chart embed - extract and return separately
+  const tradingViewMatches: string[] = [];
   html = html.replace(/\[TRADINGVIEW:([^\]]+)\]/g, (match, symbol) => {
-    return `<div class="my-4 rounded-lg overflow-hidden border border-border/50 bg-bg/50">
-      <iframe
-        src="https://s.tradingview.com/widgetembed/chart/?symbol=${encodeURIComponent(symbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC"
-        width="100%"
-        height="400"
-        frameborder="0"
-        allowtransparency="true"
-        allowfullscreen
-        class="rounded-lg"
-      ></iframe>
-    </div>`;
+    tradingViewMatches.push(symbol);
+    return `<!--TRADINGVIEW-${tradingViewMatches.length - 1}-->`;
+  });
+  html = html.replace(/\[CHART:([^\]]+)\]/g, (match, symbol) => {
+    tradingViewMatches.push(symbol);
+    return `<!--CHART-${tradingViewMatches.length - 1}-->`;
   });
 
   // Single line breaks (but not in code/quote)
   html = html.replace(/\n/g, '<br />');
 
-  return '<p class="whitespace-pre-wrap leading-normal">' + html + '</p>';
+  let resultHtml = '<p class="whitespace-pre-wrap leading-normal">' + html + '</p>';
+
+  // Replace TradingView placeholders with actual embeds
+  tradingViewMatches.forEach((symbol, index) => {
+    const embedHtml = `<div class="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+      <iframe
+        src="https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(symbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC"
+        width="100%"
+        height="450"
+        frameborder="0"
+        allowfullscreen
+        class="rounded-lg"
+      ></iframe>
+    </div>`;
+    resultHtml = resultHtml.replace(`<!--TRADINGVIEW-${index}-->`, embedHtml);
+    resultHtml = resultHtml.replace(`<!--CHART-${index}-->`, embedHtml);
+  });
+
+  return { html: resultHtml, hasChart: tradingViewMatches.length > 0, chartSymbol: tradingViewMatches[0] };
 };
 
 // Typewriter Text Component
@@ -228,8 +242,53 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, isLatest, alreadyAnimated, speed]);
 
-  return <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parseMessageContent(displayedText, contributorMap) }} />;
+  const parsed = parseMessageContent(displayedText, contributorMap);
+  return (
+    <>
+      <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parsed.html }} />
+      {parsed.hasChart && parsed.chartSymbol && (
+        <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+          <iframe
+            src={`https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(parsed.chartSymbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`}
+            width="100%"
+            height="450"
+            frameBorder="0"
+            allowFullScreen
+            className="rounded-lg"
+          />
+        </div>
+      )}
+    </>
+  );
 };
+
+// TradingView Widget Component
+const TradingViewWidget = ({ symbol }: { symbol: string }) => {
+  return (
+    <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+      <iframe
+        src={`https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(symbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`}
+        width="100%"
+        height="450"
+        frameBorder="0"
+        allowFullScreen
+        className="rounded-lg"
+      />
+    </div>
+  );
+};
+
+// Enhanced Typewriter with TradingView support
+const EnhancedTypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality, speed = 20, contributorMap = {} }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME'; speed?: number, contributorMap?: Record<string, ContributorSearchResult> }) => {
+  const [displayedText, setDisplayedText] = useState(() => {
+    if (!isLatest || alreadyAnimated) return text;
+    return '';
+  });
+
+  const tradingViewMatch = text.match(/\[TRADINGVIEW:([^\]]+)\]/);
+  const hasTradingView = !!tradingViewMatch;
+  const tradingViewSymbol = tradingViewMatch ? tradingViewMatch[1] : null;
+  const textWithoutTradingView = hasTradingView ? text.replace(/\[TRADINGVIEW:[^\]]+\]\n?/g, '') : text;
 
 
 const generateTitle = (firstMessage: string): string => {
@@ -1728,7 +1787,7 @@ export default function ChatPage() {
                                   <p
                                     className="text-sm md:text-base lg:text-base leading-snug font-mono text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
-                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
+                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap).html
                                     }}
                                   />
                                 ) : (
@@ -2128,7 +2187,7 @@ export default function ChatPage() {
                             {message.role === 'assistant' ? (
                               <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
-                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
+                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap).html }} />
                             )}
 
                             {message.role === 'assistant' && (

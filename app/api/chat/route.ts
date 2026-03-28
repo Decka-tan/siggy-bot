@@ -128,16 +128,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // /chart <coin> command - returns chart data JSON
+    // /chart <coin> command - return chart data for frontend
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim();
-      const baseUrl = process.env.VERCEL_URL || process.env.API_BASE_URL || 'https://siggy-bot.vercel.app';
-      const chartUrl = `${baseUrl}/api/chart?coin=${coin}&interval=15m&limit=96`;
       const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
 
       return NextResponse.json({
-        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n[TRADINGVIEW:${symbol}]\n\n*Click chart to interact*\n\n🔗 [Open on TradingView](${tradingViewUrl})`,
+        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n*[CHART:${symbol}]*\n\n🔗 [Open on TradingView](${tradingViewUrl})`,
         isRawCommand: true,
+        chartData: { symbol, coin: coin.toUpperCase() },
       });
     }
 
