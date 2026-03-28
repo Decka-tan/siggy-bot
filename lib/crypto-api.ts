@@ -1,37 +1,26 @@
 /**
- * CRYPTO API - Binance API Wrapper (TypeScript)
- * Free API, no key required, no rate limit issues
+ * CRYPTO API - CoinGecko Wrapper (Working version for Vercel)
+ * Free API, no key required
  */
 
-const BINANCE_API = 'https://api.binance.com/api/v3';
+const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
-// Coin symbol to Binance symbol mapping
+// Coin symbol to ID mapping
 const COIN_MAP: Record<string, string> = {
-  btc: 'BTC', eth: 'ETH', sol: 'SOL', bnb: 'BNB', xrp: 'XRP',
-  ada: 'ADA', doge: 'DOGE', dot: 'DOT', matic: 'MATIC', shib: 'SHIB',
-  ltc: 'LTC', tron: 'TRX', avax: 'AVAX', link: 'LINK', atom: 'ATOM',
-  uni: 'UNI', pepe: 'PEPE', bonk: 'BONK', floki: 'FLOKI', bome: 'BOME',
-  wif: 'WIF', render: 'RNDR', rndr: 'RNDR', fet: 'FET', near: 'NEAR',
-  op: 'OP', arb: 'ARB', imx: 'IMX', gmx: 'GMX', aave: 'AAVE',
-  sushi: 'SUSHI', cake: 'CAKE', xlm: 'XLM', algo: 'ALGO', vet: 'VET',
-  etc: 'ETC', xtz: 'XTZ', eos: 'EOS', fil: 'FIL', icp: 'ICP',
-  hbar: 'HBAR', flow: 'FLOW', mana: 'MANA', sand: 'SAND', apt: 'APT',
-  sui: 'SUI', sei: 'SEI', jup: 'JUP', orca: 'ORCA', ray: 'RAY',
-  ton: 'TON', not: 'NOT', bsv: 'BSV', neo: 'NEO', xmr: 'XMR',
-  dash: 'DASH', zec: 'ZEC', kava: 'KAVA', band: 'BAND', comp: 'COMP',
-  mkr: 'MKR', snx: 'SNX', zrx: 'ZRX', bat: 'BAT', ens: 'ENS',
-  gmt: 'GMT', apecoin: 'APE', ape: 'APE', gala: 'GALA', axs: 'AXS',
+  btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binancecoin',
+  xrp: 'ripple', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
+  matic: 'matic-network', shib: 'shiba-inu', ltc: 'litecoin', avax: 'avalanche-2',
+  link: 'chainlink', atom: 'cosmos', uni: 'uniswap', pepe: 'pepe',
+  near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
 };
 
-// Simple in-memory cache
+// Cache
 const cache = new Map<string, { data: any; expiry: number }>();
-const CACHE_TTL = 2 * 60 * 1000; // 2 minutes (Binance data is fresher)
+const CACHE_TTL = 2 * 60 * 1000;
 
 function getCached<T>(key: string): T | null {
   const cached = cache.get(key);
-  if (cached && cached.expiry > Date.now()) {
-    return cached.data as T;
-  }
+  if (cached && cached.expiry > Date.now()) return cached.data as T;
   return null;
 }
 
@@ -39,306 +28,104 @@ function setCached<T>(key: string, data: T): void {
   cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
 }
 
-// Type for price data
-type PriceData = {
-  coin: { id: string; symbol: string; name: string };
-  price: Record<string, number>;
-  change24h: Record<string, number>;
-  marketCap: string;
-  marketCapRank: number;
-  volume: string;
-  high24h: Record<string, number>;
-  low24h: Record<string, number>;
-  lastUpdated: string;
-};
-
-// Type for trending data
-type TrendingData = {
-  top7: Array<{
-    name: string;
-    symbol: string;
-    marketCapRank: number;
-    priceBtc: number;
-    score: number;
-  }>;
-  gainers: Array<{
-    name: string;
-    symbol: string;
-    change: number;
-    price: number;
-  }>;
-  losers: Array<{
-    name: string;
-    symbol: string;
-    change: number;
-    price: number;
-  }>;
-};
-
-/**
- * Normalize coin symbol to Binance symbol
- */
-export function normalizeCoinId(input: string): string {
-  const normalized = input.toUpperCase().trim();
-  const lowerInput = input.toLowerCase().trim();
-
-  if (COIN_MAP[lowerInput]) {
-    return COIN_MAP[lowerInput];
-  }
-
-  return normalized;
+function normalizeCoinId(input: string): string {
+  const normalized = input.toLowerCase().trim();
+  return COIN_MAP[normalized] || normalized;
 }
 
-/**
- * Get 24hr ticker statistics for a symbol
- */
-async function getTicker24h(symbol: string) {
-  try {
-    const url = `${BINANCE_API}/ticker/24hr?symbol=${symbol}USDT`;
-    console.log(`[Crypto API] Fetching: ${url}`);
-    const response = await fetch(url);
-    console.log(`[Crypto API] Response status: ${response.status}`);
-
-    if (!response.ok) {
-      if (response.status === 400) {
-        console.log(`[Crypto API] 400 - Invalid symbol: ${symbol}USDT`);
-        return null;
-      }
-      throw new Error(`Binance error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(`[Crypto API] Success for ${symbol}: ${data.lastPrice}`);
-    return data;
-  } catch (error) {
-    console.error('[Crypto API] Ticker fetch error:', error);
-    return null;
-  }
+async function getCoinData(coinId: string) {
+  const response = await fetch(
+    `${COINGECKO_API}/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`
+  );
+  if (!response.ok) return null;
+  return response.json();
 }
 
-/**
- * Get price data for a coin
- */
-export async function getPrice(
-  coin: string,
-  currencies: string[] = ['usd', 'idr']
-): Promise<{
-  coin: { id: string; symbol: string; name: string };
-  price: Record<string, number>;
-  change24h: Record<string, number>;
-  marketCap: string;
-  marketCapRank: number;
-  volume: string;
-  high24h: Record<string, number>;
-  low24h: Record<string, number>;
-  lastUpdated: string;
-} | null> {
-  console.log(`[Crypto API] getPrice called for: ${coin}`);
-  const symbol = normalizeCoinId(coin);
-  console.log(`[Crypto API] Normalized symbol: ${symbol}`);
-  const cacheKey = `price_${symbol}_${currencies.join(',')}`;
+export async function getPrice(coin: string, currencies: string[] = ['usd', 'idr']) {
+  const coinId = normalizeCoinId(coin);
+  const cacheKey = `price_${coinId}`;
 
-  const cached = getCached<PriceData>(cacheKey);
-  if (cached) {
-    console.log(`[Crypto API] Cache hit for ${symbol}`);
-    return cached;
-  }
-
-  try {
-    const ticker = await getTicker24h(symbol);
-    if (!ticker) {
-      console.log(`[Crypto API] Ticker returned null for ${symbol}`);
-      return null;
-    }
-
-    const currentPrice = parseFloat(ticker.lastPrice);
-    const change24h = parseFloat(ticker.priceChangePercent);
-
-    const result = {
-      coin: {
-        id: coin.toLowerCase(),
-        symbol: symbol,
-        name: symbol,
-      },
-      price: {
-        usd: currentPrice,
-        idr: currentPrice * 16500,
-      },
-      change24h: {
-        usd: change24h,
-        idr: change24h,
-      },
-      high24h: {
-        usd: parseFloat(ticker.highPrice),
-        idr: parseFloat(ticker.highPrice) * 16500,
-      },
-      low24h: {
-        usd: parseFloat(ticker.lowPrice),
-        idr: parseFloat(ticker.lowPrice) * 16500,
-      },
-      marketCap: formatNumber(parseFloat(ticker.quoteVolume) * 2),
-      marketCapRank: 0,
-      volume: formatNumber(parseFloat(ticker.quoteVolume)),
-      lastUpdated: new Date(ticker.closeTime).toISOString(),
-    };
-
-    setCached(cacheKey, result);
-    return result;
-  } catch (error) {
-    console.error('[Crypto API] Price fetch error:', error);
-    return null;
-  }
-}
-
-/**
- * Get top gainers and losers from Binance
- */
-export async function getTrending(): Promise<{
-  top7: Array<{
-    name: string;
-    symbol: string;
-    marketCapRank: number;
-    priceBtc: number;
-    score: number;
-  }>;
-  gainers: Array<{
-    name: string;
-    symbol: string;
-    change: number;
-    price: number;
-  }>;
-  losers: Array<{
-    name: string;
-    symbol: string;
-    change: number;
-    price: number;
-  }>;
-} | null> {
-  const cacheKey = 'trending';
-  const cached = getCached<TrendingData>(cacheKey);
+  const cached = getCached<any>(cacheKey);
   if (cached) return cached;
 
-  try {
-    const response = await fetch(`${BINANCE_API}/ticker/24hr`);
-    if (!response.ok) throw new Error('Failed to fetch tickers');
+  const data = await getCoinData(coinId);
+  if (!data) return null;
 
-    const tickers = await response.json();
+  const result = {
+    coin: { id: data.id, symbol: data.symbol.toUpperCase(), name: data.name },
+    price: { usd: data.market_data.current_price.usd },
+    change24h: { usd: data.market_data.price_change_percentage_24h },
+    high24h: { usd: data.market_data.high_24h.usd },
+    low24h: { usd: data.market_data.low_24h.usd },
+    marketCap: `$${(data.market_data.market_cap.usd / 1e9).toFixed(2)}B`,
+    marketCapRank: data.market_cap_rank,
+    volume: `$${(data.market_data.total_volume.usd / 1e9).toFixed(2)}B`,
+    lastUpdated: data.last_updated,
+  };
 
-    const usdtPairs = tickers
-      .filter((t: any) => t.symbol.endsWith('USDT'))
-      .filter((t: any) => parseFloat(t.quoteVolume) > 10000000)
-      .map((t: any) => ({
-        symbol: t.symbol.replace('USDT', ''),
-        name: t.symbol.replace('USDT', ''),
-        price: parseFloat(t.lastPrice),
-        change: parseFloat(t.priceChangePercent),
-        volume: parseFloat(t.quoteVolume),
-      }))
-      .sort((a: any, b: any) => b.volume - a.volume)
-      .slice(0, 100);
-
-    const top7 = usdtPairs.slice(0, 7).map((c: any) => ({
-      name: c.name,
-      symbol: c.symbol,
-      marketCapRank: 0,
-      priceBtc: 0,
-      score: c.volume,
-    }));
-
-    const gainers = [...usdtPairs]
-      .filter((c: any) => c.change > 0)
-      .sort((a: any, b: any) => b.change - a.change)
-      .slice(0, 5)
-      .map((c: any) => ({
-        name: c.name,
-        symbol: c.symbol,
-        change: c.change,
-        price: c.price,
-      }));
-
-    const losers = [...usdtPairs]
-      .filter((c: any) => c.change < 0)
-      .sort((a: any, b: any) => a.change - b.change)
-      .slice(0, 5)
-      .map((c: any) => ({
-        name: c.name,
-        symbol: c.symbol,
-        change: c.change,
-        price: c.price,
-      }));
-
-    const result = { top7, gainers, losers };
-    setCached(cacheKey, result);
-    return result;
-  } catch (error) {
-    console.error('[Crypto API] Trending fetch error:', error);
-    return null;
-  }
+  setCached(cacheKey, result);
+  return result;
 }
 
-/**
- * Get chart embed URL for TradingView
- */
-export function getChartEmbed(coin: string): {
-  chartUrl: string;
-  tradingViewUrl: string;
-  symbol: string;
-} {
-  const symbol = normalizeCoinId(coin);
-  const tvSymbol = `BINANCE:${symbol}USDT`;
-  const encoded = encodeURIComponent(tvSymbol);
+export async function getTrending() {
+  const cacheKey = 'trending';
+  const cached = getCached<any>(cacheKey);
+  if (cached) return cached;
 
+  // Get trending
+  const trendingRes = await fetch(`${COINGECKO_API}/search/trending`);
+  const trendingData = await trendingRes.json();
+
+  // Get markets for gainers/losers
+  const marketsRes = await fetch(
+    `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false`
+  );
+  const marketData = await marketsRes.json();
+
+  const top7 = trendingData.coins.slice(0, 7).map((item: any) => ({
+    name: item.item.name,
+    symbol: item.item.symbol.toUpperCase(),
+    marketCapRank: item.item.market_cap_rank || 0,
+    priceBtc: item.item.price_btc,
+    score: item.item.score,
+  }));
+
+  const gainers = marketData
+    .filter((c: any) => c.price_change_percentage_24h > 0)
+    .sort((a: any, b: any) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+    .slice(0, 5)
+    .map((c: any) => ({ name: c.name, symbol: c.symbol.toUpperCase(), change: c.price_change_percentage_24h, price: c.current_price }));
+
+  const losers = marketData
+    .filter((c: any) => c.price_change_percentage_24h < 0)
+    .sort((a: any, b: any) => a.price_change_percentage_24h - b.price_change_percentage_24h)
+    .slice(0, 5)
+    .map((c: any) => ({ name: c.name, symbol: c.symbol.toUpperCase(), change: c.price_change_percentage_24h, price: c.current_price }));
+
+  const result = { top7, gainers, losers };
+  setCached(cacheKey, result);
+  return result;
+}
+
+export function getChartEmbed(coin: string) {
+  const symbol = normalizeCoinId(coin).toUpperCase();
+  const tvSymbol = `BINANCE:${symbol}USDT`;
   return {
-    chartUrl: `https://tvdn.dev/widget/embed/?symbol=${encoded}`,
-    tradingViewUrl: `https://www.tradingview.com/chart/?symbol=${encoded}`,
+    chartUrl: `https://tvdn.dev/widget/embed/?symbol=${encodeURIComponent(tvSymbol)}`,
+    tradingViewUrl: `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`,
     symbol: tvSymbol,
   };
 }
 
-/**
- * Format number with K/M/B/T suffixes
- */
-function formatNumber(num: number): string {
-  if (num >= 1e12) return `$${(num / 1e12).toFixed(2)}T`;
-  if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-  if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-  if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-  return `$${num.toFixed(2)}`;
-}
-
-/**
- * Format price with appropriate decimals
- */
 export function formatPrice(price: number, currency: string = 'usd'): string {
   if (currency === 'idr') {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(price);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(price);
   }
-
-  if (currency === 'eur') {
-    return new Intl.NumberFormat('en-EU', {
-      style: 'currency',
-      currency: 'EUR',
-    }).format(price);
-  }
-
-  // USD
-  if (price >= 1) {
-    return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  } else if (price >= 0.01) {
-    return `$${price.toFixed(4)}`;
-  } else {
-    return `$${price.toFixed(8)}`;
-  }
+  if (price >= 1) return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (price >= 0.01) return `$${price.toFixed(4)}`;
+  return `$${price.toFixed(8)}`;
 }
 
-/**
- * Get emoji for price change
- */
 export function getPriceChangeEmoji(change: number): string {
   if (change > 5) return '🚀';
   if (change > 2) return '📈';
@@ -348,9 +135,6 @@ export function getPriceChangeEmoji(change: number): string {
   return '🔴';
 }
 
-/**
- * Get color for price change (hex)
- */
 export function getPriceChangeColor(change: number): number {
   if (change > 0) return 0x00ff00;
   if (change < 0) return 0xff0000;
