@@ -1,172 +1,82 @@
 /**
- * CONTRIBUTOR LOOKUP API
- * Returns contributor data from enriched members and activity data
+ * CONTRIBUTOR LOOKUP API - Discord API Version (No local files needed)
+ * Fetches member data directly from Discord API
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
 interface ContributorData {
   userId: string;
   username: string;
   displayName: string;
   avatar?: string;
-  messageCount: number;
+  messageCount?: number;
   contributionsCount?: number;
   eventsCount?: number;
-  firstPost?: string;
-  lastPost?: string;
   roles?: string[];
   joinedAt?: string;
 }
 
-interface ExtractionData {
-  stats: {
-    totalMessages: number;
-    totalUniqueUsers: number;
-  };
-  allMembers: ContributorData[];
-  topContributors: ContributorData[];
-}
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+let cachedMembers: ContributorData[] = [];
+let cacheExpiry = 0;
 
-let cachedData: ExtractionData | null = null;
-
-function loadData(): ExtractionData {
-  if (cachedData) {
-    return cachedData;
+async function fetchMembersFromDiscord(): Promise<ContributorData[]> {
+  // Check cache first
+  if (cachedMembers.length > 0 && Date.now() < cacheExpiry) {
+    return cachedMembers;
   }
 
   try {
-    const dataDir = path.join(process.cwd(), 'extracted-data');
+    const guildId = process.env.DISCORD_GUILD_ID;
+    const botToken = process.env.DISCORD_BOT_TOKEN;
 
-    // Load from existing files:
-    // 1. member-activity-analysis.json - 787 users with globalMessages
-    // 2. user-roles-summary.json - 7,978 users with roles/joinedAt/avatar (optimized, 1.87MB)
-    // 3. current-member-avatars.json - Current avatar data with fallbacks
-    // 4. complete-contributions-with-dates.json - Contributions with firstPost/lastPost dates
-
-    const activityPath = path.join(dataDir, 'member-activity-analysis.json');
-    const rolesPath = path.join(dataDir, 'user-roles-summary.json');
-    const avatarsPath = path.join(dataDir, 'current-member-avatars.json');
-    const contributionsPath = path.join(dataDir, 'complete-contributions-with-dates.json');
-
-    let membersMap = new Map<string, any>();
-    let avatarsMap = new Map<string, { avatar: string; displayName: string }>();
-
-    // Load current avatars first (highest priority for avatar data)
-    // Use userId as key to handle duplicate usernames, plus case-insensitive username lookup
-    if (fs.existsSync(avatarsPath)) {
-      const data = JSON.parse(fs.readFileSync(avatarsPath, 'utf-8'));
-      (data.members || []).forEach((m: any) => {
-        // Store by both lowercase and original username for case-insensitive lookup
-        avatarsMap.set(m.username.toLowerCase(), {
-          avatar: m.avatar,
-          displayName: m.displayName,
-        });
-        // Also store by userId if available (prioritized for duplicate usernames)
-        if (m.userId) {
-          avatarsMap.set(m.userId, {
-            avatar: m.avatar,
-            displayName: m.displayName,
-          });
-        }
-      });
-      console.log(`✅ Loaded current-member-avatars: ${avatarsMap.size} users`);
+    if (!guildId || !botToken) {
+      console.error('[Contributor API] Missing DISCORD_GUILD_ID or DISCORD_BOT_TOKEN');
+      return [];
     }
 
-    // Load activity data
-    if (fs.existsSync(activityPath)) {
-      const data = JSON.parse(fs.readFileSync(activityPath, 'utf-8'));
-      (data.members || []).forEach((m: any) => {
-        // Prioritize userId lookup to handle duplicate usernames correctly
-        const avatarData = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
-        membersMap.set(m.username.toLowerCase(), {
-          userId: m.userId,
-          username: m.username,
-          displayName: avatarData?.displayName || m.displayName,
-          messageCount: m.globalMessages || 0,
-          contributionsCount: m.contributionsCount || 0,
-          eventsCount: m.eventsCount || 0,
-          firstPost: m.firstPost || null,
-          lastPost: m.lastPost || null,
-          avatar: avatarData?.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
-        });
-      });
-      console.log(`✅ Loaded member-activity-analysis: ${membersMap.size} users`);
+    // Fetch all members from Discord
+    const response = await fetch(
+      `https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`,
+      {
+        headers: { 'Authorization': `Bot ${botToken}` }
+      }
+    );
+
+    if (!response.ok) {
+      console.error('[Contributor API] Discord API error:', response.status);
+      return [];
     }
 
-    // Merge with roles data (includes roles/joinedAt)
-    if (fs.existsSync(rolesPath)) {
-      const data = JSON.parse(fs.readFileSync(rolesPath, 'utf-8'));
-      (data.members || []).forEach((m: any) => {
-        const existing = membersMap.get(m.username.toLowerCase());
-        const avatarData = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
+    const members = await response.json();
 
-        if (existing) {
-          // Merge: keep activity data, add roles/joinedAt, use current avatar
-          existing.roles = m.roleNames || [];
-          existing.joinedAt = m.joinedAt;
-          // Use current avatar from avatarsMap (by userId) if available
-          const currentAvatar = avatarsMap.get(m.userId);
-          if (currentAvatar?.avatar) {
-            existing.avatar = currentAvatar.avatar;
-            existing.displayName = currentAvatar.displayName || existing.displayName;
-          } else if (m.avatar && !existing.avatar) {
-            // Fallback to roles avatar if no avatar set yet
-            existing.avatar = m.avatar;
-          }
-        } else {
-          // Add new entry from roles data
-          const currentAvatar = avatarsMap.get(m.userId) || avatarsMap.get(m.username.toLowerCase());
-          membersMap.set(m.username.toLowerCase(), {
-            userId: m.userId,
-            username: m.username,
-            displayName: currentAvatar?.displayName || m.displayName,
-            avatar: currentAvatar?.avatar || m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
-            messageCount: 0,
-            roles: m.roleNames || [],
-            joinedAt: m.joinedAt,
-          });
-        }
-      });
-      console.log(`✅ Merged user-roles-summary`);
-    }
+    // Transform to ContributorData format
+    const contributorList: ContributorData[] = members
+      .filter((m: any) => m.user) // Filter out members without user data
+      .map((m: any) => ({
+        userId: m.user.id,
+        username: m.user.username,
+        displayName: m.nick || m.user.global_name || m.user.username,
+        avatar: m.user.avatar
+          ? `https://cdn.discordapp.com/avatars/${m.user.id}/${m.user.avatar}.png`
+          : `https://cdn.discordapp.com/embed/avatars/${parseInt(m.user.id) % 5}.png`,
+        roles: m.roles || [],
+        joinedAt: m.joined_at,
+      }));
 
-    // Merge contributions data with firstPost/lastPost dates
-    if (fs.existsSync(contributionsPath)) {
-      const data = JSON.parse(fs.readFileSync(contributionsPath, 'utf-8'));
-      (data.leaderboard || []).forEach((m: any) => {
-        const existing = membersMap.get(m.username.toLowerCase());
-        if (existing) {
-          // Add firstPost/lastPost from contributions data
-          existing.firstPost = m.firstPost;
-          existing.lastPost = m.lastPost;
-        }
-      });
-      console.log(`✅ Merged contributions-with-dates`);
-    }
+    // Sort by username
+    contributorList.sort((a, b) => a.username.localeCompare(b.username));
 
-    const finalMembers = Array.from(membersMap.values());
+    // Update cache
+    cachedMembers = contributorList;
+    cacheExpiry = Date.now() + CACHE_TTL;
 
-    const result: ExtractionData = {
-      stats: {
-        totalMessages: finalMembers.reduce((sum, m) => sum + (m.messageCount || 0), 0),
-        totalUniqueUsers: finalMembers.length,
-      },
-      allMembers: finalMembers,
-      topContributors: finalMembers.sort((a, b) => (b.messageCount || 0) - (a.messageCount || 0)),
-    };
-
-    cachedData = result;
-    return result;
+    console.log(`[Contributor API] Loaded ${contributorList.length} members from Discord`);
+    return contributorList;
   } catch (error) {
-    console.error('Error loading data:', error);
-    return {
-      stats: { totalMessages: 0, totalUniqueUsers: 0 },
-      allMembers: [],
-      topContributors: [],
-    };
+    console.error('[Contributor API] Error fetching members:', error);
+    return cachedMembers.length > 0 ? cachedMembers : [];
   }
 }
 
@@ -176,48 +86,40 @@ export async function GET(req: NextRequest) {
     const action = searchParams.get('action');
     const username = searchParams.get('username') || '';
 
-    const data = loadData();
+    const members = await fetchMembersFromDiscord();
 
     if (action === 'autocomplete') {
-      // Search by username or display name
       const query = username.toLowerCase().trim();
+
       if (!query) {
-        // Return top contributors for empty search
+        // Return top members by username (first 50)
         return NextResponse.json({
           success: true,
-          contributors: data.topContributors.slice(0, 8).map((m: any) => ({
+          contributors: members.slice(0, 50).map((m) => ({
             userId: m.userId,
             username: m.username,
             displayName: m.displayName,
-            avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
-            messageCount: m.messageCount || 0,
-            contributionsCount: m.contributionsCount || 0,
-            eventsCount: m.eventsCount || 0,
-            firstPost: m.firstPost,
-            lastPost: m.lastPost,
+            avatar: m.avatar,
+            messageCount: 0,
             roles: m.roles,
             joinedAt: m.joinedAt,
           }))
         });
       }
 
-      const matches = data.allMembers
-        .filter((m: any) =>
+      // Search by username or display name
+      const matches = members
+        .filter((m) =>
           m.username?.toLowerCase().includes(query) ||
-          m.displayName?.toLowerCase().includes(query) ||
-          m.userId?.toLowerCase().includes(query)
+          m.displayName?.toLowerCase().includes(query)
         )
         .slice(0, 8)
-        .map((m: any) => ({
+        .map((m) => ({
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
-          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId || '0') % 5}.png`,
-          messageCount: m.messageCount || 0,
-          contributionsCount: m.contributionsCount || 0,
-          eventsCount: m.eventsCount || 0,
-          firstPost: m.firstPost,
-          lastPost: m.lastPost,
+          avatar: m.avatar,
+          messageCount: 0,
           roles: m.roles,
           joinedAt: m.joinedAt,
         }));
@@ -229,24 +131,24 @@ export async function GET(req: NextRequest) {
     }
 
     if (action === 'get_batch') {
-      const usernames = (searchParams.get('usernames') || '').split(',').map(u => u.toLowerCase().trim()).filter(Boolean);
-      const matches = data.allMembers.filter((m: any) =>
+      const usernames = (searchParams.get('usernames') || '')
+        .split(',')
+        .map(u => u.toLowerCase().trim())
+        .filter(Boolean);
+
+      const matches = members.filter((m) =>
         usernames.includes(m.username.toLowerCase()) ||
-        usernames.includes(m.userId)
+        usernames.includes(m.userId.toLowerCase())
       );
 
       return NextResponse.json({
         success: true,
-        contributors: matches.map((m: any) => ({
+        contributors: matches.map((m) => ({
           userId: m.userId,
           username: m.username,
           displayName: m.displayName,
-          avatar: m.avatar || `https://cdn.discordapp.com/embed/avatars/${parseInt(m.userId) % 5}.png`,
-          messageCount: m.messageCount || 0,
-          contributionsCount: m.contributionsCount || 0,
-          eventsCount: m.eventsCount || 0,
-          firstPost: m.firstPost,
-          lastPost: m.lastPost,
+          avatar: m.avatar,
+          messageCount: 0,
           roles: m.roles,
           joinedAt: m.joinedAt,
         }))
@@ -256,11 +158,14 @@ export async function GET(req: NextRequest) {
     // Default: return stats
     return NextResponse.json({
       success: true,
-      stats: data.stats
+      stats: {
+        totalMessages: 0,
+        totalUniqueUsers: members.length,
+      }
     });
 
   } catch (error: any) {
-    console.error('API Error:', error);
+    console.error('[Contributor API] Error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
