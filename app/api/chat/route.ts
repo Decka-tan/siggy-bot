@@ -49,37 +49,47 @@ export async function POST(req: NextRequest) {
 
     // /price <coin> command - using [b] tags for yellow highlights
     if (lowerMsg.startsWith('/price ')) {
-      const coin = lowerMsg.slice(7).trim();
-      const data = await getPrice(coin, ['usd', 'idr']);
-      if (data) {
-        const change = data.change24h.usd;
-        const emoji = change >= 5 ? '🚀' : change >= 2 ? '📈' : change > 0 ? '🟢' : change <= -5 ? '💀' : change <= -2 ? '📉' : '🔴';
+      try {
+        const coin = lowerMsg.slice(7).trim();
+        console.log(`[Chat] /price command for: ${coin}`);
+        const data = await getPrice(coin, ['usd', 'idr']);
+        console.log(`[Chat] getPrice result:`, data ? 'Success' : 'Null');
 
-        let response = `${emoji} [b]${data.coin.name}[/b] (${data.coin.symbol})\n\n`;
-        response += `Market Cap Rank: #${data.marketCapRank}\n\n`;
-        response += `Price (USD): [b]${formatPrice(data.price.usd, 'usd')}[/b]\n`;
-        response += `24h Change: ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
-        response += `24h High: ${formatPrice(data.high24h.usd, 'usd')}\n`;
-        response += `24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
-        response += `Market Cap: ${data.marketCap}\n`;
-        response += `Volume (24h): ${data.volume}\n`;
-        response += `\n_Data from Binance • Updated every 2 min_`;
+        if (data) {
+          const change = data.change24h.usd;
+          const emoji = change >= 5 ? '🚀' : change >= 2 ? '📈' : change > 0 ? '🟢' : change <= -5 ? '💀' : change <= -2 ? '📉' : '🔴';
 
+          let response = `${emoji} [b]${data.coin.name}[/b] (${data.coin.symbol})\n\n`;
+          response += `Price (USD): [b]${formatPrice(data.price.usd, 'usd')}[/b]\n`;
+          response += `24h Change: ${change > 0 ? '+' : ''}${change.toFixed(2)}%\n`;
+          response += `24h High: ${formatPrice(data.high24h.usd, 'usd')}\n`;
+          response += `24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
+          response += `Volume (24h): ${data.volume}\n`;
+          response += `\n_Data from Binance • Updated every 2 min_`;
+
+          return NextResponse.json({
+            response,
+            isRawCommand: true,
+          });
+        }
         return NextResponse.json({
-          response,
+          response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, dot, matic, etc.`,
+          isRawCommand: true,
+        });
+      } catch (error) {
+        console.error('[Chat] /price error:', error);
+        return NextResponse.json({
+          response: `❌ Error fetching price: ${error instanceof Error ? error.message : 'Unknown error'}`,
           isRawCommand: true,
         });
       }
-      return NextResponse.json({
-        response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, dot, matic, etc.`,
-        isRawCommand: true,
-      });
     }
 
     // /trending command - using [b] tags for yellow highlights
     if (lowerMsg === '/trending') {
-      const data = await getTrending();
-      if (data) {
+      try {
+        const data = await getTrending();
+        if (data) {
         let response = `🔥 Crypto Market Overview\n\n`;
         response += `Trending coins and top performers in the last 24 hours\n\n`;
 
@@ -106,9 +116,16 @@ export async function POST(req: NextRequest) {
         });
       }
       return NextResponse.json({
-        response: '❌ Failed to fetch trending data. The API might be rate limited.',
+        response: '❌ Failed to fetch trending data. Try again later.',
         isRawCommand: true,
       });
+      } catch (error) {
+        console.error('[Chat] /trending error:', error);
+        return NextResponse.json({
+          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isRawCommand: true,
+        });
+      }
     }
 
     // /chart <coin> command - returns chart data JSON
