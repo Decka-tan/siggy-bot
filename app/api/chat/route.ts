@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
           response += `24h High: ${formatPrice(data.high24h.usd, 'usd')}\n`;
           response += `24h Low: ${formatPrice(data.low24h.usd, 'usd')}\n`;
           response += `Volume (24h): ${data.volume}\n`;
-          response += `\n[b]Data from CoinGecko • Updated every 5 min[/b]`;
+          response += `\n*Data from CoinGecko • Updated every 5 min*`;
 
           return NextResponse.json({
             response,
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
           response += `[b]${c.symbol}[/b] ${formatPrice(c.price)} ${c.change.toFixed(2)}%\n`;
         });
 
-        response += `\n[b]Data from CoinGecko • Top gainers & losers[/b]`;
+        response += `\n*Data from CoinGecko • Top gainers & losers*`;
 
         return NextResponse.json({
           response,
@@ -136,8 +136,7 @@ export async function POST(req: NextRequest) {
       const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
 
       return NextResponse.json({
-        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n🔗 [Open on TradingView](${tradingViewUrl})\n\n_Chart data available at: ${chartUrl}_`,
-        chartData: { url: chartUrl },
+        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n[TRADINGVIEW:${symbol}]\n\n*Click chart to interact*\n\n🔗 [Open on TradingView](${tradingViewUrl})`,
         isRawCommand: true,
       });
     }

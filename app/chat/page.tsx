@@ -153,6 +153,21 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2 opacity-90">$1</blockquote>');
   html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2">$1</blockquote>');
 
+  // TradingView chart embed
+  html = html.replace(/\[TRADINGVIEW:([^\]]+)\]/g, (match, symbol) => {
+    return `<div class="my-4 rounded-lg overflow-hidden border border-border/50 bg-bg/50">
+      <iframe
+        src="https://s.tradingview.com/widgetembed/chart/?symbol=${encodeURIComponent(symbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC"
+        width="100%"
+        height="400"
+        frameborder="0"
+        allowtransparency="true"
+        allowfullscreen
+        class="rounded-lg"
+      ></iframe>
+    </div>`;
+  });
+
   // Single line breaks (but not in code/quote)
   html = html.replace(/\n/g, '<br />');
 
