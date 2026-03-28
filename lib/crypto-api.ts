@@ -58,7 +58,6 @@ const COIN_MAP: Record<string, string> = {
   apt: 'aptos',
   sui: 'sui',
   sei: 'sei-network',
-  atom: 'cosmos',
   osmo: 'osmosis',
   jup: 'jupiter-exchange-solana',
   orca: 'orca',
