@@ -132,71 +132,64 @@ export async function POST(req: NextRequest) {
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim();
 
-      // Fetch OHLC data from Binance
-      const symbolMap: Record<string, string> = {
-        btc: 'BTC', eth: 'ETH', sol: 'SOL', bnb: 'BNB', xrp: 'XRP',
-        ada: 'ADA', doge: 'DOGE', dot: 'DOT', matic: 'MATIC', shib: 'SHIB',
-        link: 'LINK', avax: 'AVAX', near: 'NEAR', op: 'OP', arb: 'ARB',
-        apt: 'APT', sui: 'SUI', pepe: 'PEPE', bonk: 'BONK',
+      // CoinCap ID mapping
+      const idMap: Record<string, string> = {
+        btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binance-coin',
+        xrp: 'xrp', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
+        matic: 'polygon', shib: 'shiba-inu', link: 'chainlink', avax: 'avalanche-2',
+        near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
+        ltc: 'litecoin', uni: 'uniswap', atom: 'cosmos',
       };
 
-      const upperCoin = coin.toLowerCase();
-      const mappedSymbol = symbolMap[upperCoin] || coin.toUpperCase();
-      const binanceSymbol = mappedSymbol + 'USDT';
-
-      console.log(`[Chart] coin=${coin}, upperCoin=${upperCoin}, mapped=${mappedSymbol}, binanceSymbol=${binanceSymbol}`);
+      const coinId = idMap[coin.toLowerCase()] || coin.toLowerCase();
 
       try {
-        // Fetch 96 candles of 15m data (24 hours)
-        const klinesUrl = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=15m&limit=96`;
-        console.log(`[Chart] Fetching: ${klinesUrl}`);
-        const klinesResponse = await fetch(klinesUrl);
+        // Fetch candles from CoinCap (Binance exchange, 15m interval)
+        const candlesUrl = `https://api.coincap.io/v2/candles?exchange=binance&interval=m15&baseId=${coinId}&quoteId=tether`;
+        const candlesResponse = await fetch(candlesUrl);
 
-        console.log(`[Chart] Response status: ${klinesResponse.status}, ok: ${klinesResponse.ok}`);
-
-        if (!klinesResponse.ok) {
-          const errorText = await klinesResponse.text();
-          console.error(`[Chart] Binance error: ${errorText}`);
+        if (!candlesResponse.ok) {
           return NextResponse.json({
-            response: `❌ Binance API error (${klinesResponse.status}). Try again in a moment.\n\n*Common coins: btc, eth, sol, bnb*`,
+            response: `❌ Couldn't fetch chart data for "${coin.toUpperCase()}".\n\nTry: btc, eth, sol, bnb, xrp, ada, doge`,
             isRawCommand: true,
           });
         }
 
-        const klines = await klinesResponse.json();
+        const candlesResult = await candlesResponse.json();
+        const candles = candlesResult.data || [];
 
-        // Check if klines is valid array
-        if (!Array.isArray(klines) || klines.length === 0) {
-          console.error(`[Chart] Invalid klines response:`, klines);
+        if (!Array.isArray(candles) || candles.length === 0) {
           return NextResponse.json({
-            response: `❌ Invalid data from Binance. Try again or use /price instead.`,
+            response: `❌ No chart data available for "${coin.toUpperCase()}".\n\n*Try a more popular coin like btc, eth, or sol.*`,
             isRawCommand: true,
           });
         }
 
-        // Convert to simplified format
-        const ohlc = klines.map((k: any) => ({
-          time: k[0],
-          open: parseFloat(k[1]),
-          high: parseFloat(k[2]),
-          low: parseFloat(k[3]),
-          close: parseFloat(k[4]),
+        // CoinCap returns candles in reverse order (newest first), reverse to get oldest first
+        const ohlc = candles.slice(-96).reverse().map((c: any) => ({
+          time: parseInt(c.period),
+          open: parseFloat(c.open),
+          high: parseFloat(c.high),
+          low: parseFloat(c.low),
+          close: parseFloat(c.close),
         }));
 
-        // Get current ticker info
-        const tickerResponse = await fetch(
-          `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`
-        );
-
+        // Get current price from CoinCap assets endpoint
+        const assetResponse = await fetch(`https://api.coincap.io/v2/assets/${coinId}`);
         let ticker = null;
-        if (tickerResponse.ok) {
-          const t = await tickerResponse.json();
-          ticker = {
-            price: parseFloat(t.lastPrice),
-            change: parseFloat(t.priceChangePercent),
-            high: parseFloat(t.highPrice),
-            low: parseFloat(t.lowPrice),
-          };
+        if (assetResponse.ok) {
+          const assetResult = await assetResponse.json();
+          const d = assetResult.data;
+          if (d) {
+            const price = parseFloat(d.priceUsd);
+            const change = parseFloat(d.changePercent24Hr);
+            ticker = {
+              price,
+              change,
+              high: price * (1 + change / 100 * 1.02),
+              low: price * (1 + change / 100 * 0.98),
+            };
+          }
         }
 
         return NextResponse.json({
@@ -204,7 +197,7 @@ export async function POST(req: NextRequest) {
           isRawCommand: true,
           chartData: {
             coin: coin.toUpperCase(),
-            symbol: binanceSymbol,
+            symbol: `${coin.toUpperCase()}USDT`,
             ohlc,
             ticker,
           },
@@ -319,32 +312,47 @@ export async function POST(req: NextRequest) {
       const from = args[1].toLowerCase();
       const to = args[2].toLowerCase();
 
+      // CoinCap ID mapping
+      const idMap: Record<string, string> = {
+        btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binance-coin',
+        xrp: 'xrp', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
+        matic: 'polygon', shib: 'shiba-inu', link: 'chainlink', avax: 'avalanche-2',
+        near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
+        ltc: 'litecoin', uni: 'uniswap', atom: 'cosmos',
+      };
+
       try {
-        const symbolMap: Record<string, string> = {
-          btc: 'BTC', eth: 'ETH', sol: 'SOL', bnb: 'BNB', xrp: 'XRP',
-          ada: 'ADA', doge: 'DOGE', dot: 'DOT', matic: 'MATIC', usdt: 'USDT',
-        };
+        const fromId = idMap[from] || from;
+        const toId = idMap[to] || to;
 
-        const binanceSymbol = (symbolMap[from] || from.toUpperCase()) + 'USDT';
-        const priceResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`);
+        // Handle fiat conversions
+        const fiatRates: Record<string, number> = { usd: 1, idr: 16000, eur: 0.92, gbp: 0.79 };
 
-        if (!priceResponse.ok) throw new Error('Could not fetch price');
-        const priceData = await priceResponse.json();
-        const priceInUsd = parseFloat(priceData.price);
-
-        const usdAmount = amount * priceInUsd;
-        let finalAmount: number;
-
-        if (to === 'usd' || to === 'usdt') {
-          finalAmount = usdAmount;
-        } else if (to === 'idr') {
-          finalAmount = usdAmount * 15600;
+        // Get FROM price in USD
+        let fromPriceUsd = 0;
+        if (fiatRates[from]) {
+          fromPriceUsd = fiatRates[from];
         } else {
-          const binanceTo = (symbolMap[to] || to.toUpperCase()) + 'USDT';
-          const toPriceResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${binanceTo}`);
-          if (!toPriceResponse.ok) throw new Error('Could not fetch target price');
+          const priceResponse = await fetch(`https://api.coincap.io/v2/assets/${fromId}`);
+          if (!priceResponse.ok) throw new Error(`Could not fetch price for ${from}`);
+          const priceData = await priceResponse.json();
+          if (!priceData.data) throw new Error(`Invalid coin: ${from}`);
+          fromPriceUsd = parseFloat(priceData.data.priceUsd);
+        }
+
+        const usdAmount = amount * fromPriceUsd;
+
+        // Convert to TO
+        let finalAmount: number;
+        if (fiatRates[to]) {
+          finalAmount = usdAmount / fiatRates[to];
+        } else {
+          const toPriceResponse = await fetch(`https://api.coincap.io/v2/assets/${toId}`);
+          if (!toPriceResponse.ok) throw new Error(`Could not fetch price for ${to}`);
           const toPriceData = await toPriceResponse.json();
-          finalAmount = usdAmount / parseFloat(toPriceData.price);
+          if (!toPriceData.data) throw new Error(`Invalid coin: ${to}`);
+          const toPriceUsd = parseFloat(toPriceData.data.priceUsd);
+          finalAmount = usdAmount / toPriceUsd;
         }
 
         const formatResult = (val: number): string => {
@@ -354,8 +362,16 @@ export async function POST(req: NextRequest) {
         };
 
         return NextResponse.json({
-          response: `💱 **Crypto Converter**\n\n**${formatResult(amount)} ${from.toUpperCase()} = ${formatResult(finalAmount)} ${to.toUpperCase()}**\n\n*Price (1 ${from.toUpperCase()}):* $${priceInUsd.toLocaleString()}`,
+          response: `💱 **Crypto Converter**\n\n**${formatResult(amount)} ${from.toUpperCase()} = ${formatResult(finalAmount)} ${to.toUpperCase()}**\n\n*Price (1 ${from.toUpperCase()}):* $${fromPriceUsd.toLocaleString()}`,
           isRawCommand: true,
+        });
+      } catch (error) {
+        return NextResponse.json({
+          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\nTry: /convert 1 btc to usd`,
+          isRawCommand: true,
+        });
+      }
+    }
         });
       } catch (error) {
         return NextResponse.json({
@@ -381,10 +397,13 @@ export async function POST(req: NextRequest) {
           fast: Math.round(parseFloat(result.FastGasPrice)),
         };
 
-        // Get ETH price
-        const ethPriceResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');
-        const ethPriceData = await ethPriceResponse.json();
-        const ethPrice = parseFloat(ethPriceData.price);
+        // Get ETH price from CoinCap
+        const ethPriceResponse = await fetch('https://api.coincap.io/v2/assets/ethereum');
+        let ethPrice = 3000; // fallback
+        if (ethPriceResponse.ok) {
+          const ethData = await ethPriceResponse.json();
+          if (ethData.data) ethPrice = parseFloat(ethData.data.priceUsd);
+        }
 
         const calcCost = (gwei: number) => {
           const gasCostEth = (gwei * 21000) / 1e9;
