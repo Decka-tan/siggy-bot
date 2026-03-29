@@ -1940,7 +1940,7 @@ export default function ChatPage() {
                                   <p
                                     className="text-sm md:text-base lg:text-base leading-snug font-mono text-text-secondary w-full"
                                     dangerouslySetInnerHTML={{
-                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap).html
+                                      __html: parseMessageContent(vnHistoryIndex === -1 ? activeConversation.messages[activeConversation.messages.length - 1].content : activeConversation.messages[vnHistoryIndex].content, contributorMap)
                                     }}
                                   />
                                 ) : (
@@ -2340,7 +2340,7 @@ export default function ChatPage() {
                             {message.role === 'assistant' ? (
                               <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
-                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap).html }} />
+                              <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
                             )}
 
                             {/* Chart for both user and assistant messages */}
