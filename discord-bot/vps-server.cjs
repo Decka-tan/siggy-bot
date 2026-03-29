@@ -55,6 +55,10 @@ const {
   handleGas,
 } = require('./commands/gas.cjs');
 
+const {
+  handleRank,
+} = require('./commands/rank.cjs');
+
 // Leaderboard command definitions
 const leaderboardCommands = [
   {
@@ -199,6 +203,13 @@ const utilityCommands = [
   {
     name: 'gas',
     description: 'Check current Ethereum gas fees',
+  },
+  {
+    name: 'rank',
+    description: 'Check your rank or another user\'s rank',
+    options: [
+      { name: 'user', description: 'The user (default: you)', type: 6, required: false },
+    ],
   },
 ];
 
@@ -759,7 +770,7 @@ async function handleHelp(interaction) {
     .setTitle('🐱 Siggy - Multi-Dimensional Cat Girl AI')
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
-      { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
+      { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top` | `/rank`', inline: false },
       { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/convert` | `/gas`', inline: false },
       { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
       { name: '🎮 Fun & Utility', value: '`/flip` | `/roll` | `/8ball` | `/choose` | `/avatar`', inline: false },
@@ -931,6 +942,7 @@ client.on('interactionCreate', async (interaction) => {
       case 'convert': await handleConvert(interaction); break;
       case 'choose': await handleChoose(interaction); break;
       case 'gas': await handleGas(interaction); break;
+      case 'rank': await handleRank(interaction); break;
     }
   } catch (error) {
     console.error('Command error:', error);
