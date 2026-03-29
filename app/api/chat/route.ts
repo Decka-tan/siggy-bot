@@ -372,14 +372,6 @@ export async function POST(req: NextRequest) {
         });
       }
     }
-        });
-      } catch (error) {
-        return NextResponse.json({
-          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          isRawCommand: true,
-        });
-      }
-    }
 
     // /gas command - Ethereum gas fees
     if (lowerMsg === '/gas') {
