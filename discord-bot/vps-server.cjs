@@ -42,6 +42,15 @@ const {
   handleLeaderboardDelete,
 } = require('./commands/leaderboard.cjs');
 
+const {
+  handleFlip,
+  handleRoll,
+  handle8Ball,
+  handleAvatar,
+  handleConvert,
+  handleChoose,
+} = require('./commands/utility.cjs');
+
 // Leaderboard command definitions
 const leaderboardCommands = [
   {
@@ -132,6 +141,56 @@ const leaderboardCommands = [
         { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
       ],
     }],
+  },
+];
+
+// Utility command definitions
+const utilityCommands = [
+  {
+    name: 'flip',
+    description: 'Flip a coin',
+    options: [
+      { name: 'amount', description: 'Number of flips (1-10)', type: 4, required: false, min_value: 1, max_value: 10 },
+      { name: 'choice', description: 'Your guess (heads/tails)', type: 3, required: false },
+    ],
+  },
+  {
+    name: 'roll',
+    description: 'Roll dice',
+    options: [
+      { name: 'sides', description: 'Number of sides (2-100)', type: 4, required: false, min_value: 2, max_value: 100 },
+      { name: 'count', description: 'Number of dice (1-10)', type: 4, required: false, min_value: 1, max_value: 10 },
+    ],
+  },
+  {
+    name: '8ball',
+    description: 'Ask the Magic 8-Ball a question',
+    options: [
+      { name: 'question', description: 'Your question', type: 3, required: true },
+    ],
+  },
+  {
+    name: 'avatar',
+    description: 'Get a user\'s avatar',
+    options: [
+      { name: 'user', description: 'The user (default: you)', type: 6, required: false },
+    ],
+  },
+  {
+    name: 'convert',
+    description: 'Convert between cryptocurrencies',
+    options: [
+      { name: 'amount', description: 'Amount to convert', type: 10, required: true },
+      { name: 'from', description: 'From currency (e.g., btc, eth)', type: 3, required: true },
+      { name: 'to', description: 'To currency (e.g., usd, idr, btc)', type: 3, required: true },
+    ],
+  },
+  {
+    name: 'choose',
+    description: 'Randomly choose from options',
+    options: [
+      { name: 'options', description: 'Options separated by | (e.g., pizza | burger | sushi)', type: 3, required: true },
+    ],
   },
 ];
 
@@ -693,8 +752,9 @@ async function handleHelp(interaction) {
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
       { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
-      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart`', inline: false },
+      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/convert`', inline: false },
       { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
+      { name: '🎮 Fun & Utility', value: '`/flip` | `/roll` | `/8ball` | `/choose` | `/avatar`', inline: false },
       { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
       { name: '💬 Chat', value: '@Siggy <message> - Chat with me directly!', inline: false },
       { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "realName", "dekka"', inline: false },
@@ -757,6 +817,7 @@ async function registerCommands() {
     { name: 'stats', description: 'Show global bot statistics' },
     { name: 'top', description: 'Show top users by message count' },
     { name: 'help', description: 'Show commands and features' },
+    ...utilityCommands,
   ];
 
   const rest = new REST({ version: '10' }).setToken(CONFIG.token);
@@ -854,10 +915,13 @@ client.on('interactionCreate', async (interaction) => {
           case 'delete': await handleLeaderboardDelete(interaction); break;
         }
         break;
-      // Crypto commands
-      case 'price': await handlePrice(interaction); break;
-      case 'trending': await handleTrending(interaction); break;
-      case 'chart': await handleChart(interaction); break;
+      // Utility commands
+      case 'flip': await handleFlip(interaction); break;
+      case 'roll': await handleRoll(interaction); break;
+      case '8ball': await handle8Ball(interaction); break;
+      case 'avatar': await handleAvatar(interaction); break;
+      case 'convert': await handleConvert(interaction); break;
+      case 'choose': await handleChoose(interaction); break;
     }
   } catch (error) {
     console.error('Command error:', error);
