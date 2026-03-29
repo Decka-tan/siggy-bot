@@ -5,24 +5,44 @@
 ### Phase 1: Crypto Basic Features
 - [x] `/price <coin>` - Check cryptocurrency price
 - [x] `/trending` - Top gainers/losers 24h
-- [x] `/chart <coin>` - TradingView-style chart (WIP - needs deployment)
+- [x] `/chart <coin>` - TradingView-style chart (Canvas-based, working)
 - [x] Website API endpoints for crypto
 - [x] Chat auto-detect crypto queries
+
+### Phase 2: Custom Leaderboard System
+- [x] Leaderboard command handlers implemented
+- [x] Leaderboard database (JSON-based)
+- [x] Commands registered (pending reset)
+- [ ] Testing after deployment
+
+### Phase 5: Utility Commands (COMPLETED AHEAD)
+- [x] `/flip [amount] [choice]` - Coin flip
+- [x] `/roll [sides] [count]` - Dice roll
+- [x] `/8ball <question>` - Magic 8-ball
+- [x] `/choose <options>` - Random choice (e.g., pizza | burger)
+- [x] `/avatar [@user]` - Get user avatar
+- [x] `/convert <amount> <from> <to>` - Crypto converter
+- [x] `/gas` - Ethereum gas fees
+- [x] `/rank [@user]` - User rank with leveling system
+
+### Phase 8: Leveling System (PARTIAL)
+- [x] `/rank` - Check rank with XP and levels
+- [ ] `/levelup` - Level up settings
+- [ ] `/xp` - XP settings
+- [ ] `/rewards` - Role rewards
 
 ---
 
 ## 🚧 IN PROGRESS
 
-### Chart Generator
-- [ ] Fix 15m timeframe candlestick rendering
-- [ ] Deploy to Render Singapore (Binance API will work)
-- [ ] Test with production deployment
+### Chart Generator (Website)
+- [x] Canvas-based renderer implemented
+- [x] Remove TradingView iframe widget
+- [ ] Deploy to Vercel & test
 
 ---
 
 ## 📋 PENDING FEATURES
-
-### Phase 2: Custom Leaderboard System
 
 **Commands:**
 ```
