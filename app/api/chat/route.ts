@@ -348,6 +348,49 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // /gas command - Ethereum gas fees
+    if (lowerMsg === '/gas') {
+      try {
+        const response = await fetch('https://api.etherscan.io/api?module=gastracker&action=gasoracle');
+        if (!response.ok) throw new Error('Failed to fetch gas data');
+
+        const data = await response.json();
+        if (data.status !== '1') throw new Error('Invalid gas data');
+
+        const result = data.result;
+        const gasPrices = {
+          slow: Math.round(parseFloat(result.SafeGasPrice)),
+          average: Math.round(parseFloat(result.ProposeGasPrice)),
+          fast: Math.round(parseFloat(result.FastGasPrice)),
+        };
+
+        // Get ETH price
+        const ethPriceResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=ETHUSDT');
+        const ethPriceData = await ethPriceResponse.json();
+        const ethPrice = parseFloat(ethPriceData.price);
+
+        const calcCost = (gwei: number) => {
+          const gasCostEth = (gwei * 21000) / 1e9;
+          return { usd: gasCostEth * ethPrice };
+        };
+
+        return NextResponse.json({
+          response: `⛽ **Ethereum Gas Fees**\n\n` +
+            `🐢 **Slow**: ${gasPrices.slow} Gwei ≈ $${calcCost(gasPrices.slow).usd.toFixed(2)}\n` +
+            `⚡ **Average**: ${gasPrices.average} Gwei ≈ $${calcCost(gasPrices.average).usd.toFixed(2)}\n` +
+            `🚀 **Fast**: ${gasPrices.fast} Gwei ≈ $${calcCost(gasPrices.fast).usd.toFixed(2)}\n\n` +
+            `💰 **ETH Price**: $${ethPrice.toLocaleString()}\n\n` +
+            `*Data: Etherscan • For standard ETH transfer (21k gas)*`,
+          isRawCommand: true,
+        });
+      } catch (error) {
+        return NextResponse.json({
+          response: `❌ Error: ${error instanceof Error ? error.message : 'Failed to fetch gas prices'}`,
+          isRawCommand: true,
+        });
+      }
+    }
+
     // === EXPLICIT /RESEARCH COMMAND HANDLER ===
     // Detect [RESEARCH_MODE: query] marker from frontend
     let researchQuery = null;
