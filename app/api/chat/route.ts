@@ -158,7 +158,18 @@ export async function POST(req: NextRequest) {
           const errorText = await klinesResponse.text();
           console.error(`[Chart] Binance error: ${errorText}`);
           return NextResponse.json({
-            response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, etc.\n\n*(Binance returned: ${klinesResponse.status})*`,
+            response: `❌ Binance API error (${klinesResponse.status}). Try again in a moment.\n\n*Common coins: btc, eth, sol, bnb*`,
+            isRawCommand: true,
+          });
+        }
+
+        const klines = await klinesResponse.json();
+
+        // Check if klines is valid array
+        if (!Array.isArray(klines) || klines.length === 0) {
+          console.error(`[Chart] Invalid klines response:`, klines);
+          return NextResponse.json({
+            response: `❌ Invalid data from Binance. Try again or use /price instead.`,
             isRawCommand: true,
           });
         }
