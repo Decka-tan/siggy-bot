@@ -201,6 +201,153 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // /flip command - coin flip
+    if (lowerMsg === '/flip' || lowerMsg.startsWith('/flip ')) {
+      const args = lowerMsg.split(' ');
+      const choice = args[1]?.toLowerCase();
+      const isHeads = Math.random() < 0.5;
+      const result = isHeads ? 'Heads' : 'Tails';
+      const emoji = isHeads ? '🪙' : '🦅';
+
+      let response = `${emoji} **Coin Flip**\n\n**Result:** ${result}`;
+      if (choice && (choice === 'heads' || choice === 'tails')) {
+        const won = (choice === 'heads' && isHeads) || (choice === 'tails' && !isHeads);
+        response += `\n**You chose:** ${choice}\n**${won ? '🎉 You won!' : '😢 You lost!'}**`;
+      }
+      return NextResponse.json({ response, isRawCommand: true });
+    }
+
+    // /roll command - dice roll
+    if (lowerMsg.startsWith('/roll ')) {
+      const args = lowerMsg.slice(6).trim().split(/\s+/);
+      const sides = parseInt(args[0]) || 6;
+      const count = parseInt(args[1]) || 1;
+
+      if (count < 1 || count > 10 || sides < 2 || sides > 100) {
+        return NextResponse.json({
+          response: '❌ Invalid parameters. Use: /roll <sides> <count>\nSides: 2-100, Count: 1-10',
+          isRawCommand: true,
+        });
+      }
+
+      const rolls = [];
+      for (let i = 0; i < count; i++) {
+        rolls.push(Math.floor(Math.random() * sides) + 1);
+      }
+
+      const total = rolls.reduce((a, b) => a + b, 0);
+      const response = count === 1
+        ? `🎲 **Dice Roll**\n\n**You rolled:** ${rolls[0]}`
+        : `🎲 **Dice Rolls**\n\n**Rolls:** ${rolls.join(', ')}\n**Total:** ${total}`;
+
+      return NextResponse.json({ response, isRawCommand: true });
+    }
+
+    // /8ball command
+    if (lowerMsg.startsWith('/8ball ')) {
+      const question = lowerMsg.slice(7).trim();
+      if (!question) {
+        return NextResponse.json({ response: '❌ You need to ask a question!', isRawCommand: true });
+      }
+
+      const responses = [
+        'It is certain ✨', 'It is decidedly so 💫', 'Without a doubt 🌟', 'Yes definitely ⭐',
+        'You may rely on it 🔮', 'As I see it, yes 👁️', 'Most likely 🎯', 'Outlook good 😊',
+        'Yes 👍', 'Signs point to yes 📍', 'Reply hazy, try again 🌫️', 'Ask again later ⏰',
+        'Better not tell you now 🤫', 'Cannot predict now ❓', 'Concentrate and ask again 🧠',
+        "Don't count on it ❌", 'My reply is no 🚫', 'My sources say no 📚', 'Outlook not so good 😕',
+        'Very doubtful 🤷',
+      ];
+
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      return NextResponse.json({
+        response: `🎱 **Magic 8-Ball**\n\n**Question:** ${question}\n**Answer:** ${response}`,
+        isRawCommand: true,
+      });
+    }
+
+    // /choose command
+    if (lowerMsg.startsWith('/choose ')) {
+      const options = lowerMsg.slice(8).trim();
+      if (!options || !options.includes('|')) {
+        return NextResponse.json({
+          response: '❌ Use format: /choose option1 | option2 | option3',
+          isRawCommand: true,
+        });
+      }
+
+      const choices = options.split('|').map(s => s.trim()).filter(s => s);
+      if (choices.length < 2) {
+        return NextResponse.json({ response: '❌ You need at least 2 options!', isRawCommand: true });
+      }
+
+      const winner = choices[Math.floor(Math.random() * choices.length)];
+      return NextResponse.json({
+        response: `🎯 **Random Choice**\n\n**Options:**\n${choices.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n**🎲 Winner:** ${winner}`,
+        isRawCommand: true,
+      });
+    }
+
+    // /convert command
+    if (lowerMsg.startsWith('/convert ')) {
+      const args = lowerMsg.slice(9).trim().split(/\s+/);
+      if (args.length < 3) {
+        return NextResponse.json({
+          response: '❌ Use format: /convert <amount> <from> <to>\nExample: /convert 1 btc to usd',
+          isRawCommand: true,
+        });
+      }
+
+      const amount = parseFloat(args[0]);
+      const from = args[1].toLowerCase();
+      const to = args[2].toLowerCase();
+
+      try {
+        const symbolMap: Record<string, string> = {
+          btc: 'BTC', eth: 'ETH', sol: 'SOL', bnb: 'BNB', xrp: 'XRP',
+          ada: 'ADA', doge: 'DOGE', dot: 'DOT', matic: 'MATIC', usdt: 'USDT',
+        };
+
+        const binanceSymbol = (symbolMap[from] || from.toUpperCase()) + 'USDT';
+        const priceResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${binanceSymbol}`);
+
+        if (!priceResponse.ok) throw new Error('Could not fetch price');
+        const priceData = await priceResponse.json();
+        const priceInUsd = parseFloat(priceData.price);
+
+        const usdAmount = amount * priceInUsd;
+        let finalAmount: number;
+
+        if (to === 'usd' || to === 'usdt') {
+          finalAmount = usdAmount;
+        } else if (to === 'idr') {
+          finalAmount = usdAmount * 15600;
+        } else {
+          const binanceTo = (symbolMap[to] || to.toUpperCase()) + 'USDT';
+          const toPriceResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${binanceTo}`);
+          if (!toPriceResponse.ok) throw new Error('Could not fetch target price');
+          const toPriceData = await toPriceResponse.json();
+          finalAmount = usdAmount / parseFloat(toPriceData.price);
+        }
+
+        const formatResult = (val: number): string => {
+          if (val >= 1000) return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          if (val >= 1) return val.toFixed(4);
+          return val.toFixed(8);
+        };
+
+        return NextResponse.json({
+          response: `💱 **Crypto Converter**\n\n**${formatResult(amount)} ${from.toUpperCase()} = ${formatResult(finalAmount)} ${to.toUpperCase()}**\n\n*Price (1 ${from.toUpperCase()}):* $${priceInUsd.toLocaleString()}`,
+          isRawCommand: true,
+        });
+      } catch (error) {
+        return NextResponse.json({
+          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isRawCommand: true,
+        });
+      }
+    }
+
     // === EXPLICIT /RESEARCH COMMAND HANDLER ===
     // Detect [RESEARCH_MODE: query] marker from frontend
     let researchQuery = null;
