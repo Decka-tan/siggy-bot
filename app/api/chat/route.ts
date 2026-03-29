@@ -140,17 +140,25 @@ export async function POST(req: NextRequest) {
         apt: 'APT', sui: 'SUI', pepe: 'PEPE', bonk: 'BONK',
       };
 
-      const binanceSymbol = (symbolMap[coin.toLowerCase()] || coin.toUpperCase()) + 'USDT';
+      const upperCoin = coin.toLowerCase();
+      const mappedSymbol = symbolMap[upperCoin] || coin.toUpperCase();
+      const binanceSymbol = mappedSymbol + 'USDT';
+
+      console.log(`[Chart] coin=${coin}, upperCoin=${upperCoin}, mapped=${mappedSymbol}, binanceSymbol=${binanceSymbol}`);
 
       try {
         // Fetch 96 candles of 15m data (24 hours)
-        const klinesResponse = await fetch(
-          `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=15m&limit=96`
-        );
+        const klinesUrl = `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=15m&limit=96`;
+        console.log(`[Chart] Fetching: ${klinesUrl}`);
+        const klinesResponse = await fetch(klinesUrl);
+
+        console.log(`[Chart] Response status: ${klinesResponse.status}, ok: ${klinesResponse.ok}`);
 
         if (!klinesResponse.ok) {
+          const errorText = await klinesResponse.text();
+          console.error(`[Chart] Binance error: ${errorText}`);
           return NextResponse.json({
-            response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, etc.`,
+            response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, etc.\n\n*(Binance returned: ${klinesResponse.status})*`,
             isRawCommand: true,
           });
         }
