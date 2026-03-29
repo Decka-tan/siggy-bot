@@ -17,7 +17,7 @@ function getMessageStats() {
 
     // Convert to array and sort by message count
     const members = Object.entries(data)
-      .map(([userId, member]: any) => ({
+      .map(([userId, member]) => ({
         userId,
         username: member.username,
         displayName: member.displayName,
