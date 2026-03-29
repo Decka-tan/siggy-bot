@@ -174,8 +174,6 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        const klines = await klinesResponse.json();
-
         // Convert to simplified format
         const ohlc = klines.map((k: any) => ({
           time: k[0],
