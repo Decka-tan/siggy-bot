@@ -51,6 +51,10 @@ const {
   handleChoose,
 } = require('./commands/utility.cjs');
 
+const {
+  handleGas,
+} = require('./commands/gas.cjs');
+
 // Leaderboard command definitions
 const leaderboardCommands = [
   {
@@ -191,6 +195,10 @@ const utilityCommands = [
     options: [
       { name: 'options', description: 'Options separated by | (e.g., pizza | burger | sushi)', type: 3, required: true },
     ],
+  },
+  {
+    name: 'gas',
+    description: 'Check current Ethereum gas fees',
   },
 ];
 
@@ -752,7 +760,7 @@ async function handleHelp(interaction) {
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
       { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
-      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/convert`', inline: false },
+      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/convert` | `/gas`', inline: false },
       { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
       { name: '🎮 Fun & Utility', value: '`/flip` | `/roll` | `/8ball` | `/choose` | `/avatar`', inline: false },
       { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
@@ -922,6 +930,7 @@ client.on('interactionCreate', async (interaction) => {
       case 'avatar': await handleAvatar(interaction); break;
       case 'convert': await handleConvert(interaction); break;
       case 'choose': await handleChoose(interaction); break;
+      case 'gas': await handleGas(interaction); break;
     }
   } catch (error) {
     console.error('Command error:', error);
