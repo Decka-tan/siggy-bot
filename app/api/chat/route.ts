@@ -20,7 +20,20 @@ import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
 import { detectResearchIntent, searchWeb, buildEnhancedPrompt, formatResponseWithSources } from '@/lib/web-research';
 import { getPrice, getTrending, formatPrice, getChartEmbed } from '@/lib/crypto-api';
-import { normalizeCoinId } from '@/lib/crypto-api';
+
+// Coin symbol to ID mapping (local copy)
+const COIN_MAP: Record<string, string> = {
+  btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binancecoin',
+  xrp: 'ripple', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
+  matic: 'matic-network', shib: 'shiba-inu', ltc: 'litecoin', avax: 'avalanche-2',
+  link: 'chainlink', atom: 'cosmos', uni: 'uniswap', pepe: 'pepe',
+  near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
+};
+
+function normalizeCoinId(input: string): string {
+  const normalized = input.toLowerCase().trim();
+  return COIN_MAP[normalized] || normalized;
+}
 
 // Inline getCoinData for /convert
 async function getCoinData(coinId: string) {
