@@ -59,6 +59,19 @@ const {
   handleRank,
 } = require('./commands/rank.cjs');
 
+const {
+  handleHug,
+  handleSlap,
+  handlePat,
+  handleHighfive,
+  handleFact,
+  handleQuote,
+  handleShuffle,
+  handleRate,
+  handleHowGay,
+  handleSimp,
+} = require('./commands/fun.cjs');
+
 // Leaderboard command definitions
 const leaderboardCommands = [
   {
@@ -209,6 +222,65 @@ const utilityCommands = [
     description: 'Check your rank or another user\'s rank',
     options: [
       { name: 'user', description: 'The user (default: you)', type: 6, required: false },
+    ],
+  },
+  // Fun & Social commands
+  {
+    name: 'hug',
+    description: 'Give someone a warm hug',
+    options: [
+      { name: 'user', description: 'User to hug', type: 6, required: false },
+    ],
+  },
+  {
+    name: 'slap',
+    description: 'Slap someone (playfully)',
+    options: [
+      { name: 'user', description: 'User to slap', type: 6, required: false },
+    ],
+  },
+  {
+    name: 'pat',
+    description: 'Pat someone\'s head',
+    options: [
+      { name: 'user', description: 'User to pat', type: 6, required: false },
+    ],
+  },
+  {
+    name: 'highfive',
+    description: 'High five someone',
+    options: [
+      { name: 'user', description: 'User to high-five', type: 6, required: false },
+    ],
+  },
+  { name: 'fact', description: 'Get a random fun fact' },
+  { name: 'quote', description: 'Get an inspirational quote' },
+  {
+    name: 'shuffle',
+    description: 'Shuffle a list of items',
+    options: [
+      { name: 'items', description: 'Items separated by comma (e.g., pizza, burger, sushi)', type: 3, required: true },
+    ],
+  },
+  {
+    name: 'rate',
+    description: 'Rate anything from 1-10',
+    options: [
+      { name: 'target', description: 'What to rate', type: 3, required: true },
+    ],
+  },
+  {
+    name: 'howgay',
+    description: 'How gay is someone? (fun meme)',
+    options: [
+      { name: 'user', description: 'User to rate', type: 6, required: false },
+    ],
+  },
+  {
+    name: 'simp',
+    description: 'Check someone\'s simp rate',
+    options: [
+      { name: 'user', description: 'User to check', type: 6, required: false },
     ],
   },
 ];
@@ -773,7 +845,8 @@ async function handleHelp(interaction) {
       { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top` | `/rank`', inline: false },
       { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/convert` | `/gas`', inline: false },
       { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
-      { name: '🎮 Fun & Utility', value: '`/flip` | `/roll` | `/8ball` | `/choose` | `/avatar`', inline: false },
+      { name: '🎮 Fun & Social', value: '`/hug` | `/slap` | `/pat` | `/highfive` | `/rate` | `/fact` | `/quote`', inline: false },
+      { name: '🎲 Utility & Games', value: '`/flip` | `/roll` | `/8ball` | `/choose` | `/shuffle` | `/avatar`', inline: false },
       { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
       { name: '💬 Chat', value: '@Siggy <message> - Chat with me directly!', inline: false },
       { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "realName", "dekka"', inline: false },
@@ -943,6 +1016,17 @@ client.on('interactionCreate', async (interaction) => {
       case 'choose': await handleChoose(interaction); break;
       case 'gas': await handleGas(interaction); break;
       case 'rank': await handleRank(interaction); break;
+      // Fun commands
+      case 'hug': await handleHug(interaction); break;
+      case 'slap': await handleSlap(interaction); break;
+      case 'pat': await handlePat(interaction); break;
+      case 'highfive': await handleHighfive(interaction); break;
+      case 'fact': await handleFact(interaction); break;
+      case 'quote': await handleQuote(interaction); break;
+      case 'shuffle': await handleShuffle(interaction); break;
+      case 'rate': await handleRate(interaction); break;
+      case 'howgay': await handleHowGay(interaction); break;
+      case 'simp': await handleSimp(interaction); break;
     }
   } catch (error) {
     console.error('Command error:', error);
