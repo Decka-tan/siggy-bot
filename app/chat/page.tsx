@@ -10,6 +10,13 @@ import { extractMoodFromResponse } from '@/lib/siggy-personality';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
+interface ChartData {
+  coin: string;
+  symbol: string;
+  ohlc: Array<{ time: number; open: number; high: number; low: number; close: number }>;
+  ticker?: { price: number; change: number; high: number; low: number };
+}
+
 interface Message {
   role: 'user' | 'assistant';
   content: string;
@@ -17,6 +24,7 @@ interface Message {
   liked?: boolean;
   disliked?: boolean;
   contributor?: ContributorElement;
+  chartData?: ChartData;
 }
 
 interface ContributorElement {
@@ -153,39 +161,168 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
   html = html.replace(/^> (.+)$/gm, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2 opacity-90">$1</blockquote>');
   html = html.replace(/\[quote\](.*?)\[\/quote\]/gi, '<blockquote class="border-l-2 border-border pl-3 italic text-neutral-400 my-2">$1</blockquote>');
 
-  // TradingView chart embed - extract and return separately
-  const tradingViewMatches: string[] = [];
-  html = html.replace(/\[TRADINGVIEW:([^\]]+)\]/g, (match, symbol) => {
-    tradingViewMatches.push(symbol);
-    return `<!--TRADINGVIEW-${tradingViewMatches.length - 1}-->`;
-  });
-  html = html.replace(/\[CHART:([^\]]+)\]/g, (match, symbol) => {
-    tradingViewMatches.push(symbol);
-    return `<!--CHART-${tradingViewMatches.length - 1}-->`;
-  });
+  // Remove chart markers - charts are rendered separately via chartData
+  html = html.replace(/\[TRADINGVIEW:[^\]]+\]\n?/g, '');
+  html = html.replace(/\[CHART\][^\n]*\n?/g, '');
+  html = html.replace(/\*\[CHART:[^\]]+\]\*/g, '');
 
   // Single line breaks (but not in code/quote)
   html = html.replace(/\n/g, '<br />');
 
-  let resultHtml = '<p class="whitespace-pre-wrap leading-normal">' + html + '</p>';
+  return '<p class="whitespace-pre-wrap leading-normal">' + html + '</p>';
+};
 
-  // Replace TradingView placeholders with actual embeds
-  tradingViewMatches.forEach((symbol, index) => {
-    const embedHtml = `<div class="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
-      <iframe
-        src="https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(symbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC"
-        width="100%"
-        height="450"
-        frameborder="0"
-        allowfullscreen
-        class="rounded-lg"
-      ></iframe>
-    </div>`;
-    resultHtml = resultHtml.replace(`<!--TRADINGVIEW-${index}-->`, embedHtml);
-    resultHtml = resultHtml.replace(`<!--CHART-${index}-->`, embedHtml);
-  });
+// Simple Canvas Candlestick Chart Component (Like Discord)
+const SimpleChart = ({ data }: { data: ChartData }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  return { html: resultHtml, hasChart: tradingViewMatches.length > 0, chartSymbol: tradingViewMatches[0] };
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !data.ohlc || data.ohlc.length === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size (handle high DPI)
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = 300 * dpr;
+    ctx.scale(dpr, dpr);
+
+    const width = rect.width;
+    const height = 300;
+
+    // TradingView dark colors
+    const colors = {
+      bg: '#131722',
+      grid: '#1e222d',
+      text: '#b2b5be',
+      green: '#26a69a',
+      red: '#ef5350',
+      border: '#363a45',
+    };
+
+    // Background
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, width, height);
+
+    // Chart area
+    const paddingRight = 70;
+    const paddingBottom = 30;
+    const paddingTop = 45;
+    const paddingLeft = 10;
+    const chartWidth = width - paddingRight - paddingLeft;
+    const chartHeight = height - paddingBottom - paddingTop;
+
+    // Grid lines
+    ctx.strokeStyle = colors.grid;
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 5; i++) {
+      const y = paddingTop + (chartHeight / 5) * i;
+      ctx.beginPath();
+      ctx.moveTo(paddingLeft, y);
+      ctx.lineTo(paddingLeft + chartWidth, y);
+      ctx.stroke();
+    }
+
+    // Find price range
+    const candles = data.ohlc;
+    const allPrices = candles.flatMap((c) => [c.low, c.high]);
+    const minPrice = Math.min(...allPrices);
+    const maxPrice = Math.max(...allPrices);
+    const range = maxPrice - minPrice || 1;
+    const paddedMin = minPrice - range * 0.05;
+    const paddedMax = maxPrice + range * 0.05;
+    const paddedRange = paddedMax - paddedMin;
+
+    // Draw candles (last 50)
+    const displayCandles = candles.slice(-50);
+    const candleWidth = (chartWidth / displayCandles.length) * 0.7;
+    const gap = (chartWidth / displayCandles.length) * 0.3;
+
+    displayCandles.forEach((candle, i) => {
+      const x = paddingLeft + i * (chartWidth / displayCandles.length) + gap / 2;
+      const isGreen = candle.close >= candle.open;
+
+      const openY = paddingTop + ((paddedMax - candle.open) / paddedRange) * chartHeight;
+      const closeY = paddingTop + ((paddedMax - candle.close) / paddedRange) * chartHeight;
+      const highY = paddingTop + ((paddedMax - candle.high) / paddedRange) * chartHeight;
+      const lowY = paddingTop + ((paddedMax - candle.low) / paddedRange) * chartHeight;
+
+      // Wick
+      ctx.strokeStyle = isGreen ? colors.green : colors.red;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x + candleWidth / 2, highY);
+      ctx.lineTo(x + candleWidth / 2, lowY);
+      ctx.stroke();
+
+      // Body
+      ctx.fillStyle = isGreen ? colors.green : colors.red;
+      const bodyTop = Math.min(openY, closeY);
+      const bodyHeight = Math.max(Math.abs(closeY - openY), 1);
+      ctx.fillRect(x, bodyTop, candleWidth, bodyHeight);
+    });
+
+    // Price scale
+    ctx.fillStyle = colors.text;
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    for (let i = 0; i < 6; i++) {
+      const price = paddedMax - (paddedRange * i) / 5;
+      const y = paddingTop + (i / 5) * chartHeight;
+      const label = formatPriceSimple(price);
+      ctx.fillText(label, width - paddingRight + 4, y + 4);
+    }
+
+    // Top info bar
+    ctx.fillStyle = 'rgba(19, 23, 34, 0.95)';
+    ctx.fillRect(0, 0, width, paddingTop);
+
+    ctx.fillStyle = '#d1d4dc';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(data.coin + 'USDT', 15, 26);
+
+    if (data.ticker) {
+      const priceColor = data.ticker.change >= 0 ? colors.green : colors.red;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(formatPriceSimple(data.ticker.price), 130, 26);
+
+      const changeText = `${data.ticker.change >= 0 ? '+' : ''}${data.ticker.change.toFixed(2)}%`;
+      ctx.fillStyle = priceColor;
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText(changeText, 240, 26);
+    }
+
+    // Time labels
+    ctx.fillStyle = colors.text;
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    const now = Date.now();
+    for (let i = 0; i < 5; i++) {
+      const hoursBack = 24 - i * 6;
+      const time = new Date(now - hoursBack * 60 * 60 * 1000);
+      const label = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+      const x = paddingLeft + (i / 4) * chartWidth;
+      ctx.fillText(label, x, height - 10);
+    }
+  }, [data]);
+
+  const formatPriceSimple = (price: number): string => {
+    if (price >= 1000) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (price >= 1) return price.toFixed(2);
+    if (price >= 0.01) return price.toFixed(4);
+    return price.toFixed(6);
+  };
+
+  return (
+    <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+      <canvas ref={canvasRef} className="w-full" style={{ height: '300px' }} />
+    </div>
+  );
 };
 
 // Typewriter Text Component
@@ -242,39 +379,9 @@ const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimatio
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [text, isLatest, alreadyAnimated, speed]);
 
-  const parsed = parseMessageContent(displayedText, contributorMap);
+  const html = parseMessageContent(displayedText, contributorMap);
   return (
-    <>
-      <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parsed.html }} />
-      {parsed.hasChart && parsed.chartSymbol && (
-        <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
-          <iframe
-            src={`https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(parsed.chartSymbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`}
-            width="100%"
-            height="450"
-            frameBorder="0"
-            allowFullScreen
-            className="rounded-lg"
-          />
-        </div>
-      )}
-    </>
-  );
-};
-
-// TradingView Widget Component
-const TradingViewWidget = ({ symbol }: { symbol: string }) => {
-  return (
-    <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
-      <iframe
-        src={`https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(symbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`}
-        width="100%"
-        height="450"
-        frameBorder="0"
-        allowFullScreen
-        className="rounded-lg"
-      />
-    </div>
+    <div className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: html }} />
   );
 };
 
@@ -329,23 +436,9 @@ const EnhancedTypewriterText = ({ text, isLatest, className, alreadyAnimated, on
     return () => clearInterval(interval);
   }, [text, isLatest, alreadyAnimated, speed, playVoiceLine, playTyping, personality, onAnimationComplete]);
 
-  const parsed = parseMessageContent(displayedText, contributorMap);
+  const html = parseMessageContent(displayedText, contributorMap);
   return (
-    <>
-      <p className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: parsed.html }} />
-      {parsed.hasChart && parsed.chartSymbol && (
-        <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
-          <iframe
-            src={`https://www.tradingview.com/widgetembed/?symbol=${encodeURIComponent(parsed.chartSymbol)}&interval=15&hidesidetoolbar=true&symboledit=false&saveimage=false&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`}
-            width="100%"
-            height="450"
-            frameBorder="0"
-            allowFullScreen
-            className="rounded-lg"
-          />
-        </div>
-      )}
-    </>
+    <div className={className || "text-sm md:text-base leading-relaxed font-mono whitespace-pre-wrap text-text-primary"} dangerouslySetInnerHTML={{ __html: html }} />
   );
 };
 
@@ -1014,6 +1107,7 @@ export default function ChatPage() {
         role: 'assistant',
         content: processedResponse,
         mood: data.currentMood,
+        chartData: data.chartData,
       };
 
       setConversations(prev => prev.map(conv => {
@@ -1250,10 +1344,11 @@ export default function ChatPage() {
         if (conv.id === activeConversationId) {
           return {
             ...conv,
-            messages: [...messagesWithoutLast, { 
-              role: 'assistant', 
-              content: processedResponse, 
-              mood: data.currentMood || 'DEFAULT' 
+            messages: [...messagesWithoutLast, {
+              role: 'assistant',
+              content: processedResponse,
+              mood: data.currentMood || 'DEFAULT',
+              chartData: data.chartData,
             }],
             currentMood: data.currentMood || conv.currentMood,
             messageCount: data.messageCount || conv.messageCount,
@@ -1354,7 +1449,7 @@ export default function ChatPage() {
       processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
       processedResponse = processedResponse.replace(/\n\s+/g, '\n');
 
-      const siggyMessage: Message = { role: 'assistant', content: processedResponse, mood: data.currentMood };
+      const siggyMessage: Message = { role: 'assistant', content: processedResponse, mood: data.currentMood, chartData: data.chartData };
       setConversations(prev => prev.map(conv => {
         if (conv.id === targetConvId) {
           return {
@@ -2247,6 +2342,9 @@ export default function ChatPage() {
                             ) : (
                               <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap).html }} />
                             )}
+
+                            {/* Chart for both user and assistant messages */}
+                            {message.chartData && <SimpleChart data={message.chartData} />}
 
                             {message.role === 'assistant' && (
                               <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">

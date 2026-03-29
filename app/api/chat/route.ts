@@ -131,13 +131,74 @@ export async function POST(req: NextRequest) {
     // /chart <coin> command - return chart data for frontend
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim();
-      const { tradingViewUrl, symbol } = await import('@/lib/crypto-api').then(m => m.getChartEmbed(coin));
 
-      return NextResponse.json({
-        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n*[CHART:${symbol}]*\n\n🔗 [Open on TradingView](${tradingViewUrl})`,
-        isRawCommand: true,
-        chartData: { symbol, coin: coin.toUpperCase() },
-      });
+      // Fetch OHLC data from Binance
+      const symbolMap: Record<string, string> = {
+        btc: 'BTC', eth: 'ETH', sol: 'SOL', bnb: 'BNB', xrp: 'XRP',
+        ada: 'ADA', doge: 'DOGE', dot: 'DOT', matic: 'MATIC', shib: 'SHIB',
+        link: 'LINK', avax: 'AVAX', near: 'NEAR', op: 'OP', arb: 'ARB',
+        apt: 'APT', sui: 'SUI', pepe: 'PEPE', bonk: 'BONK',
+      };
+
+      const binanceSymbol = (symbolMap[coin.toLowerCase()] || coin.toUpperCase()) + 'USDT';
+
+      try {
+        // Fetch 96 candles of 15m data (24 hours)
+        const klinesResponse = await fetch(
+          `https://api.binance.com/api/v3/klines?symbol=${binanceSymbol}&interval=15m&limit=96`
+        );
+
+        if (!klinesResponse.ok) {
+          return NextResponse.json({
+            response: `❌ Couldn't find coin "${coin}". Try: btc, eth, sol, bnb, xrp, ada, doge, etc.`,
+            isRawCommand: true,
+          });
+        }
+
+        const klines = await klinesResponse.json();
+
+        // Convert to simplified format
+        const ohlc = klines.map((k: any) => ({
+          time: k[0],
+          open: parseFloat(k[1]),
+          high: parseFloat(k[2]),
+          low: parseFloat(k[3]),
+          close: parseFloat(k[4]),
+        }));
+
+        // Get current ticker info
+        const tickerResponse = await fetch(
+          `https://api.binance.com/api/v3/ticker/24hr?symbol=${binanceSymbol}`
+        );
+
+        let ticker = null;
+        if (tickerResponse.ok) {
+          const t = await tickerResponse.json();
+          ticker = {
+            price: parseFloat(t.lastPrice),
+            change: parseFloat(t.priceChangePercent),
+            high: parseFloat(t.highPrice),
+            low: parseFloat(t.lowPrice),
+          };
+        }
+
+        return NextResponse.json({
+          response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n*[CHART]*`,
+          isRawCommand: true,
+          chartData: {
+            coin: coin.toUpperCase(),
+            symbol: binanceSymbol,
+            ohlc,
+            ticker,
+          },
+        });
+      } catch (error) {
+        console.error('[Chat] /chart error:', error);
+        return NextResponse.json({
+          response: `❌ Error fetching chart: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isRawCommand: true,
+        });
+      }
     }
 
     // === EXPLICIT /RESEARCH COMMAND HANDLER ===
