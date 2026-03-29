@@ -1,22 +1,22 @@
 /**
- * CRYPTO API - CoinCap API (No rate limits, works from Vercel)
- * Free public API, no key required
+ * CRYPTO API - CoinGecko Wrapper (Working version for Vercel)
+ * Free API, no key required
  */
 
-const COINCAP_API = 'https://api.coincap.io/v2';
+const COINGECKO_API = 'https://api.coingecko.com/api/v3';
 
-// Symbol mapping for CoinCap
-const COINCAP_IDS: Record<string, string> = {
-  btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binance-coin',
-  xrp: 'xrp', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
-  matic: 'polygon', shib: 'shiba-inu', link: 'chainlink', avax: 'avalanche-2',
+// Coin symbol to ID mapping
+const COIN_MAP: Record<string, string> = {
+  btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binancecoin',
+  xrp: 'ripple', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
+  matic: 'matic-network', shib: 'shiba-inu', ltc: 'litecoin', avax: 'avalanche-2',
+  link: 'chainlink', atom: 'cosmos', uni: 'uniswap', pepe: 'pepe',
   near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
-  ltc: 'litecoin', uni: 'uniswap', atom: 'cosmos', etc: 'ethereum-classic',
 };
 
 // Cache
 const cache = new Map<string, { data: any; expiry: number }>();
-const CACHE_TTL = 30 * 1000; // 30 seconds
+const CACHE_TTL = 2 * 60 * 1000;
 
 function getCached<T>(key: string): T | null {
   const cached = cache.get(key);
@@ -28,51 +28,43 @@ function setCached<T>(key: string, data: T): void {
   cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
 }
 
-function normalizeId(input: string): string {
+function normalizeCoinId(input: string): string {
   const normalized = input.toLowerCase().trim();
-  return COINCAP_IDS[normalized] || normalized;
+  return COIN_MAP[normalized] || normalized;
+}
+
+async function getCoinData(coinId: string) {
+  const response = await fetch(
+    `${COINGECKO_API}/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`
+  );
+  if (!response.ok) return null;
+  return response.json();
 }
 
 export async function getPrice(coin: string, currencies: string[] = ['usd', 'idr']) {
-  const coinId = normalizeId(coin);
+  const coinId = normalizeCoinId(coin);
   const cacheKey = `price_${coinId}`;
 
   const cached = getCached<any>(cacheKey);
   if (cached) return cached;
 
-  try {
-    const response = await fetch(`${COINCAP_API}/assets/${coinId}`);
-    if (!response.ok) return null;
+  const data = await getCoinData(coinId);
+  if (!data) return null;
 
-    const result = await response.json();
-    if (!result.data) return null;
+  const result = {
+    coin: { id: data.id, symbol: data.symbol.toUpperCase(), name: data.name },
+    price: { usd: data.market_data.current_price.usd },
+    change24h: { usd: data.market_data.price_change_percentage_24h },
+    high24h: { usd: data.market_data.high_24h.usd },
+    low24h: { usd: data.market_data.low_24h.usd },
+    marketCap: `$${(data.market_data.market_cap.usd / 1e9).toFixed(2)}B`,
+    marketCapRank: data.market_cap_rank,
+    volume: `$${(data.market_data.total_volume.usd / 1e9).toFixed(2)}B`,
+    lastUpdated: data.last_updated,
+  };
 
-    const d = result.data;
-    const priceUsd = parseFloat(d.priceUsd);
-    const change = parseFloat(d.changePercent24Hr);
-
-    const formatted = {
-      coin: {
-        id: d.id,
-        symbol: d.symbol,
-        name: d.name,
-      },
-      price: { usd: priceUsd },
-      change24h: { usd: change },
-      high24h: { usd: priceUsd * (1 + change / 100 * 1.02) }, // Approximate
-      low24h: { usd: priceUsd * (1 + change / 100 * 0.98) }, // Approximate
-      marketCap: d.marketCapUsd ? `$${(parseFloat(d.marketCapUsd) / 1e9).toFixed(2)}B` : 'N/A',
-      marketCapRank: d.rank ? parseInt(d.rank) : null,
-      volume: d.volumeUsd24Hr ? `$${(parseFloat(d.volumeUsd24Hr) / 1e9).toFixed(2)}B` : 'N/A',
-      lastUpdated: new Date().toISOString(),
-    };
-
-    setCached(cacheKey, formatted);
-    return formatted;
-  } catch (error) {
-    console.error('[Crypto API] Price error:', error);
-    return null;
-  }
+  setCached(cacheKey, result);
+  return result;
 }
 
 export async function getTrending() {
@@ -80,72 +72,54 @@ export async function getTrending() {
   const cached = getCached<any>(cacheKey);
   if (cached) return cached;
 
-  try {
-    // Fetch top 50 by market cap
-    const response = await fetch(`${COINCAP_API}/assets?limit=50`);
-    if (!response.ok) throw new Error('CoinCap API error');
+  // Get trending
+  const trendingRes = await fetch(`${COINGECKO_API}/search/trending`);
+  const trendingData = await trendingRes.json();
 
-    const result = await response.json();
-    const data = result.data || [];
+  // Get markets for gainers/losers
+  const marketsRes = await fetch(
+    `${COINGECKO_API}/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&sparkline=false`
+  );
+  const marketData = await marketsRes.json();
 
-    // Top 7 by market cap (trending)
-    const top7 = data.slice(0, 7).map((d: any) => ({
-      name: d.name,
-      symbol: d.symbol,
-      marketCapRank: parseInt(d.rank),
-      priceBtc: 0,
-      score: parseFloat(d.marketCapUsd) || 0,
-    }));
+  const top7 = trendingData.coins.slice(0, 7).map((item: any) => ({
+    name: item.item.name,
+    symbol: item.item.symbol.toUpperCase(),
+    marketCapRank: item.item.market_cap_rank || 0,
+    priceBtc: item.item.price_btc,
+    score: item.item.score,
+  }));
 
-    // Sort by 24h change for gainers/losers
-    const sortedByChange = [...data].sort((a: any, b: any) =>
-      parseFloat(b.changePercent24Hr) - parseFloat(a.changePercent24Hr)
-    );
+  const gainers = marketData
+    .filter((c: any) => c.price_change_percentage_24h > 0)
+    .sort((a: any, b: any) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+    .slice(0, 5)
+    .map((c: any) => ({ name: c.name, symbol: c.symbol.toUpperCase(), change: c.price_change_percentage_24h, price: c.current_price }));
 
-    // Top 5 gainers
-    const gainers = sortedByChange
-      .filter((d: any) => parseFloat(d.changePercent24Hr) > 0)
-      .slice(0, 5)
-      .map((d: any) => ({
-        name: d.name,
-        symbol: d.symbol,
-        change: parseFloat(d.changePercent24Hr),
-        price: parseFloat(d.priceUsd),
-      }));
+  const losers = marketData
+    .filter((c: any) => c.price_change_percentage_24h < 0)
+    .sort((a: any, b: any) => a.price_change_percentage_24h - b.price_change_percentage_24h)
+    .slice(0, 5)
+    .map((c: any) => ({ name: c.name, symbol: c.symbol.toUpperCase(), change: c.price_change_percentage_24h, price: c.current_price }));
 
-    // Top 5 losers
-    const losers = sortedByChange
-      .filter((d: any) => parseFloat(d.changePercent24Hr) < 0)
-      .sort((a: any, b: any) => parseFloat(a.changePercent24Hr) - parseFloat(b.changePercent24Hr))
-      .slice(0, 5)
-      .map((d: any) => ({
-        name: d.name,
-        symbol: d.symbol,
-        change: parseFloat(d.changePercent24Hr),
-        price: parseFloat(d.priceUsd),
-      }));
-
-    const trending = { top7, gainers, losers };
-    setCached(cacheKey, trending);
-    return trending;
-  } catch (error) {
-    console.error('[Crypto API] Trending error:', error);
-    return null;
-  }
+  const result = { top7, gainers, losers };
+  setCached(cacheKey, result);
+  return result;
 }
 
 export function getChartEmbed(coin: string) {
-  const symbol = normalizeId(coin).toUpperCase();
+  const symbol = normalizeCoinId(coin).toUpperCase();
+  const tvSymbol = `BINANCE:${symbol}USDT`;
   return {
-    chartUrl: `https://www.tradingview.com/chart/?symbol=${symbol}USDT`,
-    tradingViewUrl: `https://www.tradingview.com/chart/?symbol=${symbol}USDT`,
-    symbol: `${symbol}USDT`,
+    chartUrl: `https://tvdn.dev/widget/embed/?symbol=${encodeURIComponent(tvSymbol)}`,
+    tradingViewUrl: `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(tvSymbol)}`,
+    symbol: tvSymbol,
   };
 }
 
 export function formatPrice(price: number, currency: string = 'usd'): string {
   if (currency === 'idr') {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(price * 16000);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(price);
   }
   if (price >= 1) return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (price >= 0.01) return `$${price.toFixed(4)}`;

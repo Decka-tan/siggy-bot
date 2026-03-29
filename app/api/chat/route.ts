@@ -19,7 +19,15 @@ import {
 import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
 import { detectResearchIntent, searchWeb, buildEnhancedPrompt, formatResponseWithSources } from '@/lib/web-research';
-import { getPrice, getTrending, formatPrice } from '@/lib/crypto-api';
+import { getPrice, getTrending, formatPrice, getChartEmbed } from '@/lib/crypto-api';
+import { normalizeCoinId } from '@/lib/crypto-api';
+
+// Inline getCoinData for /convert
+async function getCoinData(coinId: string) {
+  const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`);
+  if (!response.ok) return null;
+  return response.json();
+}
 
 // Initialize AI client - OpenAI for CHAT only
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
@@ -128,87 +136,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // /chart <coin> command - return chart data for frontend
+    // /chart <coin> command - return TradingView link
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim();
+      const { tradingViewUrl, symbol } = getChartEmbed(coin);
 
-      // CoinCap ID mapping
-      const idMap: Record<string, string> = {
-        btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binance-coin',
-        xrp: 'xrp', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
-        matic: 'polygon', shib: 'shiba-inu', link: 'chainlink', avax: 'avalanche-2',
-        near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
-        ltc: 'litecoin', uni: 'uniswap', atom: 'cosmos',
-      };
-
-      const coinId = idMap[coin.toLowerCase()] || coin.toLowerCase();
-
-      try {
-        // Fetch candles from CoinCap (Binance exchange, 15m interval)
-        const candlesUrl = `https://api.coincap.io/v2/candles?exchange=binance&interval=m15&baseId=${coinId}&quoteId=tether`;
-        const candlesResponse = await fetch(candlesUrl);
-
-        if (!candlesResponse.ok) {
-          return NextResponse.json({
-            response: `❌ Couldn't fetch chart data for "${coin.toUpperCase()}".\n\nTry: btc, eth, sol, bnb, xrp, ada, doge`,
-            isRawCommand: true,
-          });
-        }
-
-        const candlesResult = await candlesResponse.json();
-        const candles = candlesResult.data || [];
-
-        if (!Array.isArray(candles) || candles.length === 0) {
-          return NextResponse.json({
-            response: `❌ No chart data available for "${coin.toUpperCase()}".\n\n*Try a more popular coin like btc, eth, or sol.*`,
-            isRawCommand: true,
-          });
-        }
-
-        // CoinCap returns candles in reverse order (newest first), reverse to get oldest first
-        const ohlc = candles.slice(-96).reverse().map((c: any) => ({
-          time: parseInt(c.period),
-          open: parseFloat(c.open),
-          high: parseFloat(c.high),
-          low: parseFloat(c.low),
-          close: parseFloat(c.close),
-        }));
-
-        // Get current price from CoinCap assets endpoint
-        const assetResponse = await fetch(`https://api.coincap.io/v2/assets/${coinId}`);
-        let ticker = null;
-        if (assetResponse.ok) {
-          const assetResult = await assetResponse.json();
-          const d = assetResult.data;
-          if (d) {
-            const price = parseFloat(d.priceUsd);
-            const change = parseFloat(d.changePercent24Hr);
-            ticker = {
-              price,
-              change,
-              high: price * (1 + change / 100 * 1.02),
-              low: price * (1 + change / 100 * 0.98),
-            };
-          }
-        }
-
-        return NextResponse.json({
-          response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n*[CHART]*`,
-          isRawCommand: true,
-          chartData: {
-            coin: coin.toUpperCase(),
-            symbol: `${coin.toUpperCase()}USDT`,
-            ohlc,
-            ticker,
-          },
-        });
-      } catch (error) {
-        console.error('[Chat] /chart error:', error);
-        return NextResponse.json({
-          response: `❌ Error fetching chart: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          isRawCommand: true,
-        });
-      }
+      return NextResponse.json({
+        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n*View chart on [TradingView](${tradingViewUrl})*`,
+        isRawCommand: true,
+      });
     }
 
     // /flip command - coin flip
@@ -312,47 +248,37 @@ export async function POST(req: NextRequest) {
       const from = args[1].toLowerCase();
       const to = args[2].toLowerCase();
 
-      // CoinCap ID mapping
-      const idMap: Record<string, string> = {
-        btc: 'bitcoin', eth: 'ethereum', sol: 'solana', bnb: 'binance-coin',
-        xrp: 'xrp', ada: 'cardano', doge: 'dogecoin', dot: 'polkadot',
-        matic: 'polygon', shib: 'shiba-inu', link: 'chainlink', avax: 'avalanche-2',
-        near: 'near', op: 'optimism', arb: 'arbitrum', apt: 'aptos',
-        ltc: 'litecoin', uni: 'uniswap', atom: 'cosmos',
-      };
-
       try {
-        const fromId = idMap[from] || from;
-        const toId = idMap[to] || to;
+        const coinId = normalizeCoinId(from);
+        const data = await getCoinData(coinId);
 
-        // Handle fiat conversions
-        const fiatRates: Record<string, number> = { usd: 1, idr: 16000, eur: 0.92, gbp: 0.79 };
-
-        // Get FROM price in USD
-        let fromPriceUsd = 0;
-        if (fiatRates[from]) {
-          fromPriceUsd = fiatRates[from];
-        } else {
-          const priceResponse = await fetch(`https://api.coincap.io/v2/assets/${fromId}`);
-          if (!priceResponse.ok) throw new Error(`Could not fetch price for ${from}`);
-          const priceData = await priceResponse.json();
-          if (!priceData.data) throw new Error(`Invalid coin: ${from}`);
-          fromPriceUsd = parseFloat(priceData.data.priceUsd);
+        if (!data) {
+          return NextResponse.json({
+            response: `❌ Couldn't find coin "${from}". Try: btc, eth, sol, bnb, xrp, ada, doge`,
+            isRawCommand: true,
+          });
         }
 
-        const usdAmount = amount * fromPriceUsd;
+        const priceUsd = data.market_data.current_price.usd;
+        const usdAmount = amount * priceUsd;
 
-        // Convert to TO
+        // Simple conversion rates
+        const fiatRates: Record<string, number> = { usd: 1, idr: 16000, eur: 0.92, gbp: 0.79 };
+
         let finalAmount: number;
         if (fiatRates[to]) {
           finalAmount = usdAmount / fiatRates[to];
         } else {
-          const toPriceResponse = await fetch(`https://api.coincap.io/v2/assets/${toId}`);
-          if (!toPriceResponse.ok) throw new Error(`Could not fetch price for ${to}`);
-          const toPriceData = await toPriceResponse.json();
-          if (!toPriceData.data) throw new Error(`Invalid coin: ${to}`);
-          const toPriceUsd = parseFloat(toPriceData.data.priceUsd);
-          finalAmount = usdAmount / toPriceUsd;
+          // Converting to another crypto - approximate
+          const toCoinId = normalizeCoinId(to);
+          const toData = await getCoinData(toCoinId);
+          if (!toData) {
+            return NextResponse.json({
+              response: `❌ Couldn't find target coin "${to}". Try: btc, eth, sol, bnb, usd, idr`,
+              isRawCommand: true,
+            });
+          }
+          finalAmount = usdAmount / toData.market_data.current_price.usd;
         }
 
         const formatResult = (val: number): string => {
@@ -362,12 +288,12 @@ export async function POST(req: NextRequest) {
         };
 
         return NextResponse.json({
-          response: `💱 **Crypto Converter**\n\n**${formatResult(amount)} ${from.toUpperCase()} = ${formatResult(finalAmount)} ${to.toUpperCase()}**\n\n*Price (1 ${from.toUpperCase()}):* $${fromPriceUsd.toLocaleString()}`,
+          response: `💱 **Crypto Converter**\n\n**${formatResult(amount)} ${from.toUpperCase()} = ${formatResult(finalAmount)} ${to.toUpperCase()}**\n\n*Price (1 ${from.toUpperCase()}):* $${priceUsd.toLocaleString()}`,
           isRawCommand: true,
         });
       } catch (error) {
         return NextResponse.json({
-          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\nTry: /convert 1 btc to usd`,
+          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
           isRawCommand: true,
         });
       }
