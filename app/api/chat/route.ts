@@ -35,7 +35,7 @@ function normalizeCoinId(input: string): string {
   return COIN_MAP[normalized] || normalized;
 }
 
-// Inline getCoinData for /convert
+// Inline getCoinData for crypto commands
 async function getCoinData(coinId: string) {
   const response = await fetch(`https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&community_data=false&developer_data=false`);
   if (!response.ok) return null;
@@ -118,7 +118,7 @@ async function generateDynamicFact(): Promise<string> {
       return null;
     },
     // Community stats
-    () => `📊 [b]Ritual Community:[/b] ${totalMembers.toLocaleString} active members!`,
+    () => `📊 [b]Ritual Community:[/b] ${totalMembers.toLocaleString()} active members!`,
     () => `💬 [b]Total Messages:[/b] ${totalMessages.toLocaleString()} messages sent!`,
     () => `✨ [b]Total Contributions:[/b] ${totalContributions.toLocaleString()} contributions made!`,
     () => `🎉 [b]Events Hosted:[/b] ${totalEvents} events participated in!`,
@@ -263,15 +263,60 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // /chart <coin> command - return TradingView link
+    // /chart <coin> command - Fetch OHLC and return chart data
     if (lowerMsg.startsWith('/chart ')) {
-      const coin = lowerMsg.slice(7).trim();
-      const { tradingViewUrl, symbol } = getChartEmbed(coin);
+      const coin = lowerMsg.slice(7).trim().toLowerCase();
+      const coinId = normalizeCoinId(coin);
 
-      return NextResponse.json({
-        response: `📈 [b]Chart for ${coin.toUpperCase()}[/b]\n\n*View chart on [TradingView](${tradingViewUrl})*`,
-        isRawCommand: true,
-      });
+      try {
+        // Fetch price data first
+        const priceData = await getPrice(coin);
+        if (!priceData) {
+          return NextResponse.json({
+            response: `❌ Couldn't find coin "${coin.toUpperCase()}". Try: \`btc\`, \`eth\`, \`sol\`, \`bnb\`, \`xrp\`, \`ada\`, \`doge\`, etc.`,
+            isRawCommand: true,
+          });
+        }
+
+        // Fetch OHLC data from Binance (15m candles)
+        let ohlcData = null;
+        try {
+          const symbol = priceData.coin.symbol + 'USDT';
+          const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=96`);
+          if (response.ok) {
+            const data = await response.json();
+            // Convert to our format: [time, open, high, low, close]
+            ohlcData = data.map((k: any) => [k[0], parseFloat(k[1]), parseFloat(k[2]), parseFloat(k[3]), parseFloat(k[4])]);
+          }
+        } catch (e) {
+          console.error('[Chart] Binance OHLC error:', e);
+        }
+
+        const { tradingViewUrl } = getChartEmbed(coin);
+
+        // Return with chartData for Canvas rendering
+        return NextResponse.json({
+          response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\n**${formatPrice(priceData.price.usd)}**  •  24h: **${priceData.change24h.usd > 0 ? '+' : ''}${priceData.change24h.usd.toFixed(2)}%**\n\n*View interactive chart on [TradingView](${tradingViewUrl})*`,
+          isRawCommand: true,
+          chartData: ohlcData ? {
+            coin: priceData.coin.name,
+            symbol: priceData.coin.symbol,
+            ohlc: ohlcData,
+            ticker: {
+              price: priceData.price.usd,
+              change: priceData.change24h.usd,
+              high: priceData.high24h.usd,
+              low: priceData.low24h.usd,
+            },
+          } : undefined,
+        });
+      } catch (error) {
+        console.error('[Chart] Error:', error);
+        return NextResponse.json({
+          response: `❌ Error fetching chart: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          isRawCommand: true,
+        });
+      }
     }
 
     // /flip command - coin flip
@@ -290,30 +335,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ response, isRawCommand: true });
     }
 
-    // /roll command - dice roll
+    // /roll command - dice roll (1-6 dice, d6 only)
     if (lowerMsg === '/roll' || lowerMsg.startsWith('/roll ')) {
       const args = lowerMsg.slice(6).trim().split(/\s+/);
-      const sides = parseInt(args[0]) || 6;
-      const count = parseInt(args[1]) || 1;
+      const count = parseInt(args[0]) || 1;
 
-      if (count < 1 || count > 10 || sides < 2 || sides > 100) {
+      if (count < 1 || count > 6) {
         return NextResponse.json({
-          response: '❌ Invalid parameters. Use: /roll <sides> <count>\nSides: 2-100, Count: 1-10',
+          response: '❌ Invalid count. Use: /roll <count>\nCount: 1-6 dice',
           isRawCommand: true,
         });
       }
 
       const rolls = [];
       for (let i = 0; i < count; i++) {
-        rolls.push(Math.floor(Math.random() * sides) + 1);
+        rolls.push(Math.floor(Math.random() * 6) + 1);
       }
 
       const total = rolls.reduce((a, b) => a + b, 0);
+
       const response = count === 1
         ? `🎲 [b]Dice Roll[/b]\n\n[b]You rolled:[/b] ${rolls[0]}`
         : `🎲 [b]Dice Rolls[/b]\n\n[b]Rolls:[/b] ${rolls.join(', ')}\n[b]Total:[/b] ${total}`;
 
-      return NextResponse.json({ response, isRawCommand: true, diceValues: rolls });
+      return NextResponse.json({
+        response,
+        isRawCommand: true,
+        diceData: { rolls, total },
+      });
     }
 
     // /choose command
@@ -340,43 +389,116 @@ export async function POST(req: NextRequest) {
 
     // === FUN COMMANDS ===
 
+    // GIF collections (same as Discord)
+    const hugGifs = [
+      'https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
+      'https://media.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
+      'https://media.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
+      'https://media.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
+      'https://media.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
+      'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+      'https://media.giphy.com/media/143v0Z4717aG7a/giphy.gif',
+      'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+      'https://media.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
+      'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+      'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+      'https://media.giphy.com/media/nKfU3gfVYynTVU1ZfG/giphy.gif',
+      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+    ];
+
+    const slapGifs = [
+      'https://media.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
+      'https://media.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
+      'https://media.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
+      'https://media.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
+      'https://media.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
+      'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+      'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+      'https://media.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
+      'https://media.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
+      'https://media.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
+      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://media.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
+    ];
+
+    const patGifs = [
+      'https://media.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
+      'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+      'https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
+      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+      'https://media.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
+      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+      'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+      'https://media.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
+      'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+    ];
+
+    const highfiveGifs = [
+      'https://media.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
+      'https://media.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
+      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    ];
+
     // /hug <user> command
-    if (lowerMsg.startsWith('/hug ')) {
-      const target = message.slice(5).trim() || 'you';
-      const hugEmojis = ['🤗', '💕', '🫂', '❤️'];
-      const emoji = hugEmojis[Math.floor(Math.random() * hugEmojis.length)];
+    if (lowerMsg.startsWith('/hug ') || lowerMsg === '/hug') {
+      const target = lowerMsg === '/hug' ? 'you' : message.slice(5).trim() || 'you';
+      const gifUrl = hugGifs[Math.floor(Math.random() * hugGifs.length)];
       return NextResponse.json({
-        response: `${emoji} [b]Hug![/b]\n\n*You hug ${target}*`,
+        response: `🤗 [b]Hug![/b]\n\n*You hug ${target}*`,
         isRawCommand: true,
+        gifData: { url: gifUrl, type: 'hug', target },
       });
     }
 
     // /slap <user> command
-    if (lowerMsg.startsWith('/slap ')) {
-      const target = message.slice(6).trim() || 'you';
-      const slapEmojis = ['👋', '💥', '😵', '🖐️'];
-      const emoji = slapEmojis[Math.floor(Math.random() * slapEmojis.length)];
+    if (lowerMsg.startsWith('/slap ') || lowerMsg === '/slap') {
+      const target = lowerMsg === '/slap' ? 'you' : message.slice(6).trim() || 'you';
+      const gifUrl = slapGifs[Math.floor(Math.random() * slapGifs.length)];
       return NextResponse.json({
-        response: `${emoji} [b]Slap![/b]\n\n*You slap ${target}*`,
+        response: `👋 [b]Slap![/b]\n\n*You slap ${target}*`,
         isRawCommand: true,
+        gifData: { url: gifUrl, type: 'slap', target },
       });
     }
 
     // /pat <user> command
-    if (lowerMsg.startsWith('/pat ')) {
-      const target = message.slice(5).trim() || 'you';
+    if (lowerMsg.startsWith('/pat ') || lowerMsg === '/pat') {
+      const target = lowerMsg === '/pat' ? 'you' : message.slice(5).trim() || 'you';
+      const gifUrl = patGifs[Math.floor(Math.random() * patGifs.length)];
       return NextResponse.json({
         response: `👋 [b]Pat![/b]\n\n*You pat ${target} on the head*`,
         isRawCommand: true,
+        gifData: { url: gifUrl, type: 'pat', target },
       });
     }
 
     // /highfive <user> command
-    if (lowerMsg.startsWith('/highfive ')) {
-      const target = message.slice(10).trim() || 'you';
+    if (lowerMsg.startsWith('/highfive ') || lowerMsg === '/highfive') {
+      const target = lowerMsg === '/highfive' ? 'you' : message.slice(10).trim() || 'you';
+      const gifUrl = highfiveGifs[Math.floor(Math.random() * highfiveGifs.length)];
       return NextResponse.json({
         response: `✋ [b]High Five![/b]\n\n*You high-five ${target}*`,
         isRawCommand: true,
+        gifData: { url: gifUrl, type: 'highfive', target },
       });
     }
 
@@ -628,22 +750,19 @@ export async function POST(req: NextRequest) {
           `• /price <coin> - Check crypto price\n` +
           `• /trending - Show trending coins\n` +
           `• /chart <coin> - Get TradingView chart\n` +
-          `• /convert <amount> <from> <to> - Convert currency\n` +
           `• /gas - Check Ethereum gas fees\n\n` +
           `**🎮 Fun Commands:**\n` +
           `• /hug, /slap, /pat, /highfive <user> - Interactions\n` +
           `• /flip - Flip a coin\n` +
-          `• /roll <sides> <count> - Roll dice\n` +
-          `• /8ball <question> - Magic 8-ball\n` +
-          `• /choose option1 | option2 - Random choice\n` +
+          `• /roll <count> - Roll 1-6 dice\n` +
+          `• /choose option1, option2 - Random choice\n` +
           `• /fact - Random fun fact\n` +
           `• /quote - Inspirational quote\n` +
-          `• /shuffle items | separated - Shuffle list\n` +
+          `• /shuffle items, separated - Shuffle list\n` +
           `• /rate <target> - Rate something 1-10\n` +
           `• /howgay <user> - Fun meme command\n` +
           `• /simp <user> - Simp rate check\n\n` +
           `**📊 Utility Commands:**\n` +
-          `• /rank [@user] - Check rank and XP\n` +
           `• /avatar [@user] - Get avatar\n` +
           `• /leaderboard <action> - Manage leaderboards\n\n` +
           `**⚙️ Meta Commands:**\n` +

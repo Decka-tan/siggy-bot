@@ -5,14 +5,32 @@
 
 const { EmbedBuilder } = require('discord.js');
 
-// Hug command
+// Hug command - Anime hug GIFs
 async function handleHug(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const hugGifs = [
+    // Cute anime hugs
     'https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
     'https://media.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
     'https://media.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
     'https://media.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
+    'https://media.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
+    'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+    'https://media.giphy.com/media/143v0Z4717aG7a/giphy.gif',
+    'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+    'https://media.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
+    'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+    'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+    'https://media.giphy.com/media/nKfU3gfVYynTVU1ZfG/giphy.gif',
+    'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+    'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+    'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+    // More variety
+    'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+    'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
   ];
 
   const embed = new EmbedBuilder()
@@ -24,13 +42,22 @@ async function handleHug(interaction) {
   await interaction.reply({ embeds: [embed] });
 }
 
-// Slap command
+// Slap command - Anime slap GIFs
 async function handleSlap(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const slapGifs = [
     'https://media.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
     'https://media.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
     'https://media.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
+    'https://media.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
+    'https://media.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
+    'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+    'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+    'https://media.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
+    'https://media.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
+    'https://media.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
+    'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+    'https://media.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
   ];
 
   const embed = new EmbedBuilder()
@@ -42,13 +69,24 @@ async function handleSlap(interaction) {
   await interaction.reply({ embeds: [embed] });
 }
 
-// Pat command
+// Pat command - Anime head pat GIFs
 async function handlePat(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const patGifs = [
     'https://media.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
     'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
     'https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
+    'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+    'https://media.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
+    'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+    'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+    'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+    'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+    'https://media.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
+    'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
   ];
 
   const embed = new EmbedBuilder()
@@ -60,12 +98,20 @@ async function handlePat(interaction) {
   await interaction.reply({ embeds: [embed] });
 }
 
-// High five command
+// High five command - Anime high-five GIFs
 async function handleHighfive(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const gifs = [
     'https://media.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
     'https://media.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
+    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+    'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+    'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+    'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+    'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+    'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+    'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
   ];
 
   const embed = new EmbedBuilder()
@@ -77,28 +123,116 @@ async function handleHighfive(interaction) {
   await interaction.reply({ embeds: [embed] });
 }
 
-// Random fact
-const facts = [
-  'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.',
-  'Octopuses have three hearts and blue blood.',
-  'A group of flamingos is called a "flamboyance".',
-  'Bananas are berries, but strawberries aren\'t.',
-  'The shortest war in history lasted 38 to 45 minutes between Britain and Zanzibar in 1896.',
-  'A day on Venus is longer than a year on Venus.',
-  'Cows have best friends and get stressed when separated.',
-  'The inventor of the Pringles can is buried in one.',
-  'There are more stars in the universe than grains of sand on Earth.',
-  'The Hawaiian alphabet has only 12 letters.',
-];
+// Random fact - Dynamic Ritual Discord facts
+const fs = require('fs');
+const path = require('path');
+
+function getDiscordData() {
+  try {
+    const dataPath = path.join(__dirname, '../../extracted-data/member-activity-analysis.json');
+    if (!fs.existsSync(dataPath)) return null;
+
+    const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+    return data;
+  } catch (error) {
+    console.error('Error loading Discord data:', error);
+    return null;
+  }
+}
+
+function generateDynamicFact() {
+  const data = getDiscordData();
+  if (!data || !data.members || data.members.length === 0) {
+    // Fallback to generic facts
+    const fallbackFacts = [
+      'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.',
+      'Octopuses have three hearts and blue blood.',
+      'A group of flamingos is called a "flamboyance".',
+      'Bananas are berries, but strawberries aren\'t.',
+      'The shortest war in history lasted 38 to 45 minutes between Britain and Zanzibar in 1896.',
+    ];
+    return fallbackFacts[Math.floor(Math.random() * fallbackFacts.length)];
+  }
+
+  const members = data.members;
+  const totalMembers = data.totalAnalyzed || members.length;
+
+  // Calculate stats
+  const topContributors = [...members].sort((a, b) => b.contributionsCount - a.contributionsCount).slice(0, 5);
+  const topMessagers = [...members].sort((a, b) => b.globalMessages - a.globalMessages).slice(0, 5);
+  const topEventParticipants = [...members].filter(m => m.eventsCount > 0).sort((a, b) => b.eventsCount - a.eventsCount).slice(0, 5);
+
+  const totalMessages = members.reduce((sum, m) => sum + (m.globalMessages || 0), 0);
+  const totalContributions = members.reduce((sum, m) => sum + (m.contributionsCount || 0), 0);
+  const totalEvents = members.reduce((sum, m) => sum + (m.eventsCount || 0), 0);
+
+  // Dynamic fact templates
+  const factTemplates = [
+    // Top contributors
+    () => {
+      const top = topContributors[Math.floor(Math.random() * Math.min(3, topContributors.length))];
+      return `🏆 **Top Contributor:** @${top.username} with ${top.contributionsCount} contributions!`;
+    },
+    // Top messagers
+    () => {
+      const top = topMessagers[Math.floor(Math.random() * Math.min(3, topMessagers.length))];
+      return `💬 **Most Active:** @${top.username} with ${top.globalMessages.toLocaleString()} messages!`;
+    },
+    // Event winners
+    () => {
+      if (topEventParticipants.length > 0) {
+        const top = topEventParticipants[Math.floor(Math.random() * Math.min(3, topEventParticipants.length))];
+        return `👑 **Event Champion:** @${top.username} with ${top.eventsCount} event wins!`;
+      }
+      return null;
+    },
+    // Community stats
+    () => `📊 **Ritual Community:** ${totalMembers.toLocaleString()} active members!`,
+    () => `💬 **Total Messages:** ${totalMessages.toLocaleString()} messages sent!`,
+    () => `✨ **Total Contributions:** ${totalContributions.toLocaleString()} contributions made!`,
+    () => `🎉 **Events Hosted:** ${totalEvents} events participated in!`,
+    // Random member highlight
+    () => {
+      const randomMember = members[Math.floor(Math.random() * members.length)];
+      return `⭐ **Member Spotlight:** @${randomMember.username} - ${randomMember.displayName}`;
+    },
+    // Shoutout to quiet achievers
+    () => {
+      const quiet = members.filter(m => m.contributionsCount > 10 && m.contributionsCount < 100);
+      if (quiet.length > 0) {
+        const member = quiet[Math.floor(Math.random() * quiet.length)];
+        return `🌟 **Rising Star:** @${member.username} with ${member.contributionsCount} contributions!`;
+      }
+      return null;
+    },
+    // Message stats
+    () => {
+      const avgMessages = Math.round(totalMessages / totalMembers);
+      return `📈 **Average Messages:** ${avgMessages} messages per member!`;
+    },
+  ];
+
+  // Try templates until we get a valid fact
+  let attempts = 0;
+  while (attempts < 10) {
+    const template = factTemplates[Math.floor(Math.random() * factTemplates.length)];
+    const fact = template();
+    if (fact) return fact;
+    attempts++;
+  }
+
+  // Ultimate fallback
+  return `🎮 **Ritual Community:** ${totalMembers.toLocaleString()} members strong!`;
+}
 
 async function handleFact(interaction) {
-  const fact = facts[Math.floor(Math.random() * facts.length)];
+  const fact = generateDynamicFact();
 
   const embed = new EmbedBuilder()
     .setColor(0x00CED1)
-    .setTitle('🧠 Random Fact')
+    .setTitle('🧠 Ritual Fact')
     .setDescription(fact)
-    .setFooter({ text: 'Did you know?' })
+    .setFooter({ text: 'Did you know? • Data from Ritual Discord' })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });

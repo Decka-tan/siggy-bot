@@ -145,10 +145,9 @@ const utilityCommands = [
   },
   {
     name: 'roll',
-    description: 'Roll dice',
+    description: 'Roll dice (1-6 d6)',
     options: [
-      { name: 'sides', description: 'Number of sides (2-100)', type: 4, required: false, min_value: 2, max_value: 100 },
-      { name: 'count', description: 'Number of dice (1-10)', type: 4, required: false, min_value: 1, max_value: 10 },
+      { name: 'count', description: 'Number of dice (1-6)', type: 4, required: false, min_value: 1, max_value: 6 },
     ],
   },
   {
@@ -346,6 +345,17 @@ function checkEasterEggs(message) {
 // ============ RATE LIMITING ============
 const rateLimiter = new Map();
 
+// Store last command for reload functionality
+const lastCommand = new Map();
+
+function setLastCommand(userId, commandName, options = {}) {
+  lastCommand.set(userId, { name: commandName, options, timestamp: Date.now() });
+}
+
+function getLastCommand(userId) {
+  return lastCommand.get(userId);
+}
+
 function checkRateLimit(userId, command = 'default') {
   const key = `${userId}_${command}`;
   const now = Date.now();
@@ -530,6 +540,122 @@ async function handleCheck(interaction) {
     await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This uses local Ritual community data, not live Discord API.*`);
   }
 }
+
+// ============================================================================
+// NEW VERSION - @USER MENTION (Switch when integrated with Discord Ritual)
+// ============================================================================
+//
+// async function handleCheck(interaction) {
+//   const userId = interaction.user.id;
+//   const rateLimit = checkRateLimit(userId, 'check');
+//
+//   if (!rateLimit.allowed) {
+//     return interaction.reply({
+//       content: `⏱️ Slow down! Try again in ${rateLimit.retryAfter}s`,
+//       ephemeral: true,
+//     });
+//   }
+//
+//   await interaction.deferReply();
+//
+//   // Get Discord user from mention
+//   const targetUser = interaction.options.getUser('user');
+//   const username = targetUser.username;
+//
+//   // Check cache first
+//   const cacheKey = `check_${username}`;
+//   const cached = getCache(cacheKey);
+//
+//   // Track this command as a message for relationship
+//   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
+//
+//   if (cached) {
+//     // Parse cached data - support both old format (string) and new format (JSON with avatar)
+//     let analysisText = cached;
+//     let avatarUrl = null;
+//
+//     try {
+//       const parsed = JSON.parse(cached);
+//       if (parsed.analysis) {
+//         analysisText = parsed.analysis;
+//         avatarUrl = parsed.avatar;
+//       }
+//     } catch {
+//       // Old cache format - just use the string
+//     }
+//
+//     const embed = new EmbedBuilder()
+//       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
+//       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
+//       .setDescription(analysisText);
+//
+//     if (avatarUrl) {
+//       embed.setThumbnail(avatarUrl);
+//     }
+//
+//     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+//       .setTimestamp();
+//
+//     return interaction.editReply({ embeds: [embed] });
+//   }
+//
+//   try {
+//     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
+//       method: 'POST',
+//       headers: { 'Content-Type': 'application/json' },
+//       body: JSON.stringify({ username }),
+//     });
+//
+//     if (!response.ok) {
+//       const errorText = await response.text();
+//       console.error('API Error:', response.status, errorText);
+//       throw new Error(`API ${response.status}: ${response.statusText}`);
+//     }
+//
+//     const data = await response.json();
+//
+//     // Cache the result with avatar
+//     setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar }));
+//
+//     // Truncate analysis to Discord's 4096 char embed limit
+//     const analysisText = (data.analysis || 'No data available').substring(0, 4096);
+//
+//     const embed = new EmbedBuilder()
+//       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
+//       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
+//       .setDescription(analysisText);
+//
+//     // Add user avatar as thumbnail if available
+//     if (data.user?.avatar) {
+//       embed.setThumbnail(data.user.avatar);
+//     }
+//
+//     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+//       .setTimestamp();
+//
+//     await interaction.editReply({ embeds: [embed] });
+//   } catch (error) {
+//     console.error('Check command error:', error);
+//     await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This uses local Ritual community data, not live Discord API.*`);
+//   }
+// }
+//
+// ============================================================================
+// COMMAND DEFINITION (Replace current check command in registerCommands)
+// ============================================================================
+//
+// {
+//   name: 'check',
+//   description: 'Analyze a Ritual contributor with AI',
+//   options: [{
+//     name: 'user',
+//     description: 'Discord user to check',
+//     type: 6,  // USER type - enables @mention with autocomplete
+//     required: true,
+//   }],
+// },
+//
+// ============================================================================
 
 async function handleResearch(interaction) {
   const userId = interaction.user.id;
@@ -786,11 +912,11 @@ async function handleHelp(interaction) {
     .setTitle('🐱 Siggy - Multi-Dimensional Cat Girl AI')
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
-      { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top` | `/rank`', inline: false },
-      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/convert` | `/gas`', inline: false },
+      { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
+      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/gas`', inline: false },
       { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
       { name: '🎮 Fun & Social', value: '`/hug` | `/slap` | `/pat` | `/highfive` | `/rate` | `/fact` | `/quote`', inline: false },
-      { name: '🎲 Utility & Games', value: '`/flip` | `/roll` | `/8ball` | `/choose` | `/shuffle` | `/avatar`', inline: false },
+      { name: '🎲 Utility & Games', value: '`/flip` | `/roll` | `/choose` | `/shuffle` | `/avatar`', inline: false },
       { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
       { name: '💬 Chat', value: '@Siggy <message> - Chat with me directly!', inline: false },
       { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "realName", "dekka"', inline: false },
@@ -823,13 +949,17 @@ async function registerCommands() {
   }
 
   const commands = [
+    // ============================================================================
+    // CURRENT: String-based username input
+    // NEW (when ready): Replace with @user mention version (see handleCheck function)
+    // ============================================================================
     {
       name: 'check',
       description: 'Analyze a Ritual contributor with AI',
       options: [{
         name: 'username',
         description: 'Username to check',
-        type: 3,
+        type: 3,  // STRING - replace with type: 6 (USER) when switching
         required: true,
       }],
     },
@@ -942,8 +1072,9 @@ client.on('interactionCreate', async (interaction) => {
     // Get the original message from the embed
     const embed = interaction.message.embeds[0];
     const content = embed ? embed.description : 'No content';
+    const title = embed ? embed.title : '';
     await interaction.reply({
-      content: `📋 **Message copied!**\n\`\`\`\n${content.slice(0, 1900)}\n\`\`\``,
+      content: `📋 **Message copied!**\n\`\`\`\n${title ? title + '\n\n' : ''}${content.slice(0, 1900)}\n\`\`\``,
       ephemeral: true,
     });
   } else if (customId.startsWith('like_') || customId.startsWith('dislike_')) {
@@ -951,6 +1082,62 @@ client.on('interactionCreate', async (interaction) => {
       content: customId.startsWith('like_') ? '👍 You liked this message!' : '👎 You disliked this message.',
       ephemeral: true,
     });
+  } else if (customId.startsWith('reload_')) {
+    // Reload last command
+    const userId = interaction.user.id;
+    const lastCmd = getLastCommand(userId);
+
+    if (!lastCmd) {
+      return interaction.reply({ content: '❌ No previous command to reload.', ephemeral: true });
+    }
+
+    // Re-execute the command
+    const { name, options } = lastCmd;
+
+    // Handle reload for different commands
+    if (name === 'roll') {
+      const { handleRoll } = require('./commands/utility.cjs');
+      const mockInteraction = {
+        ...interaction,
+        user: interaction.user,
+        options: {
+          getInteger: (key) => options.count || 1,
+          getString: () => null,
+          getUser: () => interaction.user,
+        },
+        deferReply: async () => {},
+        editReply: async (msg) => {
+          if (msg.embeds && msg.components) {
+            await interaction.update(msg);
+          } else {
+            await interaction.update({ embeds: msg.embeds || [], components: msg.components || [] });
+          }
+        },
+      };
+      await handleRoll(mockInteraction, { saveCommand: false });
+    } else if (name === 'hug' || name === 'slap' || name === 'pat' || name === 'highfive') {
+      const { handleHug, handleSlap, handlePat, handleHighfive } = require('./commands/fun.cjs');
+      const handlers = { hug: handleHug, slap: handleSlap, pat: handlePat, highfive: handleHighfive };
+
+      const mockInteraction = {
+        ...interaction,
+        options: {
+          getUser: (key) => options.user || interaction.user,
+        },
+        reply: async (msg) => {
+          await interaction.update(msg);
+        },
+      };
+      await handlers[name](mockInteraction);
+    } else if (name === 'fact') {
+      const { handleFact } = require('./commands/fun.cjs');
+      await handleFact(interaction);
+    } else if (name === 'flip') {
+      const { handleFlip } = require('./commands/utility.cjs');
+      await handleFlip(interaction);
+    } else {
+      await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
+    }
   }
 });
 

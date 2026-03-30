@@ -28,35 +28,94 @@ async function handleFlip(interaction) {
   await interaction.reply({ embeds: [embed] });
 }
 
-// Dice roll
-async function handleRoll(interaction) {
-  const sides = interaction.options.getInteger('sides') || 6;
+// Dice roll - d6 only, 1-6 dice with rolling animation
+async function handleRoll(interaction, { saveCommand = true } = {}) {
   const count = interaction.options.getInteger('count') || 1;
 
-  if (count < 1 || count > 10) {
-    return interaction.reply({ content: '❌ Count must be between 1 and 10', ephemeral: true });
-  }
-  if (sides < 2 || sides > 100) {
-    return interaction.reply({ content: '❌ Sides must be between 2 and 100', ephemeral: true });
+  if (count < 1 || count > 6) {
+    return interaction.reply({ content: '❌ Count must be between 1 and 6', ephemeral: true });
   }
 
+  // Save command for reload
+  if (saveCommand) {
+    const { setLastCommand } = require('../vps-server.cjs');
+    setLastCommand(interaction.user.id, 'roll', { count });
+  }
+
+  await interaction.deferReply();
+
+  const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+  const rollEmojis = ['🎲', '🎲', '🎲', '🎲', '🎲', '🎲'];
+
+  // Rolling animation - show random dice 3 times before final result
+  for (let i = 0; i < 3; i++) {
+    const tempRolls = Array.from({ length: count }, () => Math.floor(Math.random() * 6) + 1);
+    const tempVisual = tempRolls.map(() => rollEmojis[Math.floor(Math.random() * 6)]).join(' ');
+
+    const embed = new EmbedBuilder()
+      .setColor(0x9B59B6)
+      .setTitle(`🎲 Rolling...${'.'.repeat(i + 1)}`)
+      .setDescription(tempVisual)
+      .setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
+    await new Promise(resolve => setTimeout(resolve, 400)); // 400ms delay
+  }
+
+  // Final result
   const rolls = [];
   for (let i = 0; i < count; i++) {
-    rolls.push(Math.floor(Math.random() * sides) + 1);
+    rolls.push(Math.floor(Math.random() * 6) + 1);
   }
 
   const total = rolls.reduce((a, b) => a + b, 0);
-  const emoji = count === 1 ? '🎲' : '🎲';
+  const diceVisual = rolls.map(r => diceEmojis[r - 1]).join(' ');
+
+  // Color based on result
+  let color = 0x9B59B6; // default purple
+  if (count === 1) {
+    if (rolls[0] === 6) color = 0xFFD700; // gold for max
+    else if (rolls[0] === 1) color = 0xFF4444; // red for min
+  } else {
+    if (total === count * 6) color = 0xFFD700; // all max
+    else if (total === count) color = 0xFF4444; // all min
+    else if (total >= count * 4) color = 0x00FF00; // green for good rolls
+  }
 
   const embed = new EmbedBuilder()
-    .setColor(0x9B59B6)
-    .setTitle(`${emoji} Dice Roll${count > 1 ? 's' : ''}`)
-    .setDescription(count === 1
-      ? `**You rolled:** ${rolls[0]}`
-      : `**Rolls:** ${rolls.join(', ')}\n**Total:** ${total}`)
+    .setColor(color)
+    .setTitle(`🎲 Dice Roll${count > 1 ? 's' : ''} ${getRollReaction(rolls, count)}`)
+    .setDescription(`${diceVisual}\n\n${count > 1 ? `**Total:** ${total}` : `**You rolled:** ${rolls[0]}`}`)
     .setTimestamp();
 
-  await interaction.reply({ embeds: [embed] });
+  // Add action buttons
+  const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+  const row = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId(`reload_roll_${interaction.user.id}`)
+        .setLabel('🔄 Reload')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`copy_roll_${interaction.user.id}`)
+        .setLabel('📋 Copy')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+  await interaction.editReply({ embeds: [embed], components: [row] });
+}
+
+function getRollReaction(rolls, count) {
+  const total = rolls.reduce((a, b) => a + b, 0);
+  const maxPossible = count * 6;
+
+  if (total === maxPossible) return ' 🎉✨ MAX!'; // all sixes
+  if (total === count) return ' 💀 OOF...'; // all ones
+  if (total >= maxPossible * 0.8) return ' 🔥 HOT!'; // 80%+ of max
+  if (total <= maxPossible * 0.3) return ' 😅 Yikes...'; // 30% or less
+  if (count === 1 && rolls[0] === 6) return ' 💫 PERFECT!';
+  if (count === 1 && rolls[0] === 1) return ' 😬 Oof!';
+  return '';
 }
 
 // Get avatar

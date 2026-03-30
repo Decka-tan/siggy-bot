@@ -25,7 +25,8 @@ interface Message {
   disliked?: boolean;
   contributor?: ContributorElement;
   chartData?: ChartData;
-  diceValues?: number[];
+  diceData?: { rolls: number[]; total: number };
+  gifData?: { url: string; type: string; target: string };
 }
 
 interface ContributorElement {
@@ -326,68 +327,152 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
   );
 };
 
-// Dice Roll Component - Monopoly-style CSS dice
-const DiceRoll = ({ values }: { values: number[] }) => {
-  // Render dice dots (Monopoly style)
-  const renderDots = (value: number) => {
-    const dots = [];
-    // Position for each dot on a 3x3 grid (using percentages)
-    const positions: Record<number, number[]> = {
-      1: [50], // center
-      2: [25, 75], // top-left, bottom-right
-      3: [25, 50, 75], // top-left, center, bottom-right
-      4: [17, 83, 17, 83], // corners
-      5: [17, 83, 17, 50, 83], // corners + center
-      6: [17, 83, 17, 50, 50, 83], // 2 columns of 3
+// Canvas Dice Component - Like SimpleChart
+const SimpleDice = ({ data }: { data: { rolls: number[]; total: number } }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !data.rolls || data.rolls.length === 0) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size (handle high DPI)
+    const dpr = window.devicePixelRatio || 1;
+    const diceCount = data.rolls.length;
+    const diceSize = 80;
+    const gap = 20;
+    const padding = 30;
+    const width = Math.max(300, diceCount * (diceSize + gap) + padding * 2);
+    const height = diceSize + padding * 2;
+
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+
+    // Background (dark like chart)
+    const colors = {
+      bg: '#131722',
+      dice: '#f5f5f5',
+      dot: '#1a1a1a',
+      shadow: 'rgba(0, 0, 0, 0.3)',
     };
 
-    // For values 1-5, we need specific positions
-    const dotPositions: Record<number, { top: string; left: string }[]> = {
-      1: [{ top: '50%', left: '50%' }],
-      2: [{ top: '25%', left: '25%' }, { top: '75%', left: '75%' }],
-      3: [{ top: '25%', left: '25%' }, { top: '50%', left: '50%' }, { top: '75%', left: '75%' }],
-      4: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
-      5: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '50%', left: '50%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
-      6: [{ top: '20%', left: '25%' }, { top: '20%', left: '75%' }, { top: '50%', left: '25%' }, { top: '50%', left: '75%' }, { top: '80%', left: '25%' }, { top: '80%', left: '75%' }],
-    };
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, width, height);
 
-    const pos = dotPositions[Math.min(value, 6)] || [];
+    // Draw each die
+    data.rolls.forEach((roll, index) => {
+      const x = padding + index * (diceSize + gap);
+      const y = padding;
 
-    return pos.map((p, i) => (
-      <div
-        key={i}
-        className="absolute w-2.5 h-2.5 md:w-3 md:h-3 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2"
-        style={{ top: p.top, left: p.left }}
-      />
-    ));
+      // Dice shadow
+      ctx.fillStyle = colors.shadow;
+      ctx.beginPath();
+      ctx.roundRect(x + 4, y + 4, diceSize, diceSize, 12);
+      ctx.fill();
+
+      // Dice body (white with rounded corners)
+      const gradient = ctx.createLinearGradient(x, y, x + diceSize, y + diceSize);
+      gradient.addColorStop(0, '#ffffff');
+      gradient.addColorStop(1, '#e8e8e8');
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(x, y, diceSize, diceSize, 12);
+      ctx.fill();
+
+      // Dice border
+      ctx.strokeStyle = '#d0d0d0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw dots (pips)
+      const dotSize = 10;
+      const centerX = x + diceSize / 2;
+      const centerY = y + diceSize / 2;
+      const offset = diceSize / 4;
+
+      ctx.fillStyle = colors.dot;
+
+      // Dot positions for each value (1-6)
+      const drawDot = (dx: number, dy: number) => {
+        ctx.beginPath();
+        ctx.arc(centerX + dx, centerY + dy, dotSize / 2, 0, Math.PI * 2);
+        ctx.fill();
+      };
+
+      const value = Math.min(Math.max(roll, 1), 6);
+
+      if (value === 1 || value === 3 || value === 5) {
+        drawDot(0, 0); // center
+      }
+      if (value !== 1) {
+        drawDot(-offset, -offset); // top-left
+        drawDot(offset, offset); // bottom-right
+      }
+      if (value >= 4) {
+        drawDot(offset, -offset); // top-right
+        drawDot(-offset, offset); // bottom-left
+      }
+      if (value === 6) {
+        drawDot(-offset, 0); // middle-left
+        drawDot(offset, 0); // middle-right
+      }
+
+      // Value number below dice
+      ctx.fillStyle = '#b2b5be';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(roll.toString(), centerX, y + diceSize + 22);
+    });
+
+    // Total if multiple dice
+    if (diceCount > 1) {
+      ctx.fillStyle = '#26a69a';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Total: ${data.total}`, width - padding, height - 8);
+    }
+  }, [data]);
+
+  return (
+    <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+      <canvas ref={canvasRef} className="w-full" style={{ height: '140px' }} />
+    </div>
+  );
+};
+
+// GIF Display Component - Anime GIFs for hug/slap/pat/highfive
+const GifDisplay = ({ data }: { data: { url: string; type: string; target: string } }) => {
+  const typeEmojis: Record<string, string> = {
+    hug: '🤗',
+    slap: '👋',
+    pat: '👋',
+    highfive: '✋',
+  };
+
+  const typeColors: Record<string, string> = {
+    hug: 'border-pink-500/30 bg-pink-500/10',
+    slap: 'border-red-500/30 bg-red-500/10',
+    pat: 'border-cyan-500/30 bg-cyan-500/10',
+    highfive: 'border-yellow-500/30 bg-yellow-500/10',
   };
 
   return (
-    <div className="my-4 flex flex-wrap gap-4 justify-center items-center p-4 bg-black/20 rounded-xl">
-      {values.map((value, index) => (
-        <motion.div
-          key={index}
-          initial={{ scale: 0, rotate: -180, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{
-            type: "spring",
-            stiffness: 200,
-            damping: 15,
-            delay: index * 0.15
-          }}
-          className="relative"
-        >
-          {/* Dice container - Monopoly style white dice with rounded corners */}
-          <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-lg shadow-lg border-2 border-gray-300 relative flex items-center justify-center">
-            {/* Dice dots */}
-            {renderDots(value)}
-          </div>
-          {/* Value label below */}
-          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-bold text-accent bg-black/70 px-2 py-0.5 rounded-full">
-            {value}
-          </div>
-        </motion.div>
-      ))}
+    <div className={`my-4 rounded-xl overflow-hidden border ${typeColors[data.type] || 'border-white/10 bg-black/30'}`}>
+      <div className="relative">
+        <img
+          src={data.url}
+          alt={`${data.type} gif`}
+          className="w-full max-h-80 object-contain bg-black/50"
+        />
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+          <p className="text-white text-sm font-medium">
+            {typeEmojis[data.type] || '🎬'} {data.type.charAt(0).toUpperCase() + data.type.slice(1)} {data.target}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
@@ -1285,7 +1370,8 @@ export default function ChatPage() {
         content: processedResponse,
         mood: data.currentMood,
         chartData: data.chartData,
-        diceValues: data.diceValues,
+        diceData: data.diceData,
+        gifData: data.gifData,
       };
 
       setConversations(prev => prev.map(conv => {
@@ -2148,22 +2234,38 @@ export default function ChatPage() {
                                     }}
                                   />
                                 ) : (
-                                  <TypewriterText
-                                    text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content}
-                                    isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1}
-                                    className="text-sm md:text-base lg:text-base leading-snug font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
-                                    alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)} 
-                                    onAnimationComplete={() => {
-                                      if (vnHistoryIndex === -1) {
-                                        animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`);
-                                      }
-                                    }} 
-                                    speed={useSettings().textSpeed}
-                                    playTyping={playTyping}
-                                    playVoiceLine={playVoiceLine}
-                                    personality={personality as 'CAT' | 'ANIME'}
-                                    contributorMap={contributorMap}
-                                  />
+                                  <>
+                                    <TypewriterText
+                                      text={vnHistoryIndex === -1 ? activeConversation?.messages[activeConversation.messages.length - 1].content : activeConversation?.messages[vnHistoryIndex].content}
+                                      isLatest={vnHistoryIndex === -1 || vnHistoryIndex === activeConversation.messages.length - 1}
+                                      className="text-sm md:text-base lg:text-base leading-snug font-mono text-text-primary drop-shadow-[0_2px_8px_rgba(255,215,0,0.3)]"
+                                      alreadyAnimated={vnHistoryIndex !== -1 || animatedMessages.current.has(`${activeConversationId}-${activeConversation.messages.length - 1}`)}
+                                      onAnimationComplete={() => {
+                                        if (vnHistoryIndex === -1) {
+                                          animatedMessages.current.add(`${activeConversationId}-${activeConversation.messages.length - 1}`);
+                                        }
+                                      }}
+                                      speed={useSettings().textSpeed}
+                                      playTyping={playTyping}
+                                      playVoiceLine={playVoiceLine}
+                                      personality={personality as 'CAT' | 'ANIME'}
+                                      contributorMap={contributorMap}
+                                    />
+                                    {/* VN Mode: Dice & GIF display */}
+                                    {vnHistoryIndex === -1 ? (
+                                      <>
+                                        {activeConversation.messages[activeConversation.messages.length - 1].diceData && <SimpleDice data={activeConversation.messages[activeConversation.messages.length - 1].diceData} />}
+                                        {activeConversation.messages[activeConversation.messages.length - 1].gifData && <GifDisplay data={activeConversation.messages[activeConversation.messages.length - 1].gifData} />}
+                                        {activeConversation.messages[activeConversation.messages.length - 1].chartData && <SimpleChart data={activeConversation.messages[activeConversation.messages.length - 1].chartData} />}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {activeConversation.messages[vnHistoryIndex].diceData && <SimpleDice data={activeConversation.messages[vnHistoryIndex].diceData} />}
+                                        {activeConversation.messages[vnHistoryIndex].gifData && <GifDisplay data={activeConversation.messages[vnHistoryIndex].gifData} />}
+                                        {activeConversation.messages[vnHistoryIndex].chartData && <SimpleChart data={activeConversation.messages[vnHistoryIndex].chartData} />}
+                                      </>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             )}
@@ -2625,7 +2727,10 @@ export default function ChatPage() {
                             {message.chartData && <SimpleChart data={message.chartData} />}
 
                             {/* Dice roll visualization */}
-                            {message.diceValues && <DiceRoll values={message.diceValues} />}
+                            {message.diceData && <SimpleDice data={message.diceData} />}
+
+                            {/* GIF display for hug/slap/pat/highfive */}
+                            {message.gifData && <GifDisplay data={message.gifData} />}
 
                             {message.role === 'assistant' && (
                               <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
