@@ -557,6 +557,7 @@ export default function ChatPage() {
   const [showStats, setShowStats] = useState(true);
   const [vnHistoryIndex, setVnHistoryIndex] = useState<number>(-1); // -1 means latest
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   
   // Contributor Search States
   const [contributorResults, setContributorResults] = useState<ContributorSearchResult[]>([]);
