@@ -481,7 +481,7 @@ async function handleCheck(interaction) {
       .setDescription(analysisText);
 
     if (avatarUrl) {
-      embed.setThumbnail({ url: avatarUrl });
+      embed.setThumbnail(avatarUrl);
     }
 
     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
@@ -508,14 +508,17 @@ async function handleCheck(interaction) {
     // Cache the result with avatar
     setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar }));
 
+    // Truncate analysis to Discord's 4096 char embed limit
+    const analysisText = (data.analysis || 'No data available').substring(0, 4096);
+
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(data.analysis || 'No data available');
+      .setDescription(analysisText);
 
     // Add user avatar as thumbnail if available
     if (data.user?.avatar) {
-      embed.setThumbnail({ url: data.user.avatar });
+      embed.setThumbnail(data.user.avatar);
     }
 
     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
