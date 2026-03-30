@@ -1097,6 +1097,10 @@ client.on('interactionCreate', async (interaction) => {
     // Handle reload for different commands
     if (name === 'roll') {
       const { handleRoll } = require('./commands/utility.cjs');
+
+      // Defer the original interaction first
+      await interaction.deferReply();
+
       const mockInteraction = {
         ...interaction,
         user: interaction.user,
@@ -1107,11 +1111,7 @@ client.on('interactionCreate', async (interaction) => {
         },
         deferReply: async () => {},
         editReply: async (msg) => {
-          if (msg.embeds && msg.components) {
-            await interaction.update(msg);
-          } else {
-            await interaction.update({ embeds: msg.embeds || [], components: msg.components || [] });
-          }
+          await interaction.editReply(msg);
         },
       };
       await handleRoll(mockInteraction, { saveCommand: false });
@@ -1125,7 +1125,7 @@ client.on('interactionCreate', async (interaction) => {
           getUser: (key) => options.user || interaction.user,
         },
         reply: async (msg) => {
-          await interaction.update(msg);
+          await interaction.reply(msg);
         },
       };
       await handlers[name](mockInteraction);

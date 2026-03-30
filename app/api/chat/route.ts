@@ -293,10 +293,12 @@ export async function POST(req: NextRequest) {
         }
 
         const { tradingViewUrl } = getChartEmbed(coin);
+        const change = priceData.change24h.usd;
+        const changeText = change > 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
 
         // Return with chartData for Canvas rendering
         return NextResponse.json({
-          response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\n**${formatPrice(priceData.price.usd)}**  •  24h: **${priceData.change24h.usd > 0 ? '+' : ''}${priceData.change24h.usd.toFixed(2)}%**\n\n*View interactive chart on [TradingView](${tradingViewUrl})*`,
+          response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\nPrice: ${formatPrice(priceData.price.usd)} • 24h: ${changeText}\n\nView interactive chart on [TradingView](${tradingViewUrl})`,
           isRawCommand: true,
           chartData: ohlcData ? {
             coin: priceData.coin.name,
