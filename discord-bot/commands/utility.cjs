@@ -30,20 +30,28 @@ async function handleFlip(interaction) {
 
 // Dice roll - d6 only, 1-6 dice with rolling animation
 async function handleRoll(interaction, { saveCommand = true } = {}) {
+  console.log('[Roll] Starting roll command...');
   try {
     const count = interaction.options.getInteger('count') || 1;
+    console.log('[Roll] Count:', count);
 
     if (count < 1 || count > 6) {
       return interaction.reply({ content: '❌ Count must be between 1 and 6', ephemeral: true });
     }
 
-    // Save command for reload
+    // Save command for reload (wrap in try-catch)
     if (saveCommand) {
-      const { setLastCommand } = require('../vps-server.cjs');
-      setLastCommand(interaction.user.id, 'roll', { count });
+      try {
+        const { setLastCommand } = require('../vps-server.cjs');
+        setLastCommand(interaction.user.id, 'roll', { count });
+      } catch (e) {
+        console.error('[Roll] Failed to save command:', e);
+      }
     }
 
+    console.log('[Roll] Calling deferReply...');
     await interaction.deferReply();
+    console.log('[Roll] deferReply successful');
 
     const diceEmojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
     const rollEmojis = ['🎲', '🎲', '🎲', '🎲', '🎲', '🎲'];
@@ -103,15 +111,17 @@ async function handleRoll(interaction, { saveCommand = true } = {}) {
           .setStyle(ButtonStyle.Secondary)
       );
 
+    console.log('[Roll] Sending final result...');
     await interaction.editReply({ embeds: [embed], components: [row] });
+    console.log('[Roll] Complete');
   } catch (error) {
     console.error('[Roll] Error:', error);
     // Try to reply or editReply depending on state
     try {
-      if (interaction.deferred) {
-        await interaction.editReply({ content: '❌ Error rolling dice. Please try again.', components: [] });
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: `❌ Error: ${error.message}`, components: [] });
       } else {
-        await interaction.reply({ content: '❌ Error rolling dice. Please try again.', ephemeral: true });
+        await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true });
       }
     } catch (e) {
       console.error('[Roll] Failed to send error message:', e);
