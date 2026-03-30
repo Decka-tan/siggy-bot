@@ -697,12 +697,6 @@ export default function ChatPage() {
   const [commandQuery, setCommandQuery] = useState('');
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
 
-  // User Dropdown States (for /hug, /slap, /pat, etc.)
-  const [userResults, setUserResults] = useState<ContributorSearchResult[]>([]);
-  const [showUserDropdown, setShowUserDropdown] = useState(false);
-  const [selectedUserIndex, setSelectedUserIndex] = useState(0);
-  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
-
   // @ Mention Dropdown States (for typing @ anywhere in chat)
   const [mentionResults, setMentionResults] = useState<ContributorSearchResult[]>([]);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
@@ -1021,88 +1015,48 @@ export default function ChatPage() {
     return () => clearTimeout(timer);
   }, [input, analyzingContributor]);
 
-  // User Dropdown Effect (for /hug, /slap, /pat, /highfive, /howgay, /simp, /rate commands)
-  useEffect(() => {
-    // Commands that need user autocomplete
-    const userCommands = ['hug', 'slap', 'pat', 'highfive', 'howgay', 'simp', 'rate'];
-
-    // Check if input matches any of these commands
-    const matchedCommand = userCommands.find(cmd => {
-      const lowerInput = input.toLowerCase();
-      return lowerInput === `/${cmd}` || lowerInput.startsWith(`/${cmd} `) || lowerInput.startsWith(`/${cmd}@`);
-    });
-
-    if (!matchedCommand) {
-      setUserResults([]);
-      setShowUserDropdown(false);
-      return;
-    }
-
-    // Extract query: "/command [query]" or "/command@[query]"
-    const cmdLength = matchedCommand.length + 1; // "/" + command
-    let query = input.slice(cmdLength).trim();
-
-    // Remove @ if present
-    if (query.startsWith('@')) {
-      query = query.slice(1);
-    }
-
-    // Immediate trigger as long as we have the command (with or without space)
-    if (input.toLowerCase() === `/${matchedCommand}` || input.toLowerCase() === `/${matchedCommand} ` || input.toLowerCase() === `/${matchedCommand}@`) {
-      setIsSearchingUsers(true);
-      fetch(`/api/contributor?action=autocomplete&username=`).then(res => res.json()).then(data => {
-        if (data.success) {
-          setUserResults(data.contributors.slice(0, 8));
-          setShowUserDropdown(true);
-        }
-      }).finally(() => setIsSearchingUsers(false));
-      return;
-    }
-
-    // Debounced search for user input
-    const timer = setTimeout(async () => {
-      setIsSearchingUsers(true);
-      try {
-        const res = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
-        const data = await res.json();
-        if (data.success) {
-          setUserResults(data.contributors.slice(0, 8));
-          setShowUserDropdown(data.contributors.length > 0);
-        }
-      } catch (error) {
-        console.error('User search error:', error);
-      } finally {
-        setIsSearchingUsers(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [input]);
-
-  // @ Mention Detection Effect (for typing @ anywhere in input)
+  // Mention Detection Effect (triggers for @ mentions OR user commands like /hug)
   useEffect(() => {
     let isActive = true;
 
-    // Don't trigger if /check or other command dropdowns are active
-    if (showContributorDropdown || showUserDropdown || showCommandDropdown) {
+    // Don't trigger if /check is active since it has its own special execution flow
+    if (showContributorDropdown) {
       setMentionResults([]);
       setShowMentionDropdown(false);
       return;
     }
 
+    const userCommands = ['hug', 'slap', 'pat', 'highfive', 'howgay', 'simp', 'rate'];
+    const lowerInput = input.toLowerCase();
+    let isCommandTrigger = false;
+    let query = '';
+
+    for (const cmd of userCommands) {
+      if (lowerInput === `/${cmd}` || lowerInput.startsWith(`/${cmd} `)) {
+        isCommandTrigger = true;
+        const remaining = input.slice(`/${cmd}`.length).trim();
+        query = remaining.startsWith('@') ? remaining.slice(1) : remaining;
+        break;
+      }
+    }
+
     // Find the last @ in the input that isn't already completed
     const atMatch = input.match(/@([\w.]*)$/);
-    if (!atMatch || input.trim() === '') {
+    
+    if (!isCommandTrigger && (!atMatch || input.trim() === '')) {
       setMentionResults([]);
       setShowMentionDropdown(false);
       setMentionQuery('');
       return;
     }
 
-    const query = atMatch[1];
+    if (!isCommandTrigger && atMatch) {
+      query = atMatch[1];
+    }
+
     setMentionQuery(query);
 
-    // Immediate trigger when just @ is typed
+    // Immediate trigger when just @ is typed or command has no query
     if (query === '') {
       setIsSearchingMentions(true);
       fetch(`/api/contributor?action=autocomplete&username=`).then(res => res.json()).then(data => {
@@ -1141,26 +1095,26 @@ export default function ChatPage() {
       isActive = false;
       clearTimeout(timer);
     };
-  }, [input, showContributorDropdown, showUserDropdown, showCommandDropdown]);
+  }, [input, showContributorDropdown]);
 
-  // Select mention from @ dropdown
+  // Select mention from dropdown
   const selectMention = (user: ContributorSearchResult) => {
-    // Replace the @query at the end of input with @username + space
-    const newInput = input.replace(/@[\w.]*$/, `@${user.username} `);
+    const userCommands = ['hug', 'slap', 'pat', 'highfive', 'howgay', 'simp', 'rate'];
+    const lowerInput = input.toLowerCase();
+    const matchedCmd = userCommands.find(cmd => lowerInput === `/${cmd}` || lowerInput.startsWith(`/${cmd} `));
+
+    let newInput;
+    if (matchedCmd) {
+      newInput = `/${matchedCmd} @${user.username}`;
+    } else {
+      newInput = input.replace(/@[\w.]*$/, `@${user.username} `);
+    }
+    
     setInput(newInput);
     setShowMentionDropdown(false);
     setMentionResults([]);
     setSelectedMentionIndex(0);
     setMentionQuery('');
-    inputRef.current?.focus();
-  };
-
-  // Select user from dropdown
-  const selectUser = (user: ContributorSearchResult, command: string) => {
-    setInput(`/${command} @${user.username}`);
-    setShowUserDropdown(false);
-    setUserResults([]);
-    setSelectedUserIndex(0);
     inputRef.current?.focus();
   };
 
@@ -1407,8 +1361,6 @@ export default function ChatPage() {
     setContributorResults([]);
     setShowMentionDropdown(false);
     setMentionResults([]);
-    setShowUserDropdown(false);
-    setUserResults([]);
 
     // Intercept manual /check commands
     if (textToSend.toLowerCase().startsWith('/check') && !analyzingContributor) {
@@ -1581,32 +1533,6 @@ export default function ChatPage() {
       }
       if (e.key === 'Escape') {
         setShowContributorDropdown(false);
-        return;
-      }
-    }
-
-    // User dropdown navigation (for /hug, /slap, /pat, etc.)
-    if (showUserDropdown && userResults.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedUserIndex(prev => (prev + 1) % userResults.length);
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedUserIndex(prev => (prev - 1 + userResults.length) % userResults.length);
-        return;
-      }
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        // Extract command from input
-        const parts = input.split(' ');
-        const command = parts[0].slice(1); // Remove the /
-        selectUser(userResults[selectedUserIndex], command);
-        return;
-      }
-      if (e.key === 'Escape') {
-        setShowUserDropdown(false);
         return;
       }
     }
@@ -2716,80 +2642,6 @@ export default function ChatPage() {
                                             </div>
                                           </div>
                                           {idx === selectedMentionIndex && (
-                                            <div className="shrink-0 flex items-center self-center pr-1">
-                                              <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
-                                            </div>
-                                          )}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-
-                              {/* User Dropdown (for /hug, /slap, /pat, /highfive, /howgay, /simp, /rate) */}
-                              <AnimatePresence>
-                                {showUserDropdown && userResults.length > 0 && (
-                                  <motion.div
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
-                                    className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
-                                  >
-                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
-                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
-                                        <User className="w-3.5 h-3.5" />
-                                        Select User
-                                      </span>
-                                      {isSearchingUsers && (
-                                        <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin" />
-                                      )}
-                                    </div>
-                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
-                                      {userResults.map((user, idx) => (
-                                        <button
-                                          key={user.userId}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const parts = input.split(' ');
-                                            const command = parts[0].slice(1); // Remove the /
-                                            selectUser(user, command);
-                                          }}
-                                          onMouseEnter={() => setSelectedUserIndex(idx)}
-                                          className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedUserIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
-                                        >
-                                          <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedUserIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
-                                            <img
-                                              src={user.avatar}
-                                              alt={user.username}
-                                              onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.userId) % 5}.png`;
-                                              }}
-                                              className="w-full h-full object-cover"
-                                            />
-                                          </div>
-                                          <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
-                                              <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedUserIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
-                                                {user.displayName}
-                                              </span>
-                                              {idx === selectedUserIndex && (
-                                                <motion.span layoutId="vn-active-user-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
-                                                  Select
-                                                </motion.span>
-                                              )}
-                                            </div>
-                                            <div className={`text-xs font-mono transition-colors ${idx === selectedUserIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
-                                              @{user.username}
-                                            </div>
-                                            <div className="mt-1.5 flex items-center gap-3">
-                                              <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
-                                                {user.messageCount.toLocaleString()} messages
-                                              </div>
-                                            </div>
-                                          </div>
-                                          {idx === selectedUserIndex && (
                                             <div className="shrink-0 flex items-center self-center pr-1">
                                               <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
                                             </div>
