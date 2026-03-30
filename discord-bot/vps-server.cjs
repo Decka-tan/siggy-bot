@@ -184,7 +184,7 @@ const utilityCommands = [
     name: 'choose',
     description: 'Randomly choose from options',
     options: [
-      { name: 'options', description: 'Options separated by | (e.g., pizza | burger | sushi)', type: 3, required: true },
+      { name: 'options', description: 'Options separated by comma (e.g., pizza, burger, sushi)', type: 3, required: true },
     ],
   },
   // Fun & Social commands

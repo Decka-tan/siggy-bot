@@ -326,46 +326,66 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
   );
 };
 
-// Dice Roll Component - Visual dice rendering
+// Dice Roll Component - Monopoly-style CSS dice
 const DiceRoll = ({ values }: { values: number[] }) => {
-  const diceEmojis: Record<number, string> = {
-    1: '⚀',
-    2: '⚁',
-    3: '⚂',
-    4: '⚃',
-    5: '⚄',
-    6: '⚅',
-  };
+  // Render dice dots (Monopoly style)
+  const renderDots = (value: number) => {
+    const dots = [];
+    // Position for each dot on a 3x3 grid (using percentages)
+    const positions: Record<number, number[]> = {
+      1: [50], // center
+      2: [25, 75], // top-left, bottom-right
+      3: [25, 50, 75], // top-left, center, bottom-right
+      4: [17, 83, 17, 83], // corners
+      5: [17, 83, 17, 50, 83], // corners + center
+      6: [17, 83, 17, 50, 50, 83], // 2 columns of 3
+    };
 
-  const getDiceEmoji = (value: number) => {
-    if (value >= 1 && value <= 6) return diceEmojis[value];
-    // For dice with more than 6 sides, show the number
-    return `🎲 ${value}`;
+    // For values 1-5, we need specific positions
+    const dotPositions: Record<number, { top: string; left: string }[]> = {
+      1: [{ top: '50%', left: '50%' }],
+      2: [{ top: '25%', left: '25%' }, { top: '75%', left: '75%' }],
+      3: [{ top: '25%', left: '25%' }, { top: '50%', left: '50%' }, { top: '75%', left: '75%' }],
+      4: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
+      5: [{ top: '25%', left: '25%' }, { top: '25%', left: '75%' }, { top: '50%', left: '50%' }, { top: '75%', left: '25%' }, { top: '75%', left: '75%' }],
+      6: [{ top: '20%', left: '25%' }, { top: '20%', left: '75%' }, { top: '50%', left: '25%' }, { top: '50%', left: '75%' }, { top: '80%', left: '25%' }, { top: '80%', left: '75%' }],
+    };
+
+    const pos = dotPositions[Math.min(value, 6)] || [];
+
+    return pos.map((p, i) => (
+      <div
+        key={i}
+        className="absolute w-2.5 h-2.5 md:w-3 md:h-3 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2"
+        style={{ top: p.top, left: p.left }}
+      />
+    ));
   };
 
   return (
-    <div className="my-4 flex flex-wrap gap-3 justify-center items-center">
+    <div className="my-4 flex flex-wrap gap-4 justify-center items-center p-4 bg-black/20 rounded-xl">
       {values.map((value, index) => (
         <motion.div
           key={index}
-          initial={{ scale: 0, rotate: -180 }}
-          animate={{ scale: 1, rotate: 0 }}
+          initial={{ scale: 0, rotate: -180, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
           transition={{
             type: "spring",
-            stiffness: 260,
-            damping: 20,
-            delay: index * 0.1
+            stiffness: 200,
+            damping: 15,
+            delay: index * 0.15
           }}
           className="relative"
         >
-          <div className="text-5xl md:text-6xl filter drop-shadow-lg">
-            {getDiceEmoji(value)}
+          {/* Dice container - Monopoly style white dice with rounded corners */}
+          <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-lg shadow-lg border-2 border-gray-300 relative flex items-center justify-center">
+            {/* Dice dots */}
+            {renderDots(value)}
           </div>
-          {value <= 6 && (
-            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-bold text-accent bg-black/50 px-2 py-0.5 rounded-full">
-              {value}
-            </div>
-          )}
+          {/* Value label below */}
+          <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-bold text-accent bg-black/70 px-2 py-0.5 rounded-full">
+            {value}
+          </div>
         </motion.div>
       ))}
     </div>
@@ -595,14 +615,14 @@ export default function ChatPage() {
     { name: 'highfive', description: 'High-five someone', usage: '/highfive @user' },
     { name: 'fact', description: 'Get a random fun fact', usage: '/fact' },
     { name: 'quote', description: 'Get an inspirational quote', usage: '/quote' },
-    { name: 'shuffle', description: 'Randomize options', usage: '/shuffle option1 | option2 | ...' },
+    { name: 'shuffle', description: 'Randomize options', usage: '/shuffle option1, option2, ...' },
     { name: 'rate', description: 'Rate someone/something', usage: '/rate <target>' },
     { name: 'howgay', description: 'How gay is someone?', usage: '/howgay @user' },
     { name: 'simp', description: 'Check if someone is a simp', usage: '/simp @user' },
     // Utility
     { name: 'flip', description: 'Flip a coin (heads/tails)', usage: '/flip [amount] [choice]' },
     { name: 'roll', description: 'Roll dice', usage: '/roll [sides] [count]' },
-    { name: 'choose', description: 'Random choice from options', usage: '/choose option1 | option2 | ...' },
+    { name: 'choose', description: 'Random choice from options', usage: '/choose option1, option2, ...' },
     { name: 'avatar', description: 'Get user avatar', usage: '/avatar [@user]' },
     // Leaderboard
     { name: 'leaderboard', description: 'Manage leaderboards', usage: '/leaderboard <action> [options]' },
@@ -808,14 +828,24 @@ export default function ChatPage() {
       'rate', 'howgay', 'simp', 'shuffle', 'choose', 'leaderboard', 'roll', 'flip', 'avatar'
     ];
 
+    // User autocomplete commands (show dropdown like /check)
+    const userAutocompleteCommands = ['check', 'hug', 'slap', 'pat', 'highfive', 'howgay', 'simp', 'rate'];
+
     // Check if input starts with /
     if (input.startsWith('/')) {
       // Extract command after /
       const parts = input.slice(1).split(' ');
       const cmd = parts[0].toLowerCase();
 
-      // Don't show command dropdown if we're already in a specific command flow
-      if (commandsWithParams.includes(cmd)) {
+      // For user autocomplete commands, hide command dropdown when there's a space after command
+      if (userAutocompleteCommands.includes(cmd) && input.toLowerCase().includes(`/${cmd} `)) {
+        setShowCommandDropdown(false);
+        setCommandQuery('');
+        return;
+      }
+
+      // For other commands with params, hide dropdown immediately
+      if (commandsWithParams.includes(cmd) && !userAutocompleteCommands.includes(cmd)) {
         setShowCommandDropdown(false);
         return;
       }
@@ -824,13 +854,6 @@ export default function ChatPage() {
       setCommandQuery(cmd);
       setShowCommandDropdown(true);
     } else {
-      setShowCommandDropdown(false);
-      setCommandQuery('');
-    }
-
-    // Hide command dropdown when continuing to type command with space
-    const shouldHideDropdown = commandsWithParams.some(cmd => input.toLowerCase().startsWith(`/${cmd} `));
-    if (shouldHideDropdown) {
       setShowCommandDropdown(false);
       setCommandQuery('');
     }
@@ -894,7 +917,10 @@ export default function ChatPage() {
     const userCommands = ['hug', 'slap', 'pat', 'highfive', 'howgay', 'simp', 'rate'];
 
     // Check if input matches any of these commands
-    const matchedCommand = userCommands.find(cmd => input.toLowerCase().startsWith(`/${cmd}`));
+    const matchedCommand = userCommands.find(cmd => {
+      const lowerInput = input.toLowerCase();
+      return lowerInput === `/${cmd}` || lowerInput.startsWith(`/${cmd} `) || lowerInput.startsWith(`/${cmd}@`);
+    });
 
     if (!matchedCommand) {
       setUserResults([]);
@@ -902,12 +928,17 @@ export default function ChatPage() {
       return;
     }
 
-    // Extract query: "/command [query]"
-    const cmdLength = matchedCommand.length + 2; // "/" + command + " "
-    const query = input.slice(cmdLength).trim();
+    // Extract query: "/command [query]" or "/command@[query]"
+    const cmdLength = matchedCommand.length + 1; // "/" + command
+    let query = input.slice(cmdLength).trim();
 
-    // Immediate trigger as long as we have the command
-    if (input.toLowerCase() === `/${matchedCommand}` || input.toLowerCase() === `/${matchedCommand} `) {
+    // Remove @ if present
+    if (query.startsWith('@')) {
+      query = query.slice(1);
+    }
+
+    // Immediate trigger as long as we have the command (with or without space)
+    if (input.toLowerCase() === `/${matchedCommand}` || input.toLowerCase() === `/${matchedCommand} ` || input.toLowerCase() === `/${matchedCommand}@`) {
       setIsSearchingUsers(true);
       fetch(`/api/contributor?action=autocomplete&username=`).then(res => res.json()).then(data => {
         if (data.success) {

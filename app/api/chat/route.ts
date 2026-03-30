@@ -291,7 +291,7 @@ export async function POST(req: NextRequest) {
     }
 
     // /roll command - dice roll
-    if (lowerMsg.startsWith('/roll ')) {
+    if (lowerMsg === '/roll' || lowerMsg.startsWith('/roll ')) {
       const args = lowerMsg.slice(6).trim().split(/\s+/);
       const sides = parseInt(args[0]) || 6;
       const count = parseInt(args[1]) || 1;
@@ -319,69 +319,23 @@ export async function POST(req: NextRequest) {
     // /choose command
     if (lowerMsg.startsWith('/choose ')) {
       const options = lowerMsg.slice(8).trim();
-      if (!options || !options.includes('|')) {
+      if (!options || !options.includes(',')) {
         return NextResponse.json({
-          response: '❌ Use format: /choose option1 | option2 | option3',
+          response: '❌ Use format: /choose option1, option2, option3',
           isRawCommand: true,
         });
       }
 
-      const choices = options.split('|').map(s => s.trim()).filter(s => s);
+      const choices = options.split(',').map(s => s.trim()).filter(s => s);
       if (choices.length < 2) {
-        return NextResponse.json({ response: '❌ You need at least 2 options!', isRawCommand: true });
+        return NextResponse.json({ response: '❌ You need at least 2 options!' });
       }
 
       const winner = choices[Math.floor(Math.random() * choices.length)];
       return NextResponse.json({
-        response: `🎯 **Random Choice**\n\n**Options:**\n${choices.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n**🎲 Winner:** ${winner}`,
+        response: `🎯 [b]Random Choice[/b]\n\n[b]Options:[/b]\n${choices.map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\n[b]🎲 Winner:[/b] ${winner}`,
         isRawCommand: true,
       });
-    }
-
-    // === FUN COMMANDS ===
-    if (lowerMsg === '/gas') {
-      try {
-        const response = await fetch('https://api.etherscan.io/api?module=gastracker&action=gasoracle');
-        if (!response.ok) throw new Error('Failed to fetch gas data');
-
-        const data = await response.json();
-        if (data.status !== '1') throw new Error('Invalid gas data');
-
-        const result = data.result;
-        const gasPrices = {
-          slow: Math.round(parseFloat(result.SafeGasPrice)),
-          average: Math.round(parseFloat(result.ProposeGasPrice)),
-          fast: Math.round(parseFloat(result.FastGasPrice)),
-        };
-
-        // Get ETH price from CoinCap
-        const ethPriceResponse = await fetch('https://api.coincap.io/v2/assets/ethereum');
-        let ethPrice = 3000; // fallback
-        if (ethPriceResponse.ok) {
-          const ethData = await ethPriceResponse.json();
-          if (ethData.data) ethPrice = parseFloat(ethData.data.priceUsd);
-        }
-
-        const calcCost = (gwei: number) => {
-          const gasCostEth = (gwei * 21000) / 1e9;
-          return { usd: gasCostEth * ethPrice };
-        };
-
-        return NextResponse.json({
-          response: `⛽ **Ethereum Gas Fees**\n\n` +
-            `🐢 **Slow**: ${gasPrices.slow} Gwei ≈ $${calcCost(gasPrices.slow).usd.toFixed(2)}\n` +
-            `⚡ **Average**: ${gasPrices.average} Gwei ≈ $${calcCost(gasPrices.average).usd.toFixed(2)}\n` +
-            `🚀 **Fast**: ${gasPrices.fast} Gwei ≈ $${calcCost(gasPrices.fast).usd.toFixed(2)}\n\n` +
-            `💰 **ETH Price**: $${ethPrice.toLocaleString()}\n\n` +
-            `*Data: Etherscan • For standard ETH transfer (21k gas)*`,
-          isRawCommand: true,
-        });
-      } catch (error) {
-        return NextResponse.json({
-          response: `❌ Error: ${error instanceof Error ? error.message : 'Failed to fetch gas prices'}`,
-          isRawCommand: true,
-        });
-      }
     }
 
     // === FUN COMMANDS ===
@@ -456,15 +410,15 @@ export async function POST(req: NextRequest) {
     // /shuffle command
     if (lowerMsg.startsWith('/shuffle ')) {
       const itemsStr = lowerMsg.slice(9).trim();
-      if (!itemsStr || !itemsStr.includes('|')) {
+      if (!itemsStr || !itemsStr.includes(',')) {
         return NextResponse.json({
-          response: '❌ Use format: /shuffle option1 | option2 | option3\nExample: /shuffle pizza | burger | sushi',
+          response: '❌ Use format: /shuffle option1, option2, option3\nExample: /shuffle pizza, burger, sushi',
           isRawCommand: true,
         });
       }
-      const items = itemsStr.split('|').map(s => s.trim()).filter(s => s);
+      const items = itemsStr.split(',').map(s => s.trim()).filter(s => s);
       if (items.length < 2) {
-        return NextResponse.json({ response: '❌ Need at least 2 items!', isRawCommand: true });
+        return NextResponse.json({ response: '❌ Need at least 2 items!' });
       }
 
       // Fisher-Yates shuffle
@@ -551,7 +505,7 @@ export async function POST(req: NextRequest) {
 
       if (action === 'list') {
         return NextResponse.json({
-          response: `📋 **Available Leaderboards**\n\n` +
+          response: `📋 [b]Available Leaderboards[/b]\n\n` +
             `No leaderboards found on the website. Use Discord to create and manage leaderboards!\n\n` +
             `*On Discord, use /leaderboard create <name> to create one.*`,
           isRawCommand: true,
@@ -560,7 +514,7 @@ export async function POST(req: NextRequest) {
 
       if (action === 'create') {
         return NextResponse.json({
-          response: `❌ **Leaderboard Creation**\n\n` +
+          response: `❌ [b]Leaderboard Creation[/b]\n\n` +
             `Leaderboard management is only available on Discord. Use the Discord bot to:\n` +
             `• /leaderboard create <name> - Create a new leaderboard\n` +
             `• /leaderboard add <event> <user> <score> - Add participants\n` +
@@ -570,7 +524,7 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({
-        response: `🏆 **Leaderboard Commands**\n\n` +
+        response: `🏆 [b]Leaderboard Commands[/b]\n\n` +
           `Available actions:\n` +
           `• /leaderboard list - Show all leaderboards\n` +
           `• /leaderboard create - Create new (Discord only)\n` +

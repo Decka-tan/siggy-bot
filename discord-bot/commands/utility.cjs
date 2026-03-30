@@ -79,11 +79,11 @@ async function handleAvatar(interaction) {
 async function handleChoose(interaction) {
   const options = interaction.options.getString('options');
 
-  if (!options || !options.includes('|')) {
-    return interaction.reply({ content: '❌ Use format: /choose option1 | option2 | option3', ephemeral: true });
+  if (!options || !options.includes(',')) {
+    return interaction.reply({ content: '❌ Use format: /choose option1, option2, option3', ephemeral: true });
   }
 
-  const choices = options.split('|').map(s => s.trim()).filter(s => s);
+  const choices = options.split(',').map(s => s.trim()).filter(s => s);
   if (choices.length < 2) {
     return interaction.reply({ content: '❌ You need at least 2 options!', ephemeral: true });
   }
