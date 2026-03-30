@@ -1,13 +1,13 @@
 /**
  * LEADERBOARD DATABASE
- * Custom leaderboard system for tournaments, competitions, etc.
- * Uses JSON file for persistence
+ * Single active 1-hour session rolling leaderboard
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const DB_FILE = path.join(__dirname, '../data/leaderboards.json');
+const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 Hour
 
 // Initialize DB file if not exists
 function initDB() {
@@ -17,13 +17,10 @@ function initDB() {
   }
 
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ leaderboards: {} }, null, 2));
+    fs.writeFileSync(DB_FILE, JSON.stringify({ sessions: {} }, null, 2));
   }
 }
 
-/**
- * Read database
- */
 function readDB() {
   initDB();
   try {
@@ -31,13 +28,10 @@ function readDB() {
     return JSON.parse(data);
   } catch (error) {
     console.error('[Leaderboard DB] Read error:', error);
-    return { leaderboards: {} };
+    return { sessions: {} };
   }
 }
 
-/**
- * Write database
- */
 function writeDB(data) {
   initDB();
   try {
@@ -50,258 +44,152 @@ function writeDB(data) {
 }
 
 /**
- * Generate event ID from name
+ * Clean up expired sessions dynamically
  */
-function generateEventId(name) {
-  return name.toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-    .substring(0, 50);
+function cleanupExpiredSessions(db) {
+  let changed = false;
+  const now = Date.now();
+  for (const guildId in db.sessions) {
+    if (now > db.sessions[guildId].expiresAt) {
+      delete db.sessions[guildId];
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 /**
- * Create a new leaderboard
- * @param {string} name - Display name
- * @param {string} createdBy - User ID who created it
- * @returns {Object} Result with success, eventId, message
+ * Start a new active leaderboard session, unconditionally replacing the old one.
  */
-function createLeaderboard(name, createdBy) {
+function startSession(guildId, createdBy, userId, userName, score) {
   const db = readDB();
-  const eventId = generateEventId(name);
+  cleanupExpiredSessions(db);
 
-  if (db.leaderboards[eventId]) {
-    return {
-      success: false,
-      message: `Leaderboard "${name}" already exists! Use a different name.`,
-      eventId
-    };
-  }
-
-  db.leaderboards[eventId] = {
-    name: name,
-    created_by: createdBy,
-    created_at: new Date().toISOString(),
-    participants: {}
+  const now = Date.now();
+  
+  db.sessions[guildId] = {
+    createdBy: createdBy,
+    createdAt: now,
+    expiresAt: now + SESSION_DURATION_MS,
+    participants: {
+      [userId]: {
+        name: userName,
+        score: score,
+        updatedAt: now
+      }
+    }
   };
 
-  const saved = writeDB(db);
-
-  if (saved) {
-    return {
-      success: true,
-      message: `✅ Created leaderboard "**${name}**"!`,
-      eventId
-    };
-  }
+  writeDB(db);
 
   return {
-    success: false,
-    message: '❌ Failed to create leaderboard. Try again.'
+    success: true,
+    message: `✅ **${userName}** added with score **${score}**!`
   };
 }
 
 /**
- * Add or update a participant
- * @param {string} eventId - Event ID
- * @param {string} userId - Discord user ID
- * @param {string} userName - Display name
- * @param {number} score - Score
- * @returns {Object} Result
+ * Add or update score for a participant in the current active session
  */
-function addParticipant(eventId, userId, userName, score) {
+function addScore(guildId, userId, userName, addedScore) {
   const db = readDB();
+  
+  // Auto-cleanup
+  if (cleanupExpiredSessions(db)) {
+    writeDB(db);
+  }
 
-  if (!db.leaderboards[eventId]) {
+  if (!db.sessions[guildId]) {
     return {
       success: false,
-      message: `❌ Leaderboard not found. Use /leaderboard list to see available leaderboards.`
+      message: `❌ No active leaderboard session! Use \`/leaderboard start\` to begin one.`
     };
   }
 
-  const isNew = !db.leaderboards[eventId].participants[userId];
+  const session = db.sessions[guildId];
+  const participant = session.participants[userId];
 
-  db.leaderboards[eventId].participants[userId] = {
+  let newScore = addedScore;
+  if (participant) {
+    newScore = participant.score + addedScore;
+  }
+
+  session.participants[userId] = {
     name: userName,
-    score: score,
-    updated_at: new Date().toISOString()
+    score: newScore,
+    updatedAt: Date.now()
   };
 
-  const saved = writeDB(db);
+  // Reset the expiry timer to 1 HOUR from the latest activity
+  session.expiresAt = Date.now() + SESSION_DURATION_MS;
 
-  if (saved) {
-    const action = isNew ? 'added to' : 'updated in';
-    return {
-      success: true,
-      message: `✅ **${userName}** ${action} "**${db.leaderboards[eventId].name}**" with score **${score}**!`
-    };
-  }
+  writeDB(db);
 
   return {
-    success: false,
-    message: '❌ Failed to update participant.'
+    success: true,
+    message: `✅ **${userName}** score increased by ${addedScore} (Total: **${newScore}**)!`
   };
 }
 
 /**
- * Remove a participant
- * @param {string} eventId - Event ID
- * @param {string} userId - Discord user ID
- * @returns {Object} Result
+ * Manually end the active session
  */
-function removeParticipant(eventId, userId) {
+function endSession(guildId) {
   const db = readDB();
+  cleanupExpiredSessions(db);
 
-  if (!db.leaderboards[eventId]) {
+  if (!db.sessions[guildId]) {
     return {
       success: false,
-      message: `❌ Leaderboard not found.`
+      message: `❌ There is no active leaderboard session to end.`
     };
   }
 
-  if (!db.leaderboards[eventId].participants[userId]) {
-    return {
-      success: false,
-      message: `❌ User not found in this leaderboard.`
-    };
-  }
-
-  const userName = db.leaderboards[eventId].participants[userId].name;
-  delete db.leaderboards[eventId].participants[userId];
-
-  const saved = writeDB(db);
-
-  if (saved) {
-    return {
-      success: true,
-      message: `✅ **${userName}** removed from "**${db.leaderboards[eventId].name}**"!`
-    };
-  }
+  delete db.sessions[guildId];
+  writeDB(db);
 
   return {
-    success: false,
-    message: '❌ Failed to remove participant.'
+    success: true,
+    message: `✅ Leaderboard session has been closed.`
   };
 }
 
 /**
- * Get leaderboard sorted by score
- * @param {string} eventId - Event ID
- * @returns {Object|null} Leaderboard data or null
+ * Get the current active sorted leaderboard
  */
-function getLeaderboard(eventId) {
+function getActiveLeaderboard(guildId) {
   const db = readDB();
+  
+  // Clean up inline so we don't return an expired one
+  if (cleanupExpiredSessions(db)) {
+    writeDB(db);
+  }
 
-  if (!db.leaderboards[eventId]) {
+  if (!db.sessions[guildId]) {
     return null;
   }
 
-  const leaderboard = db.leaderboards[eventId];
-  const sortedParticipants = Object.entries(leaderboard.participants)
+  const session = db.sessions[guildId];
+  
+  const sortedParticipants = Object.entries(session.participants)
     .sort(([, a], [, b]) => b.score - a.score)
-    .map(([userId, data], index) => ({
+    .map(([uid, data], index) => ({
       rank: index + 1,
-      userId,
+      userId: uid,
       ...data
     }));
 
   return {
-    eventId,
-    name: leaderboard.name,
-    createdAt: leaderboard.created_at,
-    createdBy: leaderboard.created_by,
+    createdAt: session.createdAt,
+    expiresAt: session.expiresAt,
     participants: sortedParticipants,
     totalParticipants: sortedParticipants.length
   };
 }
 
-/**
- * List all leaderboards
- * @returns {Array} List of leaderboards
- */
-function listLeaderboards() {
-  const db = readDB();
-
-  return Object.entries(db.leaderboards).map(([eventId, data]) => ({
-    eventId,
-    name: data.name,
-    participantCount: Object.keys(data.participants).length,
-    createdAt: data.created_at
-  }));
-}
-
-/**
- * Delete a leaderboard
- * @param {string} eventId - Event ID
- * @param {string} requesterId - User ID requesting deletion
- * @returns {Object} Result
- */
-function deleteLeaderboard(eventId, requesterId) {
-  const db = readDB();
-
-  if (!db.leaderboards[eventId]) {
-    return {
-      success: false,
-      message: `❌ Leaderboard not found.`
-    };
-  }
-
-  // Check if user is the creator (you can add admin checks later)
-  if (db.leaderboards[eventId].created_by !== requesterId) {
-    return {
-      success: false,
-      message: `❌ Only the creator can delete this leaderboard.`
-    };
-  }
-
-  const name = db.leaderboards[eventId].name;
-  delete db.leaderboards[eventId];
-
-  const saved = writeDB(db);
-
-  if (saved) {
-    return {
-      success: true,
-      message: `✅ Deleted leaderboard "**${name}**"!`
-    };
-  }
-
-  return {
-    success: false,
-    message: '❌ Failed to delete leaderboard.'
-  };
-}
-
-/**
- * Search leaderboard by partial name
- * @param {string} query - Search query
- * @returns {string|null} Event ID or null
- */
-function findLeaderboard(query) {
-  const db = readDB();
-  const lowerQuery = query.toLowerCase();
-
-  // Exact match first
-  if (db.leaderboards[lowerQuery]) {
-    return lowerQuery;
-  }
-
-  // Partial name match
-  for (const [eventId, data] of Object.entries(db.leaderboards)) {
-    if (data.name.toLowerCase().includes(lowerQuery) || eventId.includes(lowerQuery)) {
-      return eventId;
-    }
-  }
-
-  return null;
-}
-
 module.exports = {
-  createLeaderboard,
-  addParticipant,
-  removeParticipant,
-  getLeaderboard,
-  listLeaderboards,
-  deleteLeaderboard,
-  findLeaderboard,
-  generateEventId
+  startSession,
+  addScore,
+  endSession,
+  getActiveLeaderboard
 };

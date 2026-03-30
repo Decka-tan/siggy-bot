@@ -33,13 +33,9 @@ const {
 
 // Leaderboard commands
 const {
-  handleLeaderboardCreate,
+  handleLeaderboardStart,
   handleLeaderboardAdd,
-  handleLeaderboardUpdate,
-  handleLeaderboardRemove,
-  handleLeaderboardShow,
-  handleLeaderboardList,
-  handleLeaderboardDelete,
+  handleLeaderboardEnd,
 } = require('./commands/leaderboard.cjs');
 
 const {
@@ -62,72 +58,34 @@ const {
   handleSimp,
 } = require('./commands/fun.cjs');
 
-// Leaderboard command definitions (single command with all subcommands)
+// Leaderboard command definitions (single active session)
 const leaderboardCommands = [
   {
     name: 'leaderboard',
-    description: 'Manage custom leaderboards',
+    description: 'Start or manage the active 1-hour rolling leaderboard',
     options: [
       {
-        name: 'create',
-        description: 'Create a new leaderboard',
+        name: 'start',
+        description: 'Start a new leaderboard session and add the first score',
         type: 1, // SUB_COMMAND
-        options: [{
-          name: 'name',
-          description: 'Leaderboard name',
-          type: 3,
-          required: true,
-        }],
+        options: [
+          { name: 'user', description: 'User to add', type: 6, required: true },
+          { name: 'score', description: 'Initial score', type: 4, required: true },
+        ],
       },
       {
         name: 'add',
-        description: 'Add a participant',
+        description: 'Increase a user\'s score in the active leaderboard session',
         type: 1,
         options: [
-          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-          { name: 'user', description: 'User to add', type: 6, required: true },
-          { name: 'score', description: 'Score to assign', type: 4, required: true },
-        ],
-      },
-      {
-        name: 'update',
-        description: 'Update a participant score',
-        type: 1,
-        options: [
-          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
           { name: 'user', description: 'User to update', type: 6, required: true },
-          { name: 'score', description: 'New score', type: 4, required: true },
+          { name: 'score', description: 'Score to add', type: 4, required: true },
         ],
       },
       {
-        name: 'remove',
-        description: 'Remove a participant',
+        name: 'end',
+        description: 'Manually end the active leaderboard session',
         type: 1,
-        options: [
-          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-          { name: 'user', description: 'User to remove', type: 6, required: true },
-        ],
-      },
-      {
-        name: 'show',
-        description: 'Display leaderboard',
-        type: 1,
-        options: [
-          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-        ],
-      },
-      {
-        name: 'list',
-        description: 'List all leaderboards',
-        type: 1,
-      },
-      {
-        name: 'delete',
-        description: 'Delete a leaderboard',
-        type: 1,
-        options: [
-          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-        ],
       },
     ],
   },
@@ -1164,13 +1122,9 @@ client.on('interactionCreate', async (interaction) => {
       case 'leaderboard':
         const subcommand = interaction.options.getSubcommand();
         switch (subcommand) {
-          case 'create': await handleLeaderboardCreate(interaction); break;
+          case 'start': await handleLeaderboardStart(interaction); break;
           case 'add': await handleLeaderboardAdd(interaction); break;
-          case 'update': await handleLeaderboardUpdate(interaction); break;
-          case 'remove': await handleLeaderboardRemove(interaction); break;
-          case 'show': await handleLeaderboardShow(interaction); break;
-          case 'list': await handleLeaderboardList(interaction); break;
-          case 'delete': await handleLeaderboardDelete(interaction); break;
+          case 'end': await handleLeaderboardEnd(interaction); break;
         }
         break;
       // Utility commands
