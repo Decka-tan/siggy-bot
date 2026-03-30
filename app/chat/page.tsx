@@ -527,11 +527,42 @@ export default function ChatPage() {
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
 
   const availableCommands = [
+    // Core
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
     { name: 'research', description: 'Research a topic using web search', usage: '/research query' },
+    // Crypto
     { name: 'price', description: 'Check cryptocurrency price', usage: '/price <coin>' },
     { name: 'trending', description: 'Show trending cryptocurrencies', usage: '/trending' },
     { name: 'chart', description: 'Get TradingView chart for a coin', usage: '/chart <coin>' },
+    // Fun
+    { name: 'hug', description: 'Hug someone', usage: '/hug @user' },
+    { name: 'slap', description: 'Slap someone', usage: '/slap @user' },
+    { name: 'pat', description: 'Pat someone', usage: '/pat @user' },
+    { name: 'highfive', description: 'High-five someone', usage: '/highfive @user' },
+    { name: 'fact', description: 'Get a random fun fact', usage: '/fact' },
+    { name: 'quote', description: 'Get an inspirational quote', usage: '/quote' },
+    { name: 'shuffle', description: 'Randomize options', usage: '/shuffle option1 | option2 | ...' },
+    { name: 'rate', description: 'Rate someone/something', usage: '/rate <target>' },
+    { name: 'howgay', description: 'How gay is someone?', usage: '/howgay @user' },
+    { name: 'simp', description: 'Check if someone is a simp', usage: '/simp @user' },
+    // Utility
+    { name: 'flip', description: 'Flip a coin (heads/tails)', usage: '/flip [amount] [choice]' },
+    { name: 'roll', description: 'Roll dice', usage: '/roll [sides] [count]' },
+    { name: '8ball', description: 'Magic 8-ball', usage: '/8ball <question>' },
+    { name: 'choose', description: 'Random choice from options', usage: '/choose option1 | option2 | ...' },
+    { name: 'convert', description: 'Convert currency', usage: '/convert <amount> <from> <to>' },
+    { name: 'gas', description: 'Check Ethereum gas fees', usage: '/gas' },
+    { name: 'rank', description: 'Check user rank and XP', usage: '/rank [@user]' },
+    { name: 'avatar', description: 'Get user avatar', usage: '/avatar [@user]' },
+    // Leaderboard
+    { name: 'leaderboard', description: 'Manage leaderboards', usage: '/leaderboard <action> [options]' },
+    // Meta
+    { name: 'transform', description: 'Switch between CAT and ANIME forms', usage: '/transform [cat|anime]' },
+    { name: 'mood', description: 'Check your current relationship and mood status', usage: '/mood' },
+    { name: 'reset', description: 'Reset conversation and relationship progress', usage: '/reset' },
+    { name: 'stats', description: 'Show global bot statistics', usage: '/stats' },
+    { name: 'top', description: 'Show top users by message count', usage: '/top' },
+    { name: 'help', description: 'Show commands and features', usage: '/help' },
   ];
 
   const filteredCommands = commandQuery 
@@ -2227,7 +2258,7 @@ export default function ChatPage() {
                               <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
-                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research') || input.toLowerCase().startsWith('/price') || input.toLowerCase().startsWith('/trending') || input.toLowerCase().startsWith('/chart')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
+                              <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${input.toLowerCase().startsWith('/') ? 'bg-accent/20 border-2 border-accent' : ''}`}>
                                 <textarea
                                   value={input}
                                   onChange={(e) => setInput(e.target.value)}
@@ -2240,7 +2271,7 @@ export default function ChatPage() {
                                   placeholder="What will you say? (type /check, /research, /price, /trending, /chart)"
                                   disabled={isLoading || analyzingContributor !== null}
                                   rows={1}
-                                  className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research') || input.toLowerCase().startsWith('/price') || input.toLowerCase().startsWith('/trending') || input.toLowerCase().startsWith('/chart')) ? 'bg-accent text-black font-bold' : 'bg-black/40 text-text-primary'}`}
+                                  className={`flex-1 px-3 py-2 border-none rounded-lg placeholder:text-text-secondary/50 focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 text-[10px] sm:text-xs transition-all font-mono shadow-inner min-w-[10px] resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/') ? 'bg-accent text-black font-bold' : 'bg-black/40 text-text-primary'}`}
                                   style={{ minHeight: '40px', height: 'auto' }}
                                 />
                                 <button
@@ -2606,7 +2637,7 @@ export default function ChatPage() {
                         <button onClick={() => setShowStats(!showStats)} className="p-3 bg-surface hover:bg-surface/80 border border-border rounded-lg text-text-secondary hover:text-accent transition-colors" title="Toggle Stats" style={{ height: '44px' }}>
                           {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                         </button>
-                        <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent/20 border-2 border-accent' : ''}`}>
+                        <div className={`flex-1 flex items-center gap-2 rounded-lg p-1 transition-all ${input.toLowerCase().startsWith('/') ? 'bg-accent/20 border-2 border-accent' : ''}`}>
                           <textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
@@ -2619,7 +2650,7 @@ export default function ChatPage() {
                             placeholder="What will you say? (type /check, /research, /price, /trending, /chart)"
                             disabled={isLoading || analyzingContributor !== null}
                             rows={1}
-                            className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${(input.toLowerCase().startsWith('/check') || input.toLowerCase().startsWith('/research')) ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
+                            className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/') ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
                             style={{ minHeight: '44px', height: 'auto' }}
                           />
                           <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>

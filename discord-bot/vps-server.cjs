@@ -867,6 +867,17 @@ function getMoodEmoji(mood) {
 
 // ============ REGISTER COMMANDS ============
 async function registerCommands() {
+  console.log('🔧 Starting command registration...');
+  console.log(`   Client ID: ${CONFIG.clientId ? CONFIG.clientId.substring(0, 10) + '...' : 'MISSING'}`);
+  console.log(`   Guild ID: ${CONFIG.guildId || 'NOT SET (will use global - 1hr delay)'}`);
+  console.log(`   Token: ${CONFIG.token ? CONFIG.token.substring(0, 20) + '...' : 'MISSING'}`);
+
+  if (!CONFIG.token || !CONFIG.clientId) {
+    console.error('❌ CRITICAL: DISCORD_BOT_TOKEN or DISCORD_CLIENT_ID is missing!');
+    console.error('   Commands CANNOT be registered without these credentials.');
+    return false;
+  }
+
   const commands = [
     {
       name: 'check',
@@ -912,6 +923,8 @@ async function registerCommands() {
     ...utilityCommands,
   ];
 
+  console.log(`   Total commands to register: ${commands.length}`);
+
   const rest = new REST({ version: '10' }).setToken(CONFIG.token);
 
   // Auto-clear commands if CLEAR_COMMANDS env var is set (one-time reset)
@@ -928,20 +941,42 @@ async function registerCommands() {
       process.exit(0); // Exit after clearing
     } catch (error) {
       console.error('❌ Clear commands error:', error);
+      if (error.message?.includes('Invalid')) {
+        console.error('   This usually means your TOKEN or CLIENT_ID is incorrect!');
+      }
+      process.exit(1);
     }
   }
 
   try {
     // Guild commands for instant update
     if (CONFIG.guildId) {
+      console.log(`📡 Registering ${commands.length} commands to guild ${CONFIG.guildId}...`);
       await rest.put(Routes.applicationGuildCommands(CONFIG.clientId, CONFIG.guildId), { body: commands });
-      console.log('✅ Commands registered to guild');
+      console.log('✅ Commands registered to guild (instant update!)');
+      console.log(`   Commands: ${commands.map(c => c.name).join(', ')}`);
     } else {
+      console.log(`📡 Registering ${commands.length} commands GLOBALLY (may take up to 1 hour to propagate)...`);
+      console.log('   💡 TIP: Set DISCORD_GUILD_ID env var for instant guild commands!');
       await rest.put(Routes.applicationCommands(CONFIG.clientId), { body: commands });
       console.log('✅ Commands registered globally');
     }
+    return true;
   } catch (error) {
-    console.error('❌ Command registration failed:', error);
+    console.error('❌ Command registration FAILED:', error.message);
+    if (error.message?.includes('Invalid')) {
+      console.error('   This usually means your TOKEN or CLIENT_ID is incorrect!');
+      console.error('   Check your .env file:');
+      console.error('   - DISCORD_BOT_TOKEN should start with "MTAw..." or "MTE..."');
+      console.error('   - DISCORD_CLIENT_ID should be a numeric string');
+    } else if (error.message?.includes('401')) {
+      console.error('   401 Unauthorized: Your bot token is invalid!');
+    } else if (error.message?.includes('403')) {
+      console.error('   403 Forbidden: Check your bot permissions!');
+    } else if (error.message?.includes('Missing Access')) {
+      console.error('   Missing Access: Bot needs "applications.commands" scope!');
+    }
+    return false;
   }
 }
 
@@ -1210,8 +1245,22 @@ server.listen(PORT, () => {
 
 // ============ START ============
 console.log('🚀 Starting Siggy Discord Bot (Enhanced)...');
-registerCommands().then(() => {
-  client.login(CONFIG.token);
-}).catch(console.error);
+
+// Register commands first, then login
+registerCommands().then((success) => {
+  if (success) {
+    console.log('✅ Command registration successful, logging in...');
+    client.login(CONFIG.token);
+  } else {
+    console.error('❌ Command registration FAILED!');
+    console.error('   Bot will start anyway, but slash commands may not work.');
+    console.error('   Check your environment variables and try again.');
+    client.login(CONFIG.token);
+  }
+}).catch((error) => {
+  console.error('❌ Fatal error during command registration:', error);
+  console.error('   Exiting...');
+  process.exit(1);
+});
 
 module.exports = { client };

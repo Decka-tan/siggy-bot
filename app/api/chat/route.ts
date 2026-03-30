@@ -358,6 +358,380 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // === FUN COMMANDS ===
+
+    // /hug <user> command
+    if (lowerMsg.startsWith('/hug ')) {
+      const target = message.slice(5).trim() || 'you';
+      const hugEmojis = ['🤗', '💕', '🫂', '❤️'];
+      const emoji = hugEmojis[Math.floor(Math.random() * hugEmojis.length)];
+      return NextResponse.json({
+        response: `${emoji} **Hug!**\n\n*You hug ${target}*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /slap <user> command
+    if (lowerMsg.startsWith('/slap ')) {
+      const target = message.slice(6).trim() || 'you';
+      const slapEmojis = ['👋', '💥', '😵', '🖐️'];
+      const emoji = slapEmojis[Math.floor(Math.random() * slapEmojis.length)];
+      return NextResponse.json({
+        response: `${emoji} **Slap!**\n\n*You slap ${target}*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /pat <user> command
+    if (lowerMsg.startsWith('/pat ')) {
+      const target = message.slice(5).trim() || 'you';
+      return NextResponse.json({
+        response: `👋 **Pat!**\n\n*You pat ${target} on the head*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /highfive <user> command
+    if (lowerMsg.startsWith('/highfive ')) {
+      const target = message.slice(10).trim() || 'you';
+      return NextResponse.json({
+        response: `✋ **High Five!**\n\n*You high-five ${target}*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /fact command
+    if (lowerMsg === '/fact') {
+      const facts = [
+        'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.',
+        'Octopuses have three hearts and blue blood.',
+        'A group of flamingos is called a "flamboyance".',
+        'Bananas are berries, but strawberries aren\'t.',
+        'The shortest war in history lasted 38 to 45 minutes between Britain and Zanzibar in 1896.',
+        'A day on Venus is longer than a year on Venus.',
+        'Cows have best friends and get stressed when separated.',
+        'The inventor of the Pringles can is buried in one.',
+        'There are more stars in the universe than grains of sand on Earth.',
+        'The Hawaiian alphabet has only 12 letters.',
+      ];
+      const fact = facts[Math.floor(Math.random() * facts.length)];
+      return NextResponse.json({
+        response: `🧠 **Random Fact**\n\n${fact}\n\n*Did you know?*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /quote command
+    if (lowerMsg === '/quote') {
+      const quotes = [
+        { text: 'The only way to do great work is to love what you do.', author: 'Steve Jobs' },
+        { text: 'Innovation distinguishes between a leader and a follower.', author: 'Steve Jobs' },
+        { text: 'Life is what happens when you\'re busy making other plans.', author: 'John Lennon' },
+        { text: 'The future belongs to those who believe in the beauty of their dreams.', author: 'Eleanor Roosevelt' },
+        { text: 'It is during our darkest moments that we must focus to see the light.', author: 'Aristotle' },
+        { text: 'Do not watch the clock. Do what it does. Keep going.', author: 'Sam Levenson' },
+        { text: 'The only impossible journey is the one you never begin.', author: 'Tony Robbins' },
+      ];
+      const quote = quotes[Math.floor(Math.random() * quotes.length)];
+      return NextResponse.json({
+        response: `💬 **Random Quote**\n\n*"${quote.text}"*\n\n— **${quote.author}**`,
+        isRawCommand: true,
+      });
+    }
+
+    // /shuffle command
+    if (lowerMsg.startsWith('/shuffle ')) {
+      const itemsStr = lowerMsg.slice(9).trim();
+      if (!itemsStr || !itemsStr.includes('|')) {
+        return NextResponse.json({
+          response: '❌ Use format: /shuffle option1 | option2 | option3\nExample: /shuffle pizza | burger | sushi',
+          isRawCommand: true,
+        });
+      }
+      const items = itemsStr.split('|').map(s => s.trim()).filter(s => s);
+      if (items.length < 2) {
+        return NextResponse.json({ response: '❌ Need at least 2 items!', isRawCommand: true });
+      }
+
+      // Fisher-Yates shuffle
+      const shuffled = [...items];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+
+      return NextResponse.json({
+        response: `🔀 **Shuffled List**\n\n${shuffled.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n*${items.length} items shuffled*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /rate command
+    if (lowerMsg.startsWith('/rate ')) {
+      const target = message.slice(6).trim() || 'you';
+      const rating = (Math.random() * 10).toFixed(1);
+
+      let emoji = '💩';
+      if (parseFloat(rating) >= 9) emoji = '🌟';
+      else if (parseFloat(rating) >= 7) emoji = '👍';
+      else if (parseFloat(rating) >= 5) emoji = '😐';
+      else if (parseFloat(rating) >= 3) emoji = '👎';
+
+      return NextResponse.json({
+        response: `⭐ **Rating: ${rating}/10**\n\nI rate **${target}** ${emoji} **${rating}/10**`,
+        isRawCommand: true,
+      });
+    }
+
+    // /howgay command
+    if (lowerMsg.startsWith('/howgay ')) {
+      const target = message.slice(8).trim() || 'you';
+      const percentage = Math.floor(Math.random() * 101);
+
+      let level = 'Barely gay at all 😐';
+      if (percentage >= 80) level = 'SUPER GAY 🌈';
+      else if (percentage >= 60) level = 'Pretty gay 😏';
+      else if (percentage >= 40) level = 'A little gay 🤷';
+      else if (percentage >= 20) level = 'Straight-ish 😌';
+
+      return NextResponse.json({
+        response: `🏳 **How Gay is ${target}?**\n\n**${target}** is **${percentage}%** gay!\n\n${level}\n\n*Just for fun! 💖*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /simp command
+    if (lowerMsg.startsWith('/simp ')) {
+      const target = message.slice(6).trim() || 'you';
+      const percentage = Math.floor(Math.random() * 101);
+
+      let level = 'Not a simp';
+      if (percentage >= 80) level = 'MEGA SIMP 🙇';
+      else if (percentage >= 60) level = 'Certified Simp �';
+      else if (percentage >= 40) level = 'Kinda Simp 😅';
+      else if (percentage >= 20) level = 'Simp tendencies';
+
+      return NextResponse.json({
+        response: `💕 **Simp Rate: ${target}**\n\n**${target}** is **${percentage}%** simp!\n\n*${level}*`,
+        isRawCommand: true,
+      });
+    }
+
+    // === UTILITY COMMANDS ===
+
+    // /avatar command
+    if (lowerMsg === '/avatar' || lowerMsg.startsWith('/avatar ')) {
+      const target = message.slice(8).trim() || userName;
+      return NextResponse.json({
+        response: `🖼️ **Avatar**\n\nShowing avatar for **${target}**\n\n*On Discord, this would show the user's profile picture. On the website, avatars are based on your display name.*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /rank command
+    if (lowerMsg === '/rank' || lowerMsg.startsWith('/rank ')) {
+      const target = message.slice(6).trim() || userName;
+      // Simulated rank since we don't have Discord data on website
+      const level = Math.floor(Math.random() * 50) + 1;
+      const xp = Math.floor(Math.random() * 5000) + 100;
+
+      const levelNames: Record<number, string> = {
+        100: '💎 Diamond Guardian',
+        75: '🌟 Celestial Voyager',
+        50: '🔮 Mystic Adept',
+        30: '⚡ Storm Rider',
+        20: '🌙 Night Walker',
+        15: '🌿 Forest Sage',
+        10: '🔥 Ember Keeper',
+        5: '💧 Spring Seeker',
+        3: '🌱 Dawn Initiate',
+        2: '🌿 Seedling',
+        1: '🍃 Newcomer',
+      };
+
+      let levelName = '🍃 Newcomer';
+      for (const [lvl, name] of Object.entries(levelNames).sort((a, b) => parseInt(b[0]) - parseInt(a[0]))) {
+        if (level >= parseInt(lvl)) {
+          levelName = name;
+          break;
+        }
+      }
+
+      const progressBar = '█'.repeat(Math.floor((xp % 100) / 10)) + '░'.repeat(10 - Math.floor((xp % 100) / 10));
+
+      return NextResponse.json({
+        response: `📊 **${target}'s Rank**\n\n` +
+          `🏆 **Server Rank:** #${Math.floor(Math.random() * 100) + 1}\n` +
+          `⭐ **Level:** ${level} - ${levelName}\n` +
+          `💬 **Messages:** ${xp.toLocaleString()}\n` +
+          `✨ **XP Progress:** ${progressBar} ${xp % 100}%\n\n` +
+          `*On Discord, this shows real server stats. On the website, it's simulated!*`,
+        isRawCommand: true,
+      });
+    }
+
+    // === LEADERBOARD COMMANDS ===
+
+    // /leaderboard command
+    if (lowerMsg === '/leaderboard' || lowerMsg.startsWith('/leaderboard ')) {
+      const args = lowerMsg.slice(12).trim().split(/\s+/);
+      const action = args[0] || 'list';
+
+      if (action === 'list') {
+        return NextResponse.json({
+          response: `📋 **Available Leaderboards**\n\n` +
+            `No leaderboards found on the website. Use Discord to create and manage leaderboards!\n\n` +
+            `*On Discord, use /leaderboard create <name> to create one.*`,
+          isRawCommand: true,
+        });
+      }
+
+      if (action === 'create') {
+        return NextResponse.json({
+          response: `❌ **Leaderboard Creation**\n\n` +
+            `Leaderboard management is only available on Discord. Use the Discord bot to:\n` +
+            `• /leaderboard create <name> - Create a new leaderboard\n` +
+            `• /leaderboard add <event> <user> <score> - Add participants\n` +
+            `• /leaderboard show <event> - View leaderboard`,
+          isRawCommand: true,
+        });
+      }
+
+      return NextResponse.json({
+        response: `🏆 **Leaderboard Commands**\n\n` +
+          `Available actions:\n` +
+          `• /leaderboard list - Show all leaderboards\n` +
+          `• /leaderboard create - Create new (Discord only)\n` +
+          `• /leaderboard show <name> - View leaderboard\n\n` +
+          `*Full leaderboard management is available on Discord.*`,
+        isRawCommand: true,
+      });
+    }
+
+    // === META COMMANDS ===
+
+    // /transform command
+    if (lowerMsg === '/transform' || lowerMsg.startsWith('/transform ')) {
+      const form = lowerMsg.slice(11).trim().toLowerCase();
+      const validForms = ['cat', 'anime'];
+
+      if (form && !validForms.includes(form)) {
+        return NextResponse.json({
+          response: `❌ Invalid form. Use: /transform [cat|anime]\n\nCurrent form: **${currentForm}**`,
+          isRawCommand: true,
+        });
+      }
+
+      const newForm = form || (currentForm === 'ANIME' ? 'CAT' : 'ANIME');
+      const formEmoji = newForm === 'CAT' ? '🐱' : '🌸';
+
+      return NextResponse.json({
+        response: `${formEmoji} **Transformation!**\n\n` +
+          `*You transformed into ${newForm} form!*\n\n` +
+          `**Current Form:** ${newForm}\n\n` +
+          `*Use the form selector in the UI to switch forms permanently.*`,
+        isRawCommand: true,
+        currentForm: newForm,
+      });
+    }
+
+    // /mood command
+    if (lowerMsg === '/mood') {
+      return NextResponse.json({
+        response: `💕 **Current Mood & Relationship**\n\n` +
+          `**Current Mood:** ${clientMood || 'DEFAULT'}\n` +
+          `**Relationship Score:** ${clientScore || 0}/100\n` +
+          `**Message Count:** ${clientMessageCount || 0}\n` +
+          `**Current Form:** ${currentForm}\n\n` +
+          `*Chat more to build your relationship with Siggy!*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /reset command
+    if (lowerMsg === '/reset') {
+      // Clear context for this user
+      contextManager.resetMemory(userId);
+
+      return NextResponse.json({
+        response: `🔄 **Reset Complete**\n\n` +
+          `*Conversation context has been cleared.*\n\n` +
+          `Starting fresh... Hi! I'm Siggy! 💕`,
+        isRawCommand: true,
+        shouldReset: true,
+      });
+    }
+
+    // /stats command
+    if (lowerMsg === '/stats') {
+      return NextResponse.json({
+        response: `📊 **Siggy Bot Statistics**\n\n` +
+          `**Version:** 2.0\n` +
+          `**Platform:** Web + Discord\n` +
+          `**AI Model:** GPT-4o\n` +
+          `**Features:**\n` +
+          `• Crypto price tracking (CoinGecko)\n` +
+          `• Web search & research\n` +
+          `• Fun commands & games\n` +
+          `• Leaderboard system\n` +
+          `• Mood & relationship tracking\n\n` +
+          `*Made with 💕 for the Ritual community*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /top command
+    if (lowerMsg === '/top') {
+      return NextResponse.json({
+        response: `👑 **Top Users**\n\n` +
+          `This feature shows the most active users in the Discord server.\n\n` +
+          `On the website, individual stats aren't tracked. Join the Discord server to see:\n` +
+          `• Message rankings\n` +
+          `• Contribution counts\n` +
+          `• Event participation stats\n\n` +
+          `*Come hang out with us on Discord!*`,
+        isRawCommand: true,
+      });
+    }
+
+    // /help command
+    if (lowerMsg === '/help') {
+      return NextResponse.json({
+        response: `📚 **Siggy Bot Commands**\n\n` +
+          `**🪙 Crypto Commands:**\n` +
+          `• /price <coin> - Check crypto price\n` +
+          `• /trending - Show trending coins\n` +
+          `• /chart <coin> - Get TradingView chart\n` +
+          `• /convert <amount> <from> <to> - Convert currency\n` +
+          `• /gas - Check Ethereum gas fees\n\n` +
+          `**🎮 Fun Commands:**\n` +
+          `• /hug, /slap, /pat, /highfive <user> - Interactions\n` +
+          `• /flip - Flip a coin\n` +
+          `• /roll <sides> <count> - Roll dice\n` +
+          `• /8ball <question> - Magic 8-ball\n` +
+          `• /choose option1 | option2 - Random choice\n` +
+          `• /fact - Random fun fact\n` +
+          `• /quote - Inspirational quote\n` +
+          `• /shuffle items | separated - Shuffle list\n` +
+          `• /rate <target> - Rate something 1-10\n` +
+          `• /howgay <user> - Fun meme command\n` +
+          `• /simp <user> - Simp rate check\n\n` +
+          `**📊 Utility Commands:**\n` +
+          `• /rank [@user] - Check rank and XP\n` +
+          `• /avatar [@user] - Get avatar\n` +
+          `• /leaderboard <action> - Manage leaderboards\n\n` +
+          `**⚙️ Meta Commands:**\n` +
+          `• /transform [cat|anime] - Switch forms\n` +
+          `• /mood - Check relationship status\n` +
+          `• /reset - Reset conversation\n` +
+          `• /stats - Bot statistics\n` +
+          `• /top - Show top users\n` +
+          `• /help - Show this message\n\n` +
+          `*Have fun! 💕*`,
+        isRawCommand: true,
+      });
+    }
+
     // === EXPLICIT /RESEARCH COMMAND HANDLER ===
     // Detect [RESEARCH_MODE: query] marker from frontend
     let researchQuery = null;
