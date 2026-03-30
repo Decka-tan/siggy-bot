@@ -39,10 +39,10 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
   ctx.fillStyle = colors.bg;
   ctx.fillRect(0, 0, width, height);
 
-  // Chart dimensions
+  // Chart dimensions - reduced top/bottom padding for more vertical space
   const paddingRight = 80; // Price scale on right
-  const paddingBottom = 40; // Time axis
-  const paddingTop = 50; // Top info
+  const paddingBottom = 35; // Time axis (reduced from 40)
+  const paddingTop = 40; // Top info (reduced from 50)
   const paddingLeft = 10;
   const chartWidth = width - paddingRight - paddingLeft;
   const chartHeight = height - paddingBottom - paddingTop;
@@ -76,13 +76,14 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
       return c;
     });
 
-    // Find min/max for scaling with padding
+    // Find min/max for scaling with minimal padding to utilize full height
     const allPrices = candles.flatMap(c => [c.low, c.high]);
     const minPrice = Math.min(...allPrices);
     const maxPrice = Math.max(...allPrices);
     const priceRange = maxPrice - minPrice || 1;
-    const paddedMin = minPrice - priceRange * 0.05;
-    const paddedMax = maxPrice + priceRange * 0.05;
+    // Reduced padding from 5% to 2% for better space utilization
+    const paddedMin = minPrice - priceRange * 0.02;
+    const paddedMax = maxPrice + priceRange * 0.02;
     const paddedRange = paddedMax - paddedMin;
 
     // Draw candles (show last 50 candles)

@@ -25,6 +25,7 @@ interface Message {
   disliked?: boolean;
   contributor?: ContributorElement;
   chartData?: ChartData;
+  chartImage?: string;
   diceData?: { rolls: number[]; total: number };
   gifData?: { url: string; type: string; target: string };
 }
@@ -457,6 +458,25 @@ const GifDisplay = ({ data }: { data: { url: string; type: string; target: strin
           <p className="text-white text-sm font-medium">
             {typeEmojis[data.type] || '🎬'} {data.type.charAt(0).toUpperCase() + data.type.slice(1)} {data.target}
           </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Chart Image Component - TradingView-style chart as embedded image
+const ChartImage = ({ url }: { url: string }) => {
+  return (
+    <div className="my-4 rounded-xl overflow-hidden border border-white/10 bg-black/30">
+      <div className="relative">
+        <iframe
+          src={url}
+          className="w-full"
+          style={{ height: '400px', border: 'none' }}
+          allowFullScreen
+        />
+        <div className="absolute bottom-0 right-0 bg-black/80 px-3 py-1 rounded-tl-lg">
+          <span className="text-white text-xs">TradingView</span>
         </div>
       </div>
     </div>
@@ -1356,6 +1376,7 @@ export default function ChatPage() {
         content: processedResponse,
         mood: data.currentMood,
         chartData: data.chartData,
+        chartImage: data.chartImage,
         diceData: data.diceData,
         gifData: data.gifData,
       };
@@ -1625,6 +1646,7 @@ export default function ChatPage() {
               content: processedResponse,
               mood: data.currentMood || 'DEFAULT',
               chartData: data.chartData,
+              chartImage: data.chartImage,
             }],
             currentMood: data.currentMood || conv.currentMood,
             messageCount: data.messageCount || conv.messageCount,
@@ -1725,7 +1747,7 @@ export default function ChatPage() {
       processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
       processedResponse = processedResponse.replace(/\n\s+/g, '\n');
 
-      const siggyMessage: Message = { role: 'assistant', content: processedResponse, mood: data.currentMood, chartData: data.chartData };
+      const siggyMessage: Message = { role: 'assistant', content: processedResponse, mood: data.currentMood, chartData: data.chartData, chartImage: data.chartImage };
       setConversations(prev => prev.map(conv => {
         if (conv.id === targetConvId) {
           return {
@@ -2237,18 +2259,18 @@ export default function ChatPage() {
                                       personality={personality as 'CAT' | 'ANIME'}
                                       contributorMap={contributorMap}
                                     />
-                                    {/* VN Mode: Dice & GIF display */}
+                                    {/* VN Mode: Dice, GIF & Chart display */}
                                     {vnHistoryIndex === -1 ? (
                                       <>
                                         {activeConversation.messages[activeConversation.messages.length - 1].diceData && <DiceRoll values={activeConversation.messages[activeConversation.messages.length - 1].diceData.rolls} />}
                                         {activeConversation.messages[activeConversation.messages.length - 1].gifData && <GifDisplay data={activeConversation.messages[activeConversation.messages.length - 1].gifData} />}
-                                        {activeConversation.messages[activeConversation.messages.length - 1].chartData && <SimpleChart data={activeConversation.messages[activeConversation.messages.length - 1].chartData} />}
+                                        {activeConversation.messages[activeConversation.messages.length - 1].chartImage && <ChartImage url={activeConversation.messages[activeConversation.messages.length - 1].chartImage} />}
                                       </>
                                     ) : (
                                       <>
                                         {activeConversation.messages[vnHistoryIndex].diceData && <DiceRoll values={activeConversation.messages[vnHistoryIndex].diceData.rolls} />}
                                         {activeConversation.messages[vnHistoryIndex].gifData && <GifDisplay data={activeConversation.messages[vnHistoryIndex].gifData} />}
-                                        {activeConversation.messages[vnHistoryIndex].chartData && <SimpleChart data={activeConversation.messages[vnHistoryIndex].chartData} />}
+                                        {activeConversation.messages[vnHistoryIndex].chartImage && <ChartImage url={activeConversation.messages[vnHistoryIndex].chartImage} />}
                                       </>
                                     )}
                                   </>
@@ -2710,7 +2732,7 @@ export default function ChatPage() {
                             )}
 
                             {/* Chart for both user and assistant messages */}
-                            {message.chartData && <SimpleChart data={message.chartData} />}
+                            {message.chartImage && <ChartImage url={message.chartImage} />}
 
                             {/* Dice roll visualization */}
                             {message.diceData && <DiceRoll values={message.diceData.rolls} />}

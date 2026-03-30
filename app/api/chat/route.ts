@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // /chart <coin> command - Fetch OHLC and return chart data
+    // /chart <coin> command - Return chart image URL
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim().toLowerCase();
       const coinId = normalizeCoinId(coin);
@@ -278,43 +278,24 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Fetch OHLC data from Binance (15m candles)
-        let ohlcData = null;
-        try {
-          const symbol = priceData.coin.symbol + 'USDT';
-          const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=96`);
-          if (response.ok) {
-            const data = await response.json();
-            // Convert to our format: [time, open, high, low, close]
-            ohlcData = data.map((k: any) => [k[0], parseFloat(k[1]), parseFloat(k[2]), parseFloat(k[3]), parseFloat(k[4])]);
-          }
-        } catch (e) {
-          console.error('[Chart] Binance OHLC error:', e);
-        }
-
         const { tradingViewUrl } = getChartEmbed(coin);
         const change = priceData.change24h.usd;
         const changeText = change > 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
 
-        // Return with chartData for Canvas rendering
-        const chartData = ohlcData ? {
-          coin: priceData.coin.name,
-          symbol: priceData.coin.symbol,
-          ohlc: ohlcData,
-          ticker: {
-            price: priceData.price.usd,
-            change: priceData.change24h.usd,
-            high: priceData.high24h.usd,
-            low: priceData.low24h.usd,
-          },
-        } : undefined;
+        // Use TradingView widget image for reliable chart display
+        const tvSymbol = encodeURIComponent(priceData.coin.symbol + 'USDT');
+        const chartImageUrl = `https://www.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${tvSymbol}&interval=D&hidesidetoolbar=1&symboledit=1&saveimage=1&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`;
 
-        console.log(`[/chart] Returning chartData:`, chartData ? `${chartData.symbol}, ${chartData.ohlc.length} candles` : 'null');
+        // Use a static chart image from Binance data (simpler approach)
+        // Using a chart generation service or fallback to TradingView screenshot
+        const fallbackChartUrl = `https://tvdn.dev/widget/embed/?symbol=${tvSymbol}&interval=15&hidesidetoolbar=true`;
+
+        console.log(`[/chart] Generated chart URL for ${priceData.coin.symbol}`);
 
         return NextResponse.json({
           response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\nPrice: ${formatPrice(priceData.price.usd)} • 24h: ${changeText}\n\nView interactive chart on [TradingView](${tradingViewUrl})`,
           isRawCommand: true,
-          chartData,
+          chartImage: fallbackChartUrl,
         });
       } catch (error) {
         console.error('[Chart] Error:', error);
