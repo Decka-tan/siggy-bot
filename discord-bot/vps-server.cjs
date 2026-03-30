@@ -62,96 +62,74 @@ const {
   handleSimp,
 } = require('./commands/fun.cjs');
 
-// Leaderboard command definitions
+// Leaderboard command definitions (single command with all subcommands)
 const leaderboardCommands = [
   {
     name: 'leaderboard',
     description: 'Manage custom leaderboards',
-    options: [{
-      name: 'create',
-      description: 'Create a new leaderboard',
-      type: 1, // SUB_COMMAND
-      options: [{
-        name: 'name',
-        description: 'Leaderboard name',
-        type: 3,
-        required: true,
-      }],
-    }],
-  },
-  {
-    name: 'leaderboard',
-    description: 'Manage custom leaderboards',
-    options: [{
-      name: 'add',
-      description: 'Add a participant',
-      type: 1,
-      options: [
-        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-        { name: 'user', description: 'User to add', type: 6, required: true },
-        { name: 'score', description: 'Score to assign', type: 4, required: true },
-      ],
-    }],
-  },
-  {
-    name: 'leaderboard',
-    description: 'Manage custom leaderboards',
-    options: [{
-      name: 'update',
-      description: 'Update a participant score',
-      type: 1,
-      options: [
-        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-        { name: 'user', description: 'User to update', type: 6, required: true },
-        { name: 'score', description: 'New score', type: 4, required: true },
-      ],
-    }],
-  },
-  {
-    name: 'leaderboard',
-    description: 'Manage custom leaderboards',
-    options: [{
-      name: 'remove',
-      description: 'Remove a participant',
-      type: 1,
-      options: [
-        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-        { name: 'user', description: 'User to remove', type: 6, required: true },
-      ],
-    }],
-  },
-  {
-    name: 'leaderboard',
-    description: 'Manage custom leaderboards',
-    options: [{
-      name: 'show',
-      description: 'Display leaderboard',
-      type: 1,
-      options: [
-        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-      ],
-    }],
-  },
-  {
-    name: 'leaderboard',
-    description: 'Manage custom leaderboards',
-    options: [{
-      name: 'list',
-      description: 'List all leaderboards',
-      type: 1,
-    }],
-  },
-  {
-    name: 'leaderboard',
-    description: 'Manage custom leaderboards',
-    options: [{
-      name: 'delete',
-      description: 'Delete a leaderboard',
-      type: 1,
-      options: [
-        { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
-      ],
-    }],
+    options: [
+      {
+        name: 'create',
+        description: 'Create a new leaderboard',
+        type: 1, // SUB_COMMAND
+        options: [{
+          name: 'name',
+          description: 'Leaderboard name',
+          type: 3,
+          required: true,
+        }],
+      },
+      {
+        name: 'add',
+        description: 'Add a participant',
+        type: 1,
+        options: [
+          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+          { name: 'user', description: 'User to add', type: 6, required: true },
+          { name: 'score', description: 'Score to assign', type: 4, required: true },
+        ],
+      },
+      {
+        name: 'update',
+        description: 'Update a participant score',
+        type: 1,
+        options: [
+          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+          { name: 'user', description: 'User to update', type: 6, required: true },
+          { name: 'score', description: 'New score', type: 4, required: true },
+        ],
+      },
+      {
+        name: 'remove',
+        description: 'Remove a participant',
+        type: 1,
+        options: [
+          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+          { name: 'user', description: 'User to remove', type: 6, required: true },
+        ],
+      },
+      {
+        name: 'show',
+        description: 'Display leaderboard',
+        type: 1,
+        options: [
+          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+        ],
+      },
+      {
+        name: 'list',
+        description: 'List all leaderboards',
+        type: 1,
+      },
+      {
+        name: 'delete',
+        description: 'Delete a leaderboard',
+        type: 1,
+        options: [
+          { name: 'event', description: 'Leaderboard name or ID', type: 3, required: true },
+        ],
+      },
+    ],
   },
 ];
 
