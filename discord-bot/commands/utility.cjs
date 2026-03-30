@@ -101,22 +101,8 @@ async function handleRoll(interaction, { saveCommand = true } = {}) {
       .setImage('attachment://dice.png')
       .setTimestamp();
 
-    // Add action buttons
-    const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-    const row = new ActionRowBuilder()
-      .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`reload_roll_${interaction.user.id}`)
-          .setLabel('🔄 Reload')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(`copy_roll_${interaction.user.id}`)
-          .setLabel('📋 Copy')
-          .setStyle(ButtonStyle.Secondary)
-      );
-
     console.log('[Roll] Sending final result...');
-    await interaction.editReply({ embeds: [embed], files: [attachment], components: [row] });
+    await interaction.editReply({ embeds: [embed], files: [attachment] });
     console.log('[Roll] Complete');
   } catch (error) {
     console.error('[Roll] Error:', error);

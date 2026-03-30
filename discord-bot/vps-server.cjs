@@ -461,8 +461,7 @@ async function handleCheck(interaction) {
 
   await interaction.deferReply();
 
-  const targetUser = interaction.options.getUser('user');
-  const username = targetUser.username;
+  const username = interaction.options.getString('username').replace('@', '');
 
   // Check cache first
   const cacheKey = `check_${username}`;
@@ -958,9 +957,9 @@ async function registerCommands() {
       name: 'check',
       description: 'Analyze a Ritual contributor with AI',
       options: [{
-        name: 'user',
-        description: 'User to check',
-        type: 6,  // USER type - enables @mention with dropdown
+        name: 'username',
+        description: 'Username to check',
+        type: 3,
         required: true,
       }],
     },

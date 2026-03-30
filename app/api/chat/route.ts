@@ -91,7 +91,12 @@ async function generateDynamicFact(): Promise<string> {
   // Calculate stats
   const topContributors = [...members].sort((a, b) => b.contributionsCount - a.contributionsCount).slice(0, 5);
   const topMessagers = [...members].sort((a, b) => b.globalMessages - a.globalMessages).slice(0, 5);
-  const topEventParticipants = [...members].filter(m => m.eventsCount > 0).sort((a, b) => b.eventsCount - a.eventsCount).slice(0, 5);
+  const topEventParticipants = [...members].filter((m: any) => {
+    if (!m.eventsCount || m.eventsCount <= 0) return false;
+    const name = (m.username || '').toLowerCase();
+    if (name === 'kash_060' || name === 'hinata') return false;
+    return true;
+  }).sort((a: any, b: any) => b.eventsCount - a.eventsCount).slice(0, 5);
 
   const totalMessages = members.reduce((sum: number, m: any) => sum + (m.globalMessages || 0), 0);
   const totalContributions = members.reduce((sum: number, m: any) => sum + (m.contributionsCount || 0), 0);
@@ -378,67 +383,48 @@ export async function POST(req: NextRequest) {
 
     // === FUN COMMANDS ===
 
-    // GIF collections - Working anime GIFs (verified URLs)
+    // GIF collections - Short clean Giphy URLs (no tracking params)
     const hugGifs = [
-      'https://media.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
-      'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
-      'https://media.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
-      'https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
-      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
-      'https://media.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
-      'https://media.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
-      'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
-      'https://media.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
+      'https://media.giphy.com/media/u9BxQbM5bxvwY/giphy.gif',
+      'https://media.giphy.com/media/3bqtLDeiDtwhq/giphy.gif',
+      'https://media.giphy.com/media/aiJ2Ym2ncACfsZFmaN/giphy.gif',
+      'https://media.giphy.com/media/m2GGGWxexjwqnHQnZI/giphy.gif',
+      'https://media.giphy.com/media/9tN31DkZotAh7BSP5m/giphy.gif',
+      'https://media.giphy.com/media/KP9Jky2RWuKyStRq4Z/giphy.gif',
+      'https://media.giphy.com/media/wnsgren9NtITS/giphy.gif',
+      'https://media.giphy.com/media/axdG5dnKJ9MtO/giphy.gif',
+      'https://media.giphy.com/media/WMvFZK6GI6K1W/giphy.gif',
+      'https://media.giphy.com/media/x90dwDUuUx9Ys/giphy.gif',
+      'https://media.giphy.com/media/d9eL06htb5Vks/giphy.gif',
+      'https://media.giphy.com/media/5QXd9CLYmU944/giphy.gif',
     ];
 
     const slapGifs = [
-      'https://media.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
-      'https://media.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
-      'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
-      'https://media.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
-      'https://media.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
-      'https://media.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
-      'https://media.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
-      'https://media.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
-      'https://media.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
-      'https://media.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
+      'https://media.giphy.com/media/Gf3AUz3eBNbTW/giphy.gif',
+      'https://media.giphy.com/media/k1uYB5LvlBZqU/giphy.gif',
+      'https://media.giphy.com/media/tX29X2Dx3sAXS/giphy.gif',
+      'https://media.giphy.com/media/xUNd9HZq1itMkiK652/giphy.gif',
+      'https://media.giphy.com/media/miFItAUiTEHlaBrzGV/giphy.gif',
+      'https://media.giphy.com/media/RYOYNPbKoRORepL80E/giphy.gif',
+      'https://media.giphy.com/media/60rUVyj8ShyuEhHbaz/giphy.gif',
     ];
 
     const patGifs = [
-      'https://media.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
-      'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
-      'https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
-      'https://media.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
-      'https://media.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
-      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-      'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
-      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
-      'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
-      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://media.giphy.com/media/5tmRHwTlHAA9WkVxTU/giphy.gif',
+      'https://media.giphy.com/media/109ltuoSQT212w/giphy.gif',
+      'https://media.giphy.com/media/LVagcxBJjZBvmyPA99/giphy.gif',
+      'https://media.giphy.com/media/z6iHlowFIRz3xjMhYH/giphy.gif',
+      'https://media.giphy.com/media/osYdfUptPqV0s/giphy.gif',
+      'https://media.giphy.com/media/trjUH7PHzQh6DybsZf/giphy.gif',
     ];
 
     const highfiveGifs = [
-      'https://media.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
-      'https://media.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
-      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+      'https://media.giphy.com/media/cAiBXaCjbHTry/giphy.gif',
+      'https://media.giphy.com/media/gQ8qWas3GxlPq/giphy.gif',
+      'https://media.giphy.com/media/d2YXC1xhS65OaDzW/giphy.gif',
+      'https://media.giphy.com/media/70EUqUG45nwO4Ga7c5/giphy.gif',
+      'https://media.giphy.com/media/7TisDMXlAUgwT1UtiI/giphy.gif',
+      'https://media.giphy.com/media/zIfyFtPlrqdjxeB2BC/giphy.gif',
     ];
 
     // /hug <user> command

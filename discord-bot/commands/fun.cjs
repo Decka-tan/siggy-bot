@@ -9,18 +9,18 @@ const { EmbedBuilder } = require('discord.js');
 async function handleHug(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const hugGifs = [
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjRndzhlY2ZqMW5mY2w0NXk2NmkyMXk5a2t1dTBsb2t0ZGF2N213YyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/u9BxQbM5bxvwY/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZjRndzhlY2ZqMW5mY2w0NXk2NmkyMXk5a2t1dTBsb2t0ZGF2N213YyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3bqtLDeiDtwhq/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3enN0aDRrNHNuaTRlNWV0dTFuNHk5Z21scWRidGJzanF3eGEzOGN4byZlcD12MV9naWZzX3NlYXJjaCZjdD1n/aiJ2Ym2ncACfsZFmaN/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDh0cmJwY3BiOHNuNTh6MWZtMWN0eDU3endmZ24za2dmNXlwaHFhYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/m2GGGWxexjwqnHQnZI/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDh0cmJwY3BiOHNuNTh6MWZtMWN0eDU3endmZ24za2dmNXlwaHFhYiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/9tN31DkZotAh7BSP5m/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3NmRzMTcyNTNtdXQ1dW5vZ3oyMzFzazNicGVicmh3czUyeTJsdmFsaiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/KP9Jky2RWuKyStRq4Z/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcG9maDlqaXc5NXFmY3dhamdnbG9uaGdnYnhubmN5dm1kenhqaDd5OSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/wnsgren9NtITS/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG5oYTJlOWdmc2wzdHZtYTR4a2ZwejN3ZjE0Ynk0ZGJqbDdicHJ1dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/axdG5dnKJ9MtO/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG5oYTJlOWdmc2wzdHZtYTR4a2ZwejN3ZjE0Ynk0ZGJqbDdicHJ1dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/WMvFZK6GI6K1W/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG5oYTJlOWdmc2wzdHZtYTR4a2ZwejN3ZjE0Ynk0ZGJqbDdicHJ1dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/x90dwDUuUx9Ys/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNG5oYTJlOWdmc2wzdHZtYTR4a2ZwejN3ZjE0Ynk0ZGJqbDdicHJ1dCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/d9eL06htb5Vks/giphy.gif',
-    'https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3cjZxOGg0aG52ODRnMHhmNWxuMW43Zmg3ZGV3eWh3MG5nZXpmc2g1ZyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/5QXd9CLYmU944/giphy.gif',
+    'https://media.giphy.com/media/u9BxQbM5bxvwY/giphy.gif',
+    'https://media.giphy.com/media/3bqtLDeiDtwhq/giphy.gif',
+    'https://media.giphy.com/media/aiJ2Ym2ncACfsZFmaN/giphy.gif',
+    'https://media.giphy.com/media/m2GGGWxexjwqnHQnZI/giphy.gif',
+    'https://media.giphy.com/media/9tN31DkZotAh7BSP5m/giphy.gif',
+    'https://media.giphy.com/media/KP9Jky2RWuKyStRq4Z/giphy.gif',
+    'https://media.giphy.com/media/wnsgren9NtITS/giphy.gif',
+    'https://media.giphy.com/media/axdG5dnKJ9MtO/giphy.gif',
+    'https://media.giphy.com/media/WMvFZK6GI6K1W/giphy.gif',
+    'https://media.giphy.com/media/x90dwDUuUx9Ys/giphy.gif',
+    'https://media.giphy.com/media/d9eL06htb5Vks/giphy.gif',
+    'https://media.giphy.com/media/5QXd9CLYmU944/giphy.gif',
   ];
 
   const randomIndex = Math.floor(Math.random() * hugGifs.length);
