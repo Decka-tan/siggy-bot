@@ -1081,6 +1081,8 @@ export default function ChatPage() {
 
   // @ Mention Detection Effect (for typing @ anywhere in input)
   useEffect(() => {
+    let isActive = true;
+
     // Don't trigger if /check or other command dropdowns are active
     if (showContributorDropdown || showUserDropdown || showCommandDropdown) {
       setMentionResults([]);
@@ -1090,7 +1092,7 @@ export default function ChatPage() {
 
     // Find the last @ in the input that isn't already completed
     const atMatch = input.match(/@([\w.]*)$/);
-    if (!atMatch) {
+    if (!atMatch || input.trim() === '') {
       setMentionResults([]);
       setShowMentionDropdown(false);
       setMentionQuery('');
@@ -1104,34 +1106,41 @@ export default function ChatPage() {
     if (query === '') {
       setIsSearchingMentions(true);
       fetch(`/api/contributor?action=autocomplete&username=`).then(res => res.json()).then(data => {
+        if (!isActive) return;
         if (data.success) {
           setMentionResults(data.contributors.slice(0, 8));
           setShowMentionDropdown(true);
           setSelectedMentionIndex(0);
         }
-      }).finally(() => setIsSearchingMentions(false));
-      return;
+      }).finally(() => { if (isActive) setIsSearchingMentions(false) });
+      return () => { isActive = false; };
     }
 
     // Debounced search
     const timer = setTimeout(async () => {
+      if (!isActive) return;
       setIsSearchingMentions(true);
       try {
         const res = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
         const data = await res.json();
+        if (!isActive) return;
         if (data.success) {
           setMentionResults(data.contributors.slice(0, 8));
           setShowMentionDropdown(data.contributors.length > 0);
           setSelectedMentionIndex(0);
         }
       } catch (error) {
+        if (!isActive) return;
         console.error('Mention search error:', error);
       } finally {
-        setIsSearchingMentions(false);
+        if (isActive) setIsSearchingMentions(false);
       }
-    }, 300);
+    }, 150);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isActive = false;
+      clearTimeout(timer);
+    };
   }, [input, showContributorDropdown, showUserDropdown, showCommandDropdown]);
 
   // Select mention from @ dropdown
@@ -1393,9 +1402,13 @@ export default function ChatPage() {
       setIsResearching(true);
     }
 
-    // Always clear search dropdown when sending
+    // Always clear search dropdowns when sending
     setShowContributorDropdown(false);
     setContributorResults([]);
+    setShowMentionDropdown(false);
+    setMentionResults([]);
+    setShowUserDropdown(false);
+    setUserResults([]);
 
     // Intercept manual /check commands
     if (textToSend.toLowerCase().startsWith('/check') && !analyzingContributor) {
