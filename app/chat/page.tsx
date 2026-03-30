@@ -464,17 +464,29 @@ const GifDisplay = ({ data }: { data: { url: string; type: string; target: strin
   );
 };
 
-// Chart Image Component - TradingView-style chart as embedded image
+// Chart Image Component - Static chart image (same as Discord)
 const ChartImage = ({ url }: { url: string }) => {
+  // Check if it's a base64 data URL or regular URL
+  const isBase64 = url?.startsWith('data:');
+
   return (
     <div className="my-4 rounded-xl overflow-hidden border border-white/10 bg-black/30">
       <div className="relative">
-        <iframe
-          src={url}
-          className="w-full"
-          style={{ height: '400px', border: 'none' }}
-          allowFullScreen
-        />
+        {isBase64 ? (
+          <img
+            src={url}
+            alt="TradingView Chart"
+            className="w-full"
+            style={{ height: 'auto', maxHeight: '400px' }}
+          />
+        ) : (
+          <iframe
+            src={url}
+            className="w-full"
+            style={{ height: '400px', border: 'none' }}
+            allowFullScreen
+          />
+        )}
         <div className="absolute bottom-0 right-0 bg-black/80 px-3 py-1 rounded-tl-lg">
           <span className="text-white text-xs">TradingView</span>
         </div>

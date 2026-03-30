@@ -76,14 +76,20 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
       return c;
     });
 
-    // Find min/max for scaling with minimal padding to utilize full height
-    const allPrices = candles.flatMap(c => [c.low, c.high]);
-    const minPrice = Math.min(...allPrices);
-    const maxPrice = Math.max(...allPrices);
-    const priceRange = maxPrice - minPrice || 1;
-    // Reduced padding from 5% to 2% for better space utilization
-    const paddedMin = minPrice - priceRange * 0.02;
-    const paddedMax = maxPrice + priceRange * 0.02;
+    // Calculate support/resistance from recent candles FIRST (for Y-axis range)
+    const recentCandles = candles.slice(-20);
+    const recentHighs = recentCandles.map(c => c.high);
+    const recentLows = recentCandles.map(c => c.low);
+
+    // Support = recent low, Resistance = recent high
+    const support = Math.min(...recentLows);
+    const resistance = Math.max(...recentHighs);
+
+    // Use support/resistance as Y-axis range (not all-time high/low)
+    const priceRange = resistance - support || 1;
+    // Small padding (5%) so candles don't touch edges
+    const paddedMin = support - priceRange * 0.05;
+    const paddedMax = resistance + priceRange * 0.05;
     const paddedRange = paddedMax - paddedMin;
 
     // Draw candles (show last 50 candles)
@@ -141,42 +147,34 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
       }
     });
 
-    // Draw support/resistance levels (recent highs/lows)
-    if (wickPositions.length >= 5) {
-      const recentWicks = wickPositions.slice(-20);
+    // Draw support/resistance levels (using the same values from Y-axis calculation)
+    const resistanceY = paddingTop + ((paddedMax - resistance) / paddedRange) * chartHeight;
+    const supportY = paddingTop + ((paddedMax - support) / paddedRange) * chartHeight;
 
-      // Find highest high (resistance)
-      const resistance = Math.max(...recentWicks.map(w => w.price));
-      const resistanceY = paddingTop + ((paddedMax - resistance) / paddedRange) * chartHeight;
+    // Draw resistance line (dashed red at top)
+    ctx.strokeStyle = 'rgba(239, 83, 80, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(paddingLeft, resistanceY);
+    ctx.lineTo(paddingLeft + chartWidth, resistanceY);
+    ctx.stroke();
 
-      // Find lowest low (support)
-      const support = Math.min(...recentWicks.map(w => w.lowPrice));
-      const supportY = paddingTop + ((paddedMax - support) / paddedRange) * chartHeight;
+    // Resistance label background
+    ctx.fillStyle = 'rgba(239, 83, 80, 0.2)';
+    ctx.fillRect(paddingLeft + 10, resistanceY - 10, 90, 18);
+    ctx.fillStyle = '#ef5350';
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('RES ' + formatPriceReal(resistance), paddingLeft + 14, resistanceY + 3);
 
-      // Draw resistance line (dashed red at top)
-      ctx.strokeStyle = 'rgba(239, 83, 80, 0.5)';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(paddingLeft, resistanceY);
-      ctx.lineTo(paddingLeft + chartWidth, resistanceY);
-      ctx.stroke();
-
-      // Resistance label background
-      ctx.fillStyle = 'rgba(239, 83, 80, 0.2)';
-      ctx.fillRect(paddingLeft + 10, resistanceY - 10, 90, 18);
-      ctx.fillStyle = '#ef5350';
-      ctx.font = '11px sans-serif';
-      ctx.textAlign = 'left';
-      ctx.fillText('RES ' + formatPriceReal(resistance), paddingLeft + 14, resistanceY + 3);
-
-      // Draw support line (dashed green at bottom)
-      ctx.strokeStyle = 'rgba(38, 166, 154, 0.5)';
-      ctx.beginPath();
-      ctx.moveTo(paddingLeft, supportY);
-      ctx.lineTo(paddingLeft + chartWidth, supportY);
-      ctx.stroke();
-      ctx.setLineDash([]);
+    // Draw support line (dashed green at bottom)
+    ctx.strokeStyle = 'rgba(38, 166, 154, 0.5)';
+    ctx.beginPath();
+    ctx.moveTo(paddingLeft, supportY);
+    ctx.lineTo(paddingLeft + chartWidth, supportY);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
       // Support label background
       ctx.fillStyle = 'rgba(38, 166, 154, 0.2)';

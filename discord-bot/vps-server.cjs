@@ -1192,6 +1192,16 @@ client.on('interactionCreate', async (interaction) => {
     }
   } catch (error) {
     console.error('Command error:', error);
+    // Reply to user with error message
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: `❌ Error: ${error.message || 'Unknown error occurred'}`, components: [] });
+      } else {
+        await interaction.reply({ content: `❌ Error: ${error.message || 'Unknown error occurred'}`, ephemeral: true });
+      }
+    } catch (e) {
+      console.error('Failed to send error message:', e);
+    }
   }
 });
 
