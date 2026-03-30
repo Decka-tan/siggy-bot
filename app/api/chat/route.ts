@@ -297,7 +297,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({
           response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\nPrice: ${formatPrice(priceData.price.usd)} • 24h: ${changeText}\n\nView interactive chart on [TradingView](${tradingViewUrl})`,
           isRawCommand: true,
-          chartImage: chartImageBase64,
+          chartImage: chartWidgetUrl,
         });
       } catch (error) {
         console.error('[Chart] Error:', error);
