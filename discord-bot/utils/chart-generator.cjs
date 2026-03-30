@@ -176,13 +176,12 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-      // Support label background
-      ctx.fillStyle = 'rgba(38, 166, 154, 0.2)';
-      ctx.fillRect(paddingLeft + 10, supportY - 8, 90, 18);
-      ctx.fillStyle = '#26a69a';
-      ctx.font = '11px sans-serif';
-      ctx.fillText('SUP ' + formatPriceReal(support), paddingLeft + 14, supportY + 4);
-    }
+    // Support label background
+    ctx.fillStyle = 'rgba(38, 166, 154, 0.2)';
+    ctx.fillRect(paddingLeft + 10, supportY - 8, 90, 18);
+    ctx.fillStyle = '#26a69a';
+    ctx.font = '11px sans-serif';
+    ctx.fillText('SUP ' + formatPriceReal(support), paddingLeft + 14, supportY + 4);
 
     // Price scale on right side (real numbers, no K/M/B)
     const priceLevels = 8;
