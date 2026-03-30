@@ -42,6 +42,120 @@ async function getCoinData(coinId: string) {
   return response.json();
 }
 
+// Discord data cache for dynamic facts
+let discordDataCache: any = null;
+let discordDataCacheTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getDiscordData() {
+  const now = Date.now();
+  if (discordDataCache && (now - discordDataCacheTime) < CACHE_DURATION) {
+    return discordDataCache;
+  }
+
+  try {
+    // Read from extracted data files
+    const fs = await import('fs/promises');
+    const path = await import('path');
+
+    const dataPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
+    const dataContent = await fs.readFile(dataPath, 'utf-8');
+    const data = JSON.parse(dataContent);
+
+    discordDataCache = data;
+    discordDataCacheTime = now;
+    return data;
+  } catch (error) {
+    console.error('Error reading Discord data:', error);
+    return null;
+  }
+}
+
+async function generateDynamicFact(): Promise<string> {
+  const data = await getDiscordData();
+  if (!data || !data.members || data.members.length === 0) {
+    // Fallback to generic facts
+    const fallbackFacts = [
+      'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.',
+      'Octopuses have three hearts and blue blood.',
+      'A group of flamingos is called a "flamboyance".',
+      'Bananas are berries, but strawberries aren\'t.',
+      'The shortest war in history lasted 38 to 45 minutes between Britain and Zanzibar in 1896.',
+    ];
+    return fallbackFacts[Math.floor(Math.random() * fallbackFacts.length)];
+  }
+
+  const members = data.members;
+  const totalMembers = data.totalAnalyzed || members.length;
+
+  // Calculate stats
+  const topContributors = [...members].sort((a, b) => b.contributionsCount - a.contributionsCount).slice(0, 5);
+  const topMessagers = [...members].sort((a, b) => b.globalMessages - a.globalMessages).slice(0, 5);
+  const topEventParticipants = [...members].filter(m => m.eventsCount > 0).sort((a, b) => b.eventsCount - a.eventsCount).slice(0, 5);
+
+  const totalMessages = members.reduce((sum: number, m: any) => sum + (m.globalMessages || 0), 0);
+  const totalContributions = members.reduce((sum: number, m: any) => sum + (m.contributionsCount || 0), 0);
+  const totalEvents = members.reduce((sum: number, m: any) => sum + (m.eventsCount || 0), 0);
+
+  // Dynamic fact templates
+  const factTemplates = [
+    // Top contributors
+    () => {
+      const top = topContributors[Math.floor(Math.random() * Math.min(3, topContributors.length))];
+      return `🏆 [b]Top Contributor:[/b] @${top.username} with ${top.contributionsCount} contributions!`;
+    },
+    // Top messagers
+    () => {
+      const top = topMessagers[Math.floor(Math.random() * Math.min(3, topMessagers.length))];
+      return `💬 [b]Most Active:[/b] @${top.username} with ${top.globalMessages.toLocaleString()} messages!`;
+    },
+    // Event winners
+    () => {
+      if (topEventParticipants.length > 0) {
+        const top = topEventParticipants[Math.floor(Math.random() * Math.min(3, topEventParticipants.length))];
+        return `👑 [b]Event Champion:[/b] @${top.username} with ${top.eventsCount} event wins!`;
+      }
+      return null;
+    },
+    // Community stats
+    () => `📊 [b]Ritual Community:[/b] ${totalMembers.toLocaleString} active members!`,
+    () => `💬 [b]Total Messages:[/b] ${totalMessages.toLocaleString()} messages sent!`,
+    () => `✨ [b]Total Contributions:[/b] ${totalContributions.toLocaleString()} contributions made!`,
+    () => `🎉 [b]Events Hosted:[/b] ${totalEvents} events participated in!`,
+    // Random member highlight
+    () => {
+      const randomMember = members[Math.floor(Math.random() * members.length)];
+      return `⭐ [b]Member Spotlight:[/b] @${randomMember.username} - ${randomMember.displayName}`;
+    },
+    // Shoutout to quiet achievers
+    () => {
+      const quiet = members.filter((m: any) => m.contributionsCount > 10 && m.contributionsCount < 100);
+      if (quiet.length > 0) {
+        const member = quiet[Math.floor(Math.random() * quiet.length)];
+        return `🌟 [b]Rising Star:[/b] @${member.username} with ${member.contributionsCount} contributions!`;
+      }
+      return null;
+    },
+    // Message stats
+    () => {
+      const avgMessages = Math.round(totalMessages / totalMembers);
+      return `📈 [b]Average Messages:[/b] ${avgMessages} messages per member!`;
+    },
+  ];
+
+  // Try templates until we get a valid fact
+  let attempts = 0;
+  while (attempts < 10) {
+    const template = factTemplates[Math.floor(Math.random() * factTemplates.length)];
+    const fact = template();
+    if (fact) return fact;
+    attempts++;
+  }
+
+  // Ultimate fallback
+  return `🎮 [b]Ritual Community:[/b] ${totalMembers.toLocaleString()} members strong!`;
+}
+
 // Initialize AI client - OpenAI for CHAT only
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
 
@@ -168,10 +282,10 @@ export async function POST(req: NextRequest) {
       const result = isHeads ? 'Heads' : 'Tails';
       const emoji = isHeads ? '🪙' : '🦅';
 
-      let response = `${emoji} **Coin Flip**\n\n**Result:** ${result}`;
+      let response = `${emoji} [b]Coin Flip[/b]\n\n[b]Result:[/b] ${result}`;
       if (choice && (choice === 'heads' || choice === 'tails')) {
         const won = (choice === 'heads' && isHeads) || (choice === 'tails' && !isHeads);
-        response += `\n**You chose:** ${choice}\n**${won ? '🎉 You won!' : '😢 You lost!'}**`;
+        response += `\n[b]You chose:[/b] ${choice}\n[b]${won ? '🎉 You won!' : '😢 You lost!'}[/b]`;
       }
       return NextResponse.json({ response, isRawCommand: true });
     }
@@ -196,33 +310,10 @@ export async function POST(req: NextRequest) {
 
       const total = rolls.reduce((a, b) => a + b, 0);
       const response = count === 1
-        ? `🎲 **Dice Roll**\n\n**You rolled:** ${rolls[0]}`
-        : `🎲 **Dice Rolls**\n\n**Rolls:** ${rolls.join(', ')}\n**Total:** ${total}`;
+        ? `🎲 [b]Dice Roll[/b]\n\n[b]You rolled:[/b] ${rolls[0]}`
+        : `🎲 [b]Dice Rolls[/b]\n\n[b]Rolls:[/b] ${rolls.join(', ')}\n[b]Total:[/b] ${total}`;
 
-      return NextResponse.json({ response, isRawCommand: true });
-    }
-
-    // /8ball command
-    if (lowerMsg.startsWith('/8ball ')) {
-      const question = lowerMsg.slice(7).trim();
-      if (!question) {
-        return NextResponse.json({ response: '❌ You need to ask a question!', isRawCommand: true });
-      }
-
-      const responses = [
-        'It is certain ✨', 'It is decidedly so 💫', 'Without a doubt 🌟', 'Yes definitely ⭐',
-        'You may rely on it 🔮', 'As I see it, yes 👁️', 'Most likely 🎯', 'Outlook good 😊',
-        'Yes 👍', 'Signs point to yes 📍', 'Reply hazy, try again 🌫️', 'Ask again later ⏰',
-        'Better not tell you now 🤫', 'Cannot predict now ❓', 'Concentrate and ask again 🧠',
-        "Don't count on it ❌", 'My reply is no 🚫', 'My sources say no 📚', 'Outlook not so good 😕',
-        'Very doubtful 🤷',
-      ];
-
-      const response = responses[Math.floor(Math.random() * responses.length)];
-      return NextResponse.json({
-        response: `🎱 **Magic 8-Ball**\n\n**Question:** ${question}\n**Answer:** ${response}`,
-        isRawCommand: true,
-      });
+      return NextResponse.json({ response, isRawCommand: true, diceValues: rolls });
     }
 
     // /choose command
@@ -247,72 +338,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // /convert command
-    if (lowerMsg.startsWith('/convert ')) {
-      const args = lowerMsg.slice(9).trim().split(/\s+/);
-      if (args.length < 3) {
-        return NextResponse.json({
-          response: '❌ Use format: /convert <amount> <from> <to>\nExample: /convert 1 btc to usd',
-          isRawCommand: true,
-        });
-      }
-
-      const amount = parseFloat(args[0]);
-      const from = args[1].toLowerCase();
-      const to = args[2].toLowerCase();
-
-      try {
-        const coinId = normalizeCoinId(from);
-        const data = await getCoinData(coinId);
-
-        if (!data) {
-          return NextResponse.json({
-            response: `❌ Couldn't find coin "${from}". Try: btc, eth, sol, bnb, xrp, ada, doge`,
-            isRawCommand: true,
-          });
-        }
-
-        const priceUsd = data.market_data.current_price.usd;
-        const usdAmount = amount * priceUsd;
-
-        // Simple conversion rates
-        const fiatRates: Record<string, number> = { usd: 1, idr: 16000, eur: 0.92, gbp: 0.79 };
-
-        let finalAmount: number;
-        if (fiatRates[to]) {
-          finalAmount = usdAmount / fiatRates[to];
-        } else {
-          // Converting to another crypto - approximate
-          const toCoinId = normalizeCoinId(to);
-          const toData = await getCoinData(toCoinId);
-          if (!toData) {
-            return NextResponse.json({
-              response: `❌ Couldn't find target coin "${to}". Try: btc, eth, sol, bnb, usd, idr`,
-              isRawCommand: true,
-            });
-          }
-          finalAmount = usdAmount / toData.market_data.current_price.usd;
-        }
-
-        const formatResult = (val: number): string => {
-          if (val >= 1000) return val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          if (val >= 1) return val.toFixed(4);
-          return val.toFixed(8);
-        };
-
-        return NextResponse.json({
-          response: `💱 **Crypto Converter**\n\n**${formatResult(amount)} ${from.toUpperCase()} = ${formatResult(finalAmount)} ${to.toUpperCase()}**\n\n*Price (1 ${from.toUpperCase()}):* $${priceUsd.toLocaleString()}`,
-          isRawCommand: true,
-        });
-      } catch (error) {
-        return NextResponse.json({
-          response: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-          isRawCommand: true,
-        });
-      }
-    }
-
-    // /gas command - Ethereum gas fees
+    // === FUN COMMANDS ===
     if (lowerMsg === '/gas') {
       try {
         const response = await fetch('https://api.etherscan.io/api?module=gastracker&action=gasoracle');
@@ -366,7 +392,7 @@ export async function POST(req: NextRequest) {
       const hugEmojis = ['🤗', '💕', '🫂', '❤️'];
       const emoji = hugEmojis[Math.floor(Math.random() * hugEmojis.length)];
       return NextResponse.json({
-        response: `${emoji} **Hug!**\n\n*You hug ${target}*`,
+        response: `${emoji} [b]Hug![/b]\n\n*You hug ${target}*`,
         isRawCommand: true,
       });
     }
@@ -377,7 +403,7 @@ export async function POST(req: NextRequest) {
       const slapEmojis = ['👋', '💥', '😵', '🖐️'];
       const emoji = slapEmojis[Math.floor(Math.random() * slapEmojis.length)];
       return NextResponse.json({
-        response: `${emoji} **Slap!**\n\n*You slap ${target}*`,
+        response: `${emoji} [b]Slap![/b]\n\n*You slap ${target}*`,
         isRawCommand: true,
       });
     }
@@ -386,7 +412,7 @@ export async function POST(req: NextRequest) {
     if (lowerMsg.startsWith('/pat ')) {
       const target = message.slice(5).trim() || 'you';
       return NextResponse.json({
-        response: `👋 **Pat!**\n\n*You pat ${target} on the head*`,
+        response: `👋 [b]Pat![/b]\n\n*You pat ${target} on the head*`,
         isRawCommand: true,
       });
     }
@@ -395,28 +421,16 @@ export async function POST(req: NextRequest) {
     if (lowerMsg.startsWith('/highfive ')) {
       const target = message.slice(10).trim() || 'you';
       return NextResponse.json({
-        response: `✋ **High Five!**\n\n*You high-five ${target}*`,
+        response: `✋ [b]High Five![/b]\n\n*You high-five ${target}*`,
         isRawCommand: true,
       });
     }
 
-    // /fact command
+    // /fact command - Dynamic Discord facts
     if (lowerMsg === '/fact') {
-      const facts = [
-        'Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3,000 years old and still edible.',
-        'Octopuses have three hearts and blue blood.',
-        'A group of flamingos is called a "flamboyance".',
-        'Bananas are berries, but strawberries aren\'t.',
-        'The shortest war in history lasted 38 to 45 minutes between Britain and Zanzibar in 1896.',
-        'A day on Venus is longer than a year on Venus.',
-        'Cows have best friends and get stressed when separated.',
-        'The inventor of the Pringles can is buried in one.',
-        'There are more stars in the universe than grains of sand on Earth.',
-        'The Hawaiian alphabet has only 12 letters.',
-      ];
-      const fact = facts[Math.floor(Math.random() * facts.length)];
+      const fact = await generateDynamicFact();
       return NextResponse.json({
-        response: `🧠 **Random Fact**\n\n${fact}\n\n*Did you know?*`,
+        response: `🧠 [b]Ritual Fact[/b]\n\n${fact}\n\n*Did you know?*`,
         isRawCommand: true,
       });
     }
@@ -434,7 +448,7 @@ export async function POST(req: NextRequest) {
       ];
       const quote = quotes[Math.floor(Math.random() * quotes.length)];
       return NextResponse.json({
-        response: `💬 **Random Quote**\n\n*"${quote.text}"*\n\n— **${quote.author}**`,
+        response: `💬 [b]Random Quote[/b]\n\n*"${quote.text}"*\n\n— [b]${quote.author}[/b]`,
         isRawCommand: true,
       });
     }
@@ -461,7 +475,7 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({
-        response: `🔀 **Shuffled List**\n\n${shuffled.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n*${items.length} items shuffled*`,
+        response: `🔀 [b]Shuffled List[/b]\n\n${shuffled.map((item, i) => `${i + 1}. ${item}`).join('\n')}\n\n*${items.length} items shuffled*`,
         isRawCommand: true,
       });
     }
@@ -478,7 +492,7 @@ export async function POST(req: NextRequest) {
       else if (parseFloat(rating) >= 3) emoji = '👎';
 
       return NextResponse.json({
-        response: `⭐ **Rating: ${rating}/10**\n\nI rate **${target}** ${emoji} **${rating}/10**`,
+        response: `⭐ [b]Rating: ${rating}/10[/b]\n\nI rate [b]${target}[/b] ${emoji} [b]${rating}/10[/b]`,
         isRawCommand: true,
       });
     }
@@ -495,7 +509,7 @@ export async function POST(req: NextRequest) {
       else if (percentage >= 20) level = 'Straight-ish 😌';
 
       return NextResponse.json({
-        response: `🏳 **How Gay is ${target}?**\n\n**${target}** is **${percentage}%** gay!\n\n${level}\n\n*Just for fun! 💖*`,
+        response: `🏳 [b]How Gay is ${target}?[/b]\n\n[b]${target}[/b] is [b]${percentage}%[/b] gay!\n\n${level}\n\n*Just for fun! 💖*`,
         isRawCommand: true,
       });
     }
@@ -512,7 +526,7 @@ export async function POST(req: NextRequest) {
       else if (percentage >= 20) level = 'Simp tendencies';
 
       return NextResponse.json({
-        response: `💕 **Simp Rate: ${target}**\n\n**${target}** is **${percentage}%** simp!\n\n*${level}*`,
+        response: `💕 [b]Simp Rate: ${target}[/b]\n\n[b]${target}[/b] is [b]${percentage}%[/b] simp!\n\n*${level}*`,
         isRawCommand: true,
       });
     }
@@ -523,49 +537,7 @@ export async function POST(req: NextRequest) {
     if (lowerMsg === '/avatar' || lowerMsg.startsWith('/avatar ')) {
       const target = message.slice(8).trim() || userName;
       return NextResponse.json({
-        response: `🖼️ **Avatar**\n\nShowing avatar for **${target}**\n\n*On Discord, this would show the user's profile picture. On the website, avatars are based on your display name.*`,
-        isRawCommand: true,
-      });
-    }
-
-    // /rank command
-    if (lowerMsg === '/rank' || lowerMsg.startsWith('/rank ')) {
-      const target = message.slice(6).trim() || userName;
-      // Simulated rank since we don't have Discord data on website
-      const level = Math.floor(Math.random() * 50) + 1;
-      const xp = Math.floor(Math.random() * 5000) + 100;
-
-      const levelNames: Record<number, string> = {
-        100: '💎 Diamond Guardian',
-        75: '🌟 Celestial Voyager',
-        50: '🔮 Mystic Adept',
-        30: '⚡ Storm Rider',
-        20: '🌙 Night Walker',
-        15: '🌿 Forest Sage',
-        10: '🔥 Ember Keeper',
-        5: '💧 Spring Seeker',
-        3: '🌱 Dawn Initiate',
-        2: '🌿 Seedling',
-        1: '🍃 Newcomer',
-      };
-
-      let levelName = '🍃 Newcomer';
-      for (const [lvl, name] of Object.entries(levelNames).sort((a, b) => parseInt(b[0]) - parseInt(a[0]))) {
-        if (level >= parseInt(lvl)) {
-          levelName = name;
-          break;
-        }
-      }
-
-      const progressBar = '█'.repeat(Math.floor((xp % 100) / 10)) + '░'.repeat(10 - Math.floor((xp % 100) / 10));
-
-      return NextResponse.json({
-        response: `📊 **${target}'s Rank**\n\n` +
-          `🏆 **Server Rank:** #${Math.floor(Math.random() * 100) + 1}\n` +
-          `⭐ **Level:** ${level} - ${levelName}\n` +
-          `💬 **Messages:** ${xp.toLocaleString()}\n` +
-          `✨ **XP Progress:** ${progressBar} ${xp % 100}%\n\n` +
-          `*On Discord, this shows real server stats. On the website, it's simulated!*`,
+        response: `🖼️ [b]Avatar[/b]\n\nShowing avatar for [b]${target}[/b]\n\n*On Discord, this would show the user's profile picture. On the website, avatars are based on your display name.*`,
         isRawCommand: true,
       });
     }

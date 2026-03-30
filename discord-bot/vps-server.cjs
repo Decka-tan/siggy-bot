@@ -45,19 +45,9 @@ const {
 const {
   handleFlip,
   handleRoll,
-  handle8Ball,
   handleAvatar,
-  handleConvert,
   handleChoose,
 } = require('./commands/utility.cjs');
-
-const {
-  handleGas,
-} = require('./commands/gas.cjs');
-
-const {
-  handleRank,
-} = require('./commands/rank.cjs');
 
 const {
   handleHug,
@@ -184,13 +174,6 @@ const utilityCommands = [
     ],
   },
   {
-    name: '8ball',
-    description: 'Ask the Magic 8-Ball a question',
-    options: [
-      { name: 'question', description: 'Your question', type: 3, required: true },
-    ],
-  },
-  {
     name: 'avatar',
     description: 'Get a user\'s avatar',
     options: [
@@ -198,30 +181,10 @@ const utilityCommands = [
     ],
   },
   {
-    name: 'convert',
-    description: 'Convert between cryptocurrencies',
-    options: [
-      { name: 'amount', description: 'Amount to convert', type: 10, required: true },
-      { name: 'from', description: 'From currency (e.g., btc, eth)', type: 3, required: true },
-      { name: 'to', description: 'To currency (e.g., usd, idr, btc)', type: 3, required: true },
-    ],
-  },
-  {
     name: 'choose',
     description: 'Randomly choose from options',
     options: [
       { name: 'options', description: 'Options separated by | (e.g., pizza | burger | sushi)', type: 3, required: true },
-    ],
-  },
-  {
-    name: 'gas',
-    description: 'Check current Ethereum gas fees',
-  },
-  {
-    name: 'rank',
-    description: 'Check your rank or another user\'s rank',
-    options: [
-      { name: 'user', description: 'The user (default: you)', type: 6, required: false },
     ],
   },
   // Fun & Social commands
@@ -1045,12 +1008,8 @@ client.on('interactionCreate', async (interaction) => {
       // Utility commands
       case 'flip': await handleFlip(interaction); break;
       case 'roll': await handleRoll(interaction); break;
-      case '8ball': await handle8Ball(interaction); break;
       case 'avatar': await handleAvatar(interaction); break;
-      case 'convert': await handleConvert(interaction); break;
       case 'choose': await handleChoose(interaction); break;
-      case 'gas': await handleGas(interaction); break;
-      case 'rank': await handleRank(interaction); break;
       // Fun commands
       case 'hug': await handleHug(interaction); break;
       case 'slap': await handleSlap(interaction); break;

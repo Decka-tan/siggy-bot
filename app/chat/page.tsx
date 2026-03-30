@@ -25,6 +25,7 @@ interface Message {
   disliked?: boolean;
   contributor?: ContributorElement;
   chartData?: ChartData;
+  diceValues?: number[];
 }
 
 interface ContributorElement {
@@ -325,6 +326,52 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
   );
 };
 
+// Dice Roll Component - Visual dice rendering
+const DiceRoll = ({ values }: { values: number[] }) => {
+  const diceEmojis: Record<number, string> = {
+    1: '⚀',
+    2: '⚁',
+    3: '⚂',
+    4: '⚃',
+    5: '⚄',
+    6: '⚅',
+  };
+
+  const getDiceEmoji = (value: number) => {
+    if (value >= 1 && value <= 6) return diceEmojis[value];
+    // For dice with more than 6 sides, show the number
+    return `🎲 ${value}`;
+  };
+
+  return (
+    <div className="my-4 flex flex-wrap gap-3 justify-center items-center">
+      {values.map((value, index) => (
+        <motion.div
+          key={index}
+          initial={{ scale: 0, rotate: -180 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{
+            type: "spring",
+            stiffness: 260,
+            damping: 20,
+            delay: index * 0.1
+          }}
+          className="relative"
+        >
+          <div className="text-5xl md:text-6xl filter drop-shadow-lg">
+            {getDiceEmoji(value)}
+          </div>
+          {value <= 6 && (
+            <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 text-xs font-bold text-accent bg-black/50 px-2 py-0.5 rounded-full">
+              {value}
+            </div>
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+};
+
 // Typewriter Text Component
 const TypewriterText = ({ text, isLatest, className, alreadyAnimated, onAnimationComplete, playTyping, playVoiceLine, personality, speed = 20, contributorMap = {} }: { text: string; isLatest: boolean; className?: string; alreadyAnimated: boolean; onAnimationComplete?: () => void; playTyping?: () => void; playVoiceLine?: (t: 'CAT' | 'ANIME') => void; personality?: 'CAT' | 'ANIME'; speed?: number, contributorMap?: Record<string, ContributorSearchResult> }) => {
   const hasAnimatedRef = useRef(alreadyAnimated);
@@ -526,6 +573,12 @@ export default function ChatPage() {
   const [commandQuery, setCommandQuery] = useState('');
   const [selectedCommandIndex, setSelectedCommandIndex] = useState(0);
 
+  // User Dropdown States (for /hug, /slap, /pat, etc.)
+  const [userResults, setUserResults] = useState<ContributorSearchResult[]>([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [selectedUserIndex, setSelectedUserIndex] = useState(0);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
+
   const availableCommands = [
     // Core
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
@@ -548,11 +601,7 @@ export default function ChatPage() {
     // Utility
     { name: 'flip', description: 'Flip a coin (heads/tails)', usage: '/flip [amount] [choice]' },
     { name: 'roll', description: 'Roll dice', usage: '/roll [sides] [count]' },
-    { name: '8ball', description: 'Magic 8-ball', usage: '/8ball <question>' },
     { name: 'choose', description: 'Random choice from options', usage: '/choose option1 | option2 | ...' },
-    { name: 'convert', description: 'Convert currency', usage: '/convert <amount> <from> <to>' },
-    { name: 'gas', description: 'Check Ethereum gas fees', usage: '/gas' },
-    { name: 'rank', description: 'Check user rank and XP', usage: '/rank [@user]' },
     { name: 'avatar', description: 'Get user avatar', usage: '/avatar [@user]' },
     // Leaderboard
     { name: 'leaderboard', description: 'Manage leaderboards', usage: '/leaderboard <action> [options]' },
@@ -752,6 +801,12 @@ export default function ChatPage() {
 
   // Slash Command Detection Effect
   useEffect(() => {
+    // Commands that take parameters (should hide dropdown when typing options)
+    const commandsWithParams = [
+      'check', 'research', 'price', 'chart', 'hug', 'slap', 'pat', 'highfive',
+      'rate', 'howgay', 'simp', 'shuffle', 'choose', 'leaderboard', 'roll', 'flip', 'avatar'
+    ];
+
     // Check if input starts with /
     if (input.startsWith('/')) {
       // Extract command after /
@@ -759,7 +814,7 @@ export default function ChatPage() {
       const cmd = parts[0].toLowerCase();
 
       // Don't show command dropdown if we're already in a specific command flow
-      if (cmd === 'check' || cmd === 'analysis' || cmd === 'research') {
+      if (commandsWithParams.includes(cmd)) {
         setShowCommandDropdown(false);
         return;
       }
@@ -773,8 +828,8 @@ export default function ChatPage() {
     }
 
     // Hide command dropdown when continuing to type command with space
-    if (input.toLowerCase().startsWith('/check ') || input.toLowerCase().startsWith('/research ') ||
-        input.toLowerCase().startsWith('/price ') || input.toLowerCase().startsWith('/chart ')) {
+    const shouldHideDropdown = commandsWithParams.some(cmd => input.toLowerCase().startsWith(`/${cmd} `));
+    if (shouldHideDropdown) {
       setShowCommandDropdown(false);
       setCommandQuery('');
     }
@@ -831,6 +886,65 @@ export default function ChatPage() {
 
     return () => clearTimeout(timer);
   }, [input, analyzingContributor]);
+
+  // User Dropdown Effect (for /hug, /slap, /pat, /highfive, /howgay, /simp, /rate commands)
+  useEffect(() => {
+    // Commands that need user autocomplete
+    const userCommands = ['hug', 'slap', 'pat', 'highfive', 'howgay', 'simp', 'rate'];
+
+    // Check if input matches any of these commands
+    const matchedCommand = userCommands.find(cmd => input.toLowerCase().startsWith(`/${cmd}`));
+
+    if (!matchedCommand) {
+      setUserResults([]);
+      setShowUserDropdown(false);
+      return;
+    }
+
+    // Extract query: "/command [query]"
+    const cmdLength = matchedCommand.length + 2; // "/" + command + " "
+    const query = input.slice(cmdLength).trim();
+
+    // Immediate trigger as long as we have the command
+    if (input.toLowerCase() === `/${matchedCommand}` || input.toLowerCase() === `/${matchedCommand} `) {
+      setIsSearchingUsers(true);
+      fetch(`/api/contributor?action=autocomplete&username=`).then(res => res.json()).then(data => {
+        if (data.success) {
+          setUserResults(data.contributors.slice(0, 8));
+          setShowUserDropdown(true);
+        }
+      }).finally(() => setIsSearchingUsers(false));
+      return;
+    }
+
+    // Debounced search for user input
+    const timer = setTimeout(async () => {
+      setIsSearchingUsers(true);
+      try {
+        const res = await fetch(`/api/contributor?action=autocomplete&username=${encodeURIComponent(query)}`);
+        const data = await res.json();
+        if (data.success) {
+          setUserResults(data.contributors.slice(0, 8));
+          setShowUserDropdown(data.contributors.length > 0);
+        }
+      } catch (error) {
+        console.error('User search error:', error);
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [input]);
+
+  // Select user from dropdown
+  const selectUser = (user: ContributorSearchResult, command: string) => {
+    setInput(`/${command} @${user.username}`);
+    setShowUserDropdown(false);
+    setUserResults([]);
+    setSelectedUserIndex(0);
+    inputRef.current?.focus();
+  };
 
   // Analyze contributor with DeepSeek
   const analyzeContributor = async (contributor: ContributorSearchResult) => {
@@ -1139,6 +1253,7 @@ export default function ChatPage() {
         content: processedResponse,
         mood: data.currentMood,
         chartData: data.chartData,
+        diceValues: data.diceValues,
       };
 
       setConversations(prev => prev.map(conv => {
@@ -1242,6 +1357,32 @@ export default function ChatPage() {
       }
       if (e.key === 'Escape') {
         setShowContributorDropdown(false);
+        return;
+      }
+    }
+
+    // User dropdown navigation (for /hug, /slap, /pat, etc.)
+    if (showUserDropdown && userResults.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedUserIndex(prev => (prev + 1) % userResults.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedUserIndex(prev => (prev - 1 + userResults.length) % userResults.length);
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        // Extract command from input
+        const parts = input.split(' ');
+        const command = parts[0].slice(1); // Remove the /
+        selectUser(userResults[selectedUserIndex], command);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowUserDropdown(false);
         return;
       }
     }
@@ -2255,6 +2396,80 @@ export default function ChatPage() {
                                 )}
                               </AnimatePresence>
 
+                              {/* User Dropdown (for /hug, /slap, /pat, /highfive, /howgay, /simp, /rate) */}
+                              <AnimatePresence>
+                                {showUserDropdown && userResults.length > 0 && (
+                                  <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10, pointerEvents: 'none' }}
+                                    className="absolute bottom-full left-0 right-0 mb-2 bg-bg/95 backdrop-blur-xl border border-border rounded-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                                  >
+                                    <div className="p-2.5 border-b border-border bg-accent/5 flex items-center justify-between">
+                                      <span className="text-[10px] font-mono text-accent uppercase tracking-[0.2em] flex items-center gap-2 font-bold">
+                                        <User className="w-3.5 h-3.5" />
+                                        Select User
+                                      </span>
+                                      {isSearchingUsers && (
+                                        <RefreshCw className="w-3.5 h-3.5 text-accent animate-spin" />
+                                      )}
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1.5 space-y-1">
+                                      {userResults.map((user, idx) => (
+                                        <button
+                                          key={user.userId}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const parts = input.split(' ');
+                                            const command = parts[0].slice(1); // Remove the /
+                                            selectUser(user, command);
+                                          }}
+                                          onMouseEnter={() => setSelectedUserIndex(idx)}
+                                          className={`w-full group flex items-start gap-4 p-3 rounded-lg transition-all text-left border ${idx === selectedUserIndex ? 'bg-accent/15 border-border shadow-[0_0_20px_rgba(255,215,0,0.1)]' : 'bg-transparent border-transparent hover:bg-white/5'}`}
+                                        >
+                                          <div className={`w-12 h-12 rounded-xl overflow-hidden border shrink-0 transition-all ${idx === selectedUserIndex ? 'border-border shadow-[0_0_15px_rgba(255,215,0,0.3)] scale-105' : 'border-border'}`}>
+                                            <img
+                                              src={user.avatar}
+                                              alt={user.username}
+                                              onError={(e) => {
+                                                const target = e.target as HTMLImageElement;
+                                                target.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.userId) % 5}.png`;
+                                              }}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          </div>
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                              <span className={`text-sm font-bold tracking-wide transition-colors ${idx === selectedUserIndex ? 'text-accent' : 'text-text-primary group-hover:text-accent/80'}`}>
+                                                {user.displayName}
+                                              </span>
+                                              {idx === selectedUserIndex && (
+                                                <motion.span layoutId="vn-active-user-badge" className="text-[9px] font-mono uppercase bg-accent text-black px-1.5 py-0.5 rounded font-black tracking-tighter">
+                                                  Select
+                                                </motion.span>
+                                              )}
+                                            </div>
+                                            <div className={`text-xs font-mono transition-colors ${idx === selectedUserIndex ? 'text-text-primary/90' : 'text-text-secondary group-hover:text-text-primary/70'}`}>
+                                              @{user.username}
+                                            </div>
+                                            <div className="mt-1.5 flex items-center gap-3">
+                                              <div className="text-[9px] font-mono text-accent bg-accent/10 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                                {user.messageCount.toLocaleString()} messages
+                                              </div>
+                                            </div>
+                                          </div>
+                                          {idx === selectedUserIndex && (
+                                            <div className="shrink-0 flex items-center self-center pr-1">
+                                              <ChevronRight className="w-4 h-4 text-accent animate-pulse" />
+                                            </div>
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
+
                               <button onClick={() => setShowStats(!showStats)} className="p-2 bg-black/40 border border-white/10 hover:border-border rounded-lg text-text-secondary hover:text-white transition-colors" title="Toggle UI" style={{ height: '40px' }}>
                                 {showStats ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
                               </button>
@@ -2376,6 +2591,9 @@ export default function ChatPage() {
 
                             {/* Chart for both user and assistant messages */}
                             {message.chartData && <SimpleChart data={message.chartData} />}
+
+                            {/* Dice roll visualization */}
+                            {message.diceValues && <DiceRoll values={message.diceValues} />}
 
                             {message.role === 'assistant' && (
                               <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
