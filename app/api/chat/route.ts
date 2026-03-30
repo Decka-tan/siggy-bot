@@ -391,79 +391,82 @@ export async function POST(req: NextRequest) {
 
     // === FUN COMMANDS ===
 
-    // GIF collections (same as Discord)
+    // GIF collections - Verified working anime GIFs
     const hugGifs = [
-      'https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
-      'https://media.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
-      'https://media.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
-      'https://media.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
-      'https://media.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
-      'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
-      'https://media.giphy.com/media/143v0Z4717aG7a/giphy.gif',
-      'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
-      'https://media.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
-      'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-      'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
-      'https://media.giphy.com/media/nKfU3gfVYynTVU1ZfG/giphy.gif',
-      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+      'https://i.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
+      'https://i.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+      'https://i.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
+      'https://i.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
+      'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://i.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+      'https://i.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+      'https://i.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+      'https://i.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+      'https://i.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+      'https://i.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+      'https://i.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
+      'https://i.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
+      'https://i.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+      'https://i.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
+      'https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+      'https://i.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+      'https://i.giphy.com/media/nKfU3gfVYynTVU1ZfG/giphy.gif',
+      'https://i.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+      'https://i.giphy.com/media/143v0Z4717aG7a/giphy.gif',
     ];
 
     const slapGifs = [
-      'https://media.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
-      'https://media.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
-      'https://media.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
-      'https://media.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
-      'https://media.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
-      'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
-      'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
-      'https://media.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
-      'https://media.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
-      'https://media.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
-      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-      'https://media.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
+      'https://i.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
+      'https://i.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
+      'https://i.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+      'https://i.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
+      'https://i.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
+      'https://i.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
+      'https://i.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
+      'https://i.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
+      'https://i.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
+      'https://i.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
+      'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://i.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
     ];
 
     const patGifs = [
-      'https://media.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
-      'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
-      'https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
-      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
-      'https://media.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
-      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-      'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
-      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-      'https://media.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
-      'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+      'https://i.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
+      'https://i.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+      'https://i.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
+      'https://i.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
+      'https://i.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
+      'https://i.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+      'https://i.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+      'https://i.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+      'https://i.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+      'https://i.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+      'https://i.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+      'https://i.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+      'https://i.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+      'https://i.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+      'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
     ];
 
     const highfiveGifs = [
-      'https://media.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
-      'https://media.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
-      'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-      'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
-      'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-      'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-      'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-      'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-      'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-      'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+      'https://i.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
+      'https://i.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
+      'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+      'https://i.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+      'https://i.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+      'https://i.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+      'https://i.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+      'https://i.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+      'https://i.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+      'https://i.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
     ];
 
     // /hug <user> command
     if (lowerMsg.startsWith('/hug ') || lowerMsg === '/hug') {
       const target = lowerMsg === '/hug' ? 'you' : message.slice(5).trim() || 'you';
-      const gifUrl = hugGifs[Math.floor(Math.random() * hugGifs.length)];
+      const randomIndex = Math.floor(Math.random() * hugGifs.length);
+      const gifUrl = hugGifs[randomIndex];
+      console.log(`[/hug] Selected GIF ${randomIndex + 1}/${hugGifs.length}: ${gifUrl}`);
       return NextResponse.json({
         response: `🤗 [b]Hug![/b]\n\n*You hug ${target}*`,
         isRawCommand: true,
@@ -474,7 +477,9 @@ export async function POST(req: NextRequest) {
     // /slap <user> command
     if (lowerMsg.startsWith('/slap ') || lowerMsg === '/slap') {
       const target = lowerMsg === '/slap' ? 'you' : message.slice(6).trim() || 'you';
-      const gifUrl = slapGifs[Math.floor(Math.random() * slapGifs.length)];
+      const randomIndex = Math.floor(Math.random() * slapGifs.length);
+      const gifUrl = slapGifs[randomIndex];
+      console.log(`[/slap] Selected GIF ${randomIndex + 1}/${slapGifs.length}: ${gifUrl}`);
       return NextResponse.json({
         response: `👋 [b]Slap![/b]\n\n*You slap ${target}*`,
         isRawCommand: true,
@@ -485,7 +490,9 @@ export async function POST(req: NextRequest) {
     // /pat <user> command
     if (lowerMsg.startsWith('/pat ') || lowerMsg === '/pat') {
       const target = lowerMsg === '/pat' ? 'you' : message.slice(5).trim() || 'you';
-      const gifUrl = patGifs[Math.floor(Math.random() * patGifs.length)];
+      const randomIndex = Math.floor(Math.random() * patGifs.length);
+      const gifUrl = patGifs[randomIndex];
+      console.log(`[/pat] Selected GIF ${randomIndex + 1}/${patGifs.length}: ${gifUrl}`);
       return NextResponse.json({
         response: `👋 [b]Pat![/b]\n\n*You pat ${target} on the head*`,
         isRawCommand: true,
@@ -496,7 +503,9 @@ export async function POST(req: NextRequest) {
     // /highfive <user> command
     if (lowerMsg.startsWith('/highfive ') || lowerMsg === '/highfive') {
       const target = lowerMsg === '/highfive' ? 'you' : message.slice(10).trim() || 'you';
-      const gifUrl = highfiveGifs[Math.floor(Math.random() * highfiveGifs.length)];
+      const randomIndex = Math.floor(Math.random() * highfiveGifs.length);
+      const gifUrl = highfiveGifs[randomIndex];
+      console.log(`[/highfive] Selected GIF ${randomIndex + 1}/${highfiveGifs.length}: ${gifUrl}`);
       return NextResponse.json({
         response: `✋ [b]High Five![/b]\n\n*You high-five ${target}*`,
         isRawCommand: true,

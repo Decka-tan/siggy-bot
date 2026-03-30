@@ -9,34 +9,36 @@ const { EmbedBuilder } = require('discord.js');
 async function handleHug(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const hugGifs = [
-    // Cute anime hugs
-    'https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
-    'https://media.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
-    'https://media.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
-    'https://media.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
-    'https://media.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
-    'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
-    'https://media.giphy.com/media/143v0Z4717aG7a/giphy.gif',
-    'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
-    'https://media.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
-    'https://media.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
-    'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
-    'https://media.giphy.com/media/nKfU3gfVYynTVU1ZfG/giphy.gif',
-    'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-    'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-    'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-    // More variety
-    'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-    'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-    'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-    'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+    // Verified working anime hug GIFs
+    'https://i.giphy.com/media/lrr9rHuoJOE0w/giphy.gif',
+    'https://i.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
+    'https://i.giphy.com/media/LMbo45iKzdPzM/giphy.gif',
+    'https://i.giphy.com/media/od5H3PmEG5EVq/giphy.gif',
+    'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+    'https://i.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+    'https://i.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+    'https://i.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+    'https://i.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    'https://i.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://i.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+    'https://i.giphy.com/media/1nkn77t9i1XCRdBFjD/giphy.gif',
+    'https://i.giphy.com/media/13YrHUvPfdfKNuFA1i/giphy.gif',
+    'https://i.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+    'https://i.giphy.com/media/xT8qB7Sd0B0Y8p0jIA/giphy.gif',
+    'https://i.giphy.com/media/3oEjI6SIIHBdRxXI40/giphy.gif',
+    'https://i.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+    'https://i.giphy.com/media/nKfU3gfVYynTVU1ZfG/giphy.gif',
+    'https://i.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+    'https://i.giphy.com/media/143v0Z4717aG7a/giphy.gif',
   ];
+
+  const randomIndex = Math.floor(Math.random() * hugGifs.length);
+  console.log(`[/hug] Selected GIF ${randomIndex + 1}/${hugGifs.length}: ${hugGifs[randomIndex]}`);
 
   const embed = new EmbedBuilder()
     .setColor(0xFF69B4)
     .setTitle(`🤗 ${interaction.user.username} hugs ${user.username}!`)
-    .setImage(hugGifs[Math.floor(Math.random() * hugGifs.length)])
+    .setImage(hugGifs[randomIndex])
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -46,24 +48,27 @@ async function handleHug(interaction) {
 async function handleSlap(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const slapGifs = [
-    'https://media.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
-    'https://media.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
-    'https://media.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
-    'https://media.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
-    'https://media.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
-    'https://media.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
-    'https://media.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
-    'https://media.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
-    'https://media.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
-    'https://media.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
-    'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-    'https://media.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
+    'https://i.giphy.com/media/GfXA8VA10YFLy/giphy.gif',
+    'https://i.giphy.com/media/XH1YqSiiEQKOc/giphy.gif',
+    'https://i.giphy.com/media/xT9IgzoKnwFNmISR8I/giphy.gif',
+    'https://i.giphy.com/media/1fF2Z8uesXe7widrMH/giphy.gif',
+    'https://i.giphy.com/media/nWFPZbAvBMSaI/giphy.gif',
+    'https://i.giphy.com/media/7eRRq5VRr277jRwj1h/giphy.gif',
+    'https://i.giphy.com/media/qCTuIrNjhfMYDkpXZR/giphy.gif',
+    'https://i.giphy.com/media/3o85xIOu5FnuxAX8I8/giphy.gif',
+    'https://i.giphy.com/media/1zCWTBDLcBHuR1NgQD/giphy.gif',
+    'https://i.giphy.com/media/8v0Q9xTPkPcM/giphy.gif',
+    'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+    'https://i.giphy.com/media/3o7btPCcdNniyf0ArS/giphy.gif',
   ];
+
+  const randomIndex = Math.floor(Math.random() * slapGifs.length);
+  console.log(`[/slap] Selected GIF ${randomIndex + 1}/${slapGifs.length}: ${slapGifs[randomIndex]}`);
 
   const embed = new EmbedBuilder()
     .setColor(0xFF4444)
     .setTitle(`👋 ${interaction.user.username} slaps ${user.username}!`)
-    .setImage(slapGifs[Math.floor(Math.random() * slapGifs.length)])
+    .setImage(slapGifs[randomIndex])
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -73,26 +78,30 @@ async function handleSlap(interaction) {
 async function handlePat(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const patGifs = [
-    'https://media.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
-    'https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
-    'https://media.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
-    'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
-    'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-    'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
-    'https://media.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
-    'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-    'https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
-    'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-    'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-    'https://media.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
-    'https://media.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+    'https://i.giphy.com/media/tOg3YhmZS39KvhCpZk/giphy.gif',
+    'https://i.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif',
+    'https://i.giphy.com/media/3oz8xIsloV7zOmt81G/giphy.gif',
+    'https://i.giphy.com/media/KFaTYtPWkey6W1uDiU/giphy.gif',
+    'https://i.giphy.com/media/7BTMl6mGphYHYI1sVq/giphy.gif',
+    'https://i.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+    'https://i.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif',
+    'https://i.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+    'https://i.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+    'https://i.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    'https://i.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+    'https://i.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://i.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
+    'https://i.giphy.com/media/j2oXzVcL45NI4lKSBu/giphy.gif',
+    'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
   ];
+
+  const randomIndex = Math.floor(Math.random() * patGifs.length);
+  console.log(`[/pat] Selected GIF ${randomIndex + 1}/${patGifs.length}: ${patGifs[randomIndex]}`);
 
   const embed = new EmbedBuilder()
     .setColor(0x87CEEB)
     .setTitle(`👋 ${interaction.user.username} pats ${user.username}!`)
-    .setImage(patGifs[Math.floor(Math.random() * patGifs.length)])
+    .setImage(patGifs[randomIndex])
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -102,22 +111,25 @@ async function handlePat(interaction) {
 async function handleHighfive(interaction) {
   const user = interaction.options.getUser('user') || interaction.user;
   const gifs = [
-    'https://media.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
-    'https://media.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
-    'https://media.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
-    'https://media.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
-    'https://media.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
-    'https://media.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
-    'https://media.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
-    'https://media.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
-    'https://media.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
-    'https://media.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    'https://i.giphy.com/media/l0MYgbpvda5TJgvHuI/giphy.gif',
+    'https://i.giphy.com/media/xUOxfoA5ffZ8xoVDCk/giphy.gif',
+    'https://i.giphy.com/media/1nlCS44h6LTLbhlgOS/giphy.gif',
+    'https://i.giphy.com/media/3o6ZsYq7LqYOi8GiEU/giphy.gif',
+    'https://i.giphy.com/media/11BudlGbe9JmW0/giphy.gif',
+    'https://i.giphy.com/media/Z5fZnS2YOnl6M/giphy.gif',
+    'https://i.giphy.com/media/xUPGcC0R9Lh9VAQlop/giphy.gif',
+    'https://i.giphy.com/media/4GjoLWH2pO9kI/giphy.gif',
+    'https://i.giphy.com/media/3o7aD2saalBwwftBIY/giphy.gif',
+    'https://i.giphy.com/media/5ntQ5WPrJyhN7NrF2w/giphy.gif',
   ];
+
+  const randomIndex = Math.floor(Math.random() * gifs.length);
+  console.log(`[/highfive] Selected GIF ${randomIndex + 1}/${gifs.length}: ${gifs[randomIndex]}`);
 
   const embed = new EmbedBuilder()
     .setColor(0xFFD700)
     .setTitle(`✋ ${interaction.user.username} high-fives ${user.username}!`)
-    .setImage(gifs[Math.floor(Math.random() * gifs.length)])
+    .setImage(gifs[randomIndex])
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
