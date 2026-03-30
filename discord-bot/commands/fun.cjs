@@ -146,7 +146,13 @@ function generateDynamicFact() {
   // Calculate stats
   const topContributors = [...members].sort((a, b) => b.contributionsCount - a.contributionsCount).slice(0, 5);
   const topMessagers = [...members].sort((a, b) => b.globalMessages - a.globalMessages).slice(0, 5);
-  const topEventParticipants = [...members].filter(m => m.eventsCount > 0).sort((a, b) => b.eventsCount - a.eventsCount).slice(0, 5);
+  const topEventParticipants = [...members].filter(m => {
+      if (!m.eventsCount || m.eventsCount <= 0) return false;
+      // Exclude event managers - they manage events, not win them
+      const name = (m.username || '').toLowerCase();
+      if (name === 'kash_060' || name === 'hinata') return false;
+      return true;
+    }).sort((a, b) => b.eventsCount - a.eventsCount).slice(0, 5);
 
   const totalMessages = members.reduce((sum, m) => sum + (m.globalMessages || 0), 0);
   const totalContributions = members.reduce((sum, m) => sum + (m.contributionsCount || 0), 0);

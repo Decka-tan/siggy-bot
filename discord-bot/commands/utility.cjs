@@ -3,7 +3,8 @@
  * /roll, /flip, /avatar, /choose
  */
 
-const { EmbedBuilder } = require('discord.js');
+const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const { generateDiceImage } = require('../utils/dice-generator.cjs');
 
 // Coin flip
 async function handleFlip(interaction) {
@@ -78,7 +79,6 @@ async function handleRoll(interaction, { saveCommand = true } = {}) {
     }
 
     const total = rolls.reduce((a, b) => a + b, 0);
-    const diceVisual = rolls.map(r => diceEmojis[r - 1]).join(' ');
 
     // Color based on result
     let color = 0x9B59B6; // default purple
@@ -91,10 +91,14 @@ async function handleRoll(interaction, { saveCommand = true } = {}) {
       else if (total >= count * 4) color = 0x00FF00; // green for good rolls
     }
 
+    // Generate dice image
+    const diceImageBuffer = await generateDiceImage(rolls);
+    const attachment = new AttachmentBuilder(diceImageBuffer, { name: 'dice.png' });
+
     const embed = new EmbedBuilder()
       .setColor(color)
       .setTitle(`🎲 Dice Roll${count > 1 ? 's' : ''} ${getRollReaction(rolls, count)}`)
-      .setDescription(`${diceVisual}\n\n${count > 1 ? `**Total:** ${total}` : `**You rolled:** ${rolls[0]}`}`)
+      .setImage('attachment://dice.png')
       .setTimestamp();
 
     // Add action buttons
@@ -112,7 +116,7 @@ async function handleRoll(interaction, { saveCommand = true } = {}) {
       );
 
     console.log('[Roll] Sending final result...');
-    await interaction.editReply({ embeds: [embed], components: [row] });
+    await interaction.editReply({ embeds: [embed], files: [attachment], components: [row] });
     console.log('[Roll] Complete');
   } catch (error) {
     console.error('[Roll] Error:', error);
