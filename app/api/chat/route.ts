@@ -297,20 +297,24 @@ export async function POST(req: NextRequest) {
         const changeText = change > 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
 
         // Return with chartData for Canvas rendering
+        const chartData = ohlcData ? {
+          coin: priceData.coin.name,
+          symbol: priceData.coin.symbol,
+          ohlc: ohlcData,
+          ticker: {
+            price: priceData.price.usd,
+            change: priceData.change24h.usd,
+            high: priceData.high24h.usd,
+            low: priceData.low24h.usd,
+          },
+        } : undefined;
+
+        console.log(`[/chart] Returning chartData:`, chartData ? `${chartData.symbol}, ${chartData.ohlc.length} candles` : 'null');
+
         return NextResponse.json({
           response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\nPrice: ${formatPrice(priceData.price.usd)} • 24h: ${changeText}\n\nView interactive chart on [TradingView](${tradingViewUrl})`,
           isRawCommand: true,
-          chartData: ohlcData ? {
-            coin: priceData.coin.name,
-            symbol: priceData.coin.symbol,
-            ohlc: ohlcData,
-            ticker: {
-              price: priceData.price.usd,
-              change: priceData.change24h.usd,
-              high: priceData.high24h.usd,
-              low: priceData.low24h.usd,
-            },
-          } : undefined,
+          chartData,
         });
       } catch (error) {
         console.error('[Chart] Error:', error);

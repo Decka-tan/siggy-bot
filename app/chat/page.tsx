@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -177,23 +177,38 @@ const parseMessageContent = (content: string, contributorMap: Record<string, Con
 // Simple Canvas Candlestick Chart Component (Like Discord)
 const SimpleChart = ({ data }: { data: ChartData }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const drawChart = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !data.ohlc || data.ohlc.length === 0) return;
+    const container = containerRef.current;
+    if (!canvas || !container || !data.ohlc || data.ohlc.length === 0) {
+      console.log('[SimpleChart] Missing refs or data', { canvas: !!canvas, container: !!container, ohlc: data.ohlc?.length });
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size (handle high DPI)
+    // Get container width for proper sizing
+    const containerWidth = container.offsetWidth;
+    if (containerWidth === 0) {
+      console.log('[SimpleChart] Container width is 0, retrying...');
+      setTimeout(drawChart, 100);
+      return;
+    }
+
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
+
+    // Set canvas size with proper width
+    canvas.width = containerWidth * dpr;
     canvas.height = 300 * dpr;
     ctx.scale(dpr, dpr);
 
-    const width = rect.width;
+    const width = containerWidth;
     const height = 300;
+
+    console.log(`[SimpleChart] Drawing chart: ${data.symbol}, ${data.ohlc.length} candles, ${width}x${height}`);
 
     // TradingView dark colors
     const colors = {
@@ -313,6 +328,20 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
     }
   }, [data]);
 
+  useEffect(() => {
+    // Initial draw
+    const timer = setTimeout(() => drawChart(), 50);
+
+    // Redraw on resize
+    const handleResize = () => drawChart();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [drawChart]);
+
   const formatPriceSimple = (price: number): string => {
     if (price >= 1000) return price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (price >= 1) return price.toFixed(2);
@@ -321,7 +350,7 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
   };
 
   return (
-    <div className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
+    <div ref={containerRef} className="my-4 rounded-lg overflow-hidden border border-white/10 bg-black/30">
       <canvas ref={canvasRef} className="w-full" style={{ height: '300px' }} />
     </div>
   );
@@ -365,35 +394,37 @@ const DiceRoll = ({ values }: { values: number[] }) => {
 
   return (
     <div className="my-4">
-      <div className="flex flex-wrap gap-4 justify-center items-center p-4 bg-black/20 rounded-xl">
-        {values.map((value, index) => (
-          <motion.div
-            key={index}
-            initial={{ scale: 0, rotate: -180, opacity: 0 }}
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{
-              type: "spring",
-              stiffness: 200,
-              damping: 15,
-              delay: index * 0.15
-            }}
-            className="relative"
-          >
-            <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-lg shadow-lg border-2 border-gray-300 relative flex items-center justify-center">
-              {renderDots(value)}
-            </div>
-            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 text-sm font-bold text-accent bg-black/70 px-2 py-0.5 rounded-full">
-              {value}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-      {values.length > 1 && (
-        <div className="text-center mt-2">
-          <span className="text-sm font-bold text-white">Total: {total}</span>
-          <span className={`ml-2 ${reactionColor}`}>{reaction}</span>
+      <div className="bg-black/20 rounded-xl p-4 pt-4 pb-4">
+        <div className="flex flex-wrap gap-4 justify-center items-center">
+          {values.map((value, index) => (
+            <motion.div
+              key={index}
+              initial={{ scale: 0, rotate: -180, opacity: 0 }}
+              animate={{ scale: 1, rotate: 0, opacity: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 200,
+                damping: 15,
+                delay: index * 0.15
+              }}
+              className="relative pb-6"
+            >
+              <div className="w-14 h-14 md:w-16 md:h-16 bg-white rounded-lg shadow-lg border-2 border-gray-300 relative flex items-center justify-center">
+                {renderDots(value)}
+              </div>
+              <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-sm font-bold text-accent bg-black/70 px-2 py-0.5 rounded-full">
+                {value}
+              </div>
+            </motion.div>
+          ))}
         </div>
-      )}
+        {values.length > 1 && (
+          <div className="text-center mt-4">
+            <span className="text-sm font-bold text-white">Total: {total}</span>
+            <span className={`ml-2 ${reactionColor}`}>{reaction}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
