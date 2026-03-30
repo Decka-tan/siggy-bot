@@ -20,9 +20,6 @@ import { getRelevantKnowledge } from '@/lib/siggy-knowledge';
 import { semanticKnowledgeSearch } from '@/lib/semantic-knowledge';
 import { detectResearchIntent, searchWeb, buildEnhancedPrompt, formatResponseWithSources } from '@/lib/web-research';
 import { getPrice, getTrending, formatPrice, getChartEmbed } from '@/lib/crypto-api';
-import { generateChartImage } from '../discord-bot/utils/chart-generator.cjs';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 // Coin symbol to ID mapping (local copy)
 const COIN_MAP: Record<string, string> = {
@@ -266,7 +263,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // /chart <coin> command - Generate static chart image like Discord
+    // /chart <coin> command - Use TradingView widget embed
     if (lowerMsg.startsWith('/chart ')) {
       const coin = lowerMsg.slice(7).trim().toLowerCase();
       const coinId = normalizeCoinId(coin);
@@ -281,40 +278,21 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        // Fetch OHLC data from Binance (15m candles)
-        let ohlcData = null;
-        try {
-          const symbol = priceData.coin.symbol + 'USDT';
-          const response = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=15m&limit=96`);
-          if (response.ok) {
-            const data = await response.json();
-            ohlcData = data.map((k: any) => [k[0], parseFloat(k[1]), parseFloat(k[2]), parseFloat(k[3]), parseFloat(k[4])]);
-          }
-        } catch (e) {
-          console.error('[Chart] Binance OHLC error:', e);
-        }
-
         const { tradingViewUrl } = getChartEmbed(coin);
         const change = priceData.change24h.usd;
         const changeText = change > 0 ? `+${change.toFixed(2)}%` : `${change.toFixed(2)}%`;
 
-        // Generate static chart image using Discord's chart generator
-        let chartImageBase64 = null;
-        if (ohlcData && ohlcData.length > 0) {
-          try {
-            const imageBuffer = await generateChartImage(
-              priceData.coin.symbol,
-              ohlcData,
-              priceData.price.usd,
-              priceData.change24h.usd
-            );
-            // Convert buffer to base64 data URL
-            chartImageBase64 = `data:image/png;base64,${imageBuffer.toString('base64')}`;
-            console.log(`[/chart] Generated chart image for ${priceData.coin.symbol}: ${imageBuffer.length} bytes`);
-          } catch (genError) {
-            console.error('[Chart] Image generation error:', genError);
-          }
-        }
+        // Use TradingView's widgetembed (reliable, no DNS issues)
+        const tvSymbol = encodeURIComponent(priceData.coin.symbol + 'USDT');
+        const chartWidgetUrl = `https://www.tradingview.com/widgetembed/?frameElementId=tradingview_chart&symbol=${tvSymbol}&interval=15&hidesidetoolbar=1&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=%5B%5D&theme=dark&style=1&timezone=Etc%2FUTC`;
+
+        console.log(`[/chart] Generated chart widget for ${priceData.coin.symbol}`);
+
+        return NextResponse.json({
+          response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\nPrice: ${formatPrice(priceData.price.usd)} • 24h: ${changeText}\n\nView interactive chart on [TradingView](${tradingViewUrl})`,
+          isRawCommand: true,
+          chartImage: chartWidgetUrl,
+        });
 
         return NextResponse.json({
           response: `📈 [b]Chart for ${priceData.coin.name} (${priceData.coin.symbol})[/b]\n\nPrice: ${formatPrice(priceData.price.usd)} • 24h: ${changeText}\n\nView interactive chart on [TradingView](${tradingViewUrl})`,
