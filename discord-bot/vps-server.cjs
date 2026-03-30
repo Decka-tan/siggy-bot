@@ -154,7 +154,7 @@ const utilityCommands = [
     name: 'avatar',
     description: 'Get a user\'s avatar',
     options: [
-      { name: 'user', description: 'The user (default: you)', type: 6, required: false },
+      { name: 'user', description: 'The user', type: 6, required: true },
     ],
   },
   {
@@ -169,28 +169,28 @@ const utilityCommands = [
     name: 'hug',
     description: 'Give someone a warm hug',
     options: [
-      { name: 'user', description: 'User to hug', type: 6, required: false },
+      { name: 'user', description: 'User to hug', type: 6, required: true },
     ],
   },
   {
     name: 'slap',
     description: 'Slap someone (playfully)',
     options: [
-      { name: 'user', description: 'User to slap', type: 6, required: false },
+      { name: 'user', description: 'User to slap', type: 6, required: true },
     ],
   },
   {
     name: 'pat',
     description: 'Pat someone\'s head',
     options: [
-      { name: 'user', description: 'User to pat', type: 6, required: false },
+      { name: 'user', description: 'User to pat', type: 6, required: true },
     ],
   },
   {
     name: 'highfive',
     description: 'High five someone',
     options: [
-      { name: 'user', description: 'User to high-five', type: 6, required: false },
+      { name: 'user', description: 'User to high-five', type: 6, required: true },
     ],
   },
   { name: 'fact', description: 'Get a random fun fact' },
@@ -213,14 +213,14 @@ const utilityCommands = [
     name: 'howgay',
     description: 'How gay is someone? (fun meme)',
     options: [
-      { name: 'user', description: 'User to rate', type: 6, required: false },
+      { name: 'user', description: 'User to rate', type: 6, required: true },
     ],
   },
   {
     name: 'simp',
     description: 'Check someone\'s simp rate',
     options: [
-      { name: 'user', description: 'User to check', type: 6, required: false },
+      { name: 'user', description: 'User to check', type: 6, required: true },
     ],
   },
 ];
@@ -461,7 +461,8 @@ async function handleCheck(interaction) {
 
   await interaction.deferReply();
 
-  const username = interaction.options.getString('username').replace('@', '');
+  const targetUser = interaction.options.getUser('user');
+  const username = targetUser.username;
 
   // Check cache first
   const cacheKey = `check_${username}`;
@@ -957,9 +958,9 @@ async function registerCommands() {
       name: 'check',
       description: 'Analyze a Ritual contributor with AI',
       options: [{
-        name: 'username',
-        description: 'Username to check',
-        type: 3,  // STRING - replace with type: 6 (USER) when switching
+        name: 'user',
+        description: 'User to check',
+        type: 6,  // USER type - enables @mention with dropdown
         required: true,
       }],
     },
