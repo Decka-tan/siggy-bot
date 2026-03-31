@@ -2,11 +2,12 @@
 
 > *A multi-dimensional feline entity descended to Earth as an anime girl to blend in, make friends, and find her soul*
 
-**Siggy is an advanced AI character with dynamic mood system, Discord community integration, web research capabilities, and immersive visual novel storytelling.**
+**Siggy is an advanced AI character with dynamic mood system, Discord community integration, web research capabilities, crypto tools, and immersive visual novel storytelling.**
 
 [![Live Demo](https://img.shields.io/badge/🌐-Live%20Demo-yellow)](https://siggy-bot.vercel.app/)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Discord](https://img.shields.io/badge/Discord-Bot%20Ready-5865F2)](https://discord.com/developers/docs)
 
 ## ✨ What Makes Siggy Unique?
 
@@ -16,10 +17,12 @@ Siggy isn't just another chatbot. She's a **multi-dimensional character** with:
 - 🔍 **Hybrid GPT + Web Research** - Auto-detects when she needs to search the web for latest info
 - 😺 **6 Emotional States** - Dynamic mood system (DEFAULT, HAPPY, SAD, SHOCK, SHY, ANGRY)
 - 📖 **Immersive Story Mode** - 4-chapter visual novel about her descent to Earth
-- 💬 **Discord Integration** - `/check` contributor analysis, `/research` web search
+- 💬 **Discord Integration** - Contributor analysis, web search, crypto prices, fun commands
+- 💰 **Crypto Tools** - Live prices, TradingView-style candlestick charts, trending coins
 - 🎭 **Personality-Driven** - 40% mystical + 40% chaotic wit + 20% anime girl excitement
 - 🥚 **Hidden Easter Eggs** - Discover secrets by saying "glitch", asking about her true form, and more
 - 🎨 **Beautiful UI** - Smooth animations, responsive design, mood-based visual feedback
+- 🔥 **Premium UX** - Message editing, search, toast notifications, skeleton loading
 
 ## 🚀 Quick Start
 
@@ -60,33 +63,76 @@ Get API keys:
 
 ## 📖 How to Use Siggy
 
-### Chat Mode
+### Website Features
 
-1. **Start a conversation** - Click "Chat Mode" on the landing page
-2. **Use Slash Commands:**
-   - `/check @username` - Analyze any contributor with AI-powered insights
-   - `/research topic` - Search the web with cited sources
-3. **Watch her mood change** - Siggy's mood shifts based on conversation context
+#### Chat Mode
+- **AI Chat** - Natural conversations with mood-based responses
+- **Slash Commands** - Quick access to powerful tools
+- **Message Editing** - Edit sent messages and get new AI responses
+- **Message Search** - Search across all conversations
+- **Visual Novel Mode** - Immersive storytelling experience
+- **Conversation Management** - Multiple conversations, export, share
 
-### Discord Features
-
-**Contributor Analysis (`/check`)**
-- Real-time Discord data for 7,978+ members
-- Message counts, contributions, events participation
-- AI-powered archetype detection
-- Role and membership information
-
-**Web Research (`/research`)**
-- Powered by Exa.ai search API
-- Clickable sources with citations
-- Real-time web information
-
-### Visual Novel Mode
-
+#### Visual Novel Mode
 1. **Click "Story Mode"** to experience Siggy's origin story
 2. **Click anywhere** to progress through the narrative
 3. **Make choices** that affect the story direction
 4. **Unlock chapters** by completing previous ones
+
+### Discord Bot Commands
+
+#### 💬 Core Commands
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/check` | Analyze a contributor with AI insights | `/check @username` |
+| `/research` | Search the web with cited sources | `/research query` |
+| `/chat` | Chat with Siggy directly | `/chat message` |
+| `/help` | Show all commands | `/help` |
+
+#### 💰 Crypto Commands
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/price` | Check cryptocurrency price | `/price btc` |
+| `/chart` | Get TradingView-style candlestick chart | `/chart eth` |
+| `/trending` | Show trending cryptocurrencies | `/trending` |
+
+#### 🎲 Fun & Social Commands
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/hug` | Give someone a warm hug (with GIF) | `/hug @user` |
+| `/slap` | Slap someone playfully (with GIF) | `/slap @user` |
+| `/pat` | Pat someone's head (with GIF) | `/pat @user` |
+| `/highfive` | High five someone (with GIF) | `/highfive @user` |
+| `/fact` | Get a random fun fact | `/fact` |
+| `/quote` | Get an inspirational quote | `/quote` |
+| `/shuffle` | Randomize a list of items | `/shuffle item1, item2` |
+| `/rate` | Rate anything from 1-10 | `/rate target` |
+| `/howgay` | Fun meme rating | `/howgay @user` |
+| `/simp` | Check simp rate | `/simp @user` |
+
+#### 🛠️ Utility Commands
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/flip` | Flip a coin | `/flip [amount] [choice]` |
+| `/roll` | Roll dice (1-6 dice) | `/roll [count]` |
+| `/avatar` | Get user's avatar | `/avatar @user` |
+| `/choose` | Random choice from options | `/choose opt1, opt2` |
+
+#### 🏆 Leaderboard Commands
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/leaderboard start` | Start a new leaderboard session | `/leaderboard start @user score` |
+| `/leaderboard add` | Add score to user | `/leaderboard add @user score` |
+| `/leaderboard end` | End active session | `/leaderboard end` |
+
+#### ⚙️ Meta Commands
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `/transform` | Switch between CAT and ANIME forms | `/transform [cat\|anime]` |
+| `/mood` | Check relationship and mood status | `/mood` |
+| `/reset` | Reset conversation progress | `/reset` |
+| `/stats` | Show global bot statistics | `/stats` |
+| `/top` | Show top users by message count | `/top` |
 
 ### Easter Eggs to Discover
 
@@ -95,15 +141,6 @@ Get API keys:
 - Ask "Do you miss the cosmic void?" → Profound reflection
 - Ask "What's your real name?" → True multi-dimensional name reveal
 - Mention "purple" → Chaotic purple-themed rant
-
-## 🏗️ Tech Stack
-
-- **Frontend:** Next.js 14 (App Router), React 18, TypeScript 5
-- **Styling:** Tailwind CSS, Framer Motion animations
-- **Backend:** Next.js API Routes, Edge Runtime
-- **AI:** OpenAI GPT-4o, DeepSeek (contributor analysis)
-- **Search:** Exa.ai Web Research API
-- **Data:** Discord API (member extraction), JSON-based caching
 
 ## 🎨 Key Features
 
@@ -119,6 +156,12 @@ Get API keys:
 - Indonesian NLP support ("berapa", "skrg", "sekarang")
 - Clickable sources with citations
 - Exa.ai-powered search results
+
+### 💰 Crypto Features
+- **Live Prices** - Real-time cryptocurrency prices via CoinGecko
+- **TradingView Charts** - Custom candlestick charts with support/resistance
+- **Trending Coins** - Top gainers and losers
+- **Multi-Currency** - Support for USD, IDR, EUR
 
 ### 📊 Contributor Analysis (`/check`)
 - **Archetype Detection:**
@@ -145,18 +188,23 @@ Get API keys:
 - **SHY** (Pink) - Embarrassed, flustered
 - **ANGRY** (Red) - Rare, but possible
 
-### 📖 Visual Novel Story Mode
-- 4 immersive chapters
-- Choice-based narrative
-- Animated backgrounds
-- Chapter progression system
+### 🔥 Premium UX Features
+- **Message Editing** - Edit any sent message and regenerate AI response
+- **Message Search** - Search across all conversations with instant navigation
+- **Toast Notifications** - Visual feedback for all actions (copy, save, delete)
+- **Skeleton Loading** - Beautiful shimmer animations while loading
+- **Responsive Design** - Consistent experience across desktop and mobile
 
-### 💬 Conversation Features
-- Personal memory across sessions
-- Relationship level tracking
-- Mood-based visual feedback
-- Copy, share, save conversations
-- Voice toggle (typewriter effect)
+## 🏗️ Tech Stack
+
+- **Frontend:** Next.js 14 (App Router), React 18, TypeScript 5
+- **Styling:** Tailwind CSS, Framer Motion animations
+- **Backend:** Next.js API Routes, Edge Runtime
+- **AI:** OpenAI GPT-4o, DeepSeek (contributor analysis)
+- **Search:** Exa.ai Web Research API
+- **Discord:** discord.js v14, Canvas (charts/dice)
+- **Database:** SQLite (user state, conversations)
+- **Data:** Discord API (member extraction), JSON-based caching
 
 ## 📸 Screenshots
 
@@ -171,6 +219,8 @@ Get API keys:
 - Mood indicators
 - Contributor dropdown
 - Command autocomplete
+- Message editing
+- Search panel
 
 ### Story Mode
 - Chapter selection
@@ -191,16 +241,32 @@ siggy-bot/
 │   │   └── contributor/
 │   │       └── route.ts          # Member data API
 │   ├── chat/
-│   │   └── page.tsx              # Main chat UI
+│   │   └── page.tsx              # Main chat UI with all features
 │   ├── story/
 │   │   └── page.tsx              # Visual novel mode
 │   ├── page.tsx                  # Landing page
 │   └── layout.tsx                # Root layout
+├── components/
+│   ├── layout/                   # Header, Footer, Bio
+│   ├── providers/                # Theme, Settings, Toast
+│   └── ui/                       # Toast, Skeleton components
+├── discord-bot/
+│   ├── commands/                 # Slash command handlers
+│   │   ├── crypto.cjs            # Price, chart, trending
+│   │   ├── fun.cjs               # Hug, slap, pat, etc.
+│   │   ├── utility.cjs           # Roll, flip, avatar
+│   │   └── leaderboard.cjs       # Leaderboard system
+│   ├── utils/                    # Helper utilities
+│   │   ├── crypto-api.cjs        # CoinGecko API
+│   │   ├── chart-generator.cjs   # TradingView charts
+│   │   └── dice-generator.cjs    # Dice images
+│   ├── vps-server.cjs            # Main bot file
+│   └── db.cjs                    # SQLite database
 ├── lib/
 │   ├── siggy-personality.ts      # Mood & personality
 │   ├── user-checker.ts           # Contributor analysis
 │   ├── siggy-knowledge.ts        # Knowledge base
-│   ├── exa-research.ts            # Web research
+│   ├── exa-research.ts           # Web research
 │   └── deepseek-client.ts        # DeepSeek AI
 ├── extracted-data/               # Discord data cache
 │   ├── current-member-avatars.json
@@ -209,10 +275,10 @@ siggy-bot/
 ├── public/                       # Static assets
 │   ├── siggy-cat-*.png           # Cat form sprites
 │   └── siggy-girl-*.png          # Anime girl sprites
-├── scripts/                      # Data extraction
-│   ├── extract-current-avatars.js
-│   ├── fix-duplicate-avatars.js
-│   └── fix-all-avatars.js
+├── scripts/                      # Data extraction & bot setup
+│   ├── register-discord-commands.js
+│   ├── extract-*.js
+│   └── import-*.ts
 └── package.json
 ```
 
@@ -241,18 +307,18 @@ vercel
 
 That's it! Vercel will auto-deploy from GitHub. ✨
 
-## 🤖 Discord Bot (Vercel Serverless)
+## 🤖 Discord Bot Setup
 
 ### Run Siggy on Discord Too!
 
 Deploy Siggy as a Discord bot using Vercel serverless functions:
 
 **Features:**
-- `/check @username` - Contributor analysis
-- `/research <query>` - Web search with sources
-- `/help` - Show all commands
-- Chat with `@Siggy` or just `siggy <message>`
+- All slash commands (check, research, crypto, fun, utility)
 - Same personality as website (moods, easter eggs, knowledge)
+- Custom candlestick charts and dice images
+- Relationship tracking per user
+- Leaderboard system
 
 **Quick Setup:**
 
@@ -275,7 +341,7 @@ Deploy Siggy as a Discord bot using Vercel serverless functions:
 
 4. **Register Commands**
    ```bash
-   node scripts/register-discord-commands.js
+   npm run discord:register
    ```
 
 5. **Deploy**
@@ -321,6 +387,11 @@ Test these interactions to see Siggy's full range:
 - `/check @kash_060` → See Event Manager analysis
 - `/check @meison7554` → See Radiant Ritualist profile
 - `/research Bittensor` → Web search with sources
+- `/price btc` → Get Bitcoin price
+- `/chart eth` → Get Ethereum candlestick chart
+- `/trending` → See trending cryptocurrencies
+- `/roll 3` → Roll 3 dice with animation
+- `/hug @user` → Send hug GIF
 
 ### Easter Eggs & Triggers:
 - Mention **"purple"** → Happy mode (favorite color!)
@@ -336,10 +407,11 @@ Test these interactions to see Siggy's full range:
 
 1. **Shared API** - One backend for Web + Discord + Future platforms
 2. **Real-time Data** - Live Discord member information
-3. **AI-Powered** - DeepSeek contributor analysis
+3. **AI-Powered** - DeepSeek contributor analysis, GPT-4o chat
 4. **Professional UI** - Next.js + Tailwind = Beautiful app
 5. **Easy Deploy** - GitHub → Vercel = Auto deploy
 6. **Scalable** - Easy to add more commands and features
+7. **Premium UX** - Message editing, search, notifications, skeletons
 
 ## 👤 Creator
 
@@ -364,6 +436,8 @@ A multi-dimensional developer who descended to the codebase to build cool things
 - **Ritual Community** - For the soul forge quest inspiration
 - **DeepSeek** - Contributor analysis AI
 - **Exa.ai** - Web research capabilities
+- **CoinGecko** - Cryptocurrency data
+- **Binance/Kraken** - OHLC chart data
 
 Built for the **Ritual Soul Forge Quest** by the Ritual community.
 
