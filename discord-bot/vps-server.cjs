@@ -871,13 +871,13 @@ async function handleHelp(interaction) {
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
       { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
-      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart` | `/gas`', inline: false },
-      { name: '🏆 Leaderboard', value: '`/leaderboard create` | `/leaderboard add` | `/leaderboard show` | `/leaderboard list`', inline: false },
-      { name: '🎮 Fun & Social', value: '`/hug` | `/slap` | `/pat` | `/highfive` | `/rate` | `/fact` | `/quote`', inline: false },
-      { name: '🎲 Utility & Games', value: '`/flip` | `/roll` | `/choose` | `/shuffle` | `/avatar`', inline: false },
+      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart`', inline: false },
+      { name: '🏆 Leaderboard', value: '`/leaderboard` | `/leaderboard create` | `/leaderboard add` | `/leaderboard show`', inline: false },
+      { name: '🎮 Fun & Social', value: '`/hug` | `/slap` | `/pat` | `/highfive` | `/rate` | `/fact` | `/quote` | `/shuffle`', inline: false },
+      { name: '🎲 Games', value: '`/flip` | `/roll` | `/choose` | `/avatar`', inline: false },
       { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
       { name: '💬 Chat', value: '@Siggy <message> - Chat with me directly!', inline: false },
-      { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "realName", "dekka"', inline: false },
+      { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "dekka"', inline: false },
       { name: '⚡ Rate Limits', value: '3 commands per 5 seconds per user', inline: false },
     )
     .setFooter({ text: 'Built by Decka-tan • Ritual Soul Forge Quest' })
