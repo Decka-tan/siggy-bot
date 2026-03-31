@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal, Mic, MicOff } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
 import { extractMoodFromResponse } from '@/lib/siggy-personality';
 import { useToast } from '@/components/ui/Toast';
@@ -717,11 +717,6 @@ export default function ChatPage() {
   }>>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
-  // NEW: Voice Input States
-  const [isListening, setIsListening] = useState(false);
-  const [voiceLang, setVoiceLang] = useState<'id-ID' | 'en-US'>('id-ID');
-  const recognitionRef = useRef<any>(null);
-
   // NEW: Toast notifications
   const { toasts, showToast } = useToast();
 
@@ -1117,65 +1112,6 @@ export default function ChatPage() {
       clearTimeout(timer);
     };
   }, [input, showContributorDropdown]);
-
-  // NEW: Voice Recognition Effect
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.log('Speech recognition not supported');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognition.lang = voiceLang;
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      setInput(prev => prev + (prev ? ' ' : '') + transcript);
-      setIsListening(false);
-      showToast('Voice captured!', 'success');
-    };
-
-    recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
-      setIsListening(false);
-      showToast('Voice recognition failed', 'error');
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognitionRef.current = recognition;
-
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.abort();
-      }
-    };
-  }, [voiceLang, showToast]);
-
-  // Toggle voice recording
-  const toggleVoiceRecording = () => {
-    if (!recognitionRef.current) {
-      showToast('Voice recognition not supported', 'error');
-      return;
-    }
-
-    if (isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-    } else {
-      recognitionRef.current.lang = voiceLang;
-      recognitionRef.current.start();
-      setIsListening(true);
-      showToast('Listening...', 'info');
-    }
-  };
 
   // Select mention from dropdown
   const selectMention = (user: ContributorSearchResult) => {
@@ -3541,30 +3477,6 @@ export default function ChatPage() {
                             className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/') ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
                             style={{ minHeight: '44px', height: 'auto' }}
                           />
-                          {/* NEW: Voice input button */}
-                          <button
-                            onClick={toggleVoiceRecording}
-                            disabled={!recognitionRef.current}
-                            className={`shrink-0 p-2 rounded-lg transition-all ${
-                              isListening ? 'bg-red-500 animate-pulse' : 'hover:bg-white/5'
-                            } ${!recognitionRef.current ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            style={{ height: '44px', width: '44px' }}
-                            title={isListening ? 'Stop recording' : 'Voice input'}
-                          >
-                            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                          </button>
-                          {/* NEW: Language toggle (shows when voice is available) */}
-                          {recognitionRef.current && !isListening && (
-                            <select
-                              value={voiceLang}
-                              onChange={(e) => setVoiceLang(e.target.value as 'id-ID' | 'en-US')}
-                              className="shrink-0 text-xs bg-surface border border-border rounded px-2 py-1 focus:outline-none focus:border-accent"
-                              title="Voice language"
-                            >
-                              <option value="id-ID">ID</option>
-                              <option value="en-US">EN</option>
-                            </select>
-                          )}
                           <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
                             {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                           </button>
