@@ -1104,6 +1104,28 @@ client.on('interactionCreate', async (interaction) => {
 
   const { commandName } = interaction;
 
+  // Collect options for reload
+  const options = {};
+  if (interaction.options) {
+    try {
+      const count = interaction.options.getInteger('count');
+      const user = interaction.options.getUser('user');
+      const target = interaction.options.getString('target');
+      const items = interaction.options.getString('items');
+      const choice = interaction.options.getString('choice');
+      const amount = interaction.options.getInteger('amount');
+
+      if (count !== null) options.count = count;
+      if (user) options.user = user;
+      if (target) options.target = target;
+      if (items) options.items = items;
+      if (choice) options.choice = choice;
+      if (amount !== null) options.amount = amount;
+    } catch (e) {
+      // Skip options extraction if failed
+    }
+  }
+
   try {
     switch (commandName) {
       case 'check': await handleCheck(interaction); break;
@@ -1127,17 +1149,38 @@ client.on('interactionCreate', async (interaction) => {
           case 'end': await handleLeaderboardEnd(interaction); break;
         }
         break;
-      // Utility commands
-      case 'flip': await handleFlip(interaction); break;
-      case 'roll': await handleRoll(interaction); break;
+      // Utility commands - save for reload
+      case 'flip':
+        setLastCommand(interaction.user.id, 'flip', options);
+        await handleFlip(interaction);
+        break;
+      case 'roll':
+        setLastCommand(interaction.user.id, 'roll', options);
+        await handleRoll(interaction);
+        break;
       case 'avatar': await handleAvatar(interaction); break;
       case 'choose': await handleChoose(interaction); break;
-      // Fun commands
-      case 'hug': await handleHug(interaction); break;
-      case 'slap': await handleSlap(interaction); break;
-      case 'pat': await handlePat(interaction); break;
-      case 'highfive': await handleHighfive(interaction); break;
-      case 'fact': await handleFact(interaction); break;
+      // Fun commands - save for reload
+      case 'hug':
+        setLastCommand(interaction.user.id, 'hug', options);
+        await handleHug(interaction);
+        break;
+      case 'slap':
+        setLastCommand(interaction.user.id, 'slap', options);
+        await handleSlap(interaction);
+        break;
+      case 'pat':
+        setLastCommand(interaction.user.id, 'pat', options);
+        await handlePat(interaction);
+        break;
+      case 'highfive':
+        setLastCommand(interaction.user.id, 'highfive', options);
+        await handleHighfive(interaction);
+        break;
+      case 'fact':
+        setLastCommand(interaction.user.id, 'fact', options);
+        await handleFact(interaction);
+        break;
       case 'quote': await handleQuote(interaction); break;
       case 'shuffle': await handleShuffle(interaction); break;
       case 'rate': await handleRate(interaction); break;
@@ -1272,21 +1315,29 @@ client.on('messageCreate', async (message) => {
       })
       .setTimestamp();
 
-    // Add action buttons
+    // Add action buttons (improved with labels + better emojis)
     const row = new ActionRowBuilder()
       .addComponents(
         new ButtonBuilder()
           .setCustomId(`copy_${message.id}`)
-          .setLabel('📋 Copy')
+          .setLabel('Copy')
+          .setEmoji('📋')
           .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId(`like_${message.id}`)
-          .setLabel('👍')
+          .setLabel('Like')
+          .setEmoji('✅')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId(`dislike_${message.id}`)
-          .setLabel('👎')
-          .setStyle(ButtonStyle.Danger)
+          .setLabel('Dislike')
+          .setEmoji('❌')
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId(`reload_${message.id}`)
+          .setLabel('Reload')
+          .setEmoji('🔄')
+          .setStyle(ButtonStyle.Primary)
       );
 
     await message.reply({ embeds: [embed], components: [row] });

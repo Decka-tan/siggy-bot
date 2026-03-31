@@ -85,12 +85,8 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     const support = Math.min(...recentLows);
     const resistance = Math.max(...recentHighs);
 
-    // Use support/resistance as Y-axis range (not all-time high/low)
+    // Use support/resistance as Y-axis range (no padding - exact bounds)
     const priceRange = resistance - support || 1;
-    // Small padding (5%) so candles don't touch edges
-    const paddedMin = support - priceRange * 0.05;
-    const paddedMax = resistance + priceRange * 0.05;
-    const paddedRange = paddedMax - paddedMin;
 
     // Draw candles (show last 50 candles)
     const maxCandles = 50;
@@ -108,11 +104,11 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
       const isGreen = candle.close >= candle.open;
       const candleColor = isGreen ? colors.green : colors.red;
 
-      // Calculate Y positions
-      const openY = paddingTop + ((paddedMax - candle.open) / paddedRange) * chartHeight;
-      const closeY = paddingTop + ((paddedMax - candle.close) / paddedRange) * chartHeight;
-      const highY = paddingTop + ((paddedMax - candle.high) / paddedRange) * chartHeight;
-      const lowY = paddingTop + ((paddedMax - candle.low) / paddedRange) * chartHeight;
+      // Calculate Y positions (using exact resistance as top, support as bottom)
+      const openY = paddingTop + ((resistance - candle.open) / priceRange) * chartHeight;
+      const closeY = paddingTop + ((resistance - candle.close) / priceRange) * chartHeight;
+      const highY = paddingTop + ((resistance - candle.high) / priceRange) * chartHeight;
+      const lowY = paddingTop + ((resistance - candle.low) / priceRange) * chartHeight;
 
       // Store for S/R lines
       wickPositions.push({ x, highY, lowY, price: candle.high, lowPrice: candle.low });
@@ -147,9 +143,9 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
       }
     });
 
-    // Draw support/resistance levels (using the same values from Y-axis calculation)
-    const resistanceY = paddingTop + ((paddedMax - resistance) / paddedRange) * chartHeight;
-    const supportY = paddingTop + ((paddedMax - support) / paddedRange) * chartHeight;
+    // Draw support/resistance levels (using exact bounds)
+    const resistanceY = paddingTop; // Top of chart
+    const supportY = paddingTop + chartHeight; // Bottom of chart
 
     // Draw resistance line (dashed red at top)
     ctx.strokeStyle = 'rgba(239, 83, 80, 0.5)';
@@ -186,7 +182,7 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     // Price scale on right side (real numbers, no K/M/B)
     const priceLevels = 8;
     for (let i = 0; i < priceLevels; i++) {
-      const price = paddedMax - (paddedRange * i / (priceLevels - 1));
+      const price = resistance - (priceRange * i / (priceLevels - 1));
       const y = paddingTop + (i / (priceLevels - 1)) * chartHeight;
 
       // Price label background
@@ -205,7 +201,7 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
 
     // Current price line (dashed)
     const lastCandle = displayCandles[displayCandles.length - 1];
-    const currentY = paddingTop + ((paddedMax - lastCandle.close) / paddedRange) * chartHeight;
+    const currentY = paddingTop + ((resistance - lastCandle.close) / priceRange) * chartHeight;
     const lineColor = lastCandle.close >= lastCandle.open ? colors.green : colors.red;
 
     // Glowing effect for current price line

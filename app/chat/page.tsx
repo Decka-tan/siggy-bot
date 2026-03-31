@@ -4,9 +4,11 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Send, BookOpen, Plus, MessageSquare, Trash2, X, Copy, ThumbsUp, ThumbsDown, Share2, ChevronLeft, ChevronRight, MessageSquareMore, Sparkles, MessageCircle, User, Upload, ChevronUp, ChevronDown, Pencil, Clock, Trophy, Search, Terminal, Mic, MicOff } from 'lucide-react';
 import { useSettings } from '@/components/providers/SettingsProvider';
 import { extractMoodFromResponse } from '@/lib/siggy-personality';
+import { useToast } from '@/components/ui/Toast';
+import { MessageSkeleton } from '@/components/ui/Skeleton';
 
 type MoodState = 'DEFAULT' | 'HAPPY' | 'SAD' | 'SHOCK' | 'SHY' | 'ANGRY';
 
@@ -28,6 +30,9 @@ interface Message {
   chartImage?: string;
   diceData?: { rolls: number[]; total: number };
   gifData?: { url: string; type: string; target: string };
+  isEditing?: boolean;
+  edited?: boolean;
+  originalContent?: string;
 }
 
 interface ContributorElement {
@@ -244,15 +249,12 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
       ctx.stroke();
     }
 
-    // Find price range
+    // Find price range - use exact high/low as bounds (no padding)
     const candles = data.ohlc;
     const allPrices = candles.flatMap((c) => [c.low, c.high]);
     const minPrice = Math.min(...allPrices);
     const maxPrice = Math.max(...allPrices);
-    const range = maxPrice - minPrice || 1;
-    const paddedMin = minPrice - range * 0.05;
-    const paddedMax = maxPrice + range * 0.05;
-    const paddedRange = paddedMax - paddedMin;
+    const priceRange = maxPrice - minPrice || 1;
 
     // Draw candles (last 50)
     const displayCandles = candles.slice(-50);
@@ -263,10 +265,10 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
       const x = paddingLeft + i * (chartWidth / displayCandles.length) + gap / 2;
       const isGreen = candle.close >= candle.open;
 
-      const openY = paddingTop + ((paddedMax - candle.open) / paddedRange) * chartHeight;
-      const closeY = paddingTop + ((paddedMax - candle.close) / paddedRange) * chartHeight;
-      const highY = paddingTop + ((paddedMax - candle.high) / paddedRange) * chartHeight;
-      const lowY = paddingTop + ((paddedMax - candle.low) / paddedRange) * chartHeight;
+      const openY = paddingTop + ((maxPrice - candle.open) / priceRange) * chartHeight;
+      const closeY = paddingTop + ((maxPrice - candle.close) / priceRange) * chartHeight;
+      const highY = paddingTop + ((maxPrice - candle.high) / priceRange) * chartHeight;
+      const lowY = paddingTop + ((maxPrice - candle.low) / priceRange) * chartHeight;
 
       // Wick
       ctx.strokeStyle = isGreen ? colors.green : colors.red;
@@ -288,7 +290,7 @@ const SimpleChart = ({ data }: { data: ChartData }) => {
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'left';
     for (let i = 0; i < 6; i++) {
-      const price = paddedMax - (paddedRange * i) / 5;
+      const price = maxPrice - (priceRange * i) / 5;
       const y = paddingTop + (i / 5) * chartHeight;
       const label = formatPriceSimple(price);
       ctx.fillText(label, width - paddingRight + 4, y + 4);
@@ -704,6 +706,25 @@ export default function ChatPage() {
   const [isSearchingMentions, setIsSearchingMentions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
 
+  // NEW: Message Search States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Array<{
+    conversationId: string;
+    messageId: string;
+    messageIndex: number;
+    preview: string;
+    context: string;
+  }>>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // NEW: Voice Input States
+  const [isListening, setIsListening] = useState(false);
+  const [voiceLang, setVoiceLang] = useState<'id-ID' | 'en-US'>('id-ID');
+  const recognitionRef = useRef<any>(null);
+
+  // NEW: Toast notifications
+  const { toasts, showToast } = useToast();
+
   const availableCommands = [
     // Core
     { name: 'check', description: 'Analyze a specific contributor by username or ID', usage: '/check @username' },
@@ -1096,6 +1117,65 @@ export default function ChatPage() {
       clearTimeout(timer);
     };
   }, [input, showContributorDropdown]);
+
+  // NEW: Voice Recognition Effect
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.log('Speech recognition not supported');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = voiceLang;
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setInput(prev => prev + (prev ? ' ' : '') + transcript);
+      setIsListening(false);
+      showToast('Voice captured!', 'success');
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      showToast('Voice recognition failed', 'error');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.abort();
+      }
+    };
+  }, [voiceLang, showToast]);
+
+  // Toggle voice recording
+  const toggleVoiceRecording = () => {
+    if (!recognitionRef.current) {
+      showToast('Voice recognition not supported', 'error');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current.lang = voiceLang;
+      recognitionRef.current.start();
+      setIsListening(true);
+      showToast('Listening...', 'info');
+    }
+  };
 
   // Select mention from dropdown
   const selectMention = (user: ContributorSearchResult) => {
@@ -1607,6 +1687,7 @@ export default function ChatPage() {
 
   const copyMessage = (content: string) => {
     navigator.clipboard.writeText(content);
+    showToast('Copied to clipboard!', 'success');
   };
 
   const toggleLike = (messageIndex: number) => {
@@ -1640,6 +1721,176 @@ export default function ChatPage() {
       navigator.share({ title: `Chat with Siggy - ${activeConversation.title}`, text: shareText.slice(0, 500), url: window.location.href });
     } else {
       navigator.clipboard.writeText(shareText.slice(0, 500));
+      showToast('Conversation copied!', 'success');
+    }
+  };
+
+  // NEW: Message Search Functions
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const results: typeof searchResults = [];
+    conversations.forEach(conv => {
+      conv.messages.forEach((msg, idx) => {
+        if (msg.content.toLowerCase().includes(query.toLowerCase())) {
+          results.push({
+            conversationId: conv.id,
+            messageId: `${conv.id}-${idx}`,
+            messageIndex: idx,
+            preview: msg.content.slice(0, 100),
+            context: conv.title,
+          });
+        }
+      });
+    });
+    setSearchResults(results.slice(0, 20));
+  };
+
+  const goToMessage = (convId: string, msgId: string) => {
+    setActiveConversationId(convId);
+    setShowSearchResults(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setTimeout(() => {
+      const element = document.querySelector(`[data-message-id="${msgId}"]`);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element?.classList.add('bg-accent/30');
+      setTimeout(() => element?.classList.remove('bg-accent/30'), 2000);
+    }, 100);
+    showToast('Navigated to message', 'success');
+  };
+
+  // NEW: Message Edit Functions
+  const startEdit = (messageIndex: number) => {
+    if (!activeConversationId) return;
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === activeConversationId) {
+        const messages = [...conv.messages];
+        messages[messageIndex] = {
+          ...messages[messageIndex],
+          isEditing: true,
+          originalContent: messages[messageIndex].content,
+        };
+        return { ...conv, messages };
+      }
+      return conv;
+    }));
+  };
+
+  const cancelEdit = (messageIndex: number) => {
+    if (!activeConversationId) return;
+    setConversations(prev => prev.map(conv => {
+      if (conv.id === activeConversationId) {
+        const messages = [...conv.messages];
+        messages[messageIndex] = {
+          ...messages[messageIndex],
+          isEditing: false,
+          content: messages[messageIndex].originalContent || messages[messageIndex].content,
+        };
+        return { ...conv, messages };
+      }
+      return conv;
+    }));
+  };
+
+  const saveEdit = async (messageIndex: number, newContent: string) => {
+    if (!activeConversationId) return;
+    const conv = conversations.find(c => c.id === activeConversationId);
+    if (!conv) return;
+
+    const msgIndex = conv.messages.findIndex((_, idx) => idx === messageIndex);
+    if (msgIndex === -1) return;
+
+    // Update the user message
+    const updatedMessages = [
+      ...conv.messages.slice(0, msgIndex),
+      { ...conv.messages[msgIndex], content: newContent, edited: true, isEditing: false },
+    ];
+
+    // Remove all assistant messages after this point
+    const messagesAfterEdit = conv.messages.slice(msgIndex + 1);
+    const hasAssistantAfter = messagesAfterEdit.some(m => m.role === 'assistant');
+
+    setConversations(prev => prev.map(c => {
+      if (c.id === activeConversationId) {
+        return { ...c, messages: updatedMessages };
+      }
+      return c;
+    }));
+
+    // If there were assistant messages after, regenerate the response
+    if (hasAssistantAfter) {
+      setIsLoading(true);
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: newContent,
+            conversationHistory: updatedMessages.slice(0, -1),
+            userId: `conv-${activeConversationId}`,
+            isFirstMessage: msgIndex === 0,
+            userName,
+            currentForm: personality,
+            relationshipScore: globalRelationshipScore,
+            currentMood: conv.currentMood || 'DEFAULT',
+            messageCount: conv.messageCount || 0,
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to get response');
+
+        const data = await response.json();
+        let processedResponse = data.response;
+        processedResponse = processedResponse.replace(/(\*[^*]+\*)\s*/g, '$1\n');
+        processedResponse = processedResponse.replace(/\n\s+/g, '\n');
+
+        const siggyMessage: Message = {
+          role: 'assistant',
+          content: processedResponse,
+          mood: data.currentMood,
+          chartData: data.chartData,
+          chartImage: data.chartImage,
+          diceData: data.diceData,
+          gifData: data.gifData,
+        };
+
+        setConversations(prev => prev.map(c => {
+          if (c.id === activeConversationId) {
+            return {
+              ...c,
+              messages: [...updatedMessages, siggyMessage],
+              currentMood: data.currentMood,
+              messageCount: data.messageCount,
+              relationshipLevel: data.relationshipLevel,
+              relationshipScore: data.relationshipScore,
+            };
+          }
+          return c;
+        }));
+
+        if (data.relationshipLevel) {
+          setGlobalRelationshipLevel(data.relationshipLevel);
+        }
+        if (data.relationshipScore !== undefined) {
+          setGlobalRelationshipScore(data.relationshipScore);
+        }
+
+        setContextInfo(data.contextInfo || null);
+        showToast('Message edited and regenerated!', 'success');
+      } catch (error) {
+        console.error('Edit failed:', error);
+        showToast('Failed to regenerate response', 'error');
+      } finally {
+        setIsLoading(false);
+        setIsResearching(false);
+      }
+    } else {
+      showToast('Message edited!', 'success');
     }
   };
 
@@ -1881,6 +2132,54 @@ export default function ChatPage() {
               </div>
             )}
           </div>
+
+          {/* NEW: Search Button */}
+          <div className={`shrink-0 ${(!vnMode && sidebarCollapsed) ? 'p-1' : 'px-3 pt-3'}`}>
+            <button
+              onClick={() => {
+                setShowSearchResults(!showSearchResults);
+                if (showSearchResults) {
+                  setSearchQuery('');
+                  setSearchResults([]);
+                }
+              }}
+              className={`w-full flex items-center ${(!vnMode && sidebarCollapsed) ? 'justify-center p-2' : 'gap-2 px-4 py-2'} bg-surface border border-border text-text-secondary hover:text-accent hover:border-border rounded-lg font-mono text-sm uppercase tracking-wider transition-colors`}
+              title="Search messages"
+            >
+              <Search className="w-4 h-4" />
+              {(!sidebarCollapsed || vnMode) && 'Search'}
+            </button>
+          </div>
+
+          {/* NEW: Search Input and Results */}
+          {showSearchResults && (!sidebarCollapsed || vnMode) && (
+            <div className={`px-3 ${!vnMode && sidebarCollapsed ? 'hidden' : ''}`}>
+              <input
+                type="text"
+                placeholder="Search messages..."
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent text-text-primary"
+              />
+              {searchResults.length > 0 && (
+                <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                  {searchResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => goToMessage(result.conversationId, result.messageId)}
+                      className="p-2 bg-bg border border-border rounded-lg hover:border-accent cursor-pointer transition-colors"
+                    >
+                      <p className="text-xs text-text-primary line-clamp-2">{result.preview}</p>
+                      <p className="text-[10px] text-text-secondary mt-1 font-mono">{result.context}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {searchQuery && searchResults.length === 0 && (
+                <p className="text-xs text-text-secondary mt-2 text-center">No results found</p>
+              )}
+            </div>
+          )}
 
           {/* New Chat Button */}
           <div className={`shrink-0 ${(!vnMode && sidebarCollapsed) ? 'p-1' : 'p-3'}`}>
@@ -2753,7 +3052,13 @@ export default function ChatPage() {
                       </div>
                     ) : (
                       activeConversation.messages.map((message, index) => (
-                        <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}>
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          data-message-id={`${activeConversationId}-${index}`}
+                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} gap-3 items-end`}
+                        >
                           {message.role === 'assistant' && (
                             <div className="shrink-0 mb-3">
                               <Image src={getSpriteForMood(personality, message.mood || 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
@@ -2765,8 +3070,38 @@ export default function ChatPage() {
                                 {message.role === 'user' ? 'YOU' : 'SIGGY'}
                               </span>
                               {message.mood && <span className={`text-[10px] font-mono px-3 py-1 rounded-full ${moodColors[message.mood]}`}>{message.mood}</span>}
+                              {message.edited && <span className="text-[9px] font-mono text-text-secondary/60">(edited)</span>}
                             </div>
-                            {message.role === 'assistant' ? (
+
+                            {/* NEW: Edit mode for user messages */}
+                            {message.isEditing && message.role === 'user' ? (
+                              <div className="space-y-2">
+                                <textarea
+                                  defaultValue={message.content}
+                                  id={`edit-input-${index}`}
+                                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-accent resize-none"
+                                  rows={3}
+                                  autoFocus
+                                />
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      const textarea = document.getElementById(`edit-input-${index}`) as HTMLTextAreaElement;
+                                      if (textarea) saveEdit(index, textarea.value);
+                                    }}
+                                    className="px-3 py-1 bg-accent text-black text-xs font-mono rounded hover:opacity-90"
+                                  >
+                                    Save
+                                  </button>
+                                  <button
+                                    onClick={() => cancelEdit(index)}
+                                    className="px-3 py-1 bg-surface border border-border text-text-secondary text-xs font-mono rounded hover:text-text-primary"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : message.role === 'assistant' ? (
                               <TypewriterText text={message.content} isLatest={index === activeConversation.messages.length - 1} className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" alreadyAnimated={animatedMessages.current.has(`${activeConversationId}-${index}`)} onAnimationComplete={() => animatedMessages.current.add(`${activeConversationId}-${index}`)} playTyping={playTyping} playVoiceLine={playVoiceLine} personality={personality as 'CAT' | 'ANIME'} speed={useSettings().textSpeed} contributorMap={contributorMap} />
                             ) : (
                               <p className="text-xs font-mono whitespace-pre-wrap leading-relaxed text-text-primary" dangerouslySetInnerHTML={{ __html: parseMessageContent(message.content, contributorMap) }} />
@@ -2810,6 +3145,37 @@ export default function ChatPage() {
                                 </div>
                               </div>
                             )}
+
+                            {/* NEW: Edit button for user messages */}
+                            {message.role === 'user' && !message.isEditing && (
+                              <div className="flex items-center gap-1 mt-2 pt-2 border-t border-border">
+                                <button
+                                  onClick={() => startEdit(index)}
+                                  className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`}
+                                  title="Edit message"
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setConversations(prev => prev.map(conv => {
+                                      if (conv.id === activeConversationId) {
+                                        return {
+                                          ...conv,
+                                          messages: conv.messages.filter((_, i) => i !== index)
+                                        };
+                                      }
+                                      return conv;
+                                    }));
+                                    showToast('Message deleted', 'info');
+                                  }}
+                                  className={`p-1.5 rounded ${vnMode ? 'hover:bg-white/10 text-gray-300 hover:text-white' : 'hover:bg-surface text-text-secondary hover:text-text-primary'}`}
+                                  title="Delete message"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            )}
                           </div>
                           {message.role === 'user' && (
                             <div className="shrink-0 mb-3 ml-3">
@@ -2831,22 +3197,8 @@ export default function ChatPage() {
                          <div className="shrink-0 mb-3">
                            <Image src={getSpriteForMood(personality, 'DEFAULT')} alt="Siggy Avatar" width={48} height={48} className="rounded-full bg-black/50 border border-border object-cover" />
                          </div>
-                         <div className="flex flex-col gap-1 items-start">
-                           <div className="max-w-[100%] rounded-xl rounded-bl-none bg-surface border border-border px-4 py-3 shadow-sm min-w-[200px]">
-                             <div className="flex items-center gap-3 mb-2">
-                               <span className="font-display text-sm md:text-base font-bold uppercase tracking-widest text-accent">SIGGY</span>
-                               <span className="text-[10px] font-mono px-3 py-1 rounded-full bg-neutral-500/20 text-neutral-400 animate-pulse italic">typing on phone...</span>
-                             </div>
-                             <p className="text-[10px] font-mono text-neutral-400 italic mb-4">
-                               {isResearching ? '*siggy is researching...*' : isAnalyzing ? '*siggy is analyzing...*' : '*siggy is thinking...*'}
-                             </p>
-                             <div className="flex gap-1.5 ml-1 mt-1">
-                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                               <span className="w-2 h-2 bg-accent/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                             </div>
-                           </div>
-                         </div>
+                         {/* NEW: Using MessageSkeleton instead of simple spinner */}
+                         <MessageSkeleton />
                        </div>
                      )}
                     <div ref={messagesEndRef} />
@@ -3124,6 +3476,30 @@ export default function ChatPage() {
                             className={`flex-1 px-3 py-2 border-none rounded-lg focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-50 font-mono text-[10px] sm:text-xs transition-all shadow-inner resize-none overflow-y-auto max-h-[60px] sm:max-h-[80px] ${input.toLowerCase().startsWith('/') ? 'bg-accent text-black font-bold' : 'bg-surface text-text-primary'}`}
                             style={{ minHeight: '44px', height: 'auto' }}
                           />
+                          {/* NEW: Voice input button */}
+                          <button
+                            onClick={toggleVoiceRecording}
+                            disabled={!recognitionRef.current}
+                            className={`shrink-0 p-2 rounded-lg transition-all ${
+                              isListening ? 'bg-red-500 animate-pulse' : 'hover:bg-white/5'
+                            } ${!recognitionRef.current ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            style={{ height: '44px', width: '44px' }}
+                            title={isListening ? 'Stop recording' : 'Voice input'}
+                          >
+                            {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                          </button>
+                          {/* NEW: Language toggle (shows when voice is available) */}
+                          {recognitionRef.current && !isListening && (
+                            <select
+                              value={voiceLang}
+                              onChange={(e) => setVoiceLang(e.target.value as 'id-ID' | 'en-US')}
+                              className="shrink-0 text-xs bg-surface border border-border rounded px-2 py-1 focus:outline-none focus:border-accent"
+                              title="Voice language"
+                            >
+                              <option value="id-ID">ID</option>
+                              <option value="en-US">EN</option>
+                            </select>
+                          )}
                           <button onClick={() => handleSendMessage()} disabled={isLoading || !input.trim()} className="shrink-0 px-4 py-2 bg-yellow-400 text-black font-bold hover:bg-yellow-300 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-mono text-xs uppercase transition-all flex items-center gap-2 shadow-[0_0_15px_rgba(255,215,0,0.2)] disabled:shadow-none" style={{ height: '44px' }}>
                             {isLoading ? <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" /> : <><Send className="w-4 h-4" />Send</>}
                           </button>

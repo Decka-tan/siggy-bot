@@ -3,6 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SettingsProvider } from "@/components/providers/SettingsProvider";
+import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,11 +21,13 @@ export default function RootLayout({
       <body className="dark min-h-screen bg-bg text-text-primary selection:bg-accent selection:text-black">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <SettingsProvider>
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
+            <ToastProvider>
+              <Header />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </ToastProvider>
           </SettingsProvider>
         </ThemeProvider>
       </body>
