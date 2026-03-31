@@ -76,22 +76,19 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
       return c;
     });
 
-    // Calculate support/resistance from recent candles FIRST (for Y-axis range)
-    const recentCandles = candles.slice(-20);
-    const recentHighs = recentCandles.map(c => c.high);
-    const recentLows = recentCandles.map(c => c.low);
-
-    // Support = recent low, Resistance = recent high
-    const support = Math.min(...recentLows);
-    const resistance = Math.max(...recentHighs);
-
-    // Use support/resistance as Y-axis range (no padding - exact bounds)
-    const priceRange = resistance - support || 1;
-
     // Draw candles (show last 50 candles)
     const maxCandles = 50;
     const step = Math.max(1, Math.floor(candles.length / maxCandles));
     const displayCandles = candles.filter((_, i) => i % step === 0).slice(-maxCandles);
+
+    // Calculate min/max from ALL displayed candles (not just recent)
+    // This ensures no candles are cut off
+    const allHighs = displayCandles.map(c => c.high);
+    const allLows = displayCandles.map(c => c.low);
+
+    const support = Math.min(...allLows);
+    const resistance = Math.max(...allHighs);
+    const priceRange = resistance - support || 1;
 
     const candleWidth = (chartWidth / displayCandles.length) * 0.75;
     const gap = (chartWidth / displayCandles.length) * 0.25;

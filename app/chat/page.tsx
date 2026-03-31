@@ -2277,8 +2277,22 @@ export default function ChatPage() {
                     </div>
                   </div>
                 </div>
-                    
+
                 <div className="p-4 border-b border-border space-y-2">
+                  {/* NEW: Search button for mobile */}
+                  <button
+                    onClick={() => {
+                      setShowMobileSidebar(false);
+                      setTimeout(() => {
+                        document.getElementById('mobile-search-input')?.focus();
+                      }, 300);
+                    }}
+                    className="w-full h-10 flex justify-center items-center gap-2 bg-surface border border-border text-text-secondary hover:text-accent hover:border-border rounded-lg font-mono text-xs uppercase tracking-wider transition-colors"
+                    title="Search messages"
+                  >
+                    <Search className="w-4 h-4" />
+                    Search Messages
+                  </button>
                   <button onClick={() => { createNewConversation(); setShowMobileSidebar(false); }} className="w-full h-12 flex justify-center items-center gap-3 bg-accent hover:opacity-90 text-black rounded-xl font-mono text-sm uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(255,215,0,0.2)] active:scale-95">
                     <Plus className="w-4 h-4" />
                     New Chat
@@ -3574,6 +3588,81 @@ export default function ChatPage() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* NEW: Mobile Search Modal */}
+      <AnimatePresence>
+        <div className="lg:hidden fixed inset-0 z-[200] pointer-events-none">
+          {/* Mobile Search Bar - fixed at top */}
+          <div className="absolute top-20 left-4 right-4 pointer-events-auto">
+            <div className="bg-surface/95 backdrop-blur-xl border border-border rounded-xl shadow-2xl p-3">
+              <div className="flex items-center gap-2">
+                <Search className="w-4 h-4 text-text-secondary" />
+                <input
+                  id="mobile-search-input"
+                  type="text"
+                  placeholder="Search messages..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    const query = e.target.value;
+                    setSearchQuery(query);
+                    if (!query.trim()) {
+                      setSearchResults([]);
+                      return;
+                    }
+
+                    const results: typeof searchResults = [];
+                    conversations.forEach(conv => {
+                      conv.messages.forEach((msg, idx) => {
+                        if (msg.content.toLowerCase().includes(query.toLowerCase())) {
+                          results.push({
+                            conversationId: conv.id,
+                            messageId: `${conv.id}-${idx}`,
+                            messageIndex: idx,
+                            preview: msg.content.slice(0, 100),
+                            context: conv.title,
+                          });
+                        }
+                      });
+                    });
+                    setSearchResults(results.slice(0, 20));
+                  }}
+                  className="flex-1 bg-bg border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent text-text-primary"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                    }}
+                    className="p-2 text-text-secondary hover:text-text-primary"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {/* Search Results */}
+              {searchResults.length > 0 && (
+                <div className="mt-3 max-h-64 overflow-y-auto space-y-2">
+                  {searchResults.map((result, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => goToMessage(result.conversationId, result.messageId)}
+                      className="p-3 bg-bg border border-border rounded-lg hover:border-accent cursor-pointer transition-colors"
+                    >
+                      <p className="text-xs text-text-primary line-clamp-2">{result.preview}</p>
+                      <p className="text-[10px] text-text-secondary mt-1 font-mono">{result.context}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {searchQuery && searchResults.length === 0 && (
+                <p className="text-xs text-text-secondary mt-2 text-center">No results found</p>
+              )}
+            </div>
+          </div>
+        </div>
       </AnimatePresence>
     </div>
   );
