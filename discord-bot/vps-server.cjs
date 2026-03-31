@@ -1499,4 +1499,4 @@ registerCommands().then((success) => {
   process.exit(1);
 });
 
-module.exports = { client };
+module.exports = { client, setLastCommand, getLastCommand };
