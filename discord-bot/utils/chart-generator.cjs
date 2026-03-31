@@ -153,13 +153,15 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     ctx.lineTo(paddingLeft + chartWidth, resistanceY);
     ctx.stroke();
 
-    // Resistance label background
+    // Resistance label - moved to right side to avoid header
+    const resLabel = 'RES ' + formatPriceReal(resistance);
+    ctx.font = '10px sans-serif';
+    const resLabelWidth = ctx.measureText(resLabel).width + 8;
     ctx.fillStyle = 'rgba(239, 83, 80, 0.2)';
-    ctx.fillRect(paddingLeft + 10, resistanceY - 10, 90, 18);
+    ctx.fillRect(width - paddingRight - resLabelWidth - 4, resistanceY - 8, resLabelWidth, 16);
     ctx.fillStyle = '#ef5350';
-    ctx.font = '11px sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('RES ' + formatPriceReal(resistance), paddingLeft + 14, resistanceY + 3);
+    ctx.fillText(resLabel, width - paddingRight - resLabelWidth, resistanceY + 4);
 
     // Draw support line (dashed green at bottom)
     ctx.strokeStyle = 'rgba(38, 166, 154, 0.5)';
@@ -169,12 +171,13 @@ async function generateChartImage(symbol, ohlcData, currentPrice, change) {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Support label background
+    // Support label - also on right side
+    const supLabel = 'SUP ' + formatPriceReal(support);
+    const supLabelWidth = ctx.measureText(supLabel).width + 8;
     ctx.fillStyle = 'rgba(38, 166, 154, 0.2)';
-    ctx.fillRect(paddingLeft + 10, supportY - 8, 90, 18);
+    ctx.fillRect(width - paddingRight - supLabelWidth - 4, supportY - 8, supLabelWidth, 16);
     ctx.fillStyle = '#26a69a';
-    ctx.font = '11px sans-serif';
-    ctx.fillText('SUP ' + formatPriceReal(support), paddingLeft + 14, supportY + 4);
+    ctx.fillText(supLabel, width - paddingRight - supLabelWidth, supportY + 4);
 
     // Price scale on right side (real numbers, no K/M/B)
     const priceLevels = 8;
