@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 
 interface SettingsContextType {
@@ -26,20 +26,52 @@ interface SettingsContextType {
   playVoiceLine: (type?: 'CAT' | 'ANIME') => void;
 }
 
-const defaultSettings: SettingsContextType = {
+// localStorage key
+const SETTINGS_KEY = 'siggy-settings';
+
+// Default settings
+const defaultSettings = {
   sfxEnabled: true,
-  setSfxEnabled: () => {},
   sfxVolume: 55,
-  setSfxVolume: () => {},
   typingSfxEnabled: true,
-  setTypingSfxEnabled: () => {},
-  bgmEnabled: true,
-  setBgmEnabled: () => {},
+  bgmEnabled: false, // Default OFF as user requested
   bgmVolume: 25,
-  setBgmVolume: () => {},
-  textSpeed: 10, // 10ms default (Fast)
-  setTextSpeed: () => {},
+  textSpeed: 0, // 0 = instant as user requested
   showTimestamps: false,
+};
+
+// Load settings from localStorage
+function loadSettings() {
+  if (typeof window === 'undefined') return defaultSettings;
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    if (saved) {
+      return { ...defaultSettings, ...JSON.parse(saved) };
+    }
+  } catch (e) {
+    console.error('Failed to load settings:', e);
+  }
+  return defaultSettings;
+}
+
+// Save settings to localStorage
+function saveSettings(settings: Record<string, any>) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Failed to save settings:', e);
+  }
+}
+
+const SettingsContext = createContext<SettingsContextType>({
+  ...defaultSettings,
+  setSfxEnabled: () => {},
+  setSfxVolume: () => {},
+  setTypingSfxEnabled: () => {},
+  setBgmEnabled: () => {},
+  setBgmVolume: () => {},
+  setTextSpeed: () => {},
   setShowTimestamps: () => {},
   playHover: () => {},
   playClick: () => {},
@@ -47,19 +79,67 @@ const defaultSettings: SettingsContextType = {
   playTransition: () => {},
   playTyping: () => {},
   playVoiceLine: () => {},
-};
-
-const SettingsContext = createContext<SettingsContextType>(defaultSettings);
+});
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [sfxEnabled, setSfxEnabled] = useState(true);
-  const [sfxVolume, setSfxVolume] = useState(55);
-  const [typingSfxEnabled, setTypingSfxEnabled] = useState(true);
-  const [bgmEnabled, setBgmEnabled] = useState(true);
-  const [bgmVolume, setBgmVolume] = useState(25);
-  const [textSpeed, setTextSpeed] = useState(10);
-  const [showTimestamps, setShowTimestamps] = useState(false);
+
+  // Initialize from localStorage
+  const [sfxEnabled, setSfxEnabledState] = useState(defaultSettings.sfxEnabled);
+  const [sfxVolume, setSfxVolumeState] = useState(defaultSettings.sfxVolume);
+  const [typingSfxEnabled, setTypingSfxEnabledState] = useState(defaultSettings.typingSfxEnabled);
+  const [bgmEnabled, setBgmEnabledState] = useState(defaultSettings.bgmEnabled);
+  const [bgmVolume, setBgmVolumeState] = useState(defaultSettings.bgmVolume);
+  const [textSpeed, setTextSpeedState] = useState(defaultSettings.textSpeed);
+  const [showTimestamps, setShowTimestampsState] = useState(defaultSettings.showTimestamps);
+
+  // Load settings on mount
+  useEffect(() => {
+    const saved = loadSettings();
+    setSfxEnabledState(saved.sfxEnabled);
+    setSfxVolumeState(saved.sfxVolume);
+    setTypingSfxEnabledState(saved.typingSfxEnabled);
+    setBgmEnabledState(saved.bgmEnabled);
+    setBgmVolumeState(saved.bgmVolume);
+    setTextSpeedState(saved.textSpeed);
+    setShowTimestampsState(saved.showTimestamps);
+  }, []);
+
+  // Wrapper functions that save to localStorage
+  const setSfxEnabled = useCallback((value: boolean) => {
+    setSfxEnabledState(value);
+    saveSettings({ ...loadSettings(), sfxEnabled: value });
+  }, []);
+
+  const setSfxVolume = useCallback((value: number) => {
+    setSfxVolumeState(value);
+    saveSettings({ ...loadSettings(), sfxVolume: value });
+  }, []);
+
+  const setTypingSfxEnabled = useCallback((value: boolean) => {
+    setTypingSfxEnabledState(value);
+    saveSettings({ ...loadSettings(), typingSfxEnabled: value });
+  }, []);
+
+  const setBgmEnabled = useCallback((value: boolean) => {
+    setBgmEnabledState(value);
+    saveSettings({ ...loadSettings(), bgmEnabled: value });
+  }, []);
+
+  const setBgmVolume = useCallback((value: number) => {
+    setBgmVolumeState(value);
+    saveSettings({ ...loadSettings(), bgmVolume: value });
+  }, []);
+
+  const setTextSpeed = useCallback((value: number) => {
+    setTextSpeedState(value);
+    saveSettings({ ...loadSettings(), textSpeed: value });
+  }, []);
+
+  const setShowTimestamps = useCallback((value: boolean) => {
+    setShowTimestampsState(value);
+    saveSettings({ ...loadSettings(), showTimestamps: value });
+  }, []);
 
   const [bgmAudio, setBgmAudio] = useState<HTMLAudioElement | null>(null);
   const [hoverAudio, setHoverAudio] = useState<HTMLAudioElement | null>(null);
