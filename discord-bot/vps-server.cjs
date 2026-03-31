@@ -1093,6 +1093,97 @@ client.on('interactionCreate', async (interaction) => {
     } else if (name === 'flip') {
       const { handleFlip } = require('./commands/utility.cjs');
       await handleFlip(interaction);
+    } else if (name === 'chat') {
+      // Reload chat message - regenerate response
+      await interaction.deferReply();
+
+      const { message } = options;
+      const userId = interaction.user.id;
+      const state = getUserState(userId);
+
+      if (!state || !message) {
+        return interaction.editReply({ content: '❌ Could not reload chat message.', components: [] });
+      }
+
+      try {
+        // Get conversation history
+        const history = getConversationHistory(userId);
+        const cleanMessage = message.replace(/<[^>]*>/g, '').trim();
+
+        // Build request
+        const requestBody = {
+          message: cleanMessage,
+          conversationHistory: history,
+          userId,
+          isFirstMessage: history.length === 0,
+          userName: interaction.user.username,
+          currentForm: state.form,
+          relationshipScore: state.relationshipScore,
+        };
+
+        const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        let botResponse = data.response || data.message || 'Nya? Something went wrong...';
+
+        // Extract mood
+        const moodMatch = botResponse.match(/\[MOOD:(\w+)\]\s*/i);
+        let mood = state.mood;
+        if (moodMatch) mood = moodMatch[1].toUpperCase();
+        else if (data.currentMood) mood = data.currentMood.toUpperCase();
+
+        const cleanResponse = botResponse.replace(/\[MOUD:[^\]]+\]\s*/gi, '').trim();
+        const spriteUrl = SPRITES[state.form][mood] || SPRITES[state.form].DEFAULT;
+        const embedColor = MOOD_COLORS[mood] || MOOD_COLORS.DEFAULT;
+        const moodEmoji = getMoodEmoji(mood);
+
+        const embed = new EmbedBuilder()
+          .setColor(embedColor)
+          .setAuthor({ name: `Siggy (${state.form}) 🔄`, iconURL: SPRITES.CAT.DEFAULT })
+          .setDescription(cleanResponse)
+          .setThumbnail(spriteUrl)
+          .setFooter({
+            text: `Reloaded • Mood: ${mood} ${moodEmoji} • Msg #${state.messageCount}`
+          })
+          .setTimestamp();
+
+        const row = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(`copy_${interaction.id}`)
+              .setLabel('Copy')
+              .setEmoji('📋')
+              .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+              .setCustomId(`like_${interaction.id}`)
+              .setLabel('Like')
+              .setEmoji('✅')
+              .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+              .setCustomId(`dislike_${interaction.id}`)
+              .setLabel('Dislike')
+              .setEmoji('❌')
+              .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+              .setCustomId(`reload_${interaction.id}`)
+              .setLabel('Reload')
+              .setEmoji('🔄')
+              .setStyle(ButtonStyle.Primary),
+          );
+
+        await interaction.editReply({ content: '', embeds: [embed], components: [row] });
+      } catch (error) {
+        console.error('Chat reload error:', error);
+        await interaction.editReply({ content: `❌ Reload failed: ${error.message}`, components: [] });
+      }
     } else {
       await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
     }
@@ -1297,6 +1388,9 @@ client.on('messageCreate', async (message) => {
       state.relationshipScore = data.relationshipScore;
     }
     saveUserState(state);
+
+    // Save for reload functionality
+    setLastCommand(message.author.id, 'chat', { message: cleanMessage });
 
     // Get sprite and color for mood
     const spriteUrl = SPRITES[state.form][mood] || SPRITES[state.form].DEFAULT;
