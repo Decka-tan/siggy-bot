@@ -165,13 +165,10 @@ function buildMarkPaidModal(invoice) {
     .setCustomId(`mark_paid_${invoice.id}`)
     .setTitle('✅ Tandai Lunas');
 
-  const unpaidParticipants = invoice.participants.filter(p => !p.paid);
-  const nameList = unpaidParticipants.map((p, i) => `${i + 1}. ${p.username}`).join(', ');
-
   const input = new TextInputBuilder()
     .setCustomId('paid_list')
-    .setLabel(`Siapa lunas? (${nameList})`)
-    .setPlaceholder('1, 3')
+    .setLabel('Nomor yang sudah lunas')
+    .setPlaceholder('1, 3, 5')
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
