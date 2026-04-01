@@ -415,7 +415,7 @@ async function handleInvoiceModal(interaction, modalType) {
 
       if (participants.length === 0) {
         return interaction.reply({
-          content: '❌ Masukkan minimal 1 orang dengan format: `username:jumlah`\nContoh: `@user:50000`',
+          content: '❌ Masukkan minimal 1 orang dengan format: `username jumlah`\nContoh: `@user 15000` atau `user 15k`',
           ephemeral: true
         });
       }
@@ -535,11 +535,26 @@ async function handleInvoiceModal(interaction, modalType) {
     }
   } catch (error) {
     console.error('[Invoice Modal] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: `❌ Terjadi error: ${error.message}`,
-        ephemeral: true
-      });
+    console.error('[Invoice Modal] modalType:', modalType);
+    console.error('[Invoice Modal] error.message:', error.message);
+    console.error('[Invoice Modal] error.stack:', error.stack);
+
+    // Try to respond if possible
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: `❌ Error: ${error.message}`,
+          ephemeral: true
+        });
+      } else if (interaction.deferred || interaction.replied) {
+        // If already replied, try to send a follow-up
+        await interaction.followUp({
+          content: `❌ Error: ${error.message}`,
+          ephemeral: true
+        }).catch(e => console.error('[Invoice Modal] Follow-up also failed:', e));
+      }
+    } catch (replyError) {
+      console.error('[Invoice Modal] Failed to send error response:', replyError);
     }
   }
 }
@@ -603,11 +618,25 @@ async function handleInvoiceButton(interaction, action) {
     }
   } catch (error) {
     console.error('[Invoice Button] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: `❌ An error occurred: ${error.message}`,
-        ephemeral: true
-      });
+    console.error('[Invoice Button] customId:', interaction.customId);
+    console.error('[Invoice Button] action:', action);
+    console.error('[Invoice Button] error.message:', error.message);
+    console.error('[Invoice Button] error.stack:', error.stack);
+
+    // Try to respond if possible
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({
+          content: `❌ Error: ${error.message}`,
+          ephemeral: true
+        });
+      } else if (interaction.deferred) {
+        await interaction.editReply({
+          content: `❌ Error: ${error.message}`,
+        });
+      }
+    } catch (replyError) {
+      console.error('[Invoice Button] Failed to send error response:', replyError);
     }
   }
 }
