@@ -8,7 +8,7 @@
 // Load environment variables FIRST
 require('dotenv').config();
 
-const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
 const {
   getUserState,
   saveUserState,
@@ -37,6 +37,16 @@ const {
   handleLeaderboardAdd,
   handleLeaderboardEnd,
 } = require('./commands/leaderboard.cjs');
+
+// Invoice commands
+const {
+  handleInvoiceCreate,
+  handleInvoiceRecap,
+  handleInvoiceModal,
+  handleInvoiceButton,
+  handleAddParticipantsToExisting,
+  invoiceCommands,
+} = require('./commands/invoice.cjs');
 
 const {
   handleFlip,
@@ -933,6 +943,7 @@ async function registerCommands() {
     },
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
+    ...invoiceCommands, // Spread invoice commands here
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -1184,9 +1195,45 @@ client.on('interactionCreate', async (interaction) => {
         console.error('Chat reload error:', error);
         await interaction.editReply({ content: `❌ Reload failed: ${error.message}`, components: [] });
       }
+    } else if (customId.startsWith('invoice_markpaid_')) {
+      await handleInvoiceButton(interaction, 'markpaid');
+    } else if (customId.startsWith('invoice_add_')) {
+      await handleInvoiceButton(interaction, 'add');
+    } else if (customId.startsWith('invoice_delete_')) {
+      await handleInvoiceButton(interaction, 'delete');
     } else {
       await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
     }
+  }
+});
+
+// Modal submit handler
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isModalSubmit()) return;
+
+  const { customId } = interaction;
+
+  if (customId === 'invoice_details') {
+    await handleInvoiceModal(interaction, 'details');
+  } else if (customId === 'invoice_participants') {
+    // Check if this is for an existing invoice (add people flow)
+    const invoiceModule = require('./commands/invoice.cjs');
+    if (invoiceModule.tempInvoiceStorage.has(interaction.user.id)) {
+      const invoiceId = invoiceModule.tempInvoiceStorage.get(interaction.user.id);
+      const invoice = require('./utils/invoice-db.cjs').getInvoice(invoiceId);
+      if (invoice && invoice.participants.length > 0) {
+        // This is adding to an existing invoice
+        await invoiceModule.handleAddParticipantsToExisting(interaction, invoiceId);
+      } else {
+        // New invoice flow
+        await handleInvoiceModal(interaction, 'participants');
+      }
+    } else {
+      // No temp storage - shouldn't happen but handle gracefully
+      await handleInvoiceModal(interaction, 'participants');
+    }
+  } else if (customId.startsWith('mark_paid_')) {
+    await handleInvoiceModal(interaction, customId);
   }
 });
 
@@ -1238,6 +1285,15 @@ client.on('interactionCreate', async (interaction) => {
           case 'start': await handleLeaderboardStart(interaction); break;
           case 'add': await handleLeaderboardAdd(interaction); break;
           case 'end': await handleLeaderboardEnd(interaction); break;
+        }
+        break;
+      // Invoice commands
+      case 'invoice':
+        const invoiceSubcommand = interaction.options.getSubcommand();
+        if (invoiceSubcommand === 'create') {
+          await handleInvoiceCreate(interaction);
+        } else if (invoiceSubcommand === 'recap') {
+          await handleInvoiceRecap(interaction);
         }
         break;
       // Utility commands - save for reload
