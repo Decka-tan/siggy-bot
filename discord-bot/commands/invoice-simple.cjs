@@ -195,6 +195,59 @@ async function processInvoiceCreateModal(interaction) {
   // Update message ID
   const message = await interaction.fetchReply();
   updateInvoiceMessage(finalInvoice.id, message.id);
+
+  // Send DM notifications to participants
+  await sendInvoiceNotifications(finalInvoice, interaction.guild);
+}
+
+/**
+ * Send DM notifications to invoice participants
+ */
+async function sendInvoiceNotifications(invoice, guild) {
+  for (const participant of invoice.participants) {
+    if (participant.userId && participant.userId.startsWith && !participant.userId.startsWith('unknown_')) {
+      try {
+        const user = await guild.client.users.fetch(participant.userId);
+        if (user && !user.bot) {
+          const amount = isNaN(participant.amount) ? 0 : participant.amount;
+          await user.send({
+            content: `🧾 **Invoice Baru!**\n\n` +
+              `Kamu ditambahkan ke invoice: **${invoice.title || 'Untitled'}**\n` +
+              `💰 Jumlah: Rp ${amount.toLocaleString('id-ID')}\n` +
+              `📅 Tanggal: ${invoice.date}\n` +
+              `👤 Dibuat oleh: ${invoice.creator.username}\n\n` +
+              `_Silakan lunasi secepatnya. Terima kasih!_`
+          });
+        }
+      } catch (err) {
+        // User has DMs disabled or doesn't exist, skip
+        console.log(`[Invoice] Could not send DM to ${participant.username}:`, err.message);
+      }
+    }
+  }
+}
+
+/**
+ * Send DM notification when marked as paid
+ */
+async function sendPaidNotification(invoice, participant, guild) {
+  if (participant.userId && !participant.userId.startsWith('unknown_')) {
+    try {
+      const user = await guild.client.users.fetch(participant.userId);
+      if (user && !user.bot) {
+        const amount = isNaN(participant.amount) ? 0 : participant.amount;
+        await user.send({
+          content: `✅ **Pembayaran Dikonfirmasi!**\n\n` +
+            `Invoice: **${invoice.title || 'Untitled'}**\n` +
+            `💰 Jumlah: Rp ${amount.toLocaleString('id-ID')}\n` +
+            `📅 Tanggal: ${invoice.date}\n\n` +
+            `_Terima kasih sudah melunasi!_`
+        });
+      }
+    } catch (err) {
+      console.log(`[Invoice] Could not send paid DM to ${participant.username}:`, err.message);
+    }
+  }
 }
 
 /**
@@ -251,8 +304,18 @@ function buildInvoiceButtons(invoiceId) {
       .setEmoji('✅')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
+      .setCustomId(`invoice_remind_${invoiceId}`)
+      .setLabel('Remind')
+      .setEmoji('🔔')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`invoice_settle_${invoiceId}`)
+      .setLabel('Settle All')
+      .setEmoji('💵')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
       .setCustomId(`invoice_add_${invoiceId}`)
-      .setLabel('Add People')
+      .setLabel('Add')
       .setEmoji('➕')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
@@ -403,6 +466,10 @@ async function handleInvoiceButton(interaction, action) {
 
     if (customId.startsWith('invoice_pay_')) {
       invoiceId = customId.replace('invoice_pay_', '');
+    } else if (customId.startsWith('invoice_remind_')) {
+      invoiceId = customId.replace('invoice_remind_', '');
+    } else if (customId.startsWith('invoice_settle_')) {
+      invoiceId = customId.replace('invoice_settle_', '');
     } else if (customId.startsWith('invoice_add_')) {
       invoiceId = customId.replace('invoice_add_', '');
     } else if (customId.startsWith('invoice_del_')) {
@@ -455,6 +522,64 @@ async function handleInvoiceButton(interaction, action) {
       return interaction.reply({
         content: '✅ Pilih orang yang sudah bayar:',
         components: [row],
+        ephemeral: true
+      });
+
+    } else if (action === 'remind') {
+      // Send reminder DMs to unpaid participants
+      const unpaid = invoice.participants.filter(p => !p.paid);
+      if (unpaid.length === 0) {
+        return interaction.reply({
+          content: '✅ Semua orang sudah lunas!',
+          ephemeral: true
+        });
+      }
+
+      let sentCount = 0;
+      for (const participant of unpaid) {
+        if (participant.userId && !participant.userId.startsWith('unknown_')) {
+          try {
+            const user = await interaction.guild.client.users.fetch(participant.userId);
+            if (user && !user.bot) {
+              const amount = isNaN(participant.amount) ? 0 : participant.amount;
+              await user.send({
+                content: `🔔 **Pengingat Pembayaran**\n\n` +
+                  `Halo ${participant.username}! 👋\n\n` +
+                  `Kamu masih memiliki tagihan invoice:\n` +
+                  `📋 **${invoice.title || 'Untitled'}**\n` +
+                  `💰 Jumlah: Rp ${amount.toLocaleString('id-ID')}\n` +
+                  `📅 Tanggal: ${invoice.date}\n\n` +
+                  `_Mohon segera lunasi. Terima kasih!_`
+              });
+              sentCount++;
+            }
+          } catch (err) {
+            console.log(`[Invoice] Could not send reminder to ${participant.username}:`, err.message);
+          }
+        }
+      }
+
+      return interaction.reply({
+        content: `🔔 Reminder terkirim ke ${sentCount}/${unpaid.length} orang!`,
+        ephemeral: true
+      });
+
+    } else if (action === 'settle') {
+      // Mark all participants as paid
+      const unpaid = invoice.participants.filter(p => !p.paid);
+      if (unpaid.length === 0) {
+        return interaction.reply({
+          content: '✅ Semua orang sudah lunas!',
+          ephemeral: true
+        });
+      }
+
+      const { markMultiplePaid } = require('../utils/invoice-db.cjs');
+      const allUserIds = invoice.participants.map(p => p.userId);
+      markMultiplePaid(invoiceId, allUserIds);
+
+      return interaction.reply({
+        content: `✅ Semua ${unpaid.length} orang ditandai lunas!`,
         ephemeral: true
       });
 
@@ -511,6 +636,173 @@ async function handleInvoiceRecap(interaction) {
   });
 }
 
+/**
+ * /invoice-search handler - Search invoices with filters
+ */
+async function handleInvoiceSearch(interaction) {
+  const query = interaction.options.getString('query') || '';
+  const period = interaction.options.getString('period') || 'all';
+
+  const invoices = getUserInvoices(interaction.user.id);
+
+  if (invoices.length === 0) {
+    return interaction.reply({
+      content: '📋 Belum ada invoice.',
+      ephemeral: true
+    });
+  }
+
+  let filtered = invoices;
+
+  // Filter by period
+  const now = new Date();
+  if (period === 'week') {
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filtered = filtered.filter(inv => new Date(inv.date) >= weekAgo);
+  } else if (period === 'month') {
+    const monthAgo = new Date(now.getFullYear(), now.getMonth(), 1);
+    filtered = filtered.filter(inv => new Date(inv.date) >= monthAgo);
+  }
+
+  // Filter by query (username or title)
+  if (query) {
+    const lowerQuery = query.toLowerCase();
+    filtered = filtered.filter(inv =>
+      inv.title?.toLowerCase().includes(lowerQuery) ||
+      inv.participants.some(p => p.username?.toLowerCase().includes(lowerQuery))
+    );
+  }
+
+  if (filtered.length === 0) {
+    return interaction.reply({
+      content: `📋 Tidak ada invoice yang cocok dengan filter.`,
+      ephemeral: true
+    });
+  }
+
+  // Calculate stats
+  const totalInvoices = filtered.length;
+  const totalPeople = filtered.flatMap(inv => inv.participants).length;
+  const paidPeople = filtered.flatMap(inv => inv.participants).filter(p => p.paid).length;
+  const unpaidPeople = totalPeople - paidPeople;
+  const totalAmount = filtered.reduce((sum, inv) => sum + (isNaN(inv.totalAmount) ? 0 : inv.totalAmount), 0);
+  const unpaidAmount = filtered
+    .flatMap(inv => inv.participants)
+    .filter(p => !p.paid)
+    .reduce((sum, p) => sum + (isNaN(p.amount) ? 0 : p.amount), 0);
+
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle(`🔍 Invoice Search${period !== 'all' ? ` (${period})` : ''}`)
+    .addFields(
+      { name: '📊 Total Invoice', value: `${totalInvoices}`, inline: true },
+      { name: '👥 Total Orang', value: `${totalPeople}`, inline: true },
+      { name: '✅ Lunas', value: `${paidPeople}`, inline: true },
+      { name: '⏳ Belum Lunas', value: `${unpaidPeople}`, inline: true },
+      { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
+      { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
+    )
+    .setFooter({ text: query ? `Query: ${query}` : '' })
+    .setTimestamp();
+
+  await interaction.reply({
+    embeds: [embed],
+    ephemeral: true
+  });
+}
+
+/**
+ * /invoice-analytics handler - Show weekly/monthly analytics
+ */
+async function handleInvoiceAnalytics(interaction) {
+  const period = interaction.options.getString('period') || 'month';
+  const invoices = getUserInvoices(interaction.user.id);
+
+  if (invoices.length === 0) {
+    return interaction.reply({
+      content: '📋 Belum ada invoice.',
+      ephemeral: true
+    });
+  }
+
+  const now = new Date();
+  let startDate;
+  let periodLabel;
+
+  if (period === 'week') {
+    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    periodLabel = '7 Hari Terakhir';
+  } else if (period === 'month') {
+    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    periodLabel = 'Bulan Ini';
+  } else {
+    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+    periodLabel = `Bulan Lalu (${endDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })})`;
+  }
+
+  const filtered = invoices.filter(inv => new Date(inv.date) >= startDate);
+
+  if (filtered.length === 0) {
+    return interaction.reply({
+      content: `📋 Tidak ada invoice untuk ${periodLabel}.`,
+      ephemeral: true
+    });
+  }
+
+  // Calculate per-person stats
+  const personStats = {};
+  filtered.forEach(inv => {
+    inv.participants.forEach(p => {
+      if (!personStats[p.username]) {
+        personStats[p.username] = { total: 0, paid: 0, unpaid: 0, count: 0 };
+      }
+      const amount = isNaN(p.amount) ? 0 : p.amount;
+      personStats[p.username].total += amount;
+      personStats[p.username].count += 1;
+      if (p.paid) {
+        personStats[p.username].paid += amount;
+      } else {
+        personStats[p.username].unpaid += amount;
+      }
+    });
+  });
+
+  // Sort by unpaid amount (highest first)
+  const sortedPeople = Object.entries(personStats)
+    .sort((a, b) => b[1].unpaid - a[1].unpaid)
+    .slice(0, 10);
+
+  let description = '';
+  sortedPeople.forEach(([name, stats], i) => {
+    const status = stats.unpaid > 0 ? '⏳' : '✅';
+    description += `${i + 1}. **${name}** ${status}\n`;
+    description += `   Total: Rp ${stats.total.toLocaleString('id-ID')} | `;
+    description += `Lunas: Rp ${stats.paid.toLocaleString('id-ID')} | `;
+    description += `Hutang: Rp ${stats.unpaid.toLocaleString('id-ID')}\n`;
+  });
+
+  const totalAmount = filtered.reduce((sum, inv) => sum + (isNaN(inv.totalAmount) ? 0 : inv.totalAmount), 0);
+  const paidAmount = filtered.flatMap(inv => inv.participants).filter(p => p.paid).reduce((sum, p) => sum + (isNaN(p.amount) ? 0 : p.amount), 0);
+  const unpaidAmount = totalAmount - paidAmount;
+
+  const embed = new EmbedBuilder()
+    .setColor(unpaidAmount > 0 ? 0xf39c12 : 0x27ae60)
+    .setTitle(`📊 Invoice Analytics - ${periodLabel}`)
+    .setDescription(description || 'Tidak ada data')
+    .addFields(
+      { name: '📁 Total Invoice', value: `${filtered.length}`, inline: true },
+      { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
+      { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
+    )
+    .setTimestamp();
+
+  await interaction.reply({
+    embeds: [embed],
+    ephemeral: true
+  });
+}
+
 // Command definitions
 const invoiceCommandsSimple = [
   {
@@ -521,12 +813,54 @@ const invoiceCommandsSimple = [
     name: 'invoice-recap',
     description: 'Lihat semua invoice kamu',
   },
+  {
+    name: 'invoice-search',
+    description: 'Cari invoice dengan filter',
+    options: [
+      {
+        name: 'query',
+        description: 'Cari berdasarkan nama atau judul',
+        type: 3, // STRING
+        required: false,
+      },
+      {
+        name: 'period',
+        description: 'Filter periode waktu',
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: 'Semua', value: 'all' },
+          { name: 'Minggu Ini', value: 'week' },
+          { name: 'Bulan Ini', value: 'month' },
+        ],
+      },
+    ],
+  },
+  {
+    name: 'invoice-analytics',
+    description: 'Lihat analitik invoice (mingguan/bulanan)',
+    options: [
+      {
+        name: 'period',
+        description: 'Pilih periode',
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: '7 Hari Terakhir', value: 'week' },
+          { name: 'Bulan Ini', value: 'month' },
+          { name: 'Bulan Lalu', value: 'last_month' },
+        ],
+      },
+    ],
+  },
 ];
 
 module.exports = {
   handleInvoiceCreateSimple,
   processInvoiceCreateModal,
   handleInvoiceRecap,
+  handleInvoiceSearch,
+  handleInvoiceAnalytics,
   renderInvoiceEmbed,
   buildInvoiceButtons,
   renderInvoiceRecapEmbed,

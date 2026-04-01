@@ -43,11 +43,14 @@ const {
   handleInvoiceCreateSimple,
   processInvoiceCreateModal,
   handleInvoiceRecap,
+  handleInvoiceSearch,
+  handleInvoiceAnalytics,
   handleInvoiceModal,
   handleInvoiceButton,
   buildMarkPaidModal,
   buildAddPeopleModal,
   invoiceCommandsSimple,
+  sendPaidNotification,
 } = require('./commands/invoice-simple.cjs');
 
 const {
@@ -1209,6 +1212,10 @@ client.on('interactionCreate', async (interaction) => {
     }
   } else if (customId.startsWith('invoice_pay_')) {
     await handleInvoiceButton(interaction, 'pay');
+  } else if (customId.startsWith('invoice_remind_')) {
+    await handleInvoiceButton(interaction, 'remind');
+  } else if (customId.startsWith('invoice_settle_')) {
+    await handleInvoiceButton(interaction, 'settle');
   } else if (customId.startsWith('invoice_add_')) {
     await handleInvoiceButton(interaction, 'add');
   } else if (customId.startsWith('invoice_del_')) {
@@ -1287,6 +1294,14 @@ async function handleMarkPaidSelect(interaction) {
 
     const embed = renderInvoiceEmbed(updatedInvoice);
     const components = buildInvoiceButtons(updatedInvoice.id);
+
+    // Send DM notifications to newly paid users
+    for (const userId of selectedValues) {
+      const participant = updatedInvoice.participants.find(p => p.userId === userId);
+      if (participant) {
+        await sendPaidNotification(updatedInvoice, participant, interaction.guild);
+      }
+    }
 
     // Send new updated invoice message
     const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
@@ -1501,6 +1516,12 @@ client.on('interactionCreate', async (interaction) => {
         break;
       case 'invoice-recap':
         await handleInvoiceRecap(interaction);
+        break;
+      case 'invoice-search':
+        await handleInvoiceSearch(interaction);
+        break;
+      case 'invoice-analytics':
+        await handleInvoiceAnalytics(interaction);
         break;
       // Utility commands - save for reload
       case 'flip':
