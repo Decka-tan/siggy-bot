@@ -462,6 +462,12 @@ const invoiceCommandsSimple = [
     description: 'Buat invoice baru',
     options: [
       {
+        name: 'people',
+        description: 'List orang & jumlah (satu per baris)',
+        type: 3, // STRING
+        required: true,
+      },
+      {
         name: 'title',
         description: 'Judul invoice (opsional)',
         type: 3, // STRING
@@ -472,12 +478,6 @@ const invoiceCommandsSimple = [
         description: 'Tanggal invoice (YYYY-MM-DD)',
         type: 3,
         required: false,
-      },
-      {
-        name: 'people',
-        description: 'List orang & jumlah (satu per baris)',
-        type: 3, // STRING
-        required: true,
       },
     ],
   },
