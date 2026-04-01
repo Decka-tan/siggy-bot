@@ -158,28 +158,21 @@ function buildDetailsModal() {
 }
 
 /**
- * Build Mark Paid Modal - single field with list format
+ * Build Mark Paid Modal - simple input
  */
 function buildMarkPaidModal(invoice) {
   const modal = new ModalBuilder()
     .setCustomId(`mark_paid_${invoice.id}`)
-    .setTitle('✅ Tandai Sudah Bayar');
+    .setTitle('✅ Tandai Lunas');
 
-  // Build list of unpaid participants
   const unpaidParticipants = invoice.participants.filter(p => !p.paid);
-  const unpaidList = unpaidParticipants
-    .map((p, i) => {
-      const amount = isNaN(p.amount) ? 0 : p.amount;
-      return `${i + 1}. ${p.username} - Rp ${amount.toLocaleString('id-ID')}${p.notes ? ` (${p.notes})` : ''}`;
-    })
-    .join('\n');
+  const nameList = unpaidParticipants.map((p, i) => `${i + 1}. ${p.username}`).join(', ');
 
   const input = new TextInputBuilder()
     .setCustomId('paid_list')
-    .setLabel('Nomor orang yang sudah bayar')
-    .setPlaceholder(`Masukkan nomor yang sudah bayar, pisahkan dengan koma\n\n${unpaidList}`)
-    .setValue('')
-    .setStyle(TextInputStyle.Paragraph)
+    .setLabel(`Siapa lunas? (${nameList})`)
+    .setPlaceholder('1, 3')
+    .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
   return modal.addComponents(new ActionRowBuilder().addComponents(input));
