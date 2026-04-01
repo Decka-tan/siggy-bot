@@ -168,7 +168,10 @@ function buildMarkPaidModal(invoice) {
   // Build list of unpaid participants
   const unpaidParticipants = invoice.participants.filter(p => !p.paid);
   const unpaidList = unpaidParticipants
-    .map((p, i) => `${i + 1}. ${p.username} - Rp ${p.amount.toLocaleString('id-ID')}${p.notes ? ` (${p.notes})` : ''}`)
+    .map((p, i) => {
+      const amount = isNaN(p.amount) ? 0 : p.amount;
+      return `${i + 1}. ${p.username} - Rp ${amount.toLocaleString('id-ID')}${p.notes ? ` (${p.notes})` : ''}`;
+    })
     .join('\n');
 
   const input = new TextInputBuilder()
@@ -200,19 +203,23 @@ function renderInvoiceEmbed(invoice) {
   invoice.participants.forEach((p, i) => {
     const status = p.paid ? '✅' : '💰';
     const notes = p.notes ? ` *(${p.notes})*` : '';
-    description += `${i + 1}. **${p.username}** - Rp ${p.amount.toLocaleString('id-ID')} ${status}${notes}\n`;
+    // Safe number formatting
+    const amount = isNaN(p.amount) || p.amount === null ? 0 : p.amount;
+    description += `${i + 1}. **${p.username}** - Rp ${amount.toLocaleString('id-ID')} ${status}${notes}\n`;
   });
 
   const unpaidTotal = invoice.participants
     .filter(p => !p.paid)
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum, p) => sum + (isNaN(p.amount) ? 0 : p.amount), 0);
+
+  const totalAmount = isNaN(invoice.totalAmount) ? 0 : invoice.totalAmount;
 
   const embed = new EmbedBuilder()
     .setColor(unpaidTotal > 0 ? 0xf39c12 : 0x27ae60)
     .setTitle('🧾 INVOICE')
     .setDescription(description)
     .addFields(
-      { name: '💰 Total', value: `Rp ${invoice.totalAmount.toLocaleString('id-ID')}`, inline: true },
+      { name: '💰 Total', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
       { name: '📊 Status', value: `${paidCount}/${totalCount} paid`, inline: true },
       { name: '⏳ Outstanding', value: `Rp ${unpaidTotal.toLocaleString('id-ID')}`, inline: true }
     )
@@ -252,7 +259,7 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
   const totalOwed = invoices
     .flatMap(inv => inv.participants)
     .filter(p => !p.paid)
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum, p) => sum + (isNaN(p.amount) ? 0 : p.amount), 0);
 
   let description = '';
 
@@ -260,9 +267,11 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
     const unpaid = inv.participants.filter(p => !p.paid);
     if (unpaid.length > 0) {
       description += `**Invoice ${i + 1}:** ${inv.title || 'Untitled'}\n`;
-      description += `  Date: ${inv.date} | Total: Rp ${inv.totalAmount.toLocaleString('id-ID')}\n`;
+      const totalAmount = isNaN(inv.totalAmount) ? 0 : inv.totalAmount;
+      description += `  Date: ${inv.date} | Total: Rp ${totalAmount.toLocaleString('id-ID')}\n`;
       unpaid.forEach(p => {
-        description += `  • ${p.username}: Rp ${p.amount.toLocaleString('id-ID')}\n`;
+        const amount = isNaN(p.amount) ? 0 : p.amount;
+        description += `  • ${p.username}: Rp ${amount.toLocaleString('id-ID')}\n`;
       });
       description += '\n';
     }
