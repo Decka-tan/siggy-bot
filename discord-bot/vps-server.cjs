@@ -1499,6 +1499,9 @@ client.on('interactionCreate', async (interaction) => {
       case 'invoice-create':
         await handleInvoiceCreateSimple(interaction);
         break;
+      case 'invoice-recap':
+        await handleInvoiceRecap(interaction);
+        break;
       // Utility commands - save for reload
       case 'flip':
         setLastCommand(interaction.user.id, 'flip', options);
