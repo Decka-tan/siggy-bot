@@ -484,7 +484,6 @@ const invoiceCommandsSimple = [
   {
     name: 'invoice-recap',
     description: 'Lihat semua invoice kamu',
-    type: 1, // SUB_COMMAND
   },
 ];
 
