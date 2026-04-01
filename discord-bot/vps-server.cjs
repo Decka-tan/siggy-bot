@@ -1197,11 +1197,6 @@ client.on('interactionCreate', async (interaction) => {
       }
     } else if (customId.startsWith('invoice_markpaid_')) {
       await handleInvoiceButton(interaction, 'markpaid');
-    } else if (customId.startsWith('invoice_add_participants_')) {
-      // Handle the "Add Participants" button from invoice creation flow
-      const invoiceId = customId.split('_').pop();
-      const { buildParticipantsModal } = require('./commands/invoice.cjs');
-      await interaction.showModal(buildParticipantsModal());
     } else if (customId.startsWith('invoice_add_')) {
       await handleInvoiceButton(interaction, 'add');
     } else if (customId.startsWith('invoice_delete_')) {
@@ -1218,25 +1213,10 @@ client.on('interactionCreate', async (interaction) => {
 
   const { customId } = interaction;
 
-  if (customId === 'invoice_details') {
-    await handleInvoiceModal(interaction, 'details');
-  } else if (customId === 'invoice_participants') {
-    // Check if this is for an existing invoice (add people flow)
-    const invoiceModule = require('./commands/invoice.cjs');
-    if (invoiceModule.tempInvoiceStorage.has(interaction.user.id)) {
-      const invoiceId = invoiceModule.tempInvoiceStorage.get(interaction.user.id);
-      const invoice = require('./utils/invoice-db.cjs').getInvoice(invoiceId);
-      if (invoice && invoice.participants.length > 0) {
-        // This is adding to an existing invoice
-        await invoiceModule.handleAddParticipantsToExisting(interaction, invoiceId);
-      } else {
-        // New invoice flow
-        await handleInvoiceModal(interaction, 'participants');
-      }
-    } else {
-      // No temp storage - shouldn't happen but handle gracefully
-      await handleInvoiceModal(interaction, 'participants');
-    }
+  if (customId === 'invoice_create' || customId === 'invoice_details') {
+    await handleInvoiceModal(interaction, 'invoice_create');
+  } else if (customId === 'invoice_add_participants') {
+    await handleInvoiceModal(interaction, 'invoice_add_participants');
   } else if (customId.startsWith('mark_paid_')) {
     await handleInvoiceModal(interaction, customId);
   }

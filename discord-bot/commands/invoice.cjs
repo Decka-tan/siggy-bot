@@ -96,67 +96,65 @@ async function resolveUsername(guild, usernameInput) {
 }
 
 /**
- * Build Step 1: Details Modal
+ * Build Single Invoice Modal (all in one)
  */
-function buildDetailsModal() {
+function buildInvoiceModal() {
   const today = formatDate(new Date());
 
   const modal = new ModalBuilder()
-    .setCustomId('invoice_details')
-    .setTitle('🧾 Create Invoice - Step 1: Details');
+    .setCustomId('invoice_create')
+    .setTitle('🧾 Buat Invoice Baru');
 
   const dateInput = new TextInputBuilder()
     .setCustomId('invoice_date')
-    .setLabel('Invoice Date')
+    .setLabel('Tanggal')
     .setValue(today)
-    .setPlaceholder('YYYY-MM-DD or "today" or "tomorrow"')
+    .setPlaceholder('YYYY-MM-DD atau "today" atau "tomorrow"')
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
 
   const titleInput = new TextInputBuilder()
     .setCustomId('invoice_title')
-    .setLabel('Invoice Title (Optional)')
-    .setPlaceholder('e.g., Event Supplies, Team Dinner')
+    .setLabel('Judul Invoice (Opsional)')
+    .setPlaceholder('Contoh: Makan bersama, Event, dll')
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
+  const participantsInput = new TextInputBuilder()
+    .setCustomId('invoice_participants')
+    .setLabel('List Orang (satu per baris)')
+    .setPlaceholder('Format: username atau @mention\nContoh:\n@user1:50000\n@user2:75000\nuser3:100000')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
   return modal.addComponents(
     new ActionRowBuilder().addComponents(dateInput),
-    new ActionRowBuilder().addComponents(titleInput)
+    new ActionRowBuilder().addComponents(titleInput),
+    new ActionRowBuilder().addComponents(participantsInput)
   );
 }
 
 /**
- * Build Step 2: Participants Modal (5 rows)
+ * Build Participants Modal (for adding more people)
  */
 function buildParticipantsModal() {
   const modal = new ModalBuilder()
-    .setCustomId('invoice_participants')
-    .setTitle('🧾 Create Invoice - Step 2: Add People');
+    .setCustomId('invoice_add_participants')
+    .setTitle('➕ Tambah Orang ke Invoice');
 
-  const rows = [];
-  for (let i = 1; i <= 5; i++) {
-    const usernameInput = new TextInputBuilder()
-      .setCustomId(`user_${i}`)
-      .setLabel(`Person ${i} - Username`)
-      .setPlaceholder('@username or username#1234')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(i === 1);
+  const participantsInput = new TextInputBuilder()
+    .setCustomId('participants_list')
+    .setLabel('List Orang (satu per baris)')
+    .setPlaceholder('Format: username:jumlah\nContoh:\n@user1:50000\n@user2:75000')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
 
-    const amountInput = new TextInputBuilder()
-      .setCustomId(`amount_${i}`)
-      .setLabel(`Person ${i} - Jumlah (Rp)`)
-      .setPlaceholder('Contoh: 50000')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(i === 1);
+  return modal.addComponents(new ActionRowBuilder().addComponents(participantsInput));
+}
 
-    rows.push(
-      new ActionRowBuilder().addComponents(usernameInput),
-      new ActionRowBuilder().addComponents(amountInput)
-    );
-  }
-
-  return modal.addComponents(...rows);
+// Keep old function name for compatibility
+function buildDetailsModal() {
+  return buildInvoiceModal();
 }
 
 /**
@@ -289,7 +287,7 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
  * Handle /invoice create command
  */
 async function handleInvoiceCreate(interaction) {
-  await interaction.showModal(buildDetailsModal());
+  await interaction.showModal(buildInvoiceModal());
 }
 
 /**
@@ -317,19 +315,75 @@ async function handleInvoiceRecap(interaction) {
 }
 
 /**
+ * Parse participants from text (format: username:amount)
+ */
+function parseParticipants(text, guild) {
+  const participants = [];
+  const lines = text.split('\n');
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    // Try format "username:amount" or "@username:amount"
+    const match = trimmed.match(/^(<@!?(\d+)>|[^:]+):(\d+)$/);
+    if (match) {
+      const mention = match[1];
+      const userId = match[2] || null;
+      const username = match[1];
+      const amount = parseInt(match[3]);
+
+      if (amount > 0) {
+        let finalUsername = username;
+        let finalUserId = userId || `unknown_${Date.now()}_${Math.random()}`;
+
+        if (userId) {
+          // It's a mention, try to get actual username
+          try {
+            const member = guild.members.cache.get(userId);
+            if (member) {
+              finalUsername = member.user.username;
+              finalUserId = userId;
+            }
+          } catch {}
+        } else {
+          // It's a plain username, try to resolve
+          const member = guild.members.cache.find(
+            m => m.user.username.toLowerCase() === username.toLowerCase()
+          );
+          if (member) {
+            finalUsername = member.user.username;
+            finalUserId = member.id;
+          }
+        }
+
+        participants.push({
+          userId: finalUserId,
+          username: finalUsername,
+          amount: amount,
+        });
+      }
+    }
+  }
+
+  return participants;
+}
+
+/**
  * Handle invoice modal submissions
  */
 async function handleInvoiceModal(interaction, modalType) {
   try {
-    if (modalType === 'details') {
-      // Process Step 1: Details modal
+    if (modalType === 'details' || modalType === 'invoice_create') {
+      // Process invoice creation modal
       const dateInput = interaction.fields.getTextInputValue('invoice_date');
       const titleInput = interaction.fields.getTextInputValue('invoice_title');
+      const participantsInput = interaction.fields.getTextInputValue('invoice_participants');
 
       const date = parseDateInput(dateInput);
       const formattedDate = formatDate(date);
 
-      // Create a temporary invoice
+      // Create the invoice
       const invoice = createInvoice(
         interaction.guildId,
         interaction.channelId,
@@ -338,66 +392,55 @@ async function handleInvoiceModal(interaction, modalType) {
         formattedDate
       );
 
-      // Store in temp for the next step
-      tempInvoiceStorage.set(interaction.user.id, invoice.id);
+      // Parse participants
+      const participants = parseParticipants(participantsInput, interaction.guild);
 
-      // Show button to add participants
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`invoice_add_participants_${invoice.id}`)
-          .setLabel('➕ Add Participants')
-          .setStyle(ButtonStyle.Primary)
-      );
+      if (participants.length === 0) {
+        return interaction.reply({
+          content: '❌ Masukkan minimal 1 orang dengan format: `username:jumlah`\nContoh: `@user:50000`',
+          ephemeral: true
+        });
+      }
 
+      // Add participants to the invoice
+      const result = addParticipants(invoice.id, participants);
+
+      if (!result.success) {
+        return interaction.reply({
+          content: `❌ Error: ${result.error}`,
+          ephemeral: true
+        });
+      }
+
+      const finalInvoice = result.invoice;
+      const embed = renderInvoiceEmbed(finalInvoice);
+      const buttons = buildInvoiceButtons(finalInvoice.id);
+
+      // Send the invoice embed
       await interaction.reply({
-        content: `✅ Invoice **${titleInput || 'Untitled'}** created! Now add the people who owe you.`,
-        components: [row],
-        ephemeral: true
+        content: '✅ Invoice berhasil dibuat!',
+        embeds: [embed],
+        components: [buttons]
       });
 
-    } else if (modalType === 'participants') {
-      // Process Step 2: Participants modal
+    } else if (modalType === 'invoice_add_participants') {
+      // Add participants to existing invoice
       const userId = interaction.user.id;
       const tempInvoiceId = tempInvoiceStorage.get(userId);
 
       if (!tempInvoiceId) {
         return interaction.reply({
-          content: '❌ Invoice session expired. Please start over with `/invoice create`.',
+          content: '❌ Sesi invoice kadaluarsa. Mulai ulang dengan `/invoice create`.',
           ephemeral: true
         });
       }
 
-      const guild = interaction.guild;
-      const participants = [];
-      const errors = [];
-
-      // Parse 5 participant rows
-      for (let i = 1; i <= 5; i++) {
-        const username = interaction.fields.getTextInputValue(`user_${i}`)?.trim();
-        const amountStr = interaction.fields.getTextInputValue(`amount_${i}`)?.trim();
-
-        if (!username) continue;
-
-        const amount = parseFloat(amountStr);
-
-        if (isNaN(amount) || amount <= 0) {
-          errors.push(`Person ${i}: Invalid amount "${amountStr}"`);
-          continue;
-        }
-
-        // Try to resolve the username
-        const member = await resolveUsername(guild, username);
-
-        participants.push({
-          userId: member ? member.id : `unknown_${i}`,
-          username: member ? member.user.username : username,
-          amount: amount,
-        });
-      }
+      const participantsInput = interaction.fields.getTextInputValue('participants_list');
+      const participants = parseParticipants(participantsInput, interaction.guild);
 
       if (participants.length === 0) {
         return interaction.reply({
-          content: '❌ Please add at least one participant.',
+          content: '❌ Masukkan minimal 1 orang dengan format: `username:jumlah`',
           ephemeral: true
         });
       }
@@ -419,16 +462,11 @@ async function handleInvoiceModal(interaction, modalType) {
       const embed = renderInvoiceEmbed(invoice);
       const buttons = buildInvoiceButtons(invoice.id);
 
-      // Send the invoice embed
-      const msg = await interaction.reply({
-        content: '✅ Invoice created successfully!',
+      await interaction.reply({
+        content: '✅ Orang berhasil ditambahkan ke invoice!',
         embeds: [embed],
-        components: [buttons],
-        fetchReply: true
+        components: [buttons]
       });
-
-      // Update the invoice with the message ID
-      updateInvoiceMessage(invoice.id, msg.id);
 
     } else if (modalType.startsWith('mark_paid')) {
       // Process Mark Paid modal
@@ -437,7 +475,7 @@ async function handleInvoiceModal(interaction, modalType) {
 
       if (!invoice) {
         return interaction.reply({
-          content: '❌ Invoice not found.',
+          content: '❌ Invoice tidak ditemukan.',
           ephemeral: true
         });
       }
@@ -468,7 +506,7 @@ async function handleInvoiceModal(interaction, modalType) {
       const buttons = buildInvoiceButtons(invoiceId);
 
       await interaction.update({
-        content: '✅ Payment status updated!',
+        content: '✅ Status pembayaran diperbarui!',
         embeds: [embed],
         components: [buttons]
       });
@@ -477,7 +515,7 @@ async function handleInvoiceModal(interaction, modalType) {
     console.error('[Invoice Modal] Error:', error);
     if (!interaction.replied && !interaction.deferred) {
       await interaction.reply({
-        content: `❌ An error occurred: ${error.message}`,
+        content: `❌ Terjadi error: ${error.message}`,
         ephemeral: true
       });
     }
@@ -512,15 +550,9 @@ async function handleInvoiceButton(interaction, action) {
       await interaction.showModal(buildMarkPaidModal(invoice));
 
     } else if (action === 'add') {
-      // Show the participants modal again
+      // Show the add participants modal
       tempInvoiceStorage.set(interaction.user.id, invoiceId);
-
-      await interaction.reply({
-        content: 'ℹ️ Adding more people to your invoice...',
-        ephemeral: true
-      });
-
-      await interaction.followUp({ modal: buildParticipantsModal() });
+      await interaction.showModal(buildParticipantsModal());
 
     } else if (action === 'delete') {
       const result = deleteInvoice(invoiceId);
@@ -549,69 +581,6 @@ async function handleInvoiceButton(interaction, action) {
   }
 }
 
-/**
- * Handle adding participants to existing invoice (called from modal)
- */
-async function handleAddParticipantsToExisting(interaction, invoiceId) {
-  const guild = interaction.guild;
-  const participants = [];
-  const errors = [];
-
-  // Parse 5 participant rows
-  for (let i = 1; i <= 5; i++) {
-    const username = interaction.fields.getTextInputValue(`user_${i}`)?.trim();
-    const amountStr = interaction.fields.getTextInputValue(`amount_${i}`)?.trim();
-
-    if (!username) continue;
-
-    const amount = parseFloat(amountStr);
-
-    if (isNaN(amount) || amount <= 0) {
-      errors.push(`Person ${i}: Invalid amount "${amountStr}"`);
-      continue;
-    }
-
-    // Try to resolve the username
-    const member = await resolveUsername(guild, username);
-
-    participants.push({
-      userId: member ? member.id : `unknown_${i}`,
-      username: member ? member.user.username : username,
-      amount: amount,
-    });
-  }
-
-  if (participants.length === 0) {
-    return interaction.reply({
-      content: '❌ Please add at least one participant.',
-      ephemeral: true
-    });
-  }
-
-  // Add participants to the invoice
-  const result = addParticipants(invoiceId, participants);
-
-  if (!result.success) {
-    return interaction.reply({
-      content: `❌ Error: ${result.error}`,
-      ephemeral: true
-    });
-  }
-
-  // Clear temp storage
-  tempInvoiceStorage.delete(interaction.user.id);
-
-  const invoice = result.invoice;
-  const embed = renderInvoiceEmbed(invoice);
-  const buttons = buildInvoiceButtons(invoice.id);
-
-  await interaction.reply({
-    content: '✅ Participants added to your invoice!',
-    embeds: [embed],
-    components: [buttons]
-  });
-}
-
 // Invoice command definitions
 const invoiceCommands = [
   {
@@ -637,8 +606,6 @@ module.exports = {
   handleInvoiceRecap,
   handleInvoiceModal,
   handleInvoiceButton,
-  handleAddParticipantsToExisting,
   invoiceCommands,
   tempInvoiceStorage,
-  buildParticipantsModal,
 };
