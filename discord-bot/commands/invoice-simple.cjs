@@ -120,8 +120,7 @@ async function handleInvoiceCreateSimple(interaction) {
 
   if (participants.length === 0) {
     return interaction.reply({
-      content: '❌ Format salah! Contoh:\n` +
-        '`/invoice-create title:"Makan Bareng" people:"@user1 15k\n@user2 13000 lunas"`',
+      content: '❌ Format salah! Contoh: `/invoice-create people:"@user 15000"`',
       ephemeral: true
     });
   }
