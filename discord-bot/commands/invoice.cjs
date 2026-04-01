@@ -158,25 +158,28 @@ function buildDetailsModal() {
 }
 
 /**
- * Build Mark Paid Modal
+ * Build Mark Paid Modal - single field with list format
  */
 function buildMarkPaidModal(invoice) {
   const modal = new ModalBuilder()
     .setCustomId(`mark_paid_${invoice.id}`)
-    .setTitle('✅ Mark Participants as Paid');
+    .setTitle('✅ Tandai Sudah Bayar');
 
-  const rows = invoice.participants.map((p) => {
-    const checkbox = new TextInputBuilder()
-      .setCustomId(`paid_${p.userId}`)
-      .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
-      .setPlaceholder('Type "yes" to mark as paid, leave blank for unpaid')
-      .setStyle(TextInputStyle.Short)
-      .setRequired(false);
+  // Build list of unpaid participants
+  const unpaidList = invoice.participants
+    .filter(p => !p.paid)
+    .map((p, i) => `${i + 1}. ${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
+    .join('\n');
 
-    return new ActionRowBuilder().addComponents(checkbox);
-  });
+  const input = new TextInputBuilder()
+    .setCustomId('paid_list')
+    .setLabel('Nomor orang yang sudah bayar')
+    .setPlaceholder(`Masukkan nomor yang sudah bayar, pisahkan dengan koma\n\n${unpaidList}`)
+    .setValue('')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(false);
 
-  return modal.addComponents(...rows);
+  return modal.addComponents(new ActionRowBuilder().addComponents(input));
 }
 
 /**
@@ -468,7 +471,7 @@ async function handleInvoiceModal(interaction, modalType) {
         components: [buttons]
       });
 
-    } else if (modalType.startsWith('mark_paid')) {
+    } else if (modalType.startsWith('mark_paid_')) {
       // Process Mark Paid modal
       const invoiceId = modalType.replace('mark_paid_', '');
       const invoice = getInvoice(invoiceId);
@@ -480,14 +483,18 @@ async function handleInvoiceModal(interaction, modalType) {
         });
       }
 
-      // Collect all user IDs marked as paid
+      // Parse comma-separated numbers
+      const paidInput = interaction.fields.getTextInputValue('paid_list');
+      const unpaidParticipants = invoice.participants.filter(p => !p.paid);
       const paidUserIds = [];
-      const allParticipants = invoice.participants;
 
-      for (const p of allParticipants) {
-        const value = interaction.fields.getTextInputValue(`paid_${p.userId}`);
-        if (value && value.toLowerCase().trim() === 'yes') {
-          paidUserIds.push(p.userId);
+      if (paidInput && paidInput.trim()) {
+        const numbers = paidInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+
+        for (const num of numbers) {
+          if (num > 0 && num <= unpaidParticipants.length) {
+            paidUserIds.push(unpaidParticipants[num - 1].userId);
+          }
         }
       }
 
@@ -528,7 +535,16 @@ async function handleInvoiceModal(interaction, modalType) {
 async function handleInvoiceButton(interaction, action) {
   try {
     const customId = interaction.customId;
-    const invoiceId = customId.split('_').pop();
+    // Extract invoice ID by removing prefix
+    let invoiceId;
+    if (customId.startsWith('invoice_markpaid_')) {
+      invoiceId = customId.replace('invoice_markpaid_', '');
+    } else if (customId.startsWith('invoice_add_')) {
+      invoiceId = customId.replace('invoice_add_', '');
+    } else if (customId.startsWith('invoice_delete_')) {
+      invoiceId = customId.replace('invoice_delete_', '');
+    }
+
     const invoice = getInvoice(invoiceId);
 
     if (!invoice) {
