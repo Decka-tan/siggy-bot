@@ -40,13 +40,12 @@ const {
 
 // Invoice commands
 const {
-  handleInvoiceCreate,
+  handleInvoiceCreateSimple,
   handleInvoiceRecap,
   handleInvoiceModal,
   handleInvoiceButton,
-  handleAddParticipantsToExisting,
   invoiceCommands,
-} = require('./commands/invoice.cjs');
+} = require('./commands/invoice-simple.cjs');
 
 const {
   handleFlip,
@@ -943,7 +942,7 @@ async function registerCommands() {
     },
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
-    ...invoiceCommands, // Spread invoice commands here
+    ...invoiceCommands, // Spread invoice commands here (now from invoice-simple.cjs)
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -1195,11 +1194,11 @@ client.on('interactionCreate', async (interaction) => {
         console.error('Chat reload error:', error);
         await interaction.editReply({ content: `❌ Reload failed: ${error.message}`, components: [] });
       }
-    } else if (customId.startsWith('invoice_markpaid_')) {
-      await handleInvoiceButton(interaction, 'markpaid');
+    } else if (customId.startsWith('invoice_pay_')) {
+      await handleInvoiceButton(interaction, 'pay');
     } else if (customId.startsWith('invoice_add_')) {
       await handleInvoiceButton(interaction, 'add');
-    } else if (customId.startsWith('invoice_delete_')) {
+    } else if (customId.startsWith('invoice_del_')) {
       await handleInvoiceButton(interaction, 'delete');
     } else {
       await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
@@ -1275,11 +1274,12 @@ client.on('interactionCreate', async (interaction) => {
       // Invoice commands
       case 'invoice':
         const invoiceSubcommand = interaction.options.getSubcommand();
-        if (invoiceSubcommand === 'create') {
-          await handleInvoiceCreate(interaction);
-        } else if (invoiceSubcommand === 'recap') {
+        if (invoiceSubcommand === 'recap') {
           await handleInvoiceRecap(interaction);
         }
+        break;
+      case 'invoice-create':
+        await handleInvoiceCreateSimple(interaction);
         break;
       // Utility commands - save for reload
       case 'flip':
