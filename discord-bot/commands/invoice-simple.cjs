@@ -684,6 +684,82 @@ async function handleInvoiceRecap(interaction) {
 }
 
 /**
+ * /invoice-delete handler - Show select menu to delete invoices
+ */
+async function handleInvoiceDelete(interaction) {
+  const invoices = getUserInvoices(interaction.user.id);
+
+  if (invoices.length === 0) {
+    return interaction.reply({
+      content: '📋 Belum ada invoice.',
+      ephemeral: true
+    });
+  }
+
+  // Limit to 25 (Discord select menu max)
+  const recentInvoices = invoices.slice(0, 25);
+
+  const options = recentInvoices.map(inv => {
+    const unpaidCount = inv.participants.filter(p => !p.paid).length;
+    const amount = isNaN(inv.totalAmount) ? 0 : inv.totalAmount;
+    const label = `${inv.title || 'Untitled'} - ${inv.date}`;
+    const description = `Rp ${amount.toLocaleString('id-ID')} | ${unpaidCount} belum lunas`;
+    const value = inv.id;
+
+    return new StringSelectMenuOptionBuilder()
+      .setLabel(label)
+      .setValue(value)
+      .setDescription(description);
+  });
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('delete_invoice_select')
+    .setPlaceholder('Pilih invoice yang ingin dihapus...')
+    .setMinValues(1)
+    .setMaxValues(Math.min(recentInvoices.length, 10))
+    .addOptions(options);
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
+
+  await interaction.reply({
+    content: '🗑️ Pilih invoice yang ingin dihapus:',
+    components: [row],
+    ephemeral: true
+  });
+}
+
+/**
+ * /invoice-clear handler - Delete all invoices (with confirmation)
+ */
+async function handleInvoiceClear(interaction) {
+  const invoices = getUserInvoices(interaction.user.id);
+
+  if (invoices.length === 0) {
+    return interaction.reply({
+      content: '📋 Belum ada invoice.',
+      ephemeral: true
+    });
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId('clear_invoice_modal')
+    .setTitle('🗑️ Hapus Semua Invoice');
+
+  const confirmInput = new TextInputBuilder()
+    .setCustomId('confirm')
+    .setLabel(`Ketik "DELETE" untuk menghapus ${invoices.length} invoice`)
+    .setPlaceholder('DELETE')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true)
+    .setMaxLength(10);
+
+  const row = new ActionRowBuilder().addComponents(confirmInput);
+  modal.addComponents(row);
+
+  await interaction.showModal(modal);
+}
+
+/**
  * /invoice-search handler - Search invoices with filters
  */
 async function handleInvoiceSearch(interaction) {
@@ -900,6 +976,14 @@ const invoiceCommandsSimple = [
       },
     ],
   },
+  {
+    name: 'invoice-delete',
+    description: 'Hapus invoice (pilih dari daftar)',
+  },
+  {
+    name: 'invoice-clear',
+    description: 'Hapus SEMUA invoice',
+  },
 ];
 
 module.exports = {
@@ -908,6 +992,8 @@ module.exports = {
   handleInvoiceRecap,
   handleInvoiceSearch,
   handleInvoiceAnalytics,
+  handleInvoiceDelete,
+  handleInvoiceClear,
   renderInvoiceEmbed,
   buildInvoiceButtons,
   renderInvoiceRecapEmbed,

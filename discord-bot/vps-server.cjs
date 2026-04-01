@@ -45,6 +45,8 @@ const {
   handleInvoiceRecap,
   handleInvoiceSearch,
   handleInvoiceAnalytics,
+  handleInvoiceDelete,
+  handleInvoiceClear,
   handleInvoiceModal,
   handleInvoiceButton,
   buildMarkPaidModal,
@@ -1239,6 +1241,8 @@ client.on('interactionCreate', async (interaction) => {
     await handleInvoiceModal(interaction, customId);
   } else if (customId.startsWith('add_people_modal_')) {
     await handleAddPeopleSubmit(interaction);
+  } else if (customId === 'clear_invoice_modal') {
+    await handleClearInvoiceModal(interaction);
   }
 });
 
@@ -1250,6 +1254,8 @@ client.on('interactionCreate', async (interaction) => {
 
   if (customId.startsWith('mark_paid_select_')) {
     await handleMarkPaidSelect(interaction);
+  } else if (customId === 'delete_invoice_select') {
+    await handleDeleteInvoiceSelect(interaction);
   }
 });
 
@@ -1454,6 +1460,76 @@ async function handleAddPeopleSubmit(interaction) {
   }
 }
 
+/**
+ * Handle delete invoice select menu
+ */
+async function handleDeleteInvoiceSelect(interaction) {
+  try {
+    const selectedIds = interaction.values;
+    let deletedCount = 0;
+
+    for (const invoiceId of selectedIds) {
+      const result = deleteInvoice(invoiceId);
+      if (result.success) {
+        deletedCount++;
+      }
+    }
+
+    await interaction.update({
+      content: `🗑️ Berhasil menghapus ${deletedCount} invoice!`,
+      components: []
+    });
+  } catch (error) {
+    console.error('[Delete Invoice Select] Error:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: `❌ Error: ${error.message}`,
+        ephemeral: true
+      });
+    }
+  }
+}
+
+/**
+ * Handle clear all invoices modal
+ */
+async function handleClearInvoiceModal(interaction) {
+  try {
+    const confirm = interaction.fields.getTextInputValue('confirm');
+
+    if (confirm !== 'DELETE') {
+      return interaction.reply({
+        content: '❌ Dibatalkan. Ketik "DELETE" untuk konfirmasi.',
+        ephemeral: true
+      });
+    }
+
+    const { getUserInvoices } = require('./utils/invoice-db.cjs');
+    const invoices = getUserInvoices(interaction.user.id);
+
+    let deletedCount = 0;
+    for (const invoice of invoices) {
+      const result = deleteInvoice(invoice.id);
+      if (result.success) {
+        deletedCount++;
+      }
+    }
+
+    await interaction.reply({
+      content: `🗑️ Berhasil menghapus ${deletedCount} invoice!`,
+      ephemeral: true
+    });
+  } catch (error) {
+    console.error('[Clear Invoice Modal] Error:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: `❌ Error: ${error.message}`,
+        ephemeral: true
+      });
+    }
+  }
+}
+
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
@@ -1522,6 +1598,12 @@ client.on('interactionCreate', async (interaction) => {
         break;
       case 'invoice-analytics':
         await handleInvoiceAnalytics(interaction);
+        break;
+      case 'invoice-delete':
+        await handleInvoiceDelete(interaction);
+        break;
+      case 'invoice-clear':
+        await handleInvoiceClear(interaction);
         break;
       // Utility commands - save for reload
       case 'flip':
