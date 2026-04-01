@@ -123,7 +123,7 @@ function buildInvoiceModal() {
   const participantsInput = new TextInputBuilder()
     .setCustomId('invoice_participants')
     .setLabel('List Orang (satu per baris)')
-    .setPlaceholder('Format: username jumlah (keterangan)\nContoh:\n@user 15k nasi dobel\n@user2 13k lunas\nuser3 12k (sambel pisang)')
+    .setPlaceholder('@user 15k\nuser2 13k lunas\nuser3 12k')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true);
 
@@ -145,7 +145,7 @@ function buildParticipantsModal() {
   const participantsInput = new TextInputBuilder()
     .setCustomId('participants_list')
     .setLabel('List Orang (satu per baris)')
-    .setPlaceholder('Format: username jumlah (keterangan)\nContoh:\n@user 15k nasi dobel\nuser2 13k')
+    .setPlaceholder('@user 15k\nuser2 13k')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true);
 
