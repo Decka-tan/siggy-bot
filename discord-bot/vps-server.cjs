@@ -1194,11 +1194,9 @@ client.on('interactionCreate', async (interaction) => {
         console.error('Chat reload error:', error);
         await interaction.editReply({ content: `❌ Reload failed: ${error.message}`, components: [] });
       }
-    } else if (customId.startsWith('invoice_pay_')) {
+    } else if (customId.startsWith('inv_pay_')) {
       await handleInvoiceButton(interaction, 'pay');
-    } else if (customId.startsWith('invoice_add_')) {
-      await handleInvoiceButton(interaction, 'add');
-    } else if (customId.startsWith('invoice_del_')) {
+    } else if (customId.startsWith('inv_del_')) {
       await handleInvoiceButton(interaction, 'delete');
     } else {
       await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
