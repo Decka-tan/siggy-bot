@@ -53,12 +53,51 @@ function parseParticipantsFromArgs(args, guild) {
 }
 
 /**
- * /invoice create — slash command with inline options
+ * /invoice create — shows modal form
  */
 async function handleInvoiceCreateSimple(interaction) {
-  const title = interaction.options.getString('title') || '';
-  const date = interaction.options.getString('date') || new Date().toISOString().split('T')[0];
-  const people = interaction.options.getString('people') || '';
+  // Show modal instead of processing directly
+  const modal = new ModalBuilder()
+    .setCustomId('invoice_create_modal')
+    .setTitle('🧾 Buat Invoice Baru');
+
+  const titleInput = new TextInputBuilder()
+    .setCustomId('title')
+    .setLabel('Judul Invoice (opsional)')
+    .setPlaceholder('Contoh: Makan Siang, Kopi, dll')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false);
+
+  const dateInput = new TextInputBuilder()
+    .setCustomId('date')
+    .setLabel('Tanggal')
+    .setPlaceholder(new Date().toISOString().split('T')[0])
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false);
+
+  const peopleInput = new TextInputBuilder()
+    .setCustomId('people')
+    .setLabel('Orang & Jumlah (satu per baris)')
+    .setPlaceholder('@user1 15000\n@user2 20000\natau: username1 15k')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true);
+
+  const row1 = new ActionRowBuilder().addComponents(titleInput);
+  const row2 = new ActionRowBuilder().addComponents(dateInput);
+  const row3 = new ActionRowBuilder().addComponents(peopleInput);
+
+  modal.addComponents(row1, row2, row3);
+
+  return interaction.showModal(modal);
+}
+
+/**
+ * Process invoice creation modal submit
+ */
+async function processInvoiceCreateModal(interaction) {
+  const title = interaction.fields.getTextInputValue('title') || '';
+  const date = interaction.fields.getTextInputValue('date') || new Date().toISOString().split('T')[0];
+  const people = interaction.fields.getTextInputValue('people') || '';
 
   const guild = interaction.guild;
 
@@ -460,26 +499,6 @@ const invoiceCommandsSimple = [
   {
     name: 'invoice-create',
     description: 'Buat invoice baru',
-    options: [
-      {
-        name: 'people',
-        description: 'List orang & jumlah (satu per baris)',
-        type: 3, // STRING
-        required: true,
-      },
-      {
-        name: 'title',
-        description: 'Judul invoice (opsional)',
-        type: 3, // STRING
-        required: false,
-      },
-      {
-        name: 'date',
-        description: 'Tanggal invoice (YYYY-MM-DD)',
-        type: 3,
-        required: false,
-      },
-    ],
   },
   {
     name: 'invoice-recap',
@@ -489,6 +508,7 @@ const invoiceCommandsSimple = [
 
 module.exports = {
   handleInvoiceCreateSimple,
+  processInvoiceCreateModal,
   handleInvoiceRecap,
   renderInvoiceEmbed,
   buildInvoiceButtons,

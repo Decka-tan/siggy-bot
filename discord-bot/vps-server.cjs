@@ -41,6 +41,7 @@ const {
 // Invoice commands
 const {
   handleInvoiceCreateSimple,
+  processInvoiceCreateModal,
   handleInvoiceRecap,
   handleInvoiceModal,
   handleInvoiceButton,
@@ -1221,7 +1222,9 @@ client.on('interactionCreate', async (interaction) => {
 
   const { customId } = interaction;
 
-  if (customId === 'invoice_create' || customId === 'invoice_details') {
+  if (customId === 'invoice_create_modal') {
+    await processInvoiceCreateModal(interaction);
+  } else if (customId === 'invoice_create' || customId === 'invoice_details') {
     await handleInvoiceModal(interaction, 'invoice_create');
   } else if (customId === 'invoice_add_participants') {
     await handleInvoiceModal(interaction, 'invoice_add_participants');
