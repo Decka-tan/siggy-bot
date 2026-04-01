@@ -275,15 +275,32 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
   let description = '';
 
   invoices.forEach((inv, i) => {
+    const paid = inv.participants.filter(p => p.paid);
     const unpaid = inv.participants.filter(p => !p.paid);
-    if (unpaid.length > 0) {
+
+    if (inv.participants.length > 0) {
       description += `**Invoice ${i + 1}:** ${inv.title || 'Untitled'}\n`;
       const totalAmount = isNaN(inv.totalAmount) ? 0 : inv.totalAmount;
-      description += `  Date: ${inv.date} | Total: Rp ${totalAmount.toLocaleString('id-ID')}\n`;
-      unpaid.forEach(p => {
-        const amount = isNaN(p.amount) ? 0 : p.amount;
-        description += `  • ${p.username}: Rp ${amount.toLocaleString('id-ID')}\n`;
-      });
+      description += `  📅 ${inv.date} | 💰 Total: Rp ${totalAmount.toLocaleString('id-ID')}\n`;
+
+      // Show paid participants
+      if (paid.length > 0) {
+        description += `  ✅ **Lunas:**\n`;
+        paid.forEach(p => {
+          const amount = isNaN(p.amount) ? 0 : p.amount;
+          description += `     • ${p.username}: Rp ${amount.toLocaleString('id-ID')}\n`;
+        });
+      }
+
+      // Show unpaid participants
+      if (unpaid.length > 0) {
+        description += `  ⏳ **Belum Lunas:**\n`;
+        unpaid.forEach(p => {
+          const amount = isNaN(p.amount) ? 0 : p.amount;
+          description += `     • ${p.username}: Rp ${amount.toLocaleString('id-ID')}\n`;
+        });
+      }
+
       description += '\n';
     }
   });
