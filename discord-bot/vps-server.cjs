@@ -1288,19 +1288,16 @@ async function handleMarkPaidSelect(interaction) {
     const embed = renderInvoiceEmbed(updatedInvoice);
     const components = buildInvoiceButtons(updatedInvoice.id);
 
-    // Update the original message if possible
-    if (invoice.messageId) {
-      try {
-        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-        const message = await channel.messages.fetch(invoice.messageId);
-        await message.edit({ embeds: [embed], components });
-      } catch (err) {
-        console.error('Failed to update invoice message:', err);
-      }
-    }
+    // Send new updated invoice message
+    const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+    await channel.send({
+      content: `📝 **Invoice Updated** - ${selectedValues.length} orang ditandai lunas!`,
+      embeds: [embed],
+      components: [components]
+    });
 
     await interaction.update({
-      content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai lunas!`,
+      content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai lunas! Invoice baru terkirim di bawah.`,
       components: []
     });
 
@@ -1418,19 +1415,16 @@ async function handleAddPeopleSubmit(interaction) {
     const embed = renderInvoiceEmbed(updatedInvoice);
     const components = buildInvoiceButtons(updatedInvoice.id);
 
-    // Update the original message if possible
-    if (invoice.messageId) {
-      try {
-        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-        const message = await channel.messages.fetch(invoice.messageId);
-        await message.edit({ embeds: [embed], components });
-      } catch (err) {
-        console.error('Failed to update invoice message:', err);
-      }
-    }
+    // Send new updated invoice message
+    const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+    await channel.send({
+      content: `📝 **Invoice Updated** - ${participants.length} orang ditambahkan!`,
+      embeds: [embed],
+      components: [components]
+    });
 
     await interaction.reply({
-      content: `✅ Berhasil menambahkan ${participants.length} orang ke invoice!`,
+      content: `✅ Berhasil menambahkan ${participants.length} orang ke invoice! Invoice baru terkirim di bawah.`,
       ephemeral: true
     });
 
