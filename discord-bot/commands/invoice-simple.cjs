@@ -183,6 +183,10 @@ async function processInvoiceCreateModal(interaction) {
   }
 
   const finalInvoice = result.invoice;
+
+  // Try to match participants to guild members for DM
+  await matchParticipantsToGuild(finalInvoice, interaction.guild);
+
   const embed = renderInvoiceEmbed(finalInvoice);
   const buttons = buildInvoiceButtons(finalInvoice.id);
 
@@ -198,6 +202,49 @@ async function processInvoiceCreateModal(interaction) {
 
   // Send DM notifications to participants
   await sendInvoiceNotifications(finalInvoice, interaction.guild);
+}
+
+/**
+ * Match invoice participants to guild members by username
+ * This enables DM for users who were added without @mention
+ */
+async function matchParticipantsToGuild(invoice, guild) {
+  const { updateInvoiceMessage: updateMsg, getInvoice: getInv, markMultiplePaid } = require('../utils/invoice-db.cjs');
+
+  let updated = false;
+
+  for (const participant of invoice.participants) {
+    // Skip if already has a valid userId
+    if (participant.userId && !participant.userId.startsWith('unknown_')) {
+      continue;
+    }
+
+    // Try to find by username
+    const member = guild.members.cache.find(
+      m => m.user.username.toLowerCase() === participant.username.toLowerCase() ||
+           m.displayName.toLowerCase() === participant.username.toLowerCase()
+    );
+
+    if (member) {
+      participant.userId = member.id;
+      updated = true;
+    }
+  }
+
+  // Save updated participant data
+  if (updated) {
+    const db = require('../utils/invoice-db.cjs');
+    const fs = require('fs');
+    const path = require('path');
+
+    const DB_FILE = path.join(__dirname, '../data/invoices.json');
+    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+
+    if (data.invoices[invoice.id]) {
+      data.invoices[invoice.id].participants = invoice.participants;
+      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    }
+  }
 }
 
 /**
