@@ -145,8 +145,8 @@ function buildParticipantsModal() {
 
     const amountInput = new TextInputBuilder()
       .setCustomId(`amount_${i}`)
-      .setLabel(`Person ${i} - Amount`)
-      .setPlaceholder('0.00')
+      .setLabel(`Person ${i} - Jumlah (Rp)`)
+      .setPlaceholder('Contoh: 50000')
       .setStyle(TextInputStyle.Short)
       .setRequired(i === 1);
 
@@ -170,7 +170,7 @@ function buildMarkPaidModal(invoice) {
   const rows = invoice.participants.map((p) => {
     const checkbox = new TextInputBuilder()
       .setCustomId(`paid_${p.userId}`)
-      .setLabel(`${p.username} - $${p.amount.toFixed(2)}`)
+      .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
       .setPlaceholder('Type "yes" to mark as paid, leave blank for unpaid')
       .setStyle(TextInputStyle.Short)
       .setRequired(false);
@@ -198,7 +198,7 @@ function renderInvoiceEmbed(invoice) {
 
   invoice.participants.forEach((p, i) => {
     const status = p.paid ? '✅ Paid' : '💰 Unpaid';
-    description += `${i + 1}. **${p.username}** - $${p.amount.toFixed(2)} - ${status}\n`;
+    description += `${i + 1}. **${p.username}** - Rp ${p.amount.toLocaleString('id-ID')} - ${status}\n`;
   });
 
   const unpaidTotal = invoice.participants
@@ -210,9 +210,9 @@ function renderInvoiceEmbed(invoice) {
     .setTitle('🧾 INVOICE')
     .setDescription(description)
     .addFields(
-      { name: '💰 Total', value: `$${invoice.totalAmount.toFixed(2)}`, inline: true },
+      { name: '💰 Total', value: `Rp ${invoice.totalAmount.toLocaleString('id-ID')}`, inline: true },
       { name: '📊 Status', value: `${paidCount}/${totalCount} paid`, inline: true },
-      { name: '⏳ Outstanding', value: `$${unpaidTotal.toFixed(2)}`, inline: true }
+      { name: '⏳ Outstanding', value: `Rp ${unpaidTotal.toLocaleString('id-ID')}`, inline: true }
     )
     .setFooter({ text: `Invoice ID: ${invoice.id}` })
     .setTimestamp(invoice.createdAt);
@@ -258,9 +258,9 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
     const unpaid = inv.participants.filter(p => !p.paid);
     if (unpaid.length > 0) {
       description += `**Invoice ${i + 1}:** ${inv.title || 'Untitled'}\n`;
-      description += `  Date: ${inv.date} | Total: $${inv.totalAmount.toFixed(2)}\n`;
+      description += `  Date: ${inv.date} | Total: Rp ${inv.totalAmount.toLocaleString('id-ID')}\n`;
       unpaid.forEach(p => {
-        description += `  • ${p.username}: $${p.amount.toFixed(2)}\n`;
+        description += `  • ${p.username}: Rp ${p.amount.toLocaleString('id-ID')}\n`;
       });
       description += '\n';
     }
@@ -276,7 +276,7 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
     .setDescription(description)
     .addFields({
       name: '💵 Total Owed to You',
-      value: `$${totalOwed.toFixed(2)}`,
+      value: `Rp ${totalOwed.toLocaleString('id-ID')}`,
       inline: false
     })
     .setFooter({ text: `Showing ${invoices.length} invoice(s)` })
@@ -341,13 +341,8 @@ async function handleInvoiceModal(interaction, modalType) {
       // Store in temp for the next step
       tempInvoiceStorage.set(interaction.user.id, invoice.id);
 
-      await interaction.reply({
-        content: `✅ Invoice details saved! Now let's add the people who owe you money.`,
-        ephemeral: true
-      });
-
-      // Show the participants modal
-      await interaction.followUp({ modal: buildParticipantsModal() });
+      // Show the participants modal directly
+      await interaction.showModal(buildParticipantsModal());
 
     } else if (modalType === 'participants') {
       // Process Step 2: Participants modal
