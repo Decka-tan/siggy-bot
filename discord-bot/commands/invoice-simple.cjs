@@ -12,7 +12,7 @@ const {
   markMultiplePaid,
   deleteInvoice,
 } = require('../utils/invoice-db.cjs');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 
 /**
  * Parse participants from argument string
@@ -269,6 +269,75 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
 }
 
 /**
+ * Build modal for marking participants as paid
+ * Uses a select menu for choosing who paid
+ */
+function buildMarkPaidModal(invoiceId, unpaidParticipants) {
+  const selectOptions = unpaidParticipants.map((p, index) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
+      .setValue(p.userId || `index_${index}`)
+      .setDescription(`Rp ${p.amount.toLocaleString('id-ID')}`)
+  );
+
+  // Split into chunks of 25 if needed (Discord limit)
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`mark_paid_select_${invoiceId}`)
+    .setPlaceholder('Pilih orang yang sudah lunas...')
+    .setMinValues(1)
+    .setMaxValues(unpaidParticipants.length)
+    .addOptions(selectOptions.slice(0, 25));
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
+
+  return {
+    type: 'select_menu',
+    customId: `mark_paid_modal_${invoiceId}`,
+    components: [row],
+    unpaidParticipants
+  };
+}
+
+/**
+ * Build modal for adding participants to an invoice
+ * Uses a modal with user mention and amount inputs
+ */
+function buildAddPeopleModal(invoiceId) {
+  const modal = new ModalBuilder()
+    .setCustomId(`add_people_modal_${invoiceId}`)
+    .setTitle('Tambah Orang ke Invoice');
+
+  const userMentionInput = new TextInputBuilder()
+    .setCustomId('user_mentions')
+    .setLabel('User (mention atau username, pisahkan dengan koma)')
+    .setPlaceholder('@user1, @user2 atau username1, username2')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const amountInput = new TextInputBuilder()
+    .setCustomId('amount')
+    .setLabel('Jumlah per orang')
+    .setPlaceholder('15000 atau 15k')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(true);
+
+  const notesInput = new TextInputBuilder()
+    .setCustomId('notes')
+    .setLabel('Catatan (opsional)')
+    .setPlaceholder('Catatan tambahan...')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(false);
+
+  const row1 = new ActionRowBuilder().addComponents(userMentionInput);
+  const row2 = new ActionRowBuilder().addComponents(amountInput);
+  const row3 = new ActionRowBuilder().addComponents(notesInput);
+
+  modal.addComponents(row1, row2, row3);
+
+  return modal;
+}
+
+/**
  * Handle invoice button interactions
  */
 async function handleInvoiceButton(interaction, action) {
@@ -302,7 +371,7 @@ async function handleInvoiceButton(interaction, action) {
     }
 
     if (action === 'pay') {
-      // Simple reply: ask for numbers
+      // Show select menu for marking people as paid
       const unpaid = invoice.participants.filter(p => !p.paid);
       if (unpaid.length === 0) {
         return interaction.reply({
@@ -311,17 +380,32 @@ async function handleInvoiceButton(interaction, action) {
         });
       }
 
-      const list = unpaid.map((p, i) => `${i + 1}. ${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`).join('\n');
+      const { components, customId: selectMenuCustomId } = buildMarkPaidModal(invoiceId, unpaid);
+
+      const row = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`mark_paid_select_${invoiceId}`)
+          .setPlaceholder('Pilih orang yang sudah lunas...')
+          .setMinValues(1)
+          .setMaxValues(unpaid.length)
+          .addOptions(unpaid.slice(0, 25).map((p, i) =>
+            new StringSelectMenuOptionBuilder()
+              .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
+              .setValue(p.userId || `index_${i}`)
+              .setDescription(`Rp ${p.amount.toLocaleString('id-ID')}`)
+          ))
+      );
+
       return interaction.reply({
-        content: `📋 Pilih yang lunas (reply dengan nomor):\n${list}\n\nContoh reply: "1, 3"`,
+        content: '✅ Pilih orang yang sudah bayar:',
+        components: [row],
         ephemeral: true
       });
 
     } else if (action === 'add') {
-      return interaction.reply({
-        content: '💡 Fitur tambah orang belum tersedia. Buat invoice baru aja.',
-        ephemeral: true
-      });
+      // Show modal for adding people
+      const modal = buildAddPeopleModal(invoiceId);
+      return interaction.showModal(modal);
 
     } else if (action === 'delete') {
       const result = deleteInvoice(invoiceId);
@@ -348,6 +432,27 @@ async function handleInvoiceButton(interaction, action) {
       });
     }
   }
+}
+
+/**
+ * /invoice-recap handler - Show all invoices for a user
+ */
+async function handleInvoiceRecap(interaction) {
+  const invoices = getUserInvoices(interaction.user.id);
+
+  if (invoices.length === 0) {
+    return interaction.reply({
+      content: '📋 Belum ada invoice.',
+      ephemeral: true
+    });
+  }
+
+  const embed = renderInvoiceRecapEmbed(invoices, interaction.user.id);
+
+  await interaction.reply({
+    embeds: [embed],
+    ephemeral: true
+  });
 }
 
 // Command definitions
@@ -385,14 +490,16 @@ const invoiceCommandsSimple = [
 
 module.exports = {
   handleInvoiceCreateSimple,
+  handleInvoiceRecap,
   renderInvoiceEmbed,
   buildInvoiceButtons,
   renderInvoiceRecapEmbed,
   invoiceCommandsSimple,
   handleInvoiceButton,
+  buildMarkPaidModal,
+  buildAddPeopleModal,
   // Also export empty handlers for backward compatibility
   handleInvoiceCreate: () => {},
-  handleInvoiceRecap: () => {},
   handleInvoiceModal: () => {},
   // Export tempInvoiceStorage for compatibility
   tempInvoiceStorage: new Map(),

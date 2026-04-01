@@ -8,7 +8,7 @@
 // Load environment variables FIRST
 require('dotenv').config();
 
-const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } = require('discord.js');
+const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const {
   getUserState,
   saveUserState,
@@ -44,8 +44,17 @@ const {
   handleInvoiceRecap,
   handleInvoiceModal,
   handleInvoiceButton,
-  invoiceCommands,
+  buildMarkPaidModal,
+  buildAddPeopleModal,
+  invoiceCommandsSimple,
 } = require('./commands/invoice-simple.cjs');
+
+const {
+  getInvoice,
+  markMultiplePaid,
+  addParticipants,
+  deleteInvoice,
+} = require('./utils/invoice-db.cjs');
 
 const {
   handleFlip,
@@ -942,7 +951,7 @@ async function registerCommands() {
     },
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
-    ...invoiceCommands, // Spread invoice commands here (now from invoice-simple.cjs)
+    ...invoiceCommandsSimple, // Spread invoice commands here (now from invoice-simple.cjs)
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -1194,9 +1203,11 @@ client.on('interactionCreate', async (interaction) => {
         console.error('Chat reload error:', error);
         await interaction.editReply({ content: `❌ Reload failed: ${error.message}`, components: [] });
       }
-    } else if (customId.startsWith('inv_pay_')) {
+    } else if (customId.startsWith('invoice_pay_')) {
       await handleInvoiceButton(interaction, 'pay');
-    } else if (customId.startsWith('inv_del_')) {
+    } else if (customId.startsWith('invoice_add_')) {
+      await handleInvoiceButton(interaction, 'add');
+    } else if (customId.startsWith('invoice_del_')) {
       await handleInvoiceButton(interaction, 'delete');
     } else {
       await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
@@ -1216,8 +1227,220 @@ client.on('interactionCreate', async (interaction) => {
     await handleInvoiceModal(interaction, 'invoice_add_participants');
   } else if (customId.startsWith('mark_paid_')) {
     await handleInvoiceModal(interaction, customId);
+  } else if (customId.startsWith('add_people_modal_')) {
+    await handleAddPeopleSubmit(interaction);
   }
 });
+
+// String select menu handler
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  const { customId } = interaction;
+
+  if (customId.startsWith('mark_paid_select_')) {
+    await handleMarkPaidSelect(interaction);
+  }
+});
+
+/**
+ * Handle mark paid select menu
+ */
+async function handleMarkPaidSelect(interaction) {
+  try {
+    const customId = interaction.customId;
+    const invoiceId = customId.replace('mark_paid_select_', '');
+    const selectedValues = interaction.values;
+
+    const invoice = getInvoice(invoiceId);
+    if (!invoice) {
+      return interaction.update({
+        content: '❌ Invoice tidak ditemukan.',
+        components: []
+      });
+    }
+
+    // Check if the user is the creator
+    if (invoice.creator.id !== interaction.user.id) {
+      return interaction.update({
+        content: '❌ Hanya pembuat invoice yang bisa aksi ini.',
+        components: []
+      });
+    }
+
+    // Mark selected users as paid
+    const result = markMultiplePaid(invoiceId, selectedValues);
+
+    if (!result.success) {
+      return interaction.update({
+        content: `❌ Error: ${result.error}`,
+        components: []
+      });
+    }
+
+    // Get updated invoice
+    const updatedInvoice = getInvoice(invoiceId);
+    const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
+
+    const embed = renderInvoiceEmbed(updatedInvoice);
+    const components = buildInvoiceButtons(updatedInvoice.id);
+
+    // Update the original message if possible
+    if (invoice.messageId) {
+      try {
+        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+        const message = await channel.messages.fetch(invoice.messageId);
+        await message.edit({ embeds: [embed], components });
+      } catch (err) {
+        console.error('Failed to update invoice message:', err);
+      }
+    }
+
+    await interaction.update({
+      content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai lunas!`,
+      components: []
+    });
+
+  } catch (error) {
+    console.error('[Mark Paid Select] Error:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: `❌ Error: ${error.message}`,
+        ephemeral: true
+      });
+    }
+  }
+}
+
+/**
+ * Handle add people modal submit
+ */
+async function handleAddPeopleSubmit(interaction) {
+  try {
+    const customId = interaction.customId;
+    const invoiceId = customId.replace('add_people_modal_', '');
+
+    const invoice = getInvoice(invoiceId);
+    if (!invoice) {
+      return interaction.reply({
+        content: '❌ Invoice tidak ditemukan.',
+        ephemeral: true
+      });
+    }
+
+    // Check if the user is the creator
+    if (invoice.creator.id !== interaction.user.id) {
+      return interaction.reply({
+        content: '❌ Hanya pembuat invoice yang bisa aksi ini.',
+        ephemeral: true
+      });
+    }
+
+    const userMentions = interaction.fields.getTextInputValue('user_mentions');
+    const amountStr = interaction.fields.getTextInputValue('amount');
+    const notes = interaction.fields.getTextInputValue('notes') || '';
+
+    // Parse amount
+    let amount = parseInt(amountStr.toLowerCase().replace('k', '000').replace(/\D/g, ''));
+    if (amountStr.toLowerCase().includes('k')) {
+      amount = parseInt(amountStr.replace('k', '000')) || amount;
+    }
+
+    if (!amount || amount <= 0) {
+      return interaction.reply({
+        content: '❌ Jumlah harus lebih dari 0.',
+        ephemeral: true
+      });
+    }
+
+    // Parse participants
+    const participants = [];
+    const inputs = userMentions.split(',').map(s => s.trim()).filter(s => s);
+
+    for (const input of inputs) {
+      // Check if it's a mention
+      const mentionMatch = input.match(/<@!?(\d+)>/);
+      let userId = null;
+      let username = input;
+
+      if (mentionMatch) {
+        userId = mentionMatch[1];
+        try {
+          const member = await interaction.guild.members.fetch(userId);
+          username = member.user.username;
+        } catch {
+          username = input;
+        }
+      } else {
+        // Try to find by username
+        try {
+          const member = interaction.guild.members.cache.find(
+            m => m.user.username.toLowerCase() === input.toLowerCase()
+          );
+          if (member) {
+            userId = member.id;
+            username = member.user.username;
+          }
+        } catch {}
+      }
+
+      participants.push({
+        userId,
+        username: notes ? `${username} (${notes})` : username,
+        amount
+      });
+    }
+
+    if (participants.length === 0) {
+      return interaction.reply({
+        content: '❌ Tidak ada user valid ditemukan.',
+        ephemeral: true
+      });
+    }
+
+    // Add participants
+    const result = addParticipants(invoiceId, participants);
+
+    if (!result.success) {
+      return interaction.reply({
+        content: `❌ Error: ${result.error}`,
+        ephemeral: true
+      });
+    }
+
+    // Get updated invoice
+    const updatedInvoice = getInvoice(invoiceId);
+    const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
+
+    const embed = renderInvoiceEmbed(updatedInvoice);
+    const components = buildInvoiceButtons(updatedInvoice.id);
+
+    // Update the original message if possible
+    if (invoice.messageId) {
+      try {
+        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+        const message = await channel.messages.fetch(invoice.messageId);
+        await message.edit({ embeds: [embed], components });
+      } catch (err) {
+        console.error('Failed to update invoice message:', err);
+      }
+    }
+
+    await interaction.reply({
+      content: `✅ Berhasil menambahkan ${participants.length} orang ke invoice!`,
+      ephemeral: true
+    });
+
+  } catch (error) {
+    console.error('[Add People Modal] Error:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({
+        content: `❌ Error: ${error.message}`,
+        ephemeral: true
+      });
+    }
+  }
+}
 
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
