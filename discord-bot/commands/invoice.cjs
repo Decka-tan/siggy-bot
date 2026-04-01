@@ -341,8 +341,19 @@ async function handleInvoiceModal(interaction, modalType) {
       // Store in temp for the next step
       tempInvoiceStorage.set(interaction.user.id, invoice.id);
 
-      // Show the participants modal directly
-      await interaction.showModal(buildParticipantsModal());
+      // Show button to add participants
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`invoice_add_participants_${invoice.id}`)
+          .setLabel('➕ Add Participants')
+          .setStyle(ButtonStyle.Primary)
+      );
+
+      await interaction.reply({
+        content: `✅ Invoice **${titleInput || 'Untitled'}** created! Now add the people who owe you.`,
+        components: [row],
+        ephemeral: true
+      });
 
     } else if (modalType === 'participants') {
       // Process Step 2: Participants modal
@@ -629,4 +640,5 @@ module.exports = {
   handleAddParticipantsToExisting,
   invoiceCommands,
   tempInvoiceStorage,
+  buildParticipantsModal,
 };

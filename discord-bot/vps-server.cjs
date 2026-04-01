@@ -1197,6 +1197,11 @@ client.on('interactionCreate', async (interaction) => {
       }
     } else if (customId.startsWith('invoice_markpaid_')) {
       await handleInvoiceButton(interaction, 'markpaid');
+    } else if (customId.startsWith('invoice_add_participants_')) {
+      // Handle the "Add Participants" button from invoice creation flow
+      const invoiceId = customId.split('_').pop();
+      const { buildParticipantsModal } = require('./commands/invoice.cjs');
+      await interaction.showModal(buildParticipantsModal());
     } else if (customId.startsWith('invoice_add_')) {
       await handleInvoiceButton(interaction, 'add');
     } else if (customId.startsWith('invoice_delete_')) {
