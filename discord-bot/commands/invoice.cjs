@@ -123,7 +123,7 @@ function buildInvoiceModal() {
   const participantsInput = new TextInputBuilder()
     .setCustomId('invoice_participants')
     .setLabel('List Orang (satu per baris)')
-    .setPlaceholder('Format: username atau @mention\nContoh:\n@user1:50000\n@user2:75000\nuser3:100000')
+    .setPlaceholder('Format: username jumlah (keterangan)\nContoh:\n@user 15k nasi dobel\n@user2 13k lunas\nuser3 12k (sambel pisang)')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true);
 
@@ -145,7 +145,7 @@ function buildParticipantsModal() {
   const participantsInput = new TextInputBuilder()
     .setCustomId('participants_list')
     .setLabel('List Orang (satu per baris)')
-    .setPlaceholder('Format: username:jumlah\nContoh:\n@user1:50000\n@user2:75000')
+    .setPlaceholder('Format: username jumlah (keterangan)\nContoh:\n@user 15k nasi dobel\nuser2 13k')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true);
 
@@ -166,9 +166,9 @@ function buildMarkPaidModal(invoice) {
     .setTitle('✅ Tandai Sudah Bayar');
 
   // Build list of unpaid participants
-  const unpaidList = invoice.participants
-    .filter(p => !p.paid)
-    .map((p, i) => `${i + 1}. ${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
+  const unpaidParticipants = invoice.participants.filter(p => !p.paid);
+  const unpaidList = unpaidParticipants
+    .map((p, i) => `${i + 1}. ${p.username} - Rp ${p.amount.toLocaleString('id-ID')}${p.notes ? ` (${p.notes})` : ''}`)
     .join('\n');
 
   const input = new TextInputBuilder()
@@ -198,8 +198,9 @@ function renderInvoiceEmbed(invoice) {
   description += '**Participants:**\n';
 
   invoice.participants.forEach((p, i) => {
-    const status = p.paid ? '✅ Paid' : '💰 Unpaid';
-    description += `${i + 1}. **${p.username}** - Rp ${p.amount.toLocaleString('id-ID')} - ${status}\n`;
+    const status = p.paid ? '✅' : '💰';
+    const notes = p.notes ? ` *(${p.notes})*` : '';
+    description += `${i + 1}. **${p.username}** - Rp ${p.amount.toLocaleString('id-ID')} ${status}${notes}\n`;
   });
 
   const unpaidTotal = invoice.participants
@@ -318,30 +319,39 @@ async function handleInvoiceRecap(interaction) {
 }
 
 /**
- * Parse participants from text (format: username:amount)
+ * Parse participants from text (format: username amount (notes))
+ * Supports: "username 15000", "@user 15000 lunas", "user 13000 (note)"
  */
 function parseParticipants(text, guild) {
   const participants = [];
-  const lines = text.split('\n');
+
+  // Split by lines and remove empty lines
+  const lines = text.split('\n').filter(l => l.trim());
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
 
-    // Try format "username:amount" or "@username:amount"
-    const match = trimmed.match(/^(<@!?(\d+)>|[^:]+):(\d+)$/);
+    // Try to match: @mention amount notes, or username amount notes
+    // Pattern: (mention or username) followed by numbers, then optional text
+    const match = trimmed.match(/^(<@!?(\d+)>|[\w\d]+)\s+(\d+[kK]?\s*)(.*)$/);
     if (match) {
-      const mention = match[1];
+      const mentionOrUsername = match[1];
       const userId = match[2] || null;
-      const username = match[1];
-      const amount = parseInt(match[3]);
+      let amountStr = match[3].toLowerCase().replace('k', '000');
+      const notes = match[4].trim();
+
+      // Parse amount (handle k suffix)
+      let amount = parseInt(amountStr.replace(/\D/g, ''));
+      if (amountStr.includes('k')) {
+        amount = parseInt(amountStr.replace('k', '000')) || amount;
+      }
 
       if (amount > 0) {
-        let finalUsername = username;
-        let finalUserId = userId || `unknown_${Date.now()}_${Math.random()}`;
+        let finalUsername = mentionOrUsername;
+        let finalUserId = userId;
 
+        // Resolve user from guild
         if (userId) {
-          // It's a mention, try to get actual username
           try {
             const member = guild.members.cache.get(userId);
             if (member) {
@@ -350,9 +360,9 @@ function parseParticipants(text, guild) {
             }
           } catch {}
         } else {
-          // It's a plain username, try to resolve
+          // Try to find by username
           const member = guild.members.cache.find(
-            m => m.user.username.toLowerCase() === username.toLowerCase()
+            m => m.user.username.toLowerCase() === mentionOrUsername.toLowerCase()
           );
           if (member) {
             finalUsername = member.user.username;
@@ -360,10 +370,15 @@ function parseParticipants(text, guild) {
           }
         }
 
+        // Check if already marked as paid (notes contains "lunas")
+        const isPaid = /lunas|paid|bayar/i.test(notes);
+
         participants.push({
-          userId: finalUserId,
+          userId: finalUserId || `unknown_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
           username: finalUsername,
           amount: amount,
+          notes: notes || null,
+          paid: isPaid,
         });
       }
     }
