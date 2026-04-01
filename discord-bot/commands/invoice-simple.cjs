@@ -1001,6 +1001,8 @@ module.exports = {
   handleInvoiceButton,
   buildMarkPaidModal,
   buildAddPeopleModal,
+  sendInvoiceNotifications,
+  sendPaidNotification,
   // Also export empty handlers for backward compatibility
   handleInvoiceCreate: () => {},
   handleInvoiceModal: () => {},
