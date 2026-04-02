@@ -127,7 +127,7 @@ async function handlePrice(interaction) {
     }
 
     const { coin: coinInfo, price, change24h, marketCap, marketCapRank, volume, high24h, low24h } = data;
-    const change = change24h[currency] || change24h.usd;
+    const change = change24h?.[currency] ?? change24h?.usd ?? 0;
     const emoji = getPriceChangeEmoji(change);
     const color = getPriceChangeColor(change);
 
@@ -138,7 +138,7 @@ async function handlePrice(interaction) {
       .addFields(
         {
           name: `💰 Price (${currency.toUpperCase()})`,
-          value: formatPrice(price[currency], currency),
+          value: formatPrice(price?.[currency] ?? price?.usd ?? 0, currency),
           inline: true,
         },
         {
@@ -150,12 +150,12 @@ async function handlePrice(interaction) {
       .addFields(
         {
           name: `📊 24h High`,
-          value: formatPrice(high24h[currency] || high24h.usd, currency),
+          value: formatPrice(high24h?.[currency] ?? high24h?.usd ?? 0, currency),
           inline: true,
         },
         {
           name: `📊 24h Low`,
-          value: formatPrice(low24h[currency] || low24h.usd, currency),
+          value: formatPrice(low24h?.[currency] ?? low24h?.usd ?? 0, currency),
           inline: true,
         },
       )

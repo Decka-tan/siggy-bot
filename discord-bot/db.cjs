@@ -31,7 +31,17 @@ function loadDatabase() {
   try {
     if (fs.existsSync(DB_FILE)) {
       const data = fs.readFileSync(DB_FILE, 'utf8');
-      db = JSON.parse(data);
+      const parsed = JSON.parse(data);
+
+      // Validate structure
+      if (!parsed || typeof parsed !== 'object') {
+        throw new Error('Invalid database structure');
+      }
+      if (!parsed.userStates || typeof parsed.userStates !== 'object') {
+        throw new Error('Invalid userStates in database');
+      }
+
+      db = parsed;
       console.log('✅ Database loaded from disk');
     } else {
       saveDatabase(); // Create initial file
@@ -39,6 +49,12 @@ function loadDatabase() {
     }
   } catch (error) {
     console.error('Error loading database:', error);
+    // Backup corrupted file and start fresh
+    if (fs.existsSync(DB_FILE)) {
+      const backupFile = DB_FILE + '.corrupted.' + Date.now();
+      fs.copyFileSync(DB_FILE, backupFile);
+      console.log(`📦 Corrupted database backed up to: ${backupFile}`);
+    }
     // Start with empty db
     db = {
       userStates: {},
@@ -48,14 +64,18 @@ function loadDatabase() {
         lastSaved: null,
       },
     };
+    saveDatabase();
   }
 }
 
-// Save database to file
+// Save database to file (atomic write to prevent corruption)
 function saveDatabase() {
   try {
     db.meta.lastSaved = Date.now();
-    fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), 'utf8');
+    const tempFile = DB_FILE + '.tmp';
+    fs.writeFileSync(tempFile, JSON.stringify(db, null, 2), 'utf8');
+    // Atomic rename - this either succeeds completely or fails without corrupting
+    fs.renameSync(tempFile, DB_FILE);
   } catch (error) {
     console.error('Error saving database:', error);
   }

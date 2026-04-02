@@ -1230,15 +1230,20 @@ client.on('interactionCreate', async (interaction) => {
       await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
     }
   } else if (customId.startsWith('invoice_pay_')) {
-    await handleInvoiceButton(interaction, 'pay');
+    try { await handleInvoiceButton(interaction, 'pay'); }
+    catch (e) { console.error('[Invoice Button Pay] Error:', e); }
   } else if (customId.startsWith('invoice_remind_')) {
-    await handleInvoiceButton(interaction, 'remind');
+    try { await handleInvoiceButton(interaction, 'remind'); }
+    catch (e) { console.error('[Invoice Button Remind] Error:', e); }
   } else if (customId.startsWith('invoice_settle_')) {
-    await handleInvoiceButton(interaction, 'settle');
+    try { await handleInvoiceButton(interaction, 'settle'); }
+    catch (e) { console.error('[Invoice Button Settle] Error:', e); }
   } else if (customId.startsWith('invoice_add_')) {
-    await handleInvoiceButton(interaction, 'add');
+    try { await handleInvoiceButton(interaction, 'add'); }
+    catch (e) { console.error('[Invoice Button Add] Error:', e); }
   } else if (customId.startsWith('invoice_del_')) {
-    await handleInvoiceButton(interaction, 'delete');
+    try { await handleInvoiceButton(interaction, 'delete'); }
+    catch (e) { console.error('[Invoice Button Delete] Error:', e); }
   }
 });
 
@@ -1248,18 +1253,25 @@ client.on('interactionCreate', async (interaction) => {
 
   const { customId } = interaction;
 
-  if (customId === 'invoice_create_modal') {
-    await processInvoiceCreateModal(interaction);
-  } else if (customId === 'invoice_create' || customId === 'invoice_details') {
-    await handleInvoiceModal(interaction, 'invoice_create');
-  } else if (customId === 'invoice_add_participants') {
-    await handleInvoiceModal(interaction, 'invoice_add_participants');
-  } else if (customId.startsWith('mark_paid_')) {
-    await handleInvoiceModal(interaction, customId);
-  } else if (customId.startsWith('add_people_modal_')) {
-    await handleAddPeopleSubmit(interaction);
-  } else if (customId === 'clear_invoice_modal') {
-    await handleClearInvoiceModal(interaction);
+  try {
+    if (customId === 'invoice_create_modal') {
+      await processInvoiceCreateModal(interaction);
+    } else if (customId === 'invoice_create' || customId === 'invoice_details') {
+      await handleInvoiceModal(interaction, 'invoice_create');
+    } else if (customId === 'invoice_add_participants') {
+      await handleInvoiceModal(interaction, 'invoice_add_participants');
+    } else if (customId.startsWith('mark_paid_')) {
+      await handleInvoiceModal(interaction, customId);
+    } else if (customId.startsWith('add_people_modal_')) {
+      await handleAddPeopleSubmit(interaction);
+    } else if (customId === 'clear_invoice_modal') {
+      await handleClearInvoiceModal(interaction);
+    }
+  } catch (error) {
+    console.error('[Modal Handler] Error:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
+    }
   }
 });
 
@@ -1269,10 +1281,17 @@ client.on('interactionCreate', async (interaction) => {
 
   const { customId } = interaction;
 
-  if (customId.startsWith('mark_paid_select_')) {
-    await handleMarkPaidSelect(interaction);
-  } else if (customId === 'delete_invoice_select') {
-    await handleDeleteInvoiceSelect(interaction);
+  try {
+    if (customId.startsWith('mark_paid_select_')) {
+      await handleMarkPaidSelect(interaction);
+    } else if (customId === 'delete_invoice_select') {
+      await handleDeleteInvoiceSelect(interaction);
+    }
+  } catch (error) {
+    console.error('[Select Menu Handler] Error:', error);
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
+    }
   }
 });
 
