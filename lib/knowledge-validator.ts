@@ -112,5 +112,3 @@ if (require.main === module) {
 
   process.exit(result.valid ? 0 : 1);
 }
-
-export { validateKnowledge };
