@@ -381,21 +381,34 @@ export function buildSiggyPrompt(
   relationshipLevel: string = 'ACQUAINTANCE',
   relationshipScore: number = 0
 ): string {
-  // Update mood count
-  moodSystem.updateMood(userMessage);
+  // Sanitize inputs to prevent prompt injection
+  const sanitizeInput = (input: string): string => {
+    return input
+      .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/\[MOOD:[^\]]*\]/gi, '') // Remove mood injection attempts
+      .replace(/SYSTEM:|INSTRUCTION:|GUIDELINE:/gi, '') // Remove instruction injection
+      .slice(0, 500); // Limit length
+  };
+
+  const safeUserName = sanitizeInput(userName);
+  const safeUserMessage = sanitizeInput(userMessage);
+
+  // Update mood count with sanitized message
+  moodSystem.updateMood(safeUserMessage);
 
   // Format conversation history
   const historyText = formatConversationHistory(conversationHistory.slice(-6));
 
-  // Check for easter eggs
-  const easterEggResponse = checkEasterEggs(userMessage, conversationHistory);
+  // Check for easter eggs (use original message for trigger detection)
+  const easterEggResponse = checkEasterEggs(safeUserMessage, conversationHistory);
 
   let prompt = "\n" + CORE_IDENTITY + "\n\n" + MOOD_PERSONALITIES[moodSystem.getCurrentMood()] + "\n\n" + RITUAL_KNOWLEDGE;
   prompt += "\n\n## PHYSICAL STATE OVERRIDE:";
   prompt += "\nYou are currently in your " + (currentForm === 'CAT' ? "LITERAL COSMIC CAT FORM (you have 4 legs, fur, a tail, and are fully a cat. You are NOT an anime girl right now)" : "ANIME GIRL FORM (humanoid girl with cat ears and a tail)");
   prompt += "\n\n## CONVERSATION CONTEXT:";
   prompt += "\n- This is message #" + moodSystem.getMessageCount() + " in the current conversation";
-  prompt += "\n- The user's name is: " + userName;
+  prompt += "\n- The user's name is: " + safeUserName;
   prompt += "\n- CURRENT RELATIONSHIP: " + relationshipLevel + " (Score: " + relationshipScore + ")";
   prompt += "\n- RELATIONSHIP GUIDELINE: " + (RELATIONSHIP_DESCRIPTIONS[relationshipLevel] || RELATIONSHIP_DESCRIPTIONS.ACQUAINTANCE);
   prompt += "\n- First message: " + isFirstMessage;
@@ -413,7 +426,7 @@ export function buildSiggyPrompt(
   prompt += "\n7. Use line breaks to separate paragraphs - don't cram everything into one line";
   prompt += "\n8. Speak as a lived identity, not an AI reciting data.";
   prompt += "\n9. *NAME FORMATTING*: If you mention a community member, ALWAYS use their clean `@username` (lowercase, alphanumeric) instead of their decorated Ritual Name (like 'Name (❖,❖)'). Check the 'Mapping' knowledge category for translations. This ensures they get a blue highlight and mini-PFP in the UI.";
-  prompt += "\n10. " + (isFirstMessage ? "Start with a greeting that includes the user's name: " + userName : "");
+  prompt += "\n10. " + (isFirstMessage ? "Start with a greeting that includes the user's name: " + safeUserName : "");
   if (isFirstMessage) {
     prompt += "\n\n## OPENING LINE SUGGESTION: " + moodSystem.getOpeningLine();
   }
@@ -425,8 +438,15 @@ export function buildSiggyPrompt(
 function formatConversationHistory(history: Message[]): string {
   if (history.length === 0) return 'No previous conversation.';
 
+  const sanitizeHistory = (content: string): string => {
+    return content
+      .replace(/\[MOOD:[^\]]*\]/gi, '') // Remove mood tags from history
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .slice(0, 200); // Limit history entry length
+  };
+
   return history
-    .map((msg, i) => (i + 1) + ". " + msg.role.charAt(0).toUpperCase() + msg.role.slice(1) + ": " + msg.content)
+    .map((msg, i) => (i + 1) + ". " + msg.role.charAt(0).toUpperCase() + msg.role.slice(1) + ": " + sanitizeHistory(msg.content))
     .join('\n');
 }
 

@@ -25,7 +25,44 @@ export class UserCheckerAPI {
 
   private memberCache: Map<string, EnrichedUser> = new Map();
   private cacheExpiry: Map<string, number> = new Map();
-  private CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private CACHE_TTL = 15 * 60 * 1000; // 15 minutes (increased from 5)
+
+  // Rate limiting
+  private rateLimitMap: Map<string, { count: number; resetTime: number }> = new Map();
+  private readonly MAX_REQUESTS_PER_MINUTE = 10;
+  private readonly RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+
+  /**
+   * Sanitize username input to prevent injection attacks
+   */
+  private sanitizeUsername(input: string): string {
+    // Remove any potentially dangerous characters
+    return input
+      .trim()
+      .replace(/[<>]/g, '') // Remove angle brackets
+      .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+      .slice(0, 32); // Discord username max length
+  }
+
+  /**
+   * Check rate limit for a given key
+   */
+  private checkRateLimit(key: string): boolean {
+    const now = Date.now();
+    const record = this.rateLimitMap.get(key);
+
+    if (!record || now > record.resetTime) {
+      this.rateLimitMap.set(key, { count: 1, resetTime: now + this.RATE_LIMIT_WINDOW });
+      return true;
+    }
+
+    if (record.count >= this.MAX_REQUESTS_PER_MINUTE) {
+      return false;
+    }
+
+    record.count++;
+    return true;
+  }
 
   /**
    * Fetch member from Discord API
@@ -101,7 +138,9 @@ export class UserCheckerAPI {
   }
 
   public async findUser(query: string): Promise<EnrichedUser | null> {
-    const q = query.toLowerCase().replace('@', '').trim();
+    // Sanitize input
+    const sanitized = this.sanitizeUsername(query);
+    const q = sanitized.toLowerCase().replace('@', '').trim();
 
     // Check cache first
     const cached = this.memberCache.get(q);
@@ -137,12 +176,17 @@ export class UserCheckerAPI {
    * THE ULTIMATE ANALYSIS (API Version)
    */
   public async getAIAnalysis(username: string): Promise<string> {
+    // Rate limit check
+    if (!this.checkRateLimit('analysis')) {
+      return `⏳ **Slow down, nya~!** Too many requests. Please wait a moment before trying again! 🐱`;
+    }
+
     const user = await this.findUser(username);
     if (!user) return `❌ User @${username} not found in server nyann~! 😿\n\n_Tip: Make sure the username is correct and they're a member of the server._`;
 
     const basicStats = this.formatBasicStats(user);
 
-    const systemPrompt = `You are SIGGY - a multi-dimensional cat girl AI.
+    const systemPrompt = `You are SIGGY - a Multiversal Cat Girl AI.
 
 Analyze this Discord member and provide a fun, cat-themed profile.
 
