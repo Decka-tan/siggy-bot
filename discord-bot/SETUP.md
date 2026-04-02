@@ -15,7 +15,7 @@ Complete guide to integrate Siggy into your Discord server with mood sprites, co
 ### 1. Go to Discord Developer Portal
 1. Visit [https://discord.com/developers/applications](https://discord.com/developers/applications)
 2. Click **"New Application"**
-3. Name it: **"Siggy - Multi-Dimensional Cat Girl"**
+3. Name it: **"Siggy - Multiversal Cat Girl"**
 4. Click **"Create"**
 
 ### 2. Get Client ID & Create Bot

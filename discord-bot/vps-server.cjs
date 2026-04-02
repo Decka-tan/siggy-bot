@@ -493,7 +493,7 @@ async function handleCheck(interaction) {
       embed.setThumbnail(avatarUrl);
     }
 
-    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
@@ -530,7 +530,7 @@ async function handleCheck(interaction) {
       embed.setThumbnail(data.user.avatar);
     }
 
-    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
@@ -592,7 +592,7 @@ async function handleCheck(interaction) {
 //       embed.setThumbnail(avatarUrl);
 //     }
 //
-//     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+//     embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
 //       .setTimestamp();
 //
 //     return interaction.editReply({ embeds: [embed] });
@@ -629,7 +629,7 @@ async function handleCheck(interaction) {
 //       embed.setThumbnail(data.user.avatar);
 //     }
 //
-//     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+//     embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
 //       .setTimestamp();
 //
 //     await interaction.editReply({ embeds: [embed] });
@@ -788,7 +788,7 @@ async function handleTransform(interaction) {
         ? '*A literal cosmic cat with four legs, fur, and a tail. Nyan~*'
         : '*An anime girl with cat ears and a tail. Human-shaped but still very feline!*'))
     .setThumbnail(spriteUrl)
-    .setFooter({ text: `Multi-dimensional Cat Girl AI • Form: ${newState.form} • Mood: ${newState.mood} • Bond: ${getRelationshipLevel(newState.relationshipScore)}` })
+    .setFooter({ text: `Multiversal Cat Girl AI • Form: ${newState.form} • Mood: ${newState.mood} • Bond: ${getRelationshipLevel(newState.relationshipScore)}` })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -806,7 +806,7 @@ async function handleMood(interaction) {
       `**Relationship**: ${getRelationshipLevel(state.relationshipScore)} (${state.relationshipScore} points)\n` +
       `**Messages Exchanged**: ${state.messageCount}`)
     .setThumbnail(SPRITES[state.form][state.mood] || SPRITES[state.form].DEFAULT)
-    .setFooter({ text: 'Multi-dimensional Cat Girl AI' })
+    .setFooter({ text: 'Multiversal Cat Girl AI' })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -824,7 +824,7 @@ async function handleReset(interaction) {
     .setAuthor({ name: 'Siggy Memory Wipe', iconURL: SPRITES.ANIME.SHOCK })
     .setDescription('*blinks slowly* ...who are you? Oh! A new friend! Hi there! 👋\n\n' +
       'Your conversation, mood, and relationship have been reset.')
-    .setFooter({ text: 'Multi-dimensional Cat Girl AI • Memory Cleared' })
+    .setFooter({ text: 'Multiversal Cat Girl AI • Memory Cleared' })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed], ephemeral: true });
@@ -858,7 +858,7 @@ async function handleStats(interaction) {
         { name: '😺 Mood Distribution', value: moodFields, inline: false },
         { name: '🎭 Form Distribution', value: formFields, inline: false },
       )
-      .setFooter({ text: 'Multi-dimensional Cat Girl AI • Data persists across restarts!' })
+      .setFooter({ text: 'Multiversal Cat Girl AI • Data persists across restarts!' })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
@@ -895,7 +895,7 @@ async function handleTop(interaction) {
         name: 'Your Rank',
         value: userRank ? `#${userRank}` : 'Not ranked yet',
       })
-      .setFooter({ text: 'Multi-dimensional Cat Girl AI • Chat more to rank up!' })
+      .setFooter({ text: 'Multiversal Cat Girl AI • Chat more to rank up!' })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
@@ -908,7 +908,7 @@ async function handleTop(interaction) {
 async function handleHelp(interaction) {
   const embed = new EmbedBuilder()
     .setColor(0x9b59b6)
-    .setTitle('🐱 Siggy - Multi-Dimensional Cat Girl AI')
+    .setTitle('🐱 Siggy - Multiversal Cat Girl AI')
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
       { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
@@ -1806,7 +1806,7 @@ client.on('messageCreate', async (message) => {
       .setDescription(cleanResponse)
       .setThumbnail(spriteUrl)
       .setFooter({
-        text: `Multi-dimensional Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount}`
+        text: `Multiversal Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount}`
       })
       .setTimestamp();
 

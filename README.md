@@ -1,6 +1,6 @@
-# 🐱✨ SIGGY - Multi-Dimensional Cat Girl AI
+# 🐱✨ SIGGY - Multiversal Cat Girl AI
 
-> *A multi-dimensional feline entity descended to Earth as an anime girl to blend in, make friends, and find her soul*
+> *A multiversal feline entity descended to Earth as an anime girl to blend in, make friends, and find her soul*
 
 **Siggy is an advanced AI character with dynamic mood system, Discord community integration, web research capabilities, crypto tools, and immersive visual novel storytelling.**
 
@@ -11,7 +11,7 @@
 
 ## ✨ What Makes Siggy Unique?
 
-Siggy isn't just another chatbot. She's a **multi-dimensional character** with:
+Siggy isn't just another chatbot. She's a **multiversal character** with:
 
 - 🧠 **Ritual Knowledge Base** - Community knowledge with 7,978+ members, events, and roles
 - 🔍 **Hybrid GPT + Web Research** - Auto-detects when she needs to search the web for latest info

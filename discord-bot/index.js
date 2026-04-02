@@ -1,6 +1,6 @@
 /**
  * SIGGY DISCORD BOT
- * Multi-dimensional cat girl AI for Discord
+ * Multiversal Cat Girl AI for Discord
  *
  * Features:
  * - Chat with Siggy in Discord
@@ -125,7 +125,7 @@ function createSiggyEmbed(response, mood, username) {
     })
     .setDescription(response)
     .setThumbnail(spriteUrl)
-    .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${mood}` })
+    .setFooter({ text: `Multiversal Cat Girl AI • Mood: ${mood}` })
     .setTimestamp();
 
   return embed;
@@ -190,7 +190,7 @@ async function handleCheckCommand(interaction) {
       .setColor(0xf1c40f)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.cat.DEFAULT })
       .setDescription(data.analysis || 'No analysis available')
-      .setFooter({ text: 'Multi-dimensional Cat Girl AI' })
+      .setFooter({ text: 'Multiversal Cat Girl AI' })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
@@ -235,8 +235,8 @@ async function handleResearchCommand(interaction) {
 async function handleHelpCommand(interaction) {
   const embed = new EmbedBuilder()
     .setColor(0x9b59b6)
-    .setTitle('🐱 Siggy - Multi-Dimensional Cat Girl AI')
-    .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
+    .setTitle('🐱 Siggy - Multiversal Cat Girl AI')
+    .setDescription('*A multiversal feline entity descended to Earth as an anime girl*')
     .addFields(
       { name: 'Chat', value: 'Just send a message and talk to Siggy!', inline: false },
       { name: '/check @username', value: 'Analyze a contributor with AI-powered insights', inline: false },
