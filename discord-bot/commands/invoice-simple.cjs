@@ -122,6 +122,11 @@ async function processInvoiceCreateModal(interaction) {
         amount = parseInt(amountStr.replace('k', '000')) || amount;
       }
 
+      // Validate amount is a positive number
+      if (isNaN(amount) || amount <= 0) {
+        continue; // Skip invalid entries
+      }
+
       if (amount > 0) {
         let finalUsername = mentionOrUsername;
         let finalUserId = userId;
@@ -231,18 +236,15 @@ async function matchParticipantsToGuild(invoice, guild) {
     }
   }
 
-  // Save updated participant data
+  // Save updated participant data using DB function
   if (updated) {
+    // Update participants in DB by reading, updating, and writing back
     const db = require('../utils/invoice-db.cjs');
-    const fs = require('fs');
-    const path = require('path');
-
-    const DB_FILE = path.join(__dirname, '../data/invoices.json');
-    const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    const data = db.readDB();
 
     if (data.invoices[invoice.id]) {
       data.invoices[invoice.id].participants = invoice.participants;
-      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+      db.writeDB(data);
     }
   }
 }

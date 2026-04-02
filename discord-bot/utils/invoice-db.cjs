@@ -1,12 +1,17 @@
 /**
  * INVOICE DATABASE
  * JSON file persistence for invoices
+ * With simple locking to prevent race conditions
  */
 
 const fs = require('fs');
 const path = require('path');
 
 const DB_FILE = path.join(__dirname, '../data/invoices.json');
+
+// Simple in-memory lock for write operations
+let writeLock = false;
+let pendingWrites = [];
 
 // Initialize DB file if not exists
 function initDB() {
@@ -24,7 +29,17 @@ function readDB() {
   initDB();
   try {
     const data = fs.readFileSync(DB_FILE, 'utf8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    // Validate structure
+    if (!parsed || typeof parsed !== 'object') {
+      console.error('[Invoice DB] Invalid structure, resetting');
+      return { invoices: {} };
+    }
+    if (!parsed.invoices || typeof parsed.invoices !== 'object') {
+      console.error('[Invoice DB] Invalid invoices, resetting');
+      return { invoices: {} };
+    }
+    return parsed;
   } catch (error) {
     console.error('[Invoice DB] Read error:', error);
     return { invoices: {} };
@@ -34,11 +49,33 @@ function readDB() {
 function writeDB(data) {
   initDB();
   try {
+    // Validate data before writing
+    if (!data || typeof data !== 'object' || !data.invoices) {
+      console.error('[Invoice DB] Invalid data structure, skipping write');
+      return false;
+    }
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
     return true;
   } catch (error) {
     console.error('[Invoice DB] Write error:', error);
     return false;
+  }
+}
+
+/**
+ * Acquire lock and run operation safely
+ */
+async function withLock(operation) {
+  // Wait for lock to be released
+  while (writeLock) {
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+
+  writeLock = true;
+  try {
+    return await operation();
+  } finally {
+    writeLock = false;
   }
 }
 
@@ -90,21 +127,34 @@ function addParticipants(invoiceId, participants) {
     return { success: false, error: 'Invoice not found' };
   }
 
-  // Filter out participants with empty usernames
-  const validParticipants = participants.filter(p => p.username && p.username.trim());
+  // Filter out participants with empty usernames or invalid amounts
+  const validParticipants = participants.filter(p => {
+    if (!p.username || !p.username.trim()) return false;
+    // Validate amount: must be a positive number
+    const amount = Number(p.amount);
+    if (isNaN(amount) || amount <= 0) return false;
+    return true;
+  });
 
-  // Add new participants
+  if (validParticipants.length === 0) {
+    return { success: false, error: 'No valid participants to add' };
+  }
+
+  // Add new participants with validated amounts
   validParticipants.forEach(p => {
     invoice.participants.push({
-      userId: p.userId,
+      userId: p.userId || `unknown_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       username: p.username,
-      amount: p.amount,
-      paid: false,
+      amount: Number(p.amount), // Ensure it's a number
+      paid: p.paid || false,
     });
   });
 
-  // Recalculate total
-  invoice.totalAmount = invoice.participants.reduce((sum, p) => sum + p.amount, 0);
+  // Recalculate total safely
+  invoice.totalAmount = invoice.participants.reduce((sum, p) => {
+    const amount = Number(p.amount) || 0;
+    return sum + amount;
+  }, 0);
 
   writeDB(db);
 
@@ -265,4 +315,6 @@ module.exports = {
   markMultiplePaid,
   deleteInvoice,
   calculateTotalOwed,
+  readDB,
+  writeDB,
 };

@@ -392,6 +392,23 @@ setInterval(() => {
   }
 }, 60000);
 
+// Clear expired rate limiter entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, data] of rateLimiter.entries()) {
+    if (now > data.resetAt) rateLimiter.delete(key);
+  }
+}, 300000);
+
+// Clear old lastCommand entries every hour (older than 24 hours)
+setInterval(() => {
+  const now = Date.now();
+  const dayAgo = now - (24 * 60 * 60 * 1000);
+  for (const [key, data] of lastCommand.entries()) {
+    if (data.timestamp && data.timestamp < dayAgo) lastCommand.delete(key);
+  }
+}, 3600000);
+
 // ============ USER STATE TRACKING ============
 // Track command as message for relationship (now with DB persistence)
 function trackCommandAsMessage(userId, userName, commandName) {
