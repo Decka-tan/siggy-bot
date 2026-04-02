@@ -61,13 +61,21 @@ export function validateKnowledge(): ValidationResult {
     }
 
     // Check for outdated date patterns (YYYY where year is old)
-    const currentYear = new Date().getFullYear();
-    const yearMatches = entry.content.match(/\b(20\d{2})\b/g);
-    if (yearMatches) {
-      for (const yearStr of yearMatches) {
-        const year = parseInt(yearStr);
-        if (year < currentYear - 2) {
-          warnings.push(`Possibly outdated date ${year} in: ${entry.id}`);
+    // Skip if content contains historical context indicators
+    const historicalIndicators = ['launched', 'historical', 'reference', 'founded', 'established', 'introduced', 'created'];
+    const isHistorical = historicalIndicators.some(indicator =>
+      entry.content.toLowerCase().includes(indicator)
+    );
+
+    if (!isHistorical) {
+      const currentYear = new Date().getFullYear();
+      const yearMatches = entry.content.match(/\b(20\d{2})\b/g);
+      if (yearMatches) {
+        for (const yearStr of yearMatches) {
+          const year = parseInt(yearStr);
+          if (year < currentYear - 2) {
+            warnings.push(`Possibly outdated date ${year} in: ${entry.id}`);
+          }
         }
       }
     }
