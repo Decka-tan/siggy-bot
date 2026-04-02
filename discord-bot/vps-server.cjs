@@ -1677,9 +1677,6 @@ client.on('messageCreate', async (message) => {
     return message.reply('Nya? You called me? *tilts head* 🐱');
   }
 
-  // Defer reply (API calls can be slow)
-  await message.channel.sendTyping();
-
   // Get user state and history from database
   const userId = message.author.id;
   const state = getUserState(userId);
@@ -1697,6 +1694,9 @@ client.on('messageCreate', async (message) => {
   }
 
   try {
+    // Defer reply (API calls can be slow)
+    await message.channel.sendTyping();
+
     // Build request with all params from website
     const requestBody = {
       message: cleanMessage,
