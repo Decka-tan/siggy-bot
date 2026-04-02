@@ -306,14 +306,23 @@ const EASTER_EGGS = {
   },
 };
 
+// Pre-build trigger map for O(1) easter egg lookup
+const EASTER_EGG_TRIGGERS = new Map();
+for (const [name, egg] of Object.entries(EASTER_EGGS)) {
+  for (const trigger of egg.triggers) {
+    EASTER_EGG_TRIGGERS.set(trigger, { name, ...egg });
+  }
+}
+
 function checkEasterEggs(message) {
   const lower = message.toLowerCase();
 
-  for (const [name, egg] of Object.entries(EASTER_EGGS)) {
-    if (egg.triggers.some(trigger => lower.includes(trigger))) {
+  // Quick lookup using pre-built map
+  for (const [trigger, egg] of EASTER_EGG_TRIGGERS) {
+    if (lower.includes(trigger)) {
       return {
         triggered: true,
-        name,
+        name: egg.name,
         response: egg.response,
         moodOverride: egg.moodOverride,
         formHint: egg.formHint,

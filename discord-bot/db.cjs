@@ -82,17 +82,17 @@ function saveDatabase() {
 }
 
 // Auto-save every 30 seconds
-setInterval(saveDatabase, 30000);
+const saveInterval = setInterval(saveDatabase, 30000);
 
-// Also save on process exit
-process.on('SIGINT', () => {
+// Clear interval and save on process exit
+const shutdown = () => {
+  clearInterval(saveInterval);
   saveDatabase();
   process.exit(0);
-});
-process.on('SIGTERM', () => {
-  saveDatabase();
-  process.exit(0);
-});
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 // ============ USER STATES ============
 

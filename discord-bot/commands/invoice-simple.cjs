@@ -45,7 +45,10 @@ function parseParticipantsFromArgs(args, guild) {
             paid: false,
           });
         }
-      } catch {}
+      } catch (err) {
+        // Member not found or error fetching, skip this participant
+        console.error(`[Invoice] Error fetching member: ${err.message}`);
+      }
     }
   }
 
@@ -138,7 +141,10 @@ async function processInvoiceCreateModal(interaction) {
               finalUsername = member.user.username;
               finalUserId = userId;
             }
-          } catch {}
+          } catch (err) {
+            // Member fetch failed, will use username as-is
+            console.error(`[Invoice] Error fetching user ${userId}: ${err.message}`);
+          }
         } else {
           const member = guild.members.cache.find(
             m => m.user.username.toLowerCase() === mentionOrUsername.toLowerCase()
