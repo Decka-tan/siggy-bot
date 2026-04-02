@@ -235,12 +235,12 @@ export const RITUAL_WEB_KNOWLEDGE: KnowledgeEntry[] = [
   },
 
   // ==========================================
-  // SHRINE
+  // SHRINE (INFRASTRUCTURE)
   // ==========================================
   {
-    id: 'ritual-shrine',
+    id: 'ritual-shrine-infrastructure',
     category: 'shrine',
-    keywords: ['shrine', 'infrastructure', 'ritualfoundation', 'storage', 'evault', 'promptd'],
+    keywords: ['shrine', 'infrastructure', 'ritualfoundation', 'storage', 'evault', 'promptd', 'rfs'],
     content: "Shrine is Ritual's infrastructure layer. eVault provides secure storage solutions. Promptd handles prompt management and execution. RFS (Ritual File System) enables decentralized storage and retrieval of AI models and data. Available at shrine.ritualfoundation.org.",
     priority: 7,
     source: 'https://shrine.ritualfoundation.org/',
@@ -268,8 +268,8 @@ export const RITUAL_WEB_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-vs-chains',
     category: 'docs',
-    keywords: ['vs', 'chain', 'other', 'compare', 'bitcoin', 'ethereum'],
-    content: "Why another blockchain? Bitcoin enabled money transfer without intermediaries (2009). Ethereum introduced smart contracts (2015). But focus shifted to performance metrics (latency, throughput) for existing users rather than net-new user innovations. Ritual focuses on expressive compute - AI, ZK, TEE - to unlock transformative new use cases, not just scale existing ones.",
+    keywords: ['vs', 'chain', 'other', 'compare', 'bitcoin', 'ethereum', 'history'],
+    content: "Why another blockchain? Bitcoin enabled money transfer without intermediaries (launched 2009 - historical reference). Ethereum introduced smart contracts (launched 2015 - historical reference). But focus shifted to performance metrics (latency, throughput) for existing users rather than net-new user innovations. Ritual focuses on expressive compute - AI, ZK, TEE - to unlock transformative new use cases, not just scale existing ones.",
     priority: 8,
     source: 'https://www.ritualfoundation.org/docs/landscape/ritual-vs-other-chains',
   },

@@ -200,8 +200,8 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-shrine',
     category: 'programs',
-    keywords: ['shrine', 'ritual shrine', 'builders program', 'apply'],
-    content: `Ritual Shrine: Comprehensive program empowering visionary builders creating net-new applications on crypto x AI frontier. Features: rolling applications (no deadlines), for builders at any stage (concept to scaling), quality over quantity. Ideal Shrine builders: see possibilities others miss at AI/crypto intersection, learn rapidly in uncharted territory, solve with originality, commit to long-term innovation.`,
+    keywords: ['shrine', 'ritual shrine', 'builders program', 'apply', 'incubator', 'accelerator'],
+    content: `Ritual Shrine (Builders Program): Comprehensive program empowering visionary builders creating net-new applications on crypto x AI frontier. Features: rolling applications (no deadlines), for builders at any stage (concept to scaling), quality over quantity. Ideal Shrine builders: see possibilities others miss at AI/crypto intersection, learn rapidly in uncharted territory, solve with originality, commit to long-term innovation.`,
     priority: 6,
     source: 'ritual-programs',
   },
