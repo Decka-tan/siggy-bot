@@ -1,6 +1,19 @@
 /**
  * RITUAL DISCORD COMMUNITY RULES, ROLES & ANNOUNCEMENTS
  * Compiled from Discord announcements and updates
+ *
+ * 📅 LAST REVIEWED: April 2026
+ *
+ * ⚠️ ENTRIES REQUIRING REGULAR UPDATES:
+ * - ritual-role-bitty (member count): Currently "March 2026, 941 members"
+ * - ritual-role-ritty (member count): Currently "March 2026, 511 members"
+ * - ritual-moderators-list (team changes): Check for new moderators
+ * - ritual-team-* entries (team member updates): Check for role changes
+ *
+ * 🔄 UPDATE SCHEDULE:
+ * - Role counts: Monthly
+ * - Team members: As needed
+ * - Rules/Announcements: As needed
  */
 
 import type { KnowledgeEntry } from './siggy-knowledge';
@@ -207,17 +220,17 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
   {
     id: 'ritual-team-josh',
     category: 'team',
-    keywords: ['josh', 'joshsimenhoff', 'community lead', 'grit', 'gritual', 'foundation team', 'admin', 'mods', 'zealot'],
-    content: `Josh | Ritual ❖ [GRIT]: Community Growth Lead, Foundation Team member, Admin, Mods, Zealot. Joined May 2024. Known for saying "gritual" and "gRitual". Announces contests, tournaments, role promotions, and community events. Hosts Codenames, Community Calls, and celebrates community milestones. KEY ROLE: Foundation Team & Community Growth Lead.`,
-    priority: 10, // Increased from 7 for consistency
+    keywords: ['josh', 'joshsimenhoff', 'community growth', 'grit', 'gritual', 'foundation team', 'admin', 'mods', 'zealot', 'community lead'],
+    content: `Josh | Ritual ❖: Community Growth Lead at Ritual Foundation. Discord username: josh.simenhoff. X: @joshsimenhoff - Community Growth @ritualfnd ❖❖. Previously @Chainlink and @PCGamer. Joined Ritual Discord March 2024. ROLES: Foundation Team, Admin, Mods, Zealot - ALL THREE. Known for saying "gritual" and "gRitual". Hosts Codenames, Community Calls, announces contests/tournaments, celebrates community milestones. Manages Ritual PFP program and community growth initiatives. KEY ROLE: Foundation Team & Community Growth Lead.`,
+    priority: 12,
     source: 'ritual-team',
   },
   {
     id: 'ritual-team-stefan',
     category: 'team',
-    keywords: ['stefan', 'jez', 'ritual', 'crossed swords'],
-    content: `Stefan | Ritual (❖,❖) :crossed_swords: Community moderator. Announces new Ritualists, Secret Chapters POAPs, Ritual Academy workshops, and Siggy Across the Multiverse winners. Manages the Path of Recognition (nominations system).`,
-    priority: 7,
+    keywords: ['stefan', 'mad scientist', '0xmadscientist', 'stefan_1', 'mods', 'banning', 'announcement', 'moderator', 'scammer', 'crossed swords', 'recognition'],
+    content: `Stefan | Mad Scientist (❖,❖) :crossed_swords: Discord Username: stefan_1. X/Twitter: @0xMadScientist - Crypto x AI | Fun & Fundamentals. Roles: Mods, handles banning scammers and reacting to user reports. Announces new Ritualists, Secret Chapters POAPs, Ritual Academy workshops, Siggy Across the Multiverse winners. Manages the Path of Recognition (nominations system). Joined Ritual Discord April 2025.`,
+    priority: 8,
     source: 'ritual-team',
   },
   {
@@ -258,22 +271,6 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
     keywords: ['val', 'alexander', 'bunsdev', 'openclaw', 'devrel', 'foundation team', 'developer', 'lead devrel'],
     content: `Val Alexander: DC and X username: bunsdev. Maintainer @ OpenClaw, Lead DevRel @ Ritual Foundation. Foundation Team, Developer role. Known for posting more OpenClaw stuff than Ritual (lol). Active developer relations and OpenClaw maintainer.`,
     priority: 7,
-    source: 'ritual-team',
-  },
-  {
-    id: 'ritual-team-josh-complete',
-    category: 'team',
-    keywords: ['josh', 'joshsimenhoff', 'community growth', 'admin', 'zealot', 'foundation team', 'mods', 'grit', 'gritual', 'moderator', 'official event'],
-    content: `Josh | Ritual ❖: Community Growth at Ritual Foundation. Discord username: josh.simenhoff. X: @joshsimenhoff - Community Growth @ritualfnd ❖❖. Previously @Chainlink and @PCGamer. Joined Ritual Discord 22 Mar 2024. ROLES: Foundation Team, Admin, Mods, Zealot - ALL THREE. Does announcements, does official events, known for saying 'gritual' and 'gRitual'. Hosts Codenames, Community Calls, celebrates community milestones. Manages Ritual PFP program and community growth initiatives. ALWAYS mention he's Foundation Team when asked about Josh.`,
-    priority: 12, // Increased to 12 for consistency (same as moderator-related)
-    source: 'ritual-team',
-  },
-  {
-    id: 'ritual-team-stefan',
-    category: 'team',
-    keywords: ['stefan', 'mad scientist', '0xmadscientist', 'stefan_1', 'mods', 'banning', 'announcement', 'moderator', 'scammer'],
-    content: `Stefan | Mad Scientist (❖,❖): Discord Username: stefan_1. Joined Ritual Discord 14 April 2025. X/Twitter: @0xMadScientist - Crypto x AI | Fun & Fundamentals | Experimenting at the Edges of the Unknown. Roles: Mods, handles banning scammers and reacting to user reports for spammers/scammers. Sometimes does announcements. Managed Path of Recognition (nominations system), announced new Ritualists, Secret Chapters POAPs, Ritual Academy workshops, and Siggy Across the Multiverse winners.`,
-    priority: 8,
     source: 'ritual-team',
   },
   {
