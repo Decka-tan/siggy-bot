@@ -1354,16 +1354,32 @@ async function handleMarkPaidSelect(interaction) {
       }
     }
 
-    // Send new updated invoice message
+    // Get channel and delete old invoice message if exists
     const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-    await channel.send({
-      content: `📝 **Invoice Updated** - ${selectedValues.length} orang ditandai lunas!`,
+
+    // Delete the original invoice message (the one with buttons)
+    if (updatedInvoice.messageId) {
+      try {
+        const oldMessage = await channel.messages.fetch(updatedInvoice.messageId);
+        await oldMessage.delete();
+      } catch (err) {
+        console.log(`[Invoice] Could not delete old message: ${err.message}`);
+      }
+    }
+
+    // Send new updated invoice message
+    const newMessage = await channel.send({
+      content: `✅ ${selectedValues.length} orang ditandai lunas!`,
       embeds: [embed],
       components: [components]
     });
 
+    // Update messageId in database
+    const { updateInvoiceMessage } = require('./utils/invoice-db.cjs');
+    updateInvoiceMessage(updatedInvoice.id, newMessage.id);
+
     await interaction.update({
-      content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai lunas! Invoice baru terkirim di bawah.`,
+      content: `✅ Invoice diperbarui! Message lama dihapus.`,
       components: []
     });
 
@@ -1481,16 +1497,32 @@ async function handleAddPeopleSubmit(interaction) {
     const embed = renderInvoiceEmbed(updatedInvoice);
     const components = buildInvoiceButtons(updatedInvoice.id);
 
-    // Send new updated invoice message
+    // Get channel and delete old invoice message if exists
     const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-    await channel.send({
-      content: `📝 **Invoice Updated** - ${participants.length} orang ditambahkan!`,
+
+    // Delete the original invoice message (the one with buttons)
+    if (updatedInvoice.messageId) {
+      try {
+        const oldMessage = await channel.messages.fetch(updatedInvoice.messageId);
+        await oldMessage.delete();
+      } catch (err) {
+        console.log(`[Invoice] Could not delete old message: ${err.message}`);
+      }
+    }
+
+    // Send new updated invoice message
+    const newMessage = await channel.send({
+      content: `✅ ${participants.length} orang ditambahkan!`,
       embeds: [embed],
       components: [components]
     });
 
+    // Update messageId in database
+    const { updateInvoiceMessage } = require('./utils/invoice-db.cjs');
+    updateInvoiceMessage(updatedInvoice.id, newMessage.id);
+
     await interaction.reply({
-      content: `✅ Berhasil menambahkan ${participants.length} orang ke invoice! Invoice baru terkirim di bawah.`,
+      content: `✅ Berhasil menambahkan ${participants.length} orang! Message lama dihapus.`,
       ephemeral: true
     });
 
