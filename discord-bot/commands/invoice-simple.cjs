@@ -483,7 +483,7 @@ function buildAddPeopleModal(invoiceId) {
 
   const userMentionInput = new TextInputBuilder()
     .setCustomId('user_mentions')
-    .setLabel('User (mention atau username, pisahkan dengan koma)')
+    .setLabel('User (@mention atau username, koma)')
     .setPlaceholder('@user1, @user2 atau username1, username2')
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
