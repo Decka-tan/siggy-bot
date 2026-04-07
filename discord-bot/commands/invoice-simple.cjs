@@ -395,27 +395,29 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
   invoices.forEach((inv, i) => {
     const paid = inv.participants.filter(p => p.paid);
     const unpaid = inv.participants.filter(p => !p.paid);
+    const creatorName = inv.creator.username;
 
     if (inv.participants.length > 0) {
       description += `**Invoice ${i + 1}:** ${inv.title || 'Untitled'}\n`;
+      description += `  👤 Dibuat oleh: ${creatorName}\n`;
       const totalAmount = isNaN(inv.totalAmount) ? 0 : inv.totalAmount;
       description += `  📅 ${inv.date} | 💰 Total: Rp ${totalAmount.toLocaleString('id-ID')}\n`;
 
-      // Show paid participants
+      // Show paid participants with "lunas ke creator"
       if (paid.length > 0) {
         description += `  ✅ **Lunas:**\n`;
         paid.forEach(p => {
           const amount = isNaN(p.amount) ? 0 : p.amount;
-          description += `     • ${p.username}: Rp ${amount.toLocaleString('id-ID')}\n`;
+          description += `     • ${p.username}: Rp ${amount.toLocaleString('id-ID')} → ${creatorName}\n`;
         });
       }
 
-      // Show unpaid participants
+      // Show unpaid participants with "hutang ke creator"
       if (unpaid.length > 0) {
         description += `  ⏳ **Belum Lunas:**\n`;
         unpaid.forEach(p => {
           const amount = isNaN(p.amount) ? 0 : p.amount;
-          description += `     • ${p.username}: Rp ${amount.toLocaleString('id-ID')}\n`;
+          description += `     • ${p.username} hutang Rp ${amount.toLocaleString('id-ID')} ke ${creatorName}\n`;
         });
       }
 
@@ -1023,12 +1025,19 @@ async function handleInvoiceAnalytics(interaction) {
     });
   }
 
-  // Calculate per-person stats
+  // Calculate per-person stats with creditors tracking
   const personStats = {};
   filtered.forEach(inv => {
+    const creatorName = inv.creator.username;
     inv.participants.forEach(p => {
       if (!personStats[p.username]) {
-        personStats[p.username] = { total: 0, paid: 0, unpaid: 0, count: 0 };
+        personStats[p.username] = {
+          total: 0,
+          paid: 0,
+          unpaid: 0,
+          count: 0,
+          creditors: {} // Track who this person owes money to
+        };
       }
       const amount = isNaN(p.amount) ? 0 : p.amount;
       personStats[p.username].total += amount;
@@ -1037,6 +1046,11 @@ async function handleInvoiceAnalytics(interaction) {
         personStats[p.username].paid += amount;
       } else {
         personStats[p.username].unpaid += amount;
+        // Track creditor (who they owe money to)
+        if (!personStats[p.username].creditors[creatorName]) {
+          personStats[p.username].creditors[creatorName] = 0;
+        }
+        personStats[p.username].creditors[creatorName] += amount;
       }
     });
   });
@@ -1053,6 +1067,14 @@ async function handleInvoiceAnalytics(interaction) {
     description += `   Total: Rp ${stats.total.toLocaleString('id-ID')} | `;
     description += `Lunas: Rp ${stats.paid.toLocaleString('id-ID')} | `;
     description += `Hutang: Rp ${stats.unpaid.toLocaleString('id-ID')}\n`;
+
+    // Show breakdown of who they owe money to
+    if (Object.keys(stats.creditors).length > 0) {
+      const creditorList = Object.entries(stats.creditors)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3); // Top 3 creditors
+      description += `   📎 Hutang ke: ${creditorList.map(([c, amt]) => `${c} (Rp ${amt.toLocaleString('id-ID')})`).join(', ')}\n`;
+    }
   });
 
   const totalAmount = filtered.reduce((sum, inv) => sum + (isNaN(inv.totalAmount) ? 0 : inv.totalAmount), 0);
