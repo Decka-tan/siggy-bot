@@ -150,13 +150,9 @@ async function processInvoiceCreateModal(interaction) {
             console.error(`[Invoice] Error fetching user ${userId}: ${err.message}`);
           }
         } else {
-          const member = guild.members.cache.find(
-            m => m.user.username.toLowerCase() === mentionOrUsername.toLowerCase()
-          );
-          if (member) {
-            finalUsername = member.user.username;
-            finalUserId = member.id;
-          }
+          // No @mention - just use the name as-is (nickname/real name is fine)
+          finalUsername = mentionOrUsername;
+          finalUserId = null; // No Discord ID available
         }
 
         const isPaid = /lunas|paid|bayar/i.test(notes);
@@ -675,65 +671,30 @@ async function handleInvoiceButton(interaction, action) {
 }
 
 /**
- * /invoice-recap handler - Show all invoices for a user
- * Includes invoices where user is creator OR participant
+ * /invoice-recap handler - Show ALL invoices (global view)
+ * Anyone can see all invoices created by everyone
  */
 async function handleInvoiceRecap(interaction) {
-  // Get invoices where user is creator
-  const createdInvoices = getUserInvoices(interaction.user.id);
+  const db = require('../utils/invoice-db.cjs');
+  const allInvoices = db.readDB();
 
-  // Get invoices where user is participant
-  const participatedInvoices = await getUserParticipatedInvoices(interaction.user.id);
-
-  // Merge and remove duplicates
-  const allInvoicesMap = new Map();
-  createdInvoices.forEach(inv => allInvoicesMap.set(inv.id, { ...inv, role: 'creator' }));
-  participatedInvoices.forEach(inv => {
-    if (!allInvoicesMap.has(inv.id)) {
-      allInvoicesMap.set(inv.id, { ...inv, role: 'participant' });
-    }
-  });
-
-  const allInvoices = Array.from(allInvoicesMap.values())
+  // Get all invoices from all creators
+  const invoices = Object.values(allInvoices.invoices || {})
     .sort((a, b) => b.createdAt - a.createdAt);
 
-  if (allInvoices.length === 0) {
+  if (invoices.length === 0) {
     return interaction.reply({
       content: '📋 Belum ada invoice.',
       ephemeral: true
     });
   }
 
-  const embed = renderInvoiceRecapEmbed(allInvoices, interaction.user.id);
+  const embed = renderInvoiceRecapEmbed(invoices, interaction.user.id);
 
   await interaction.reply({
     embeds: [embed],
     ephemeral: true
   });
-}
-
-/**
- * Get invoices where user is a participant
- */
-async function getUserParticipatedInvoices(userId) {
-  const db = require('../utils/invoice-db.cjs');
-  const allInvoices = db.readDB();
-
-  const participatedInvoices = [];
-
-  for (const invoiceId in allInvoices.invoices) {
-    const invoice = allInvoices.invoices[invoiceId];
-    // Check if user is in participants
-    const isParticipant = invoice.participants.some(p =>
-      p.userId === userId.toString()
-    );
-
-    if (isParticipant) {
-      participatedInvoices.push(invoice);
-    }
-  }
-
-  return participatedInvoices.sort((a, b) => b.createdAt - a.createdAt);
 }
 
 /**
@@ -937,29 +898,18 @@ async function handleInvoiceClear(interaction) {
 }
 
 /**
- * /invoice-search handler - Search invoices with filters
- * Includes invoices where user is creator OR participant
+ * /invoice-search handler - Search invoices with filters (GLOBAL)
+ * Anyone can search all invoices
  */
 async function handleInvoiceSearch(interaction) {
   const query = interaction.options.getString('query') || '';
   const period = interaction.options.getString('period') || 'all';
 
-  // Get invoices where user is creator
-  const createdInvoices = getUserInvoices(interaction.user.id);
+  const db = require('../utils/invoice-db.cjs');
+  const allData = db.readDB();
 
-  // Get invoices where user is participant
-  const participatedInvoices = await getUserParticipatedInvoices(interaction.user.id);
-
-  // Merge and remove duplicates
-  const allInvoicesMap = new Map();
-  createdInvoices.forEach(inv => allInvoicesMap.set(inv.id, { ...inv, role: 'creator' }));
-  participatedInvoices.forEach(inv => {
-    if (!allInvoicesMap.has(inv.id)) {
-      allInvoicesMap.set(inv.id, { ...inv, role: 'participant' });
-    }
-  });
-
-  const invoices = Array.from(allInvoicesMap.values())
+  // Get ALL invoices
+  const invoices = Object.values(allData.invoices || {})
     .sort((a, b) => b.createdAt - a.createdAt);
 
   if (invoices.length === 0) {
@@ -1029,28 +979,16 @@ async function handleInvoiceSearch(interaction) {
 }
 
 /**
- * /invoice-analytics handler - Show weekly/monthly analytics
- * Includes invoices where user is creator OR participant
+ * /invoice-analytics handler - Show weekly/monthly analytics (GLOBAL)
+ * Anyone can see analytics for all invoices
  */
 async function handleInvoiceAnalytics(interaction) {
   const period = interaction.options.getString('period') || 'month';
+  const db = require('../utils/invoice-db.cjs');
+  const allData = db.readDB();
 
-  // Get invoices where user is creator
-  const createdInvoices = getUserInvoices(interaction.user.id);
-
-  // Get invoices where user is participant
-  const participatedInvoices = await getUserParticipatedInvoices(interaction.user.id);
-
-  // Merge and remove duplicates
-  const allInvoicesMap = new Map();
-  createdInvoices.forEach(inv => allInvoicesMap.set(inv.id, { ...inv, role: 'creator' }));
-  participatedInvoices.forEach(inv => {
-    if (!allInvoicesMap.has(inv.id)) {
-      allInvoicesMap.set(inv.id, { ...inv, role: 'participant' });
-    }
-  });
-
-  const invoices = Array.from(allInvoicesMap.values())
+  // Get ALL invoices
+  const invoices = Object.values(allData.invoices || {})
     .sort((a, b) => b.createdAt - a.createdAt);
 
   if (invoices.length === 0) {
