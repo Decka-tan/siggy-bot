@@ -9,6 +9,9 @@ const {
   getInvoice,
   updateInvoiceMessage,
   getUserInvoices,
+  getUserDebts,
+  getAllParticipantNames,
+  getDebtsByName,
   markMultiplePaid,
   deleteInvoice,
 } = require('../utils/invoice-db.cjs');
@@ -692,6 +695,144 @@ async function handleInvoiceRecap(interaction) {
 }
 
 /**
+ * /invoice-owe handler - Show dropdown to find debts by name
+ */
+async function handleInvoiceOwe(interaction) {
+  const allNames = getAllParticipantNames();
+
+  if (allNames.length === 0) {
+    return interaction.reply({
+      content: '📋 Belum ada invoice.',
+      ephemeral: true
+    });
+  }
+
+  // Limit to 25 (Discord select menu max)
+  const topNames = allNames.slice(0, 25);
+
+  const options = topNames.map(nameInfo => {
+    const hasUnpaid = nameInfo.unpaidCount > 0;
+    const label = nameInfo.name;
+    const description = hasUnpaid
+      ? `Rp ${nameInfo.totalDebt.toLocaleString('id-ID')} | ${nameInfo.unpaidCount} belum lunas`
+      : `Rp ${nameInfo.totalDebt.toLocaleString('id-ID')} | Lunas`;
+
+    return new StringSelectMenuOptionBuilder()
+      .setLabel(label)
+      .setValue(nameInfo.name)
+      .setDescription(description);
+  });
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('find_debt_select')
+    .setPlaceholder('Pilih nama kamu...')
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(options);
+
+  const row = new ActionRowBuilder().addComponents(selectMenu);
+
+  await interaction.reply({
+    content: '🔍 **Cari Hutang Berdasarkan Nama**\n\nPilih nama kamu dari daftar di bawah:',
+    components: [row],
+    ephemeral: true
+  });
+}
+
+/**
+ * Handle find debt select menu
+ */
+async function handleFindDebtSelect(interaction) {
+  const selectedName = interaction.values[0];
+  const debts = getDebtsByName(selectedName);
+
+  if (debts.length === 0) {
+    return interaction.update({
+      content: `🎉 **${selectedName} gak punya hutang!** Semua invoice lunas!`,
+      components: []
+    });
+  }
+
+  const totalOwed = debts.reduce((sum, debt) => sum + (Number(debt.amount) || 0), 0);
+
+  let description = '';
+
+  debts.forEach((debt, i) => {
+    const inv = debt.invoice;
+    const amount = Number(debt.amount) || 0;
+    const creator = inv.creator.username;
+    const title = inv.title || 'Untitled';
+    const notes = debt.notes ? ` *(${debt.notes})*` : '';
+
+    description += `**${i + 1}. ${title}**\n`;
+    description += `   👤 Creator: ${creator}\n`;
+    description += `   💰 Hutang: Rp ${amount.toLocaleString('id-ID')}${notes}\n`;
+    description += `   📅 Tanggal: ${inv.date}\n\n`;
+  });
+
+  const embed = new EmbedBuilder()
+    .setColor(0xf39c12)
+    .setTitle(`💳 Hutang Belum Dibayar: ${selectedName}`)
+    .setDescription(description)
+    .addFields({
+      name: '💵 Total Hutang',
+      value: `Rp ${totalOwed.toLocaleString('id-ID')}`,
+      inline: false
+    })
+    .setFooter({ text: `${debts.length} invoice belum lunas` })
+    .setTimestamp();
+
+  await interaction.update({
+    content: '',
+    embeds: [embed],
+    components: []
+  });
+}
+
+  if (debts.length === 0) {
+    return interaction.reply({
+      content: '🎉 **Kamu gak punya hutang!** Semua invoice lunas!',
+      ephemeral: true
+    });
+  }
+
+  // Calculate totals
+  const totalOwed = debts.reduce((sum, debt) => sum + (Number(debt.amount) || 0), 0);
+
+  let description = '';
+
+  debts.forEach((debt, i) => {
+    const inv = debt.invoice;
+    const amount = Number(debt.amount) || 0;
+    const creator = inv.creator.username;
+    const title = inv.title || 'Untitled';
+    const notes = debt.notes ? ` *(${debt.notes})*` : '';
+
+    description += `**${i + 1}. ${title}**\n`;
+    description += `   👤 Creator: ${creator}\n`;
+    description += `   💰 Hutang: Rp ${amount.toLocaleString('id-ID')}${notes}\n`;
+    description += `   📅 Tanggal: ${inv.date}\n\n`;
+  });
+
+  const embed = new EmbedBuilder()
+    .setColor(0xf39c12) // Orange for unpaid
+    .setTitle('💳 **Hutang Belum Dibayar**')
+    .setDescription(description)
+    .addFields({
+      name: '💵 Total Hutang',
+      value: `Rp ${totalOwed.toLocaleString('id-ID')}`,
+      inline: false
+    })
+    .setFooter({ text: `${debts.length} invoice belum lunas` })
+    .setTimestamp();
+
+  await interaction.reply({
+    embeds: [embed],
+    ephemeral: true
+  });
+}
+
+/**
  * /invoice-delete handler - Show select menu to delete invoices
  */
 async function handleInvoiceDelete(interaction) {
@@ -992,6 +1133,10 @@ const invoiceCommandsSimple = [
     name: 'invoice-clear',
     description: 'Hapus SEMUA invoice',
   },
+  {
+    name: 'invoice-owe',
+    description: 'Cek hutang yang belum kamu bayar',
+  },
 ];
 
 module.exports = {
@@ -1002,6 +1147,8 @@ module.exports = {
   handleInvoiceAnalytics,
   handleInvoiceDelete,
   handleInvoiceClear,
+  handleInvoiceOwe,
+  handleFindDebtSelect,
   renderInvoiceEmbed,
   buildInvoiceButtons,
   renderInvoiceRecapEmbed,

@@ -218,6 +218,90 @@ function getUserInvoices(userId) {
 }
 
 /**
+ * Get invoices where user is a participant (owes money)
+ */
+function getUserDebts(userId) {
+  const db = readDB();
+  const debts = [];
+
+  for (const invoiceId in db.invoices) {
+    const invoice = db.invoices[invoiceId];
+    // Find if user is a participant in this invoice
+    const userParticipation = invoice.participants.find(p =>
+      p.userId === userId.toString() || p.username.toLowerCase() === userId.toString().toLowerCase()
+    );
+
+    if (userParticipation && !userParticipation.paid) {
+      // User owes money in this invoice
+      debts.push({
+        invoice,
+        amount: userParticipation.amount,
+        notes: userParticipation.notes || null,
+      });
+    }
+  }
+
+  return debts.sort((a, b) => b.invoice.createdAt - a.invoice.createdAt);
+}
+
+/**
+ * Get all unique participant names across all invoices (for dropdown)
+ */
+function getAllParticipantNames() {
+  const db = readDB();
+  const nameMap = new Map(); // name -> { totalDebt, unpaidCount }
+
+  for (const invoiceId in db.invoices) {
+    const invoice = db.invoices[invoiceId];
+    for (const p of invoice.participants) {
+      const name = p.username;
+      if (!nameMap.has(name)) {
+        nameMap.set(name, {
+          totalDebt: 0,
+          unpaidCount: 0,
+        });
+      }
+      const stats = nameMap.get(name);
+      stats.totalDebt += Number(p.amount) || 0;
+      if (!p.paid) {
+        stats.unpaidCount += 1;
+      }
+    }
+  }
+
+  // Convert to array and sort by debt amount (highest first)
+  return Array.from(nameMap.entries())
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => b.totalDebt - a.totalDebt);
+}
+
+/**
+ * Get debts by participant name (not Discord user)
+ */
+function getDebtsByName(participantName) {
+  const db = readDB();
+  const debts = [];
+
+  for (const invoiceId in db.invoices) {
+    const invoice = db.invoices[invoiceId];
+    // Find if participant name matches (case insensitive)
+    const userParticipation = invoice.participants.find(p =>
+      p.username.toLowerCase() === participantName.toLowerCase()
+    );
+
+    if (userParticipation && !userParticipation.paid) {
+      debts.push({
+        invoice,
+        amount: userParticipation.amount,
+        notes: userParticipation.notes || null,
+      });
+    }
+  }
+
+  return debts.sort((a, b) => b.invoice.createdAt - a.invoice.createdAt);
+}
+
+/**
  * Mark a participant as paid or unpaid
  */
 function markParticipantPaid(invoiceId, userId, paid = true) {
@@ -311,6 +395,9 @@ module.exports = {
   updateInvoiceMessage,
   getGuildInvoices,
   getUserInvoices,
+  getUserDebts,
+  getAllParticipantNames,
+  getDebtsByName,
   markParticipantPaid,
   markMultiplePaid,
   deleteInvoice,

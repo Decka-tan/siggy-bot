@@ -47,6 +47,7 @@ const {
   handleInvoiceAnalytics,
   handleInvoiceDelete,
   handleInvoiceClear,
+  handleInvoiceOwe,
   handleInvoiceModal,
   handleInvoiceButton,
   buildMarkPaidModal,
@@ -1295,6 +1296,9 @@ client.on('interactionCreate', async (interaction) => {
       await handleMarkPaidSelect(interaction);
     } else if (customId === 'delete_invoice_select') {
       await handleDeleteInvoiceSelect(interaction);
+    } else if (customId === 'find_debt_select') {
+      const { handleFindDebtSelect } = require('./commands/invoice-simple.cjs');
+      await handleFindDebtSelect(interaction);
     }
   } catch (error) {
     console.error('[Select Menu Handler] Error:', error);
@@ -1681,6 +1685,9 @@ client.on('interactionCreate', async (interaction) => {
         break;
       case 'invoice-clear':
         await handleInvoiceClear(interaction);
+        break;
+      case 'invoice-owe':
+        await handleInvoiceOwe(interaction);
         break;
       // Utility commands - save for reload
       case 'flip':
