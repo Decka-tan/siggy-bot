@@ -48,6 +48,7 @@ const {
   handleInvoiceDelete,
   handleInvoiceClear,
   handleInvoiceOwe,
+  handleInvoiceMerge,
   handleInvoiceModal,
   handleInvoiceButton,
   buildMarkPaidModal,
@@ -1688,6 +1689,9 @@ client.on('interactionCreate', async (interaction) => {
         break;
       case 'invoice-owe':
         await handleInvoiceOwe(interaction);
+        break;
+      case 'invoice-merge':
+        await handleInvoiceMerge(interaction);
         break;
       // Utility commands - save for reload
       case 'flip':

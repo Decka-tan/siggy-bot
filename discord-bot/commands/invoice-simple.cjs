@@ -12,6 +12,7 @@ const {
   getUserDebts,
   getAllParticipantNames,
   getDebtsByName,
+  addNameAlias,
   markMultiplePaid,
   deleteInvoice,
 } = require('../utils/invoice-db.cjs');
@@ -740,6 +741,35 @@ async function handleInvoiceOwe(interaction) {
 }
 
 /**
+ * /invoice-merge handler - Merge name aliases
+ */
+async function handleInvoiceMerge(interaction) {
+  const canonicalName = interaction.options.getString('canonical');
+  const aliasName = interaction.options.getString('alias');
+
+  // Only creator can merge (for now)
+  // In the future, you might want to add admin permission check
+  const result = addNameAlias(canonicalName, aliasName);
+
+  const embed = new EmbedBuilder()
+    .setColor(result.success ? 0x27ae60 : 0xf39c12)
+    .setTitle('🔗 **Merge Nama**')
+    .setDescription(`✅ "${aliasName}" sekarang digabung dengan "${canonicalName}"`)
+    .addFields({
+      name: 'Info',
+      value: `Sekarang kalau ada invoice atas nama "${aliasName}", akan dihitung sebagai milik "${canonicalName}".`,
+      inline: false
+    })
+    .setFooter({ text: 'Cek dengan /invoice-owe' })
+    .setTimestamp();
+
+  await interaction.reply({
+    embeds: [embed],
+    ephemeral: true
+  });
+}
+
+/**
  * Handle find debt select menu
  */
 async function handleFindDebtSelect(interaction) {
@@ -1137,6 +1167,24 @@ const invoiceCommandsSimple = [
     name: 'invoice-owe',
     description: 'Cek hutang yang belum kamu bayar',
   },
+  {
+    name: 'invoice-merge',
+    description: 'Merge nama alias (Abi -> Abimanyu)',
+    options: [
+      {
+        name: 'canonical',
+        description: 'Nama asli yang benar',
+        type: 3, // STRING
+        required: true,
+      },
+      {
+        name: 'alias',
+        description: 'Nama alias yang mau di-merge',
+        type: 3, // STRING
+        required: true,
+      },
+    ],
+  },
 ];
 
 module.exports = {
@@ -1148,6 +1196,7 @@ module.exports = {
   handleInvoiceDelete,
   handleInvoiceClear,
   handleInvoiceOwe,
+  handleInvoiceMerge,
   handleFindDebtSelect,
   renderInvoiceEmbed,
   buildInvoiceButtons,

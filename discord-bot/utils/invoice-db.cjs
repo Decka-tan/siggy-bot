@@ -33,16 +33,20 @@ function readDB() {
     // Validate structure
     if (!parsed || typeof parsed !== 'object') {
       console.error('[Invoice DB] Invalid structure, resetting');
-      return { invoices: {} };
+      return { invoices: {}, nameAliases: {} };
     }
     if (!parsed.invoices || typeof parsed.invoices !== 'object') {
       console.error('[Invoice DB] Invalid invoices, resetting');
-      return { invoices: {} };
+      return { invoices: {}, nameAliases: {} };
+    }
+    // Ensure nameAliases exists
+    if (!parsed.nameAliases) {
+      parsed.nameAliases = {};
     }
     return parsed;
   } catch (error) {
     console.error('[Invoice DB] Read error:', error);
-    return { invoices: {} };
+    return { invoices: {}, nameAliases: {} };
   }
 }
 
@@ -246,48 +250,109 @@ function getUserDebts(userId) {
 
 /**
  * Get all unique participant names across all invoices (for dropdown)
+ * Groups by canonical name using aliases
  */
 function getAllParticipantNames() {
   const db = readDB();
-  const nameMap = new Map(); // name -> { totalDebt, unpaidCount }
+  const nameMap = new Map(); // canonicalName -> { totalDebt, unpaidCount, aliases }
 
   for (const invoiceId in db.invoices) {
     const invoice = db.invoices[invoiceId];
     for (const p of invoice.participants) {
-      const name = p.username;
-      if (!nameMap.has(name)) {
-        nameMap.set(name, {
+      const rawName = p.username;
+      // Get canonical name (resolve alias)
+      const canonicalName = getCanonicalName(rawName, db.nameAliases);
+
+      if (!nameMap.has(canonicalName)) {
+        nameMap.set(canonicalName, {
           totalDebt: 0,
           unpaidCount: 0,
+          aliases: new Set(),
         });
       }
-      const stats = nameMap.get(name);
+      const stats = nameMap.get(canonicalName);
       stats.totalDebt += Number(p.amount) || 0;
       if (!p.paid) {
         stats.unpaidCount += 1;
+      }
+      // Track all aliases for this canonical name
+      if (rawName.toLowerCase() !== canonicalName.toLowerCase()) {
+        stats.aliases.add(rawName);
       }
     }
   }
 
   // Convert to array and sort by debt amount (highest first)
   return Array.from(nameMap.entries())
-    .map(([name, stats]) => ({ name, ...stats }))
+    .map(([name, stats]) => ({
+      name,
+      ...stats,
+      aliases: Array.from(stats.aliases)
+    }))
     .sort((a, b) => b.totalDebt - a.totalDebt);
 }
 
 /**
- * Get debts by participant name (not Discord user)
+ * Get canonical name for a participant (resolves aliases)
+ */
+function getCanonicalName(participantName, aliases = null) {
+  const db = aliases || readDB();
+  const nameLower = participantName.toLowerCase();
+
+  // Check if this name is an alias
+  for (const [canonical, aliasesList] of Object.entries(db.nameAliases || {})) {
+    if (aliasesList.includes(nameLower) || nameLower === canonical.toLowerCase()) {
+      return canonical;
+    }
+  }
+
+  // No alias found, return original name
+  return participantName;
+}
+
+/**
+ * Add name alias (e.g., "Abi" -> "Abimanyu")
+ */
+function addNameAlias(canonicalName, aliasName) {
+  const db = readDB();
+
+  if (!db.nameAliases) {
+    db.nameAliases = {};
+  }
+
+  const canonicalLower = canonicalName.toLowerCase();
+  const aliasLower = aliasName.toLowerCase();
+
+  if (!db.nameAliases[canonicalLower]) {
+    db.nameAliases[canonicalLower] = [];
+  }
+
+  if (!db.nameAliases[canonicalLower].includes(aliasLower)) {
+    db.nameAliases[canonicalLower].push(aliasLower);
+    writeDB(db);
+    return { success: true, message: `Alias "${aliasName}" -> "${canonicalName}" added` };
+  }
+
+  return { success: true, message: `Alias already exists` };
+}
+
+/**
+ * Get debts by participant name (resolves aliases)
  */
 function getDebtsByName(participantName) {
   const db = readDB();
   const debts = [];
+  const canonicalName = getCanonicalName(participantName, db.nameAliases);
+  const canonicalLower = canonicalName.toLowerCase();
+  const aliases = db.nameAliases[canonicalLower] || [];
 
   for (const invoiceId in db.invoices) {
     const invoice = db.invoices[invoiceId];
-    // Find if participant name matches (case insensitive)
-    const userParticipation = invoice.participants.find(p =>
-      p.username.toLowerCase() === participantName.toLowerCase()
-    );
+    // Find if participant name matches (canonical OR aliases)
+    const userParticipation = invoice.participants.find(p => {
+      const pNameLower = p.username.toLowerCase();
+      return pNameLower === canonicalLower || aliases.includes(pNameLower);
+    });
 
     if (userParticipation && !userParticipation.paid) {
       debts.push({
@@ -398,6 +463,8 @@ module.exports = {
   getUserDebts,
   getAllParticipantNames,
   getDebtsByName,
+  getCanonicalName,
+  addNameAlias,
   markParticipantPaid,
   markMultiplePaid,
   deleteInvoice,
