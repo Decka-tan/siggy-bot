@@ -542,8 +542,11 @@ async function handleInvoiceButton(interaction, action) {
       });
     }
 
-    // Check if the user is the creator
-    if (invoice.creator.id !== interaction.user.id) {
+    // Permission check:
+    // - remind: Anyone can use (to remind people to pay)
+    // - pay, settle, add, delete: Only creator
+    const actionsRequiringCreator = ['pay', 'settle', 'add', 'delete'];
+    if (actionsRequiringCreator.includes(action) && invoice.creator.id !== interaction.user.id) {
       return interaction.reply({
         content: '❌ Hanya pembuat invoice yang bisa aksi ini.',
         ephemeral: true
