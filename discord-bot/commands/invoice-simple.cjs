@@ -860,49 +860,6 @@ async function handleFindDebtSelect(interaction) {
   });
 }
 
-  if (debts.length === 0) {
-    return interaction.reply({
-      content: '🎉 **Kamu gak punya hutang!** Semua invoice lunas!',
-      ephemeral: true
-    });
-  }
-
-  // Calculate totals
-  const totalOwed = debts.reduce((sum, debt) => sum + (Number(debt.amount) || 0), 0);
-
-  let description = '';
-
-  debts.forEach((debt, i) => {
-    const inv = debt.invoice;
-    const amount = Number(debt.amount) || 0;
-    const creator = inv.creator.username;
-    const title = inv.title || 'Untitled';
-    const notes = debt.notes ? ` *(${debt.notes})*` : '';
-
-    description += `**${i + 1}. ${title}**\n`;
-    description += `   👤 Creator: ${creator}\n`;
-    description += `   💰 Hutang: Rp ${amount.toLocaleString('id-ID')}${notes}\n`;
-    description += `   📅 Tanggal: ${inv.date}\n\n`;
-  });
-
-  const embed = new EmbedBuilder()
-    .setColor(0xf39c12) // Orange for unpaid
-    .setTitle('💳 **Hutang Belum Dibayar**')
-    .setDescription(description)
-    .addFields({
-      name: '💵 Total Hutang',
-      value: `Rp ${totalOwed.toLocaleString('id-ID')}`,
-      inline: false
-    })
-    .setFooter({ text: `${debts.length} invoice belum lunas` })
-    .setTimestamp();
-
-  await interaction.reply({
-    embeds: [embed],
-    ephemeral: true
-  });
-}
-
 /**
  * /invoice-delete handler - Show select menu to delete invoices
  */
