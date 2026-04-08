@@ -1140,6 +1140,7 @@ async function sendAnalyticsPage(interaction, people, periodLabel, page) {
 
   row.addComponents(
     new ButtonBuilder()
+      .setCustomId(`analytics_page_${interaction.user.id}_${page}`)
       .setLabel(`${page + 1}/${totalPages}`)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(true)
