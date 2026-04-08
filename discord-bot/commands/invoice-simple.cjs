@@ -1170,6 +1170,84 @@ async function sendAnalyticsPage(interaction, people, periodLabel, page) {
 }
 
 /**
+ * Send analytics page with update (for pagination)
+ */
+async function sendAnalyticsPageUpdate(interaction, people, periodLabel, page) {
+  const pageSize = 10;
+  const totalPages = Math.ceil(people.length / pageSize);
+  const startIdx = page * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, people.length);
+  const pagePeople = people.slice(startIdx, endIdx);
+
+  // Build description for this page
+  let description = '';
+  pagePeople.forEach(([name, stats], i) => {
+    const globalIndex = startIdx + i + 1;
+    const status = stats.unpaid > 0 ? '⏳' : '✅';
+    description += `${globalIndex}. **${name}** ${status}\n`;
+    description += `   Total: Rp ${stats.total.toLocaleString('id-ID')} | `;
+    description += `Lunas: Rp ${stats.paid.toLocaleString('id-ID')} | `;
+    description += `Hutang: Rp ${stats.unpaid.toLocaleString('id-ID')}\n`;
+
+    // Show breakdown of who they owe money to
+    if (Object.keys(stats.creditors).length > 0) {
+      const creditorList = Object.entries(stats.creditors)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3);
+      description += `   📎 Hutang ke: ${creditorList.map(([c, amt]) => `${c} (Rp ${amt.toLocaleString('id-ID')})`).join(', ')}\n`;
+    }
+  });
+
+  const totalAmount = people.reduce((sum, [, stats]) => sum + stats.total, 0);
+  const paidAmount = people.reduce((sum, [, stats]) => sum + stats.paid, 0);
+  const unpaidAmount = totalAmount - paidAmount;
+
+  const embed = new EmbedBuilder()
+    .setColor(unpaidAmount > 0 ? 0xf39c12 : 0x27ae60)
+    .setTitle(`📊 Invoice Analytics - ${periodLabel}`)
+    .setDescription(description || 'Tidak ada data')
+    .addFields(
+      { name: `👥 Total: ${people.length} orang`, value: `Halaman ${page + 1}/${totalPages}`, inline: true },
+      { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
+      { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
+    )
+    .setTimestamp();
+
+  // Build pagination buttons
+  const row = new ActionRowBuilder();
+  if (page > 0) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`analytics_prev_${interaction.user.id}`)
+        .setLabel('◀ Prev')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`analytics_page_${interaction.user.id}_${page}`)
+      .setLabel(`${page + 1}/${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true)
+  );
+
+  if (page < totalPages - 1) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`analytics_next_${interaction.user.id}`)
+        .setLabel('Next ▶')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  const components = row.components.length > 1 ? [row] : [];
+
+  // ALWAYS use update for pagination
+  await interaction.update({ embeds: [embed], components });
+}
+
+/**
  * Handle analytics pagination buttons
  */
 async function handleAnalyticsPagination(interaction, action) {
@@ -1194,8 +1272,8 @@ async function handleAnalyticsPagination(interaction, action) {
   // Update state
   state.page = newPage;
 
-  // Send new page
-  await sendAnalyticsPage(interaction, state.people, state.periodLabel, newPage);
+  // Send new page (using update, not reply)
+  await sendAnalyticsPageUpdate(interaction, state.people, state.periodLabel, newPage);
 }
 
 // Command definitions
