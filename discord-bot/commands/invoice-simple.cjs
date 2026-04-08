@@ -988,16 +988,18 @@ const analyticsState = new Map();
 const ANALYTICS_STATE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
- * /invoice-analytics handler - Show weekly/monthly analytics (GLOBAL with pagination)
- * Anyone can see analytics for all invoices
+ * /invoice-analytics handler - Show weekly/monthly analytics (PER-SERVER with pagination)
+ * Shows analytics for invoices in this server only
  */
 async function handleInvoiceAnalytics(interaction) {
   const period = interaction.options.getString('period') || 'month';
   const db = require('../utils/invoice-db.cjs');
   const allData = db.readDB();
 
-  // Get ALL invoices
+  // Get invoices for THIS SERVER ONLY
+  const guildId = interaction.guildId;
   const invoices = Object.values(allData.invoices || {})
+    .filter(inv => inv.guildId === guildId)
     .sort((a, b) => b.createdAt - a.createdAt);
 
   if (invoices.length === 0) {
