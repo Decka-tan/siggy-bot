@@ -219,6 +219,9 @@ const CONFIG = {
   apiKey: process.env.OPENAI_API_KEY,
 };
 
+// Guild IDs allowed to use invoice commands
+const INVOICE_GUILD_IDS = ['1455014277197860908', '1164825060440281128'];
+
 // ============ SPRITES (CAT and ANIME forms) ============
 const SPRITES = {
   CAT: {
@@ -598,7 +601,7 @@ async function handleCheck(interaction) {
       embed.setThumbnail(avatarUrl);
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
@@ -635,7 +638,7 @@ async function handleCheck(interaction) {
       embed.setThumbnail(data.user.avatar);
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
@@ -839,7 +842,7 @@ async function handleResearch(interaction) {
       .setColor(MOOD_COLORS[mood] || 0x3498db)
       .setAuthor({ name: 'Siggy Web Research', iconURL: SPRITES.CAT.DEFAULT })
       .setDescription(cleanResult.substring(0, 4000)) // Discord embed limit
-      .setFooter({ text: `Powered by Exa • Mood: ${mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
+      .setFooter({ text: `Powered by Exa • Mood: ${mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     if (sources) {
@@ -893,7 +896,7 @@ async function handleTransform(interaction) {
         ? '*A literal cosmic cat with four legs, fur, and a tail. Nyan~*'
         : '*An anime girl with cat ears and a tail. Human-shaped but still very feline!*'))
     .setThumbnail(spriteUrl)
-    .setFooter({ text: `Multiversal Cat Girl AI • Form: ${newState.form} • Mood: ${newState.mood} • Bond: ${getRelationshipLevel(newState.relationshipScore)}` })
+    .setFooter({ text: `Multiversal Cat Girl AI • Form: ${newState.form} • Mood: ${newState.mood} • bond: ${getRelationshipLevel(newState.relationshipScore)}` })
     .setTimestamp();
 
   await interaction.reply({ embeds: [embed] });
@@ -1079,7 +1082,7 @@ async function registerCommands() {
     },
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
-    ...invoiceCommandsSimple, // Spread invoice commands here (now from invoice-simple.cjs)
+    // Note: Invoice commands are registered only to specific guilds (see below)
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -1140,6 +1143,21 @@ async function registerCommands() {
       await rest.put(Routes.applicationCommands(CONFIG.clientId), { body: commands });
       console.log('✅ Commands registered globally');
     }
+
+    // Register invoice commands to specific guilds only
+    console.log(`💰 Registering invoice commands to ${INVOICE_GUILD_IDS.length} allowed guilds...`);
+    for (const guildId of INVOICE_GUILD_IDS) {
+      try {
+        await rest.put(
+          Routes.applicationGuildCommands(CONFIG.clientId, guildId),
+          { body: invoiceCommandsSimple }
+        );
+        console.log(`✅ Invoice commands registered to guild: ${guildId}`);
+      } catch (error) {
+        console.error(`❌ Failed to register invoice commands to guild ${guildId}:`, error.message);
+      }
+    }
+
     return true;
   } catch (error) {
     console.error('❌ Command registration FAILED:', error.message);
@@ -1298,7 +1316,7 @@ client.on('interactionCreate', async (interaction) => {
           .setDescription(cleanResponse)
           .setThumbnail(spriteUrl)
           .setFooter({
-            text: `Reloaded • Mood: ${mood} ${moodEmoji} • Msg #${state.messageCount}`
+            text: `Reloaded • Mood: ${mood} ${moodEmoji}`
           })
           .setTimestamp();
 
@@ -1980,7 +1998,7 @@ client.on('messageCreate', async (message) => {
       .setDescription(cleanResponse)
       .setThumbnail(spriteUrl)
       .setFooter({
-        text: `Multiversal Cat Girl AI • Mood: ${mood} ${moodEmoji} • ${relationshipLevel} • Msg #${state.messageCount}`
+        text: `Multiversal Cat Girl AI • Mood: ${mood} ${moodEmoji} • bond: ${relationshipLevel}`
       })
       .setTimestamp();
 
