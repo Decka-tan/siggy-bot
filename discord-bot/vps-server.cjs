@@ -435,6 +435,99 @@ function trackCommandAsMessage(userId, userName, commandName) {
   return state;
 }
 
+// ============ CHANNEL WHITELIST & COOLDOWN ============
+// Per-server channel whitelists (guildId -> Set of allowed channel IDs)
+// Leave empty Set() to allow all channels in that server
+const SERVER_ALLOWED_CHANNELS = {
+  // Ritual server - add channel IDs here when known
+  // 'RITUAL_GUILD_ID': new Set(['channel_id_1', 'channel_id_2']),
+
+  // Other servers can be added here with their own channel restrictions
+  // 'OTHER_GUILD_ID': new Set(['their_channel_id']),
+};
+
+// Cooldown settings (milliseconds)
+const COOLDOWN_DURATION = 3000; // 3 seconds per user
+const COOLDOWN_PER_COMMAND = {
+  'chat': 5000,      // 5 seconds for chat (long responses)
+  'research': 8000,  // 8 seconds for research (heavy API calls)
+  'transform': 5000, // 5 seconds for transform
+  'chart': 5000,     // 5 seconds for chart
+};
+
+// Track user cooldowns: userId -> lastCommandTime
+const userCooldowns = new Map();
+const commandCooldowns = new Map(); // userId -> { commandName -> lastCommandTime }
+
+/**
+ * Check if user is on cooldown
+ * @param {string} userId - User ID
+ * @param {string} commandName - Command name
+ * @returns {number} Remaining cooldown in ms, or 0 if no cooldown
+ */
+function checkCooldown(userId, commandName) {
+  const now = Date.now();
+
+  // Get user-specific command cooldowns
+  if (!commandCooldowns.has(userId)) {
+    commandCooldowns.set(userId, new Map());
+  }
+  const userCommands = commandCooldowns.get(userId);
+
+  // Check for command-specific cooldown
+  if (COOLDOWN_PER_COMMAND[commandName]) {
+    const lastTime = userCommands.get(commandName) || 0;
+    const elapsed = now - lastTime;
+    const cooldown = COOLDOWN_PER_COMMAND[commandName];
+
+    if (elapsed < cooldown) {
+      return cooldown - elapsed;
+    }
+  }
+
+  // Check for global cooldown (any command)
+  const lastAnyCommand = userCooldowns.get(userId) || 0;
+  const globalElapsed = now - lastAnyCommand;
+
+  if (globalElapsed < COOLDOWN_DURATION) {
+    return COOLDOWN_DURATION - globalElapsed;
+  }
+
+  return 0; // No cooldown
+}
+
+/**
+ * Update user cooldown after command execution
+ */
+function updateCooldown(userId, commandName) {
+  const now = Date.now();
+
+  // Update global cooldown
+  userCooldowns.set(userId, now);
+
+  // Update command-specific cooldown
+  if (!commandCooldowns.has(userId)) {
+    commandCooldowns.set(userId, new Map());
+  }
+  commandCooldowns.get(userId).set(commandName, now);
+}
+
+/**
+ * Check if command is allowed in this channel (per-server)
+ */
+function isChannelAllowed(guildId, channelId) {
+  // Get allowed channels for this guild
+  const allowedChannels = SERVER_ALLOWED_CHANNELS[guildId];
+
+  // If no restriction set for this server, allow all channels
+  if (!allowedChannels || allowedChannels.size === 0) {
+    return true;
+  }
+
+  // Check if this channel is in the allowed list
+  return allowedChannels.has(channelId);
+}
+
 // ============ CLIENT ============
 const client = new Client({
   intents: [
@@ -1212,11 +1305,6 @@ client.on('interactionCreate', async (interaction) => {
         const row = new ActionRowBuilder()
           .addComponents(
             new ButtonBuilder()
-              .setCustomId(`copy_${interaction.id}`)
-              .setLabel('Copy')
-              .setEmoji('📋')
-              .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder()
               .setCustomId(`like_${interaction.id}`)
               .setLabel('Like')
               .setEmoji('✅')
@@ -1623,6 +1711,30 @@ client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   const { commandName } = interaction;
+  const userId = interaction.user.id;
+  const channelId = interaction.channelId;
+  const guildId = interaction.guildId;
+
+  // Check if command is allowed in this channel (per-server)
+  if (!isChannelAllowed(guildId, channelId)) {
+    return interaction.reply({
+      content: '❌ Bot commands are only allowed in specific channels. Please use the designated channels.',
+      ephemeral: true
+    });
+  }
+
+  // Check cooldown
+  const remainingCooldown = checkCooldown(userId, commandName);
+  if (remainingCooldown > 0) {
+    const seconds = Math.ceil(remainingCooldown / 1000);
+    return interaction.reply({
+      content: `⏳ Please wait ${seconds} second${seconds > 1 ? 's' : ''} before using another command.`,
+      ephemeral: true
+    });
+  }
+
+  // Update cooldown after successful check
+  updateCooldown(userId, commandName);
 
   // Collect options for reload
   const options = {};
@@ -1760,6 +1872,9 @@ client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
 
+  // Check if message is in allowed channel (per-server)
+  if (!isChannelAllowed(message.guildId, message.channelId)) return;
+
   // Only respond if @mentioned
   if (!message.mentions.has(client.user)) return;
 
@@ -1872,11 +1987,6 @@ client.on('messageCreate', async (message) => {
     // Add action buttons (improved with labels + better emojis)
     const row = new ActionRowBuilder()
       .addComponents(
-        new ButtonBuilder()
-          .setCustomId(`copy_${message.id}`)
-          .setLabel('Copy')
-          .setEmoji('📋')
-          .setStyle(ButtonStyle.Secondary),
         new ButtonBuilder()
           .setCustomId(`like_${message.id}`)
           .setLabel('Like')
