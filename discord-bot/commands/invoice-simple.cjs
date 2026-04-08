@@ -676,20 +676,21 @@ async function handleInvoiceButton(interaction, action) {
 }
 
 /**
- * /invoice-recap handler - Show ALL invoices (global view)
- * Anyone can see all invoices created by everyone
+ * /invoice-recap handler - Show invoices for THIS SERVER only
  */
 async function handleInvoiceRecap(interaction) {
   const db = require('../utils/invoice-db.cjs');
   const allInvoices = db.readDB();
+  const guildId = interaction.guildId;
 
-  // Get all invoices from all creators
+  // Get invoices for THIS SERVER only
   const invoices = Object.values(allInvoices.invoices || {})
+    .filter(inv => inv.guildId === guildId)
     .sort((a, b) => b.createdAt - a.createdAt);
 
   if (invoices.length === 0) {
     return interaction.reply({
-      content: '📋 Belum ada invoice.',
+      content: '📋 Belum ada invoice di server ini.',
       ephemeral: true
     });
   }
@@ -703,10 +704,10 @@ async function handleInvoiceRecap(interaction) {
 }
 
 /**
- * /invoice-owe handler - Show dropdown to find debts by name
+ * /invoice-owe handler - Show dropdown to find debts by name (PER-SERVER)
  */
 async function handleInvoiceOwe(interaction) {
-  const allNames = getAllParticipantNames();
+  const allNames = getAllParticipantNames(interaction.guildId);
 
   if (allNames.length === 0) {
     return interaction.reply({
@@ -777,11 +778,11 @@ async function handleInvoiceMerge(interaction) {
 }
 
 /**
- * Handle find debt select menu
+ * Handle find debt select menu (PER-SERVER)
  */
 async function handleFindDebtSelect(interaction) {
   const selectedName = interaction.values[0];
-  const debts = getDebtsByName(selectedName);
+  const debts = getDebtsByName(selectedName, interaction.guildId);
 
   if (debts.length === 0) {
     return interaction.update({
@@ -903,8 +904,7 @@ async function handleInvoiceClear(interaction) {
 }
 
 /**
- * /invoice-search handler - Search invoices with filters (GLOBAL)
- * Anyone can search all invoices
+ * /invoice-search handler - Search invoices with filters (PER-SERVER)
  */
 async function handleInvoiceSearch(interaction) {
   const query = interaction.options.getString('query') || '';
@@ -912,14 +912,16 @@ async function handleInvoiceSearch(interaction) {
 
   const db = require('../utils/invoice-db.cjs');
   const allData = db.readDB();
+  const guildId = interaction.guildId;
 
-  // Get ALL invoices
+  // Get invoices for THIS SERVER only
   const invoices = Object.values(allData.invoices || {})
+    .filter(inv => inv.guildId === guildId)
     .sort((a, b) => b.createdAt - a.createdAt);
 
   if (invoices.length === 0) {
     return interaction.reply({
-      content: '📋 Belum ada invoice.',
+      content: '📋 Belum ada invoice di server ini.',
       ephemeral: true
     });
   }

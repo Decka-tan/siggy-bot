@@ -251,13 +251,19 @@ function getUserDebts(userId) {
 /**
  * Get all unique participant names across all invoices (for dropdown)
  * Groups by canonical name using aliases
+ * @param {string|null} guildId - Filter by guild ID, or null for all guilds
  */
-function getAllParticipantNames() {
+function getAllParticipantNames(guildId = null) {
   const db = readDB();
   const nameMap = new Map(); // canonicalName -> { totalDebt, unpaidCount, aliases }
 
   for (const invoiceId in db.invoices) {
     const invoice = db.invoices[invoiceId];
+
+    // Skip if guild filter is set and doesn't match
+    if (guildId && invoice.guildId !== guildId.toString()) {
+      continue;
+    }
     for (const p of invoice.participants) {
       const rawName = p.username;
       // Get canonical name (resolve alias)
@@ -338,8 +344,10 @@ function addNameAlias(canonicalName, aliasName) {
 
 /**
  * Get debts by participant name (resolves aliases)
+ * @param {string} participantName - Name to search for
+ * @param {string|null} guildId - Filter by guild ID, or null for all guilds
  */
-function getDebtsByName(participantName) {
+function getDebtsByName(participantName, guildId = null) {
   const db = readDB();
   const debts = [];
   const canonicalName = getCanonicalName(participantName, db.nameAliases);
@@ -348,6 +356,11 @@ function getDebtsByName(participantName) {
 
   for (const invoiceId in db.invoices) {
     const invoice = db.invoices[invoiceId];
+
+    // Skip if guild filter is set and doesn't match
+    if (guildId && invoice.guildId !== guildId.toString()) {
+      continue;
+    }
     // Find if participant name matches (canonical OR aliases)
     const userParticipation = invoice.participants.find(p => {
       const pNameLower = p.username.toLowerCase();
