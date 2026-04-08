@@ -983,8 +983,12 @@ async function handleInvoiceSearch(interaction) {
   });
 }
 
+// Analytics pagination state: userId -> { page, data, timestamp }
+const analyticsState = new Map();
+const ANALYTICS_STATE_TTL = 5 * 60 * 1000; // 5 minutes
+
 /**
- * /invoice-analytics handler - Show weekly/monthly analytics (GLOBAL)
+ * /invoice-analytics handler - Show weekly/monthly analytics (GLOBAL with pagination)
  * Anyone can see analytics for all invoices
  */
 async function handleInvoiceAnalytics(interaction) {
@@ -1064,13 +1068,37 @@ async function handleInvoiceAnalytics(interaction) {
 
   // Sort by unpaid amount (highest first)
   const sortedPeople = Object.entries(personStats)
-    .sort((a, b) => b[1].unpaid - a[1].unpaid)
-    .slice(0, 10);
+    .sort((a, b) => b[1].unpaid - a[1].unpaid);
 
+  // Save state for pagination
+  analyticsState.set(interaction.user.id, {
+    page: 0,
+    people: sortedPeople,
+    periodLabel,
+    filtered: filtered,
+    timestamp: Date.now()
+  });
+
+  // Show first page
+  await sendAnalyticsPage(interaction, sortedPeople, periodLabel, 0);
+}
+
+/**
+ * Send analytics page with pagination buttons
+ */
+async function sendAnalyticsPage(interaction, people, periodLabel, page) {
+  const pageSize = 10;
+  const totalPages = Math.ceil(people.length / pageSize);
+  const startIdx = page * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, people.length);
+  const pagePeople = people.slice(startIdx, endIdx);
+
+  // Build description for this page
   let description = '';
-  sortedPeople.forEach(([name, stats], i) => {
+  pagePeople.forEach(([name, stats], i) => {
+    const globalIndex = startIdx + i + 1;
     const status = stats.unpaid > 0 ? '⏳' : '✅';
-    description += `${i + 1}. **${name}** ${status}\n`;
+    description += `${globalIndex}. **${name}** ${status}\n`;
     description += `   Total: Rp ${stats.total.toLocaleString('id-ID')} | `;
     description += `Lunas: Rp ${stats.paid.toLocaleString('id-ID')} | `;
     description += `Hutang: Rp ${stats.unpaid.toLocaleString('id-ID')}\n`;
@@ -1084,8 +1112,8 @@ async function handleInvoiceAnalytics(interaction) {
     }
   });
 
-  const totalAmount = filtered.reduce((sum, inv) => sum + (isNaN(inv.totalAmount) ? 0 : inv.totalAmount), 0);
-  const paidAmount = filtered.flatMap(inv => inv.participants).filter(p => p.paid).reduce((sum, p) => sum + (isNaN(p.amount) ? 0 : p.amount), 0);
+  const totalAmount = people.reduce((sum, [, stats]) => sum + stats.total, 0);
+  const paidAmount = people.reduce((sum, [, stats]) => sum + stats.paid, 0);
   const unpaidAmount = totalAmount - paidAmount;
 
   const embed = new EmbedBuilder()
@@ -1093,16 +1121,78 @@ async function handleInvoiceAnalytics(interaction) {
     .setTitle(`📊 Invoice Analytics - ${periodLabel}`)
     .setDescription(description || 'Tidak ada data')
     .addFields(
-      { name: '📁 Total Invoice', value: `${filtered.length}`, inline: true },
+      { name: `👥 Total: ${people.length} orang`, value: `Halaman ${page + 1}/${totalPages}`, inline: true },
       { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
       { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
     )
     .setTimestamp();
 
-  await interaction.reply({
-    embeds: [embed],
-    ephemeral: true
-  });
+  // Build pagination buttons
+  const row = new ActionRowBuilder();
+  if (page > 0) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`analytics_prev_${interaction.user.id}`)
+        .setLabel('◀ Prev')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  row.addComponents(
+    new ButtonBuilder()
+      .setLabel(`${page + 1}/${totalPages}`)
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(true)
+  );
+
+  if (page < totalPages - 1) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`analytics_next_${interaction.user.id}`)
+        .setLabel('Next ▶')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  const components = row.components.length > 1 ? [row] : [];
+
+  // Update or reply
+  const method = interaction.replied || interaction.deferred ? 'update' : 'reply';
+
+  if (method === 'update') {
+    await interaction.update({ embeds: [embed], components });
+  } else {
+    await interaction.reply({ embeds: [embed], components, ephemeral: true });
+  }
+}
+
+/**
+ * Handle analytics pagination buttons
+ */
+async function handleAnalyticsPagination(interaction, action) {
+  const state = analyticsState.get(interaction.user.id);
+
+  if (!state || Date.now() - state.timestamp > ANALYTICS_STATE_TTL) {
+    return interaction.reply({
+      content: '❌ Sesi habis. Silakan jalankan /invoice-analytics lagi.',
+      ephemeral: true
+    });
+  }
+
+  let newPage = state.page;
+  if (action === 'next') {
+    newPage = Math.min(state.page + 1, Math.ceil(state.people.length / 10) - 1);
+  } else if (action === 'prev') {
+    newPage = Math.max(state.page - 1, 0);
+  } else {
+    return; // Invalid action
+  }
+
+  // Update state
+  state.page = newPage;
+
+  // Send new page
+  await sendAnalyticsPage(interaction, state.people, state.periodLabel, newPage);
 }
 
 // Command definitions
@@ -1193,6 +1283,7 @@ module.exports = {
   handleInvoiceRecap,
   handleInvoiceSearch,
   handleInvoiceAnalytics,
+  handleAnalyticsPagination,
   handleInvoiceDelete,
   handleInvoiceClear,
   handleInvoiceOwe,

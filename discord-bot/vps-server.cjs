@@ -49,6 +49,7 @@ const {
   handleInvoiceClear,
   handleInvoiceOwe,
   handleInvoiceMerge,
+  handleAnalyticsPagination,
   handleInvoiceModal,
   handleInvoiceButton,
   buildMarkPaidModal,
@@ -1255,6 +1256,12 @@ client.on('interactionCreate', async (interaction) => {
   } else if (customId.startsWith('invoice_del_')) {
     try { await handleInvoiceButton(interaction, 'delete'); }
     catch (e) { console.error('[Invoice Button Delete] Error:', e); }
+  } else if (customId.startsWith('analytics_prev_')) {
+    try { await handleAnalyticsPagination(interaction, 'prev'); }
+    catch (e) { console.error('[Analytics Pagination Prev] Error:', e); }
+  } else if (customId.startsWith('analytics_next_')) {
+    try { await handleAnalyticsPagination(interaction, 'next'); }
+    catch (e) { console.error('[Analytics Pagination Next] Error:', e); }
   }
 });
 
