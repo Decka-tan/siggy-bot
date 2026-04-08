@@ -1028,13 +1028,17 @@ async function handleInvoiceAnalytics(interaction) {
     });
   }
 
-  // Calculate per-person stats with creditors tracking
+  // Calculate per-person stats with creditors tracking and alias resolution
   const personStats = {};
   filtered.forEach(inv => {
     const creatorName = inv.creator.username;
     inv.participants.forEach(p => {
-      if (!personStats[p.username]) {
-        personStats[p.username] = {
+      // Resolve alias to get canonical name (Abi -> Abimanyu)
+      const { getCanonicalName } = require('../utils/invoice-db.cjs');
+      const canonicalName = getCanonicalName(p.username, allData.nameAliases);
+
+      if (!personStats[canonicalName]) {
+        personStats[canonicalName] = {
           total: 0,
           paid: 0,
           unpaid: 0,
@@ -1043,17 +1047,17 @@ async function handleInvoiceAnalytics(interaction) {
         };
       }
       const amount = isNaN(p.amount) ? 0 : p.amount;
-      personStats[p.username].total += amount;
-      personStats[p.username].count += 1;
+      personStats[canonicalName].total += amount;
+      personStats[canonicalName].count += 1;
       if (p.paid) {
-        personStats[p.username].paid += amount;
+        personStats[canonicalName].paid += amount;
       } else {
-        personStats[p.username].unpaid += amount;
+        personStats[canonicalName].unpaid += amount;
         // Track creditor (who they owe money to)
-        if (!personStats[p.username].creditors[creatorName]) {
-          personStats[p.username].creditors[creatorName] = 0;
+        if (!personStats[canonicalName].creditors[creatorName]) {
+          personStats[canonicalName].creditors[creatorName] = 0;
         }
-        personStats[p.username].creditors[creatorName] += amount;
+        personStats[canonicalName].creditors[creatorName] += amount;
       }
     });
   });
