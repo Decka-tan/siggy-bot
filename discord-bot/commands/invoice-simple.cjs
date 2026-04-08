@@ -1037,16 +1037,26 @@ async function handleInvoiceAnalytics(interaction) {
   }
 
   // Calculate per-person stats with creditors tracking and alias resolution
+  // Uses case-insensitive grouping to handle "CINDY" vs "Cindy" automatically
   const personStats = {};
+  const nameVariants = {}; // Track all case variants for each person
+
   filtered.forEach(inv => {
     const creatorName = inv.creator.username;
     inv.participants.forEach(p => {
       // Resolve alias to get canonical name (Abi -> Abimanyu)
       const { getCanonicalName } = require('../utils/invoice-db.cjs');
       const canonicalName = getCanonicalName(p.username, allData.nameAliases);
+      const nameKey = canonicalName.toLowerCase(); // Case-insensitive key
 
-      if (!personStats[canonicalName]) {
-        personStats[canonicalName] = {
+      // Track all case variants for this person
+      if (!nameVariants[nameKey]) {
+        nameVariants[nameKey] = {};
+      }
+      nameVariants[nameKey][canonicalName] = (nameVariants[nameKey][canonicalName] || 0) + 1;
+
+      if (!personStats[nameKey]) {
+        personStats[nameKey] = {
           total: 0,
           paid: 0,
           unpaid: 0,
@@ -1055,23 +1065,33 @@ async function handleInvoiceAnalytics(interaction) {
         };
       }
       const amount = isNaN(p.amount) ? 0 : p.amount;
-      personStats[canonicalName].total += amount;
-      personStats[canonicalName].count += 1;
+      personStats[nameKey].total += amount;
+      personStats[nameKey].count += 1;
       if (p.paid) {
-        personStats[canonicalName].paid += amount;
+        personStats[nameKey].paid += amount;
       } else {
-        personStats[canonicalName].unpaid += amount;
+        personStats[nameKey].unpaid += amount;
         // Track creditor (who they owe money to)
-        if (!personStats[canonicalName].creditors[creatorName]) {
-          personStats[canonicalName].creditors[creatorName] = 0;
+        if (!personStats[nameKey].creditors[creatorName]) {
+          personStats[nameKey].creditors[creatorName] = 0;
         }
-        personStats[canonicalName].creditors[creatorName] += amount;
+        personStats[nameKey].creditors[creatorName] += amount;
       }
     });
   });
 
+  // Determine display name (most common variant) for each person
+  const displayNames = {};
+  for (const [nameKey, variants] of Object.entries(nameVariants)) {
+    // Sort by frequency, then alphabetically, take the first one
+    displayNames[nameKey] = Object.entries(variants)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0][0];
+  }
+
   // Sort by unpaid amount (highest first)
+  // Use display names instead of lowercase keys
   const sortedPeople = Object.entries(personStats)
+    .map(([nameKey, stats]) => [displayNames[nameKey] || nameKey, stats])
     .sort((a, b) => b[1].unpaid - a[1].unpaid);
 
   // Save state for pagination
