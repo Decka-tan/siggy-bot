@@ -106,6 +106,8 @@ function getUserState(userId) {
       form: 'ANIME',
       relationshipScore: 0,
       messageCount: 0,
+      contributionCount: 0, // Track contributions in #contributions channel
+      eventParticipationCount: 0, // Track event participation (mentions in #event channel)
       lastInteraction: Date.now(),
     };
     saveDatabase();

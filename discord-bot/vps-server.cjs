@@ -581,17 +581,35 @@ async function handleCheck(interaction) {
 
   await interaction.deferReply();
 
-  const username = interaction.options.getString('username').replace('@', '');
+  // Get Discord user from mention
+  const targetUser = interaction.options.getUser('user');
+  if (!targetUser) {
+    return interaction.editReply('❌ Could not find that user.');
+  }
 
-  // Check cache first
-  const cacheKey = `check_${username}`;
+  // Fetch guild member for additional data (roles, join date, nickname)
+  let targetMember = null;
+  try {
+    targetMember = await interaction.guild.members.fetch(targetUser.id);
+  } catch (err) {
+    // User might not be in this guild
+    console.error('Could not fetch guild member:', err.message);
+  }
+
+  // Check cache first (use userId for cache key now)
+  const cacheKey = `check_${targetUser.id}`;
   const cached = getCache(cacheKey);
 
   // Track this command as a message for relationship
   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
 
+  // Get contribution count from database
+  const targetUserState = getUserState(targetUser.id);
+  const contributionCount = targetUserState.contributionCount || 0;
+  const eventParticipationCount = targetUserState.eventParticipationCount || 0;
+
   if (cached) {
-    // Parse cached data - support both old format (string) and new format (JSON with avatar)
+    // Parse cached data
     let analysisText = cached;
     let avatarUrl = null;
 
@@ -614,17 +632,82 @@ async function handleCheck(interaction) {
       embed.setThumbnail(avatarUrl);
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    // Add fields with real-time data
+    embed.addFields(
+      { name: '📊 Contributions', value: `${contributionCount} messages`, inline: true },
+      { name: '🎉 Events', value: `${eventParticipationCount} mentions`, inline: true },
+    );
+
+    if (targetMember) {
+      const roles = targetMember.roles.cache
+        .filter(r => r.id !== interaction.guild.id)
+        .map(r => r.name)
+        .slice(0, 3)
+        .join(', ') || 'None';
+
+      embed.addFields(
+        { name: '🎭 Roles', value: roles || 'None', inline: true },
+        { name: '📅 Joined', value: targetMember.joinedAt?.toLocaleDateString() || 'Unknown', inline: true },
+      );
+    }
+
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
   }
 
+  // Build fresh data from Discord API
+  const userData = {
+    username: targetUser.username,
+    displayName: targetMember?.displayName || targetUser.username,
+    avatar: targetUser.displayAvatarURL({ size: 256 }),
+    joinDate: targetMember?.joinedAt?.toLocaleDateString(),
+    roles: targetMember
+      ? targetMember.roles.cache
+          .filter(r => r.id !== interaction.guild.id)
+          .map(r => r.name)
+          .toArray()
+      : [],
+    isBot: targetUser.bot,
+    userId: targetUser.id,
+  };
+
+  // Build analysis data for AI
+  const analysisData = {
+    username: userData.username,
+    displayName: userData.displayName,
+    roles: userData.roles.join(', ') || 'None',
+    joinDate: userData.joinDate || 'Unknown',
+    contributions: contributionCount,
+    eventParticipation: eventParticipationCount,
+    isBot: userData.isBot,
+  };
+
   try {
-    const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
+    // Build prompt for AI analysis
+    const prompt = `Analyze this Ritual contributor:
+@${userData.displayName} (${userData.username})
+Roles: ${analysisData.roles}
+Joined: ${analysisData.joinDate}
+Contributions: ${contributionCount} messages in #contributions channel
+Event Participation: ${eventParticipationCount} mentions in #event channel
+${userData.isBot ? '⚠️ This is a BOT account' : ''}
+
+Provide a fun, brief analysis of their Ritual journey. Be playful and encouraging!`;
+
+    const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
+      body: JSON.stringify({
+        message: prompt,
+        userId: userId,
+        userName: interaction.user.username,
+        currentForm: state.form,
+        relationshipScore: state.relationshipScore,
+        conversationHistory: [],
+        isFirstMessage: false,
+      }),
     });
 
     if (!response.ok) {
@@ -634,35 +717,51 @@ async function handleCheck(interaction) {
     }
 
     const data = await response.json();
+    let analysisText = data.response || data.message || 'No data available';
+
+    // Clean the response (remove mood markers)
+    analysisText = analysisText.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
 
     // Cache the result with avatar
-    setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar }));
+    setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar: userData.avatar }));
 
     // Truncate analysis to Discord's 4096 char embed limit
-    const analysisText = (data.analysis || 'No data available').substring(0, 4096);
+    const displayAnalysis = analysisText.substring(0, 4096);
 
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(analysisText);
+      .setDescription(displayAnalysis)
+      .setThumbnail(userData.avatar);
 
-    // Add user avatar as thumbnail if available
-    if (data.user?.avatar) {
-      embed.setThumbnail(data.user.avatar);
+    // Add fields with real-time data
+    embed.addFields(
+      { name: '📊 Contributions', value: `${contributionCount} messages`, inline: true },
+      { name: '🎉 Events', value: `${eventParticipationCount} mentions`, inline: true },
+    );
+
+    if (targetMember) {
+      const roles = userData.roles.slice(0, 3).join(', ') || 'None';
+
+      embed.addFields(
+        { name: '🎭 Roles', value: roles, inline: true },
+        { name: '📅 Joined', value: userData.joinDate || 'Unknown', inline: true },
+      );
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     console.error('Check command error:', error);
-    await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This uses local Ritual community data, not live Discord API.*`);
+    await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This now uses live Discord API data from the Ritual server!*`);
   }
 }
 
 // ============================================================================
-// NEW VERSION - @USER MENTION (Switch when integrated with Discord Ritual)
+// DEPRECATED: OLD STRING-BASED VERSION
+// ============================================================================
 // ============================================================================
 //
 // async function handleCheck(interaction) {
@@ -1077,9 +1176,9 @@ async function registerCommands() {
       name: 'check',
       description: 'Analyze a Ritual contributor with AI',
       options: [{
-        name: 'username',
-        description: 'Username to check',
-        type: 3,
+        name: 'user',
+        description: 'Discord user to check',
+        type: 6, // USER - enables @mention with autocomplete
         required: true,
       }],
     },
@@ -1925,6 +2024,30 @@ client.on('interactionCreate', async (interaction) => {
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
+
+  // Track contributions in #contributions channel (Ritual only)
+  const RITUAL_GUILD_ID = '1210468736205852672';
+  const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
+  const EVENT_CHANNEL_ID = '1389298240762937414';
+
+  if (message.guildId === RITUAL_GUILD_ID &&
+      message.channelId === CONTRIBUTIONS_CHANNEL_ID) {
+    const state = getUserState(message.author.id);
+    state.contributionCount = (state.contributionCount || 0) + 1;
+    saveUserState(state);
+  }
+
+  // Track event participation (mentions in #event channel)
+  if (message.guildId === RITUAL_GUILD_ID &&
+      message.channelId === EVENT_CHANNEL_ID) {
+    // Count all @mentions in the message and increment their event participation
+    const mentionedUsers = message.mentions.users.filter(u => !u.bot);
+    for (const [userId, user] of mentionedUsers) {
+      const state = getUserState(userId);
+      state.eventParticipationCount = (state.eventParticipationCount || 0) + 1;
+      saveUserState(state);
+    }
+  }
 
   // Handle payment proof DMs (DM = no guild)
   if (!message.guild) {
