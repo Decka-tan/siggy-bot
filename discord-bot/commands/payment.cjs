@@ -461,11 +461,52 @@ async function handlePaymentConfirm(interaction, action) {
     // Mark as paid
     markParticipantPaid(invoiceId, participantUserId);
 
+    // Get updated invoice
+    const updatedInvoice = getInvoice(invoiceId);
+    const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification } = require('./invoice-simple.cjs');
+
+    // Get channel and delete old invoice message if exists
+    const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+
+    // Delete the original invoice message (the one with buttons)
+    if (updatedInvoice.messageId) {
+      try {
+        const oldMessage = await channel.messages.fetch(updatedInvoice.messageId);
+        await oldMessage.delete();
+        console.log(`[Payment] Old invoice message deleted`);
+      } catch (err) {
+        console.log(`[Payment] Could not delete old message: ${err.message}`);
+      }
+    }
+
+    // Send new updated invoice message
+    const embed = renderInvoiceEmbed(updatedInvoice);
+    const components = buildInvoiceButtons(updatedInvoice.id);
+
+    const newMessage = await channel.send({
+      content: `✅ 1 orang ditandai lunas!`,
+      embeds: [embed],
+      components: [components]
+    });
+
+    // Update messageId in database
+    const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
+    updateInvoiceMessage(updatedInvoice.id, newMessage.id);
+
+    console.log(`[Payment] New invoice message sent: ${newMessage.id}`);
+
     await interaction.update({
       content: `✅ Pembayaran dikonfirmasi!\n\n` +
         `👤 ${participant.username} - Rp ${Number(participant.amount).toLocaleString('id-ID')} → LUNAS`,
       components: []
     });
+
+    // Send paid notification to participant
+    try {
+      await sendPaidNotification(updatedInvoice, participant, interaction.guild);
+    } catch (err) {
+      console.log(`[Payment] Could not send paid notification:`, err.message);
+    }
 
     // Notify payer
     try {
@@ -479,37 +520,6 @@ async function handlePaymentConfirm(interaction, action) {
       });
     } catch (err) {
       console.log(`[Payment] Could not notify payer:`, err.message);
-    }
-
-    // Update invoice message if exists
-    try {
-      const { renderInvoiceEmbed, buildInvoiceButtons } = require('./invoice-simple.cjs');
-      const updatedInvoice = getInvoice(invoiceId);
-
-      console.log(`[Payment] Updating invoice message: messageId=${updatedInvoice.messageId}, channelId=${updatedInvoice.channelId}`);
-
-      if (updatedInvoice.messageId) {
-        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-        const msg = await channel.messages.fetch(updatedInvoice.messageId);
-
-        await msg.edit({
-          embeds: [renderInvoiceEmbed(updatedInvoice)],
-          components: [buildInvoiceButtons(updatedInvoice.id)]
-        });
-        console.log(`[Payment] Invoice message updated successfully`);
-
-        // Send announcement message in channel
-        await channel.send({
-          content: `✅ **Invoice Updated!**\n\n` +
-            `👤 ${participant.username} udah lunas Rp ${Number(participant.amount).toLocaleString('id-ID')}!\n` +
-            `📋 Invoice: ${invoice.title || 'Untitled'}\n` +
-            `💸 Dikonfirmasi oleh: ${interaction.user.username}`
-        });
-      } else {
-        console.log(`[Payment] Cannot update invoice - no messageId`);
-      }
-    } catch (err) {
-      console.log(`[Payment] Could not update invoice message:`, err.message);
     }
 
   } else {
