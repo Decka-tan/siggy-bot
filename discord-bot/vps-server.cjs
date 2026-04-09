@@ -570,23 +570,22 @@ client.on('error', (error) => {
 // ============ COMMANDS ============
 // Helper function to count messages using Discord Search API (FAST!)
 async function countMessagesByAuthor(guild, targetUserId, channelId = null) {
-  const endpoint = channelId
-    ? `/guilds/${guild.id}/messages/search?author_id=${targetUserId}&channel_id=${channelId}`
-    : `/guilds/${guild.id}/messages/search?author_id=${targetUserId}`;
-
   try {
-    const response = await fetch(`https://discord.com/api/v10${endpoint}`, {
+    const endpoint = channelId
+      ? `https://discord.com/api/v10/guilds/${guild.id}/messages/search?author_id=${targetUserId}&channel_id=${channelId}`
+      : `https://discord.com/api/v10/guilds/${guild.id}/messages/search?author_id=${targetUserId}`;
+
+    const response = await fetch(endpoint, {
       headers: { 'Authorization': `Bot ${CONFIG.token}` },
     });
 
     if (!response.ok) {
-      if (response.status === 404) return 0;
-      console.error('Search API error:', response.status, await response.text());
+      const errorText = await response.text();
+      console.error('Search API error:', response.status, errorText);
       return 0;
     }
 
     const data = await response.json();
-    // USE total_results - this is the ACTUAL count from Discord!
     return data.total_results || 0;
   } catch (err) {
     console.error('Error counting messages:', err.message);
@@ -597,19 +596,19 @@ async function countMessagesByAuthor(guild, targetUserId, channelId = null) {
 // Helper function to count mentions using Discord Search API (FAST!)
 async function countMentionsOfUser(guild, targetUserId, channelId) {
   try {
-    const response = await fetch(
-      `https://discord.com/api/v10/guilds/${guild.id}/messages/search?mentions=${targetUserId}&channel_id=${channelId}`,
-      { headers: { 'Authorization': `Bot ${CONFIG.token}` } }
-    );
+    const endpoint = `https://discord.com/api/v10/guilds/${guild.id}/messages/search?mentions=${targetUserId}&channel_id=${channelId}`;
+
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bot ${CONFIG.token}` },
+    });
 
     if (!response.ok) {
-      if (response.status === 404) return 0;
-      console.error('Search API error:', response.status, await response.text());
+      const errorText = await response.text();
+      console.error('Search API error:', response.status, errorText);
       return 0;
     }
 
     const data = await response.json();
-    // USE total_results - this is the ACTUAL count from Discord!
     return data.total_results || 0;
   } catch (err) {
     console.error('Error counting mentions:', err.message);
