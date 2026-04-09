@@ -675,15 +675,18 @@ async function handleInvoiceRecap(interaction) {
 async function handleInvoiceOwe(interaction) {
   const allNames = getAllParticipantNames(interaction.guildId);
 
-  if (allNames.length === 0) {
+  // Filter: only show people with unpaid debts
+  const withUnpaid = allNames.filter(n => n.unpaidCount > 0);
+
+  if (withUnpaid.length === 0) {
     return interaction.reply({
-      content: '📋 Belum ada invoice.',
+      content: '🎉 Semua orang udah lunas! Ga ada hutang.',
       ephemeral: true
     });
   }
 
   // Limit to 25 (Discord select menu max)
-  const topNames = allNames.slice(0, 25);
+  const topNames = withUnpaid.slice(0, 25);
 
   const options = topNames.map(nameInfo => {
     const hasUnpaid = nameInfo.unpaidCount > 0;
