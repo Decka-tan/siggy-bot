@@ -743,79 +743,77 @@ async function handleCheck(interaction) {
   const avatar = targetUser.displayAvatarURL({ size: 256 });
 
   // Build request data with real-time Discord info + scanned stats
-  const requestData = {
-    username: targetUser.username,
-    displayName,
-    avatar,
-    roles,
-    joinDate,
-    contributionCount,
-    eventParticipationCount,
-    globalMessageCount,
-  };
+  // Note: globalMessageCount from Search API is limited to 25, we'll get real count from old API
 
-  // Log the fresh data for debugging
-  console.log(`Fresh data for ${displayName}:`, {
-    global: globalMessageCount,
-    contributions: contributionCount,
-    events: eventParticipationCount,
-  });
+  // First, call old /api/analyze to get the good AI response and REAL global count
+  let analysisText = '';
+  let realGlobalCount = 0;
 
-  // Build the embed directly with fresh data (skip old API!)
-  const statsBlock = `@${displayName}
-🌎 Global Messages: ${globalMessageCount.toLocaleString()}
+  try {
+    const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: targetUser.username }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      // Extract real global count from old API response
+      const globalMatch = (data.analysis || '').match(/🌎 Global Messages:\s*([\d,]+)/);
+      if (globalMatch) {
+        realGlobalCount = parseInt(globalMatch[1].replace(/,/g, ''));
+      }
+
+      // Get the analysis text (everything after the stats block)
+      const fullText = data.analysis || '';
+      const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
+      if (splitIndex !== -1) {
+        // Keep the intelligence part, rebuild stats with fresh data
+        const intelligencePart = fullText.substring(splitIndex);
+        const statsBlock = `@${displayName}
+🌎 Global Messages: ${realGlobalCount.toLocaleString()}
 📝 Contributions: ${contributionCount} msgs
 🎉 Events: ${eventParticipationCount} participations
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
-  // Get AI analysis with fresh data context
-  try {
-    const prompt = `Analyze this Ritual contributor based on REAL-TIME data:
-${statsBlock}
-
-Provide a brief, fun analysis. Mention their actual stats above. Keep it under 500 chars.`;
-
-    const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: prompt,
-        userId: userId,
-        userName: interaction.user.username,
-        currentForm: state.form,
-        relationshipScore: state.relationshipScore,
-        conversationHistory: [],
-        isFirstMessage: false,
-      }),
-    });
-
-    let analysisText = statsBlock; // Default to just stats
-
-    if (response.ok) {
-      const data = await response.json();
-      const aiResponse = (data.response || data.message || '').replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
-      if (aiResponse) {
-        analysisText = `${statsBlock}\n\n🔍 Contributor Intelligence: @${displayName}\n\n${aiResponse}`;
+        analysisText = `${statsBlock}\n\n${intelligencePart}`;
+      } else {
+        analysisText = fullText;
       }
     }
-
-    // Cache the result
-    setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar }));
-
-    const embed = new EmbedBuilder()
-      .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
-      .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(analysisText.substring(0, 4096))
-      .setThumbnail(avatar)
-      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
-      .setTimestamp();
-
-    await interaction.editReply({ embeds: [embed] });
-  } catch (error) {
-    console.error('Check command error:', error);
-    await interaction.editReply('❌ Gagal mengambil data. Coba lagi nanti ya!');
+  } catch (err) {
+    console.error('Error calling analyze API:', err);
   }
+
+  // Fallback if API failed
+  if (!analysisText) {
+    const statsBlock = `@${displayName}
+🌎 Global Messages: ${realGlobalCount.toLocaleString()}
+📝 Contributions: ${contributionCount} msgs
+🎉 Events: ${eventParticipationCount} participations
+🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
+📅 Joined: ${joinDate}`;
+    analysisText = statsBlock;
+  }
+
+  // Cache the result
+  setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar }));
+
+  const embed = new EmbedBuilder()
+    .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
+    .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
+    .setDescription(analysisText.substring(0, 4096))
+    .setThumbnail(avatar)
+    .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+} catch (error) {
+  console.error('Check command error:', error);
+  await interaction.editReply('❌ Gagal mengambil data. Coba lagi nanti ya!');
+}
 }
 
 // ============================================================================
