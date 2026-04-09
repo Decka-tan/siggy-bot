@@ -488,7 +488,7 @@ async function handlePaymentConfirm(interaction, action) {
 
       console.log(`[Payment] Updating invoice message: messageId=${updatedInvoice.messageId}, channelId=${updatedInvoice.channelId}`);
 
-      if (interaction.channel && updatedInvoice.messageId) {
+      if (updatedInvoice.messageId) {
         const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
         const msg = await channel.messages.fetch(updatedInvoice.messageId);
 
@@ -498,7 +498,7 @@ async function handlePaymentConfirm(interaction, action) {
         });
         console.log(`[Payment] Invoice message updated successfully`);
       } else {
-        console.log(`[Payment] Cannot update invoice - interaction.channel=${!!interaction.channel}, messageId=${updatedInvoice.messageId}`);
+        console.log(`[Payment] Cannot update invoice - no messageId`);
       }
     } catch (err) {
       console.log(`[Payment] Could not update invoice message:`, err.message);
