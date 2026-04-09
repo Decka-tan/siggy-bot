@@ -258,14 +258,16 @@ async function handleBayarSelectPerson(interaction) {
   const creatorPaymentInfo = getPaymentInfo(invoice.creator.id);
 
   // Store pending claim
-  pendingClaims.set(interaction.user.id, {
+  const claimData = {
     invoiceId,
     participantUserId,
     participantName: participant.username,
     amount: participant.amount,
     creatorId: invoice.creator.id,
     timestamp: Date.now()
-  });
+  };
+  pendingClaims.set(interaction.user.id, claimData);
+  console.log(`[Payment] Pending claim SET for ${interaction.user.id}:`, claimData);
 
   // Build payment info message
   let description = `💵 **Bayar untuk: ${participant.username}**\n`;
@@ -317,6 +319,7 @@ async function handleBayarSelectPerson(interaction) {
         `Cukup kirim screenshot/foto bukti transfer. Bot akan forward ke @${invoice.creator.username} ✅\n\n` +
         `_Timeout: 5 menit_`
     });
+    console.log(`[Payment] DM sent to ${interaction.user.username} - waiting for proof`);
   } catch (err) {
     console.log(`[Payment] Could not DM ${interaction.user.username}:`, err.message);
   }
@@ -326,11 +329,19 @@ async function handleBayarSelectPerson(interaction) {
  * Handle payment proof DM (image attachment)
  */
 async function handlePaymentProofDM(message, client) {
+  console.log(`[Payment Proof DM] Received from ${message.author.username} (${message.author.id})`);
+  console.log(`[Payment Proof DM] Attachments: ${message.attachments.size}, Stickers: ${message.stickers.size}`);
+
   const pending = pendingClaims.get(message.author.id);
+  console.log(`[Payment Proof DM] Pending claim:`, pending ? 'FOUND' : 'NOT FOUND');
 
   // No pending claim, ignore
-  if (!pending) return;
+  if (!pending) {
+    console.log(`[Payment Proof DM] No pending claim for ${message.author.id}. Did you complete all 3 forms?`);
+    return;
+  }
   if (Date.now() - pending.timestamp > CLAIM_TIMEOUT) {
+    console.log(`[Payment Proof DM] Claim expired for ${message.author.id}`);
     pendingClaims.delete(message.author.id);
     return;
   }
