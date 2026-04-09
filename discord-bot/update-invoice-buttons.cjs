@@ -3,21 +3,21 @@
  * Run this script to update all existing invoice messages
  * with the new [Bayar] button (replacing [Remind])
  *
- * Usage: cd /home/ubuntu/siggy-bot && node scripts/update-invoice-buttons.cjs
+ * Usage: cd /home/ubuntu/siggy-bot/discord-bot && node update-invoice-buttons.cjs
  */
 
 // Load .env (optional - skip if already loaded)
 try {
-  require('dotenv').config();
+  require('dotenv').config({ path: '../.env' });
 } catch (e) {
   console.log('dotenv not found, using env vars from process.env');
 }
 
 const { Client, GatewayIntentBits } = require('discord.js');
 
-// Import functions (paths work when run from project root)
-const { readDB } = require('./discord-bot/utils/invoice-db.cjs');
-const { renderInvoiceEmbed, buildInvoiceButtons } = require('./discord-bot/commands/invoice-simple.cjs');
+// Import functions (relative to discord-bot folder)
+const { readDB } = require('./utils/invoice-db.cjs');
+const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
 
 // Create client
 const client = new Client({
@@ -98,7 +98,7 @@ client.once('ready', async () => {
 });
 
 // Login
-client.login(process.env.DISCORD_TOKEN).catch(err => {
+client.login(process.env.DISCORD_BOT_TOKEN).catch(err => {
   console.error('❌ Login failed:', err.message);
   process.exit(1);
 });
