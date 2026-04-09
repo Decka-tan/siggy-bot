@@ -376,12 +376,12 @@ async function handlePaymentProofDM(message, client) {
 
   // Build confirm/reject buttons
   const confirmButton = new ButtonBuilder()
-    .setCustomId(`payment_confirm_${pending.invoiceId}_${pending.participantUserId}_${message.author.id}`)
+    .setCustomId(`payment_confirm|${pending.invoiceId}|${pending.participantUserId}|${message.author.id}`)
     .setLabel('✅ Confirm & Lunasi')
     .setStyle(ButtonStyle.Success);
 
   const rejectButton = new ButtonBuilder()
-    .setCustomId(`payment_reject_${pending.invoiceId}_${pending.participantUserId}_${message.author.id}`)
+    .setCustomId(`payment_reject|${pending.invoiceId}|${pending.participantUserId}|${message.author.id}`)
     .setLabel('❌ Reject')
     .setStyle(ButtonStyle.Danger);
 
@@ -433,11 +433,13 @@ async function handlePaymentProofDM(message, client) {
  */
 async function handlePaymentConfirm(interaction, action) {
   const customId = interaction.customId;
-  // Format: payment_confirm_invoiceId_participantUserId_payerId
-  const parts = customId.split('_');
-  const invoiceId = parts[2];
-  const participantUserId = parts[3];
-  const payerId = parts[4];
+  // Format: payment_confirm|invoiceId|participantUserId|payerId
+  const parts = customId.split('|');
+  const invoiceId = parts[1];
+  const participantUserId = parts[2];
+  const payerId = parts[3];
+
+  console.log(`[Payment Confirm] action=${action}, invoiceId=${invoiceId}, participant=${participantUserId}, payer=${payerId}`);
 
   const invoice = getInvoice(invoiceId);
   if (!invoice) {
