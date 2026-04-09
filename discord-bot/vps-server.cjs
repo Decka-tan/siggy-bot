@@ -770,22 +770,23 @@ async function handleCheck(interaction) {
     analysisText = statsBlock;
   }
 
-  // Cache the result
-  setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar }));
+  try {
+    // Cache the result
+    setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar }));
 
-  const embed = new EmbedBuilder()
-    .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
-    .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-    .setDescription(analysisText.substring(0, 4096))
-    .setThumbnail(avatar)
-    .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
-    .setTimestamp();
+    const embed = new EmbedBuilder()
+      .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
+      .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
+      .setDescription(analysisText.substring(0, 4096))
+      .setThumbnail(avatar)
+      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
+      .setTimestamp();
 
-  await interaction.editReply({ embeds: [embed] });
-} catch (error) {
-  console.error('Check command error:', error);
-  await interaction.editReply('❌ Gagal mengambil data. Coba lagi nanti ya!');
-}
+    await interaction.editReply({ embeds: [embed] });
+  } catch (error) {
+    console.error('Check command error:', error);
+    await interaction.editReply('❌ Gagal mengambil data. Coba lagi nanti ya!');
+  }
 }
 
 // ============================================================================
