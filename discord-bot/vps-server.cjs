@@ -580,13 +580,28 @@ async function countMessagesByAuthor(guild, targetUserId, channelId = null) {
     });
 
     if (!response.ok) {
-      if (response.status === 404) return 0; // No messages found
-      console.error('Search API error:', response.status);
+      if (response.status === 404) return 0;
+      console.error('Search API error:', response.status, await response.text());
       return 0;
     }
 
     const data = await response.json();
-    return data.total_results || 0;
+    // Discord search returns actual messages array, count them
+    const messages = data.messages || [];
+    let totalCount = 0;
+
+    // Flatten the nested array structure and count
+    messages.forEach(chunk => {
+      totalCount += chunk.filter(m => m.author.id === targetUserId).length;
+    });
+
+    // If we got max results (25 per chunk), there might be more
+    // For now, return what we found + estimate if hitting limit
+    if (totalCount >= 25) {
+      console.log(`⚠️ Hit search limit for ${targetUserId}, actual count may be higher`);
+    }
+
+    return totalCount;
   } catch (err) {
     console.error('Error counting messages:', err.message);
     return 0;
@@ -603,12 +618,23 @@ async function countMentionsOfUser(guild, targetUserId, channelId) {
 
     if (!response.ok) {
       if (response.status === 404) return 0;
-      console.error('Search API error:', response.status);
+      console.error('Search API error:', response.status, await response.text());
       return 0;
     }
 
     const data = await response.json();
-    return data.total_results || 0;
+    const messages = data.messages || [];
+    let totalCount = 0;
+
+    messages.forEach(chunk => {
+      totalCount += chunk.filter(m => m.mentions?.users?.some(u => u.id === targetUserId)).length;
+    });
+
+    if (totalCount >= 25) {
+      console.log(`⚠️ Hit search limit for mentions ${targetUserId}, actual count may be higher`);
+    }
+
+    return totalCount;
   } catch (err) {
     console.error('Error counting mentions:', err.message);
     return 0;
