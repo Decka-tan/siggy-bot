@@ -568,6 +568,88 @@ client.on('error', (error) => {
 });
 
 // ============ COMMANDS ============
+// Helper function to count messages in a channel
+async function countMessagesInChannel(channel, targetUserId) {
+  if (!channel) return 0;
+
+  let count = 0;
+  let lastId = null;
+  const maxMessages = 10000; // Safety limit
+
+  try {
+    while (true) {
+      const options = { limit: 100 };
+      if (lastId) options.before = lastId;
+
+      const messages = await channel.messages.fetch(options);
+      if (messages.size === 0) break;
+
+      // Count messages from target user
+      messages.forEach(msg => {
+        if (msg.author.id === targetUserId) count++;
+      });
+
+      lastId = messages.last().id;
+      if (count >= maxMessages) break;
+    }
+  } catch (err) {
+    console.error(`Error counting in ${channel.name}:`, err.message);
+  }
+
+  return count;
+}
+
+// Helper function to count mentions in a channel
+async function countMentionsInChannel(channel, targetUserId) {
+  if (!channel) return 0;
+
+  let count = 0;
+  let lastId = null;
+  const maxMessages = 10000; // Safety limit
+
+  try {
+    while (true) {
+      const options = { limit: 100 };
+      if (lastId) options.before = lastId;
+
+      const messages = await channel.messages.fetch(options);
+      if (messages.size === 0) break;
+
+      // Count messages that mention the target user
+      messages.forEach(msg => {
+        if (msg.mentions.users.has(targetUserId)) count++;
+      });
+
+      lastId = messages.last().id;
+      if (count >= maxMessages) break;
+    }
+  } catch (err) {
+    console.error(`Error counting mentions in ${channel.name}:`, err.message);
+  }
+
+  return count;
+}
+
+// Helper function to count global messages across all channels
+async function countGlobalMessages(guild, targetUserId) {
+  const channels = await guild.channels.fetch();
+  let totalCount = 0;
+
+  for (const [, channel] of channels) {
+    if (!channel || channel.type !== 0) continue; // Only text channels
+
+    try {
+      const count = await countMessagesInChannel(channel, targetUserId);
+      totalCount += count;
+    } catch (err) {
+      // Skip channels we can't access
+      continue;
+    }
+  }
+
+  return totalCount;
+}
+
 async function handleCheck(interaction) {
   const userId = interaction.user.id;
   const rateLimit = checkRateLimit(userId, 'check');
@@ -587,54 +669,15 @@ async function handleCheck(interaction) {
     return interaction.editReply('❌ Could not find that user.');
   }
 
-  // Fetch guild member for real-time roles and join date
-  let targetMember = null;
-  try {
-    targetMember = await interaction.guild.members.fetch(targetUser.id);
-  } catch (err) {
-    // User might not be in this guild
-    console.error('Could not fetch guild member:', err.message);
-  }
-
-  // Get user stats from database
-  const targetUserState = getUserState(targetUser.id);
-  const contributionCount = targetUserState.contributionCount || 0;
-  const eventParticipationCount = targetUserState.eventParticipationCount || 0;
-  const globalMessageCount = targetUserState.messageCount || 0;
-
-  // Build real-time Discord data
-  const roles = targetMember
-    ? [...targetMember.roles.cache
-        .filter(r => r.id !== interaction.guild.id)
-        .values()]
-        .map(r => r.name)
-    : [];
-  const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
-  const displayName = targetMember?.displayName || targetUser.username;
-  const avatar = targetUser.displayAvatarURL({ size: 256 });
-
-  // Build request data with real-time Discord info + database stats
-  const requestData = {
-    username: targetUser.username,
-    displayName,
-    avatar,
-    roles,
-    joinDate,
-    contributionCount,
-    eventParticipationCount,
-    globalMessageCount,
-  };
-
-  // Check cache first (use userId + data hash for cache key)
-  const dataHash = JSON.stringify(requestData);
-  const cacheKey = `check_${targetUser.id}_${Buffer.from(dataHash).toString('base64').slice(0, 16)}`;
+  // Check cache first (shorter cache for fresh data)
+  const cacheKey = `check_${targetUser.id}`;
   const cached = getCache(cacheKey);
 
   // Track this command as a message for relationship
   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
 
   if (cached) {
-    // Parse cached data - support both old format (string) and new format (JSON with avatar)
+    // Parse cached data
     let analysisText = cached;
     let avatarUrl = null;
 
@@ -662,6 +705,69 @@ async function handleCheck(interaction) {
 
     return interaction.editReply({ embeds: [embed] });
   }
+
+  // Update with scanning status
+  await interaction.editReply('🔍 Scanning messages... ini bisa makan waktu bentar...');
+
+  // Fetch guild member for real-time roles and join date
+  let targetMember = null;
+  try {
+    targetMember = await interaction.guild.members.fetch(targetUser.id);
+  } catch (err) {
+    console.error('Could not fetch guild member:', err.message);
+  }
+
+  // Get channel IDs
+  const RITUAL_GUILD_ID = '1210468736205852672';
+  const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
+  const EVENT_CHANNEL_ID = '1389298240762937414';
+
+  // Scan historical data from Discord
+  let globalMessageCount = 0;
+  let contributionCount = 0;
+  let eventParticipationCount = 0;
+
+  try {
+    // Fetch contribution count from #contributions channel
+    const contributionsChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
+    if (contributionsChannel) {
+      contributionCount = await countMessagesInChannel(contributionsChannel, targetUser.id);
+    }
+
+    // Fetch event participation from #event channel
+    const eventChannel = await interaction.guild.channels.fetch(EVENT_CHANNEL_ID).catch(() => null);
+    if (eventChannel) {
+      eventParticipationCount = await countMentionsInChannel(eventChannel, targetUser.id);
+    }
+
+    // Fetch global message count from all channels
+    globalMessageCount = await countGlobalMessages(interaction.guild, targetUser.id);
+  } catch (err) {
+    console.error('Error scanning messages:', err);
+  }
+
+  // Build real-time Discord data
+  const roles = targetMember
+    ? [...targetMember.roles.cache
+        .filter(r => r.id !== interaction.guild.id)
+        .values()]
+        .map(r => r.name)
+    : [];
+  const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
+  const displayName = targetMember?.displayName || targetUser.username;
+  const avatar = targetUser.displayAvatarURL({ size: 256 });
+
+  // Build request data with real-time Discord info + scanned stats
+  const requestData = {
+    username: targetUser.username,
+    displayName,
+    avatar,
+    roles,
+    joinDate,
+    contributionCount,
+    eventParticipationCount,
+    globalMessageCount,
+  };
 
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
