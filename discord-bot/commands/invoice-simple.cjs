@@ -359,9 +359,9 @@ function buildInvoiceButtons(invoiceId) {
       .setEmoji('✅')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId(`invoice_remind_${invoiceId}`)
-      .setLabel('Remind')
-      .setEmoji('🔔')
+      .setCustomId(`invoice_bayar_${invoiceId}`)
+      .setLabel('Bayar')
+      .setEmoji('💵')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId(`invoice_settle_${invoiceId}`)
@@ -523,8 +523,8 @@ async function handleInvoiceButton(interaction, action) {
 
     if (customId.startsWith('invoice_pay_')) {
       invoiceId = customId.replace('invoice_pay_', '');
-    } else if (customId.startsWith('invoice_remind_')) {
-      invoiceId = customId.replace('invoice_remind_', '');
+    } else if (customId.startsWith('invoice_bayar_')) {
+      invoiceId = customId.replace('invoice_bayar_', '');
     } else if (customId.startsWith('invoice_settle_')) {
       invoiceId = customId.replace('invoice_settle_', '');
     } else if (customId.startsWith('invoice_add_')) {
@@ -543,7 +543,7 @@ async function handleInvoiceButton(interaction, action) {
     }
 
     // Permission check:
-    // - remind: Anyone can use (to remind people to pay)
+    // - bayar: Anyone can use (to claim they've paid)
     // - pay, settle, add, delete: Only creator
     const actionsRequiringCreator = ['pay', 'settle', 'add', 'delete'];
     if (actionsRequiringCreator.includes(action) && invoice.creator.id !== interaction.user.id) {
@@ -585,44 +585,10 @@ async function handleInvoiceButton(interaction, action) {
         ephemeral: true
       });
 
-    } else if (action === 'remind') {
-      // Send reminder DMs to unpaid participants
-      const unpaid = invoice.participants.filter(p => !p.paid);
-      if (unpaid.length === 0) {
-        return interaction.reply({
-          content: '✅ Semua orang sudah lunas!',
-          ephemeral: true
-        });
-      }
-
-      let sentCount = 0;
-      for (const participant of unpaid) {
-        if (participant.userId && !participant.userId.startsWith('unknown_')) {
-          try {
-            const user = await interaction.guild.client.users.fetch(participant.userId);
-            if (user && !user.bot) {
-              const amount = isNaN(participant.amount) ? 0 : participant.amount;
-              await user.send({
-                content: `🔔 **Pengingat Pembayaran**\n\n` +
-                  `Halo ${participant.username}! 👋\n\n` +
-                  `Kamu masih memiliki tagihan invoice:\n` +
-                  `📋 **${invoice.title || 'Untitled'}**\n` +
-                  `💰 Jumlah: Rp ${amount.toLocaleString('id-ID')}\n` +
-                  `📅 Tanggal: ${invoice.date}\n\n` +
-                  `_Mohon segera lunasi. Terima kasih!_`
-              });
-              sentCount++;
-            }
-          } catch (err) {
-            console.log(`[Invoice] Could not send reminder to ${participant.username}:`, err.message);
-          }
-        }
-      }
-
-      return interaction.reply({
-        content: `🔔 Reminder terkirim ke ${sentCount}/${unpaid.length} orang!`,
-        ephemeral: true
-      });
+    } else if (action === 'bayar') {
+      // Delegate to payment.cjs handleBayar
+      const { handleBayar } = require('./payment.cjs');
+      return handleBayar(interaction);
 
     } else if (action === 'settle') {
       // Mark all participants as paid

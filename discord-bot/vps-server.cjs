@@ -59,6 +59,18 @@ const {
 } = require('./commands/invoice-simple.cjs');
 
 const {
+  handlePaymentSet,
+  processPaymentSetModal,
+  handleInvoiceLink,
+  handleBayar,
+  handleBayarSelectInvoice,
+  handleBayarSelectPerson,
+  handlePaymentProofDM,
+  handlePaymentConfirm,
+  paymentCommands,
+} = require('./commands/payment.cjs');
+
+const {
   getInvoice,
   markMultiplePaid,
   addParticipants,
@@ -1083,6 +1095,8 @@ async function registerCommands() {
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
     // Note: Invoice commands are registered only to specific guilds (see below)
+    ...invoiceCommandsSimple, // Spread invoice commands here (now from invoice-simple.cjs)
+    ...paymentCommands, // Payment commands
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -1350,9 +1364,9 @@ client.on('interactionCreate', async (interaction) => {
   } else if (customId.startsWith('invoice_pay_')) {
     try { await handleInvoiceButton(interaction, 'pay'); }
     catch (e) { console.error('[Invoice Button Pay] Error:', e); }
-  } else if (customId.startsWith('invoice_remind_')) {
-    try { await handleInvoiceButton(interaction, 'remind'); }
-    catch (e) { console.error('[Invoice Button Remind] Error:', e); }
+  } else if (customId.startsWith('invoice_bayar_')) {
+    try { await handleInvoiceButton(interaction, 'bayar'); }
+    catch (e) { console.error('[Invoice Button Bayar] Error:', e); }
   } else if (customId.startsWith('invoice_settle_')) {
     try { await handleInvoiceButton(interaction, 'settle'); }
     catch (e) { console.error('[Invoice Button Settle] Error:', e); }
@@ -1368,6 +1382,12 @@ client.on('interactionCreate', async (interaction) => {
   } else if (customId.startsWith('analytics_next_')) {
     try { await handleAnalyticsPagination(interaction, 'next'); }
     catch (e) { console.error('[Analytics Pagination Next] Error:', e); }
+  } else if (customId.startsWith('payment_confirm_')) {
+    try { await handlePaymentConfirm(interaction, 'confirm'); }
+    catch (e) { console.error('[Payment Confirm] Error:', e); }
+  } else if (customId.startsWith('payment_reject_')) {
+    try { await handlePaymentConfirm(interaction, 'reject'); }
+    catch (e) { console.error('[Payment Reject] Error:', e); }
   }
 });
 
@@ -1390,6 +1410,8 @@ client.on('interactionCreate', async (interaction) => {
       await handleAddPeopleSubmit(interaction);
     } else if (customId === 'clear_invoice_modal') {
       await handleClearInvoiceModal(interaction);
+    } else if (customId === 'payment_set_modal') {
+      await processPaymentSetModal(interaction);
     }
   } catch (error) {
     console.error('[Modal Handler] Error:', error);
@@ -1413,6 +1435,10 @@ client.on('interactionCreate', async (interaction) => {
     } else if (customId === 'find_debt_select') {
       const { handleFindDebtSelect } = require('./commands/invoice-simple.cjs');
       await handleFindDebtSelect(interaction);
+    } else if (customId === 'bayar_select_invoice') {
+      await handleBayarSelectInvoice(interaction);
+    } else if (customId.startsWith('bayar_select_person_')) {
+      await handleBayarSelectPerson(interaction);
     }
   } catch (error) {
     console.error('[Select Menu Handler] Error:', error);
@@ -1830,6 +1856,16 @@ client.on('interactionCreate', async (interaction) => {
       case 'invoice-merge':
         await handleInvoiceMerge(interaction);
         break;
+      // Payment commands
+      case 'payment-set':
+        await handlePaymentSet(interaction);
+        break;
+      case 'invoice-link':
+        await handleInvoiceLink(interaction);
+        break;
+      case 'bayar':
+        await handleBayar(interaction);
+        break;
       // Utility commands - save for reload
       case 'flip':
         setLastCommand(interaction.user.id, 'flip', options);
@@ -1889,6 +1925,13 @@ client.on('interactionCreate', async (interaction) => {
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
+
+  // Handle payment proof DMs (DM = no guild)
+  if (!message.guild) {
+    try { await handlePaymentProofDM(message, client); }
+    catch (e) { console.error('[Payment Proof DM] Error:', e); }
+    return; // Don't process DMs further
+  }
 
   // Check if message is in allowed channel (per-server)
   if (!isChannelAllowed(message.guildId, message.channelId)) return;
