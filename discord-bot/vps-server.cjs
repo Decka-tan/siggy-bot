@@ -587,17 +587,51 @@ async function handleCheck(interaction) {
     return interaction.editReply('❌ Could not find that user.');
   }
 
-  // Check cache first (use userId for cache key now)
-  const cacheKey = `check_${targetUser.id}`;
+  // Fetch guild member for real-time roles and join date
+  let targetMember = null;
+  try {
+    targetMember = await interaction.guild.members.fetch(targetUser.id);
+  } catch (err) {
+    // User might not be in this guild
+    console.error('Could not fetch guild member:', err.message);
+  }
+
+  // Get user stats from database
+  const targetUserState = getUserState(targetUser.id);
+  const contributionCount = targetUserState.contributionCount || 0;
+  const eventParticipationCount = targetUserState.eventParticipationCount || 0;
+  const globalMessageCount = targetUserState.messageCount || 0;
+
+  // Build real-time Discord data
+  const roles = targetMember
+    ? [...targetMember.roles.cache
+        .filter(r => r.id !== interaction.guild.id)
+        .values()]
+        .map(r => r.name)
+    : [];
+  const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
+  const displayName = targetMember?.displayName || targetUser.username;
+  const avatar = targetUser.displayAvatarURL({ size: 256 });
+
+  // Build request data with real-time Discord info + database stats
+  const requestData = {
+    username: targetUser.username,
+    displayName,
+    avatar,
+    roles,
+    joinDate,
+    contributionCount,
+    eventParticipationCount,
+    globalMessageCount,
+  };
+
+  // Check cache first (use userId + data hash for cache key)
+  const dataHash = JSON.stringify(requestData);
+  const cacheKey = `check_${targetUser.id}_${Buffer.from(dataHash).toString('base64').slice(0, 16)}`;
   const cached = getCache(cacheKey);
 
   // Track this command as a message for relationship
   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
-
-  // Get contribution count from database
-  const targetUserState = getUserState(targetUser.id);
-  const contributionCount = targetUserState.contributionCount || 0;
-  const eventParticipationCount = targetUserState.eventParticipationCount || 0;
 
   if (cached) {
     // Parse cached data - support both old format (string) and new format (JSON with avatar)
@@ -623,25 +657,17 @@ async function handleCheck(interaction) {
       embed.setThumbnail(avatarUrl);
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
   }
 
-  // Get global message count for display
-  const globalMessageCount = targetUserState.messageCount || 0;
-
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: targetUser.username,
-        contributionCount,
-        eventParticipationCount,
-        globalMessageCount,
-      }),
+      body: JSON.stringify(requestData),
     });
 
     if (!response.ok) {
@@ -670,7 +696,7 @@ async function handleCheck(interaction) {
       embed.setThumbnail(targetUser.displayAvatarURL({ size: 256 }));
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
