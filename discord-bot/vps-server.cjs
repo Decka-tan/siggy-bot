@@ -454,8 +454,8 @@ function trackCommandAsMessage(userId, userName, commandName) {
 // Per-server channel whitelists (guildId -> Set of allowed channel IDs)
 // Leave empty Set() to allow all channels in that server
 const SERVER_ALLOWED_CHANNELS = {
-  // Ritual server - add channel IDs here when known
-  // 'RITUAL_GUILD_ID': new Set(['channel_id_1', 'channel_id_2']),
+  // Ritual server - Siggy only reacts in this channel
+  '1210468736205852672': new Set(['1242888966118572103']),
 
   // Other servers can be added here with their own channel restrictions
   // 'OTHER_GUILD_ID': new Set(['their_channel_id']),
