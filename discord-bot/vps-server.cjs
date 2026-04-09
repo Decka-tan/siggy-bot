@@ -1383,10 +1383,10 @@ client.on('interactionCreate', async (interaction) => {
   } else if (customId.startsWith('analytics_next_')) {
     try { await handleAnalyticsPagination(interaction, 'next'); }
     catch (e) { console.error('[Analytics Pagination Next] Error:', e); }
-  } else if (customId.startsWith('payment_confirm_')) {
+  } else if (customId.startsWith('payment_confirm|')) {
     try { await handlePaymentConfirm(interaction, 'confirm'); }
     catch (e) { console.error('[Payment Confirm] Error:', e); }
-  } else if (customId.startsWith('payment_reject_')) {
+  } else if (customId.startsWith('payment_reject|')) {
     try { await handlePaymentConfirm(interaction, 'reject'); }
     catch (e) { console.error('[Payment Reject] Error:', e); }
   }
