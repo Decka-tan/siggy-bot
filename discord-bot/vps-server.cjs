@@ -726,6 +726,7 @@ async function handleCheck(interaction) {
 
   // Call old /api/analyze to get the good AI response format
   let analysisText = '';
+  let oldApiStats = { global: 0, contributions: 0, events: 0 };
 
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
@@ -736,17 +737,28 @@ async function handleCheck(interaction) {
 
     if (response.ok) {
       const data = await response.json();
+      const fullText = data.analysis || '';
+
+      // Extract old API stats as fallback
+      const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
+      const contribMatch = fullText.match(/📝 Contributions:\s*([\d,]+)/);
+      const eventsMatch = fullText.match(/🎉 Events:\s*([\d,]+)/);
+
+      if (globalMatch) oldApiStats.global = parseInt(globalMatch[1].replace(/,/g, ''));
+      if (contribMatch) oldApiStats.contributions = parseInt(contribMatch[1].replace(/,/g, ''));
+      if (eventsMatch) oldApiStats.events = parseInt(eventsMatch[1].replace(/,/g, ''));
+
+      console.log(`Old API stats:`, oldApiStats);
 
       // Get the analysis text (everything after the stats block)
-      const fullText = data.analysis || '';
       const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
       if (splitIndex !== -1) {
-        // Keep the intelligence part, rebuild stats with FRESH Search API data
+        // Keep the intelligence part, rebuild stats with fresh data (or old API as fallback)
         const intelligencePart = fullText.substring(splitIndex);
         const statsBlock = `@${displayName}
-🌎 Global Messages: ${globalMessageCount.toLocaleString()}
-📝 Contributions: ${contributionCount} msgs
-🎉 Events: ${eventParticipationCount} participations
+🌎 Global Messages: ${(globalMessageCount || oldApiStats.global).toLocaleString()}
+📝 Contributions: ${(contributionCount || oldApiStats.contributions)} msgs
+🎉 Events: ${(eventParticipationCount || oldApiStats.events)} participations
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
@@ -762,9 +774,9 @@ async function handleCheck(interaction) {
   // Fallback if API failed
   if (!analysisText) {
     const statsBlock = `@${displayName}
-🌎 Global Messages: ${globalMessageCount.toLocaleString()}
-📝 Contributions: ${contributionCount} msgs
-🎉 Events: ${eventParticipationCount} participations
+🌎 Global Messages: ${(globalMessageCount || oldApiStats.global).toLocaleString()}
+📝 Contributions: ${(contributionCount || oldApiStats.contributions)} msgs
+🎉 Events: ${(eventParticipationCount || oldApiStats.events)} participations
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
     analysisText = statsBlock;
