@@ -6,12 +6,18 @@
  * Usage: cd /home/ubuntu/siggy-bot && node scripts/update-invoice-buttons.cjs
  */
 
-require('dotenv').config();
+// Load .env (optional - skip if already loaded)
+try {
+  require('dotenv').config();
+} catch (e) {
+  console.log('dotenv not found, using env vars from process.env');
+}
+
 const { Client, GatewayIntentBits } = require('discord.js');
 
-// Import functions
-const { readDB } = require('../discord-bot/utils/invoice-db.cjs');
-const { renderInvoiceEmbed, buildInvoiceButtons } = require('../discord-bot/commands/invoice-simple.cjs');
+// Import functions (paths work when run from project root)
+const { readDB } = require('./discord-bot/utils/invoice-db.cjs');
+const { renderInvoiceEmbed, buildInvoiceButtons } = require('./discord-bot/commands/invoice-simple.cjs');
 
 // Create client
 const client = new Client({
