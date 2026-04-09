@@ -754,40 +754,61 @@ async function handleCheck(interaction) {
     globalMessageCount,
   };
 
+  // Log the fresh data for debugging
+  console.log(`Fresh data for ${displayName}:`, {
+    global: globalMessageCount,
+    contributions: contributionCount,
+    events: eventParticipationCount,
+  });
+
+  // Build the embed directly with fresh data (skip old API!)
+  const statsBlock = `@${displayName}
+🌎 Global Messages: ${globalMessageCount.toLocaleString()}
+📝 Contributions: ${contributionCount} msgs
+🎉 Events: ${eventParticipationCount} participations
+🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
+📅 Joined: ${joinDate}`;
+
+  // Get AI analysis with fresh data context
   try {
-    const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
+    const prompt = `Analyze this Ritual contributor based on REAL-TIME data:
+${statsBlock}
+
+Provide a brief, fun analysis. Mention their actual stats above. Keep it under 500 chars.`;
+
+    const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestData),
+      body: JSON.stringify({
+        message: prompt,
+        userId: userId,
+        userName: interaction.user.username,
+        currentForm: state.form,
+        relationshipScore: state.relationshipScore,
+        conversationHistory: [],
+        isFirstMessage: false,
+      }),
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('API Error:', response.status, errorText);
-      throw new Error(`API ${response.status}: ${response.statusText}`);
+    let analysisText = statsBlock; // Default to just stats
+
+    if (response.ok) {
+      const data = await response.json();
+      const aiResponse = (data.response || data.message || '').replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
+      if (aiResponse) {
+        analysisText = `${statsBlock}\n\n🔍 Contributor Intelligence: @${displayName}\n\n${aiResponse}`;
+      }
     }
 
-    const data = await response.json();
-
-    // Cache the result with avatar
-    setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar || targetUser.displayAvatarURL({ size: 256 }) }));
-
-    // Truncate analysis to Discord's 4096 char embed limit
-    const analysisText = (data.analysis || 'No data available').substring(0, 4096);
+    // Cache the result
+    setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar }));
 
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(analysisText);
-
-    // Add user avatar as thumbnail if available
-    if (data.user?.avatar) {
-      embed.setThumbnail(data.user.avatar);
-    } else if (targetUser) {
-      embed.setThumbnail(targetUser.displayAvatarURL({ size: 256 }));
-    }
-
-    embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
+      .setDescription(analysisText.substring(0, 4096))
+      .setThumbnail(avatar)
+      .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
