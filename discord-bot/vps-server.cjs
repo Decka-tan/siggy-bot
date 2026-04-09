@@ -630,26 +630,6 @@ async function countMentionsInChannel(channel, targetUserId) {
   return count;
 }
 
-// Helper function to count global messages across all channels
-async function countGlobalMessages(guild, targetUserId) {
-  const channels = await guild.channels.fetch();
-  let totalCount = 0;
-
-  for (const [, channel] of channels) {
-    if (!channel || channel.type !== 0) continue; // Only text channels
-
-    try {
-      const count = await countMessagesInChannel(channel, targetUserId);
-      totalCount += count;
-    } catch (err) {
-      // Skip channels we can't access
-      continue;
-    }
-  }
-
-  return totalCount;
-}
-
 async function handleCheck(interaction) {
   const userId = interaction.user.id;
   const rateLimit = checkRateLimit(userId, 'check');
@@ -722,8 +702,7 @@ async function handleCheck(interaction) {
   const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
   const EVENT_CHANNEL_ID = '1389298240762937414';
 
-  // Scan historical data from Discord
-  let globalMessageCount = 0;
+  // Scan historical data from Discord (skip global - too slow!)
   let contributionCount = 0;
   let eventParticipationCount = 0;
 
@@ -739,12 +718,13 @@ async function handleCheck(interaction) {
     if (eventChannel) {
       eventParticipationCount = await countMentionsInChannel(eventChannel, targetUser.id);
     }
-
-    // Fetch global message count from all channels
-    globalMessageCount = await countGlobalMessages(interaction.guild, targetUser.id);
   } catch (err) {
     console.error('Error scanning messages:', err);
   }
+
+  // Use DB messageCount for global (not accurate but fast)
+  const targetUserState = getUserState(targetUser.id);
+  const globalMessageCount = targetUserState.messageCount || 0;
 
   // Build real-time Discord data
   const roles = targetMember
