@@ -1095,9 +1095,7 @@ async function registerCommands() {
     },
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
-    // Note: Invoice commands are registered only to specific guilds (see below)
-    ...invoiceCommandsSimple, // Spread invoice commands here (now from invoice-simple.cjs)
-    ...paymentCommands, // Payment commands
+    // Note: Invoice & payment commands are registered only to specific guilds (see below)
     {
       name: 'transform',
       description: 'Switch between CAT and ANIME forms (auto-toggle if not specified)',
@@ -1159,17 +1157,18 @@ async function registerCommands() {
       console.log('✅ Commands registered globally');
     }
 
-    // Register invoice commands to specific guilds only
-    console.log(`💰 Registering invoice commands to ${INVOICE_GUILD_IDS.length} allowed guilds...`);
+    // Register invoice & payment commands to specific guilds only
+    const invoiceAndPaymentCommands = [...invoiceCommandsSimple, ...paymentCommands];
+    console.log(`💰 Registering ${invoiceAndPaymentCommands.length} invoice/payment commands to ${INVOICE_GUILD_IDS.length} allowed guilds...`);
     for (const guildId of INVOICE_GUILD_IDS) {
       try {
         await rest.put(
           Routes.applicationGuildCommands(CONFIG.clientId, guildId),
-          { body: invoiceCommandsSimple }
+          { body: invoiceAndPaymentCommands }
         );
-        console.log(`✅ Invoice commands registered to guild: ${guildId}`);
+        console.log(`✅ Invoice/payment commands registered to guild: ${guildId}`);
       } catch (error) {
-        console.error(`❌ Failed to register invoice commands to guild ${guildId}:`, error.message);
+        console.error(`❌ Failed to register invoice/payment commands to guild ${guildId}:`, error.message);
       }
     }
 
