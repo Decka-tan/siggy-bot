@@ -497,6 +497,14 @@ async function handlePaymentConfirm(interaction, action) {
           components: [buildInvoiceButtons(updatedInvoice.id)]
         });
         console.log(`[Payment] Invoice message updated successfully`);
+
+        // Send announcement message in channel
+        await channel.send({
+          content: `✅ **Invoice Updated!**\n\n` +
+            `👤 ${participant.username} udah lunas Rp ${Number(participant.amount).toLocaleString('id-ID')}!\n` +
+            `📋 Invoice: ${invoice.title || 'Untitled'}\n` +
+            `💸 Dikonfirmasi oleh: ${interaction.user.username}`
+        });
       } else {
         console.log(`[Payment] Cannot update invoice - no messageId`);
       }
