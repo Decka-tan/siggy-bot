@@ -587,15 +587,6 @@ async function handleCheck(interaction) {
     return interaction.editReply('❌ Could not find that user.');
   }
 
-  // Fetch guild member for additional data (roles, join date, nickname)
-  let targetMember = null;
-  try {
-    targetMember = await interaction.guild.members.fetch(targetUser.id);
-  } catch (err) {
-    // User might not be in this guild
-    console.error('Could not fetch guild member:', err.message);
-  }
-
   // Check cache first (use userId for cache key now)
   const cacheKey = `check_${targetUser.id}`;
   const cached = getCache(cacheKey);
@@ -609,7 +600,7 @@ async function handleCheck(interaction) {
   const eventParticipationCount = targetUserState.eventParticipationCount || 0;
 
   if (cached) {
-    // Parse cached data
+    // Parse cached data - support both old format (string) and new format (JSON with avatar)
     let analysisText = cached;
     let avatarUrl = null;
 
@@ -632,81 +623,24 @@ async function handleCheck(interaction) {
       embed.setThumbnail(avatarUrl);
     }
 
-    // Add fields with real-time data
-    embed.addFields(
-      { name: '📊 Contributions', value: `${contributionCount} messages`, inline: true },
-      { name: '🎉 Events', value: `${eventParticipationCount} mentions`, inline: true },
-    );
-
-    if (targetMember) {
-      const roles = targetMember.roles.cache
-        .filter(r => r.id !== interaction.guild.id)
-        .map(r => r.name)
-        .slice(0, 3)
-        .join(', ') || 'None';
-
-      embed.addFields(
-        { name: '🎭 Roles', value: roles || 'None', inline: true },
-        { name: '📅 Joined', value: targetMember.joinedAt?.toLocaleDateString() || 'Unknown', inline: true },
-      );
-    }
-
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });
   }
 
-  // Build fresh data from Discord API
-  const userData = {
-    username: targetUser.username,
-    displayName: targetMember?.displayName || targetUser.username,
-    avatar: targetUser.displayAvatarURL({ size: 256 }),
-    joinDate: targetMember?.joinedAt?.toLocaleDateString(),
-    roles: targetMember
-      ? [...targetMember.roles.cache
-          .filter(r => r.id !== interaction.guild.id)
-          .values()]
-          .map(r => r.name)
-      : [],
-    isBot: targetUser.bot,
-    userId: targetUser.id,
-  };
-
-  // Build analysis data for AI
-  const analysisData = {
-    username: userData.username,
-    displayName: userData.displayName,
-    roles: userData.roles.join(', ') || 'None',
-    joinDate: userData.joinDate || 'Unknown',
-    contributions: contributionCount,
-    eventParticipation: eventParticipationCount,
-    isBot: userData.isBot,
-  };
+  // Get global message count for display
+  const globalMessageCount = targetUserState.messageCount || 0;
 
   try {
-    // Build prompt for AI analysis
-    const prompt = `Analyze this Ritual contributor:
-@${userData.displayName} (${userData.username})
-Roles: ${analysisData.roles}
-Joined: ${analysisData.joinDate}
-Contributions: ${contributionCount} messages in #contributions channel
-Event Participation: ${eventParticipationCount} mentions in #event channel
-${userData.isBot ? '⚠️ This is a BOT account' : ''}
-
-Provide a fun, brief analysis of their Ritual journey. Be playful and encouraging!`;
-
-    const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
+    const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: prompt,
-        userId: userId,
-        userName: interaction.user.username,
-        currentForm: state.form,
-        relationshipScore: state.relationshipScore,
-        conversationHistory: [],
-        isFirstMessage: false,
+        username: targetUser.username,
+        contributionCount,
+        eventParticipationCount,
+        globalMessageCount,
       }),
     });
 
@@ -717,39 +651,26 @@ Provide a fun, brief analysis of their Ritual journey. Be playful and encouragin
     }
 
     const data = await response.json();
-    let analysisText = data.response || data.message || 'No data available';
-
-    // Clean the response (remove mood markers)
-    analysisText = analysisText.replace(/\[MOOD:[^\]]+\]\s*/gi, '').trim();
 
     // Cache the result with avatar
-    setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar: userData.avatar }));
+    setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar || targetUser.displayAvatarURL({ size: 256 }) }));
 
     // Truncate analysis to Discord's 4096 char embed limit
-    const displayAnalysis = analysisText.substring(0, 4096);
+    const analysisText = (data.analysis || 'No data available').substring(0, 4096);
 
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(displayAnalysis)
-      .setThumbnail(userData.avatar);
+      .setDescription(analysisText);
 
-    // Add fields with real-time data
-    embed.addFields(
-      { name: '📊 Contributions', value: `${contributionCount} messages`, inline: true },
-      { name: '🎉 Events', value: `${eventParticipationCount} mentions`, inline: true },
-    );
-
-    if (targetMember) {
-      const roles = userData.roles.slice(0, 3).join(', ') || 'None';
-
-      embed.addFields(
-        { name: '🎭 Roles', value: roles, inline: true },
-        { name: '📅 Joined', value: userData.joinDate || 'Unknown', inline: true },
-      );
+    // Add user avatar as thumbnail if available
+    if (data.user?.avatar) {
+      embed.setThumbnail(data.user.avatar);
+    } else if (targetUser) {
+      embed.setThumbnail(targetUser.displayAvatarURL({ size: 256 }));
     }
 
-    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
+    embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
