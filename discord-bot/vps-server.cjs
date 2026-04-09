@@ -568,66 +568,51 @@ client.on('error', (error) => {
 });
 
 // ============ COMMANDS ============
-// Helper function to count messages in a channel
-async function countMessagesInChannel(channel, targetUserId) {
-  if (!channel) return 0;
-
-  let count = 0;
-  let lastId = null;
-  const maxMessages = 10000; // Safety limit
+// Helper function to count messages using Discord Search API (FAST!)
+async function countMessagesByAuthor(guild, targetUserId, channelId = null) {
+  const endpoint = channelId
+    ? `/guilds/${guild.id}/messages/search?author_id=${targetUserId}&channel_id=${channelId}`
+    : `/guilds/${guild.id}/messages/search?author_id=${targetUserId}`;
 
   try {
-    while (true) {
-      const options = { limit: 100 };
-      if (lastId) options.before = lastId;
+    const response = await fetch(`https://discord.com/api/v10${endpoint}`, {
+      headers: { 'Authorization': `Bot ${CONFIG.token}` },
+    });
 
-      const messages = await channel.messages.fetch(options);
-      if (messages.size === 0) break;
-
-      // Count messages from target user
-      messages.forEach(msg => {
-        if (msg.author.id === targetUserId) count++;
-      });
-
-      lastId = messages.last().id;
-      if (count >= maxMessages) break;
+    if (!response.ok) {
+      if (response.status === 404) return 0; // No messages found
+      console.error('Search API error:', response.status);
+      return 0;
     }
-  } catch (err) {
-    console.error(`Error counting in ${channel.name}:`, err.message);
-  }
 
-  return count;
+    const data = await response.json();
+    return data.total_results || 0;
+  } catch (err) {
+    console.error('Error counting messages:', err.message);
+    return 0;
+  }
 }
 
-// Helper function to count mentions in a channel
-async function countMentionsInChannel(channel, targetUserId) {
-  if (!channel) return 0;
-
-  let count = 0;
-  let lastId = null;
-  const maxMessages = 10000; // Safety limit
-
+// Helper function to count mentions using Discord Search API (FAST!)
+async function countMentionsOfUser(guild, targetUserId, channelId) {
   try {
-    while (true) {
-      const options = { limit: 100 };
-      if (lastId) options.before = lastId;
+    const response = await fetch(
+      `https://discord.com/api/v10/guilds/${guild.id}/messages/search?mentions=${targetUserId}&channel_id=${channelId}`,
+      { headers: { 'Authorization': `Bot ${CONFIG.token}` } }
+    );
 
-      const messages = await channel.messages.fetch(options);
-      if (messages.size === 0) break;
-
-      // Count messages that mention the target user
-      messages.forEach(msg => {
-        if (msg.mentions.users.has(targetUserId)) count++;
-      });
-
-      lastId = messages.last().id;
-      if (count >= maxMessages) break;
+    if (!response.ok) {
+      if (response.status === 404) return 0;
+      console.error('Search API error:', response.status);
+      return 0;
     }
-  } catch (err) {
-    console.error(`Error counting mentions in ${channel.name}:`, err.message);
-  }
 
-  return count;
+    const data = await response.json();
+    return data.total_results || 0;
+  } catch (err) {
+    console.error('Error counting mentions:', err.message);
+    return 0;
+  }
 }
 
 async function handleCheck(interaction) {
@@ -687,7 +672,7 @@ async function handleCheck(interaction) {
   }
 
   // Update with scanning status
-  await interaction.editReply('🔍 Scanning messages... ini bisa makan waktu bentar...');
+  await interaction.editReply('🔍 Scanning messages...');
 
   // Fetch guild member for real-time roles and join date
   let targetMember = null;
@@ -702,29 +687,23 @@ async function handleCheck(interaction) {
   const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
   const EVENT_CHANNEL_ID = '1389298240762937414';
 
-  // Scan historical data from Discord (skip global - too slow!)
+  // Scan using Discord Search API (FAST - server-side filtering!)
+  let globalMessageCount = 0;
   let contributionCount = 0;
   let eventParticipationCount = 0;
 
   try {
-    // Fetch contribution count from #contributions channel
-    const contributionsChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
-    if (contributionsChannel) {
-      contributionCount = await countMessagesInChannel(contributionsChannel, targetUser.id);
-    }
+    // Global messages - search entire guild
+    globalMessageCount = await countMessagesByAuthor(interaction.guild, targetUser.id);
 
-    // Fetch event participation from #event channel
-    const eventChannel = await interaction.guild.channels.fetch(EVENT_CHANNEL_ID).catch(() => null);
-    if (eventChannel) {
-      eventParticipationCount = await countMentionsInChannel(eventChannel, targetUser.id);
-    }
+    // Contribution count - search #contributions channel
+    contributionCount = await countMessagesByAuthor(interaction.guild, targetUser.id, CONTRIBUTIONS_CHANNEL_ID);
+
+    // Event participation - search mentions in #event channel
+    eventParticipationCount = await countMentionsOfUser(interaction.guild, targetUser.id, EVENT_CHANNEL_ID);
   } catch (err) {
     console.error('Error scanning messages:', err);
   }
-
-  // Use DB messageCount for global (not accurate but fast)
-  const targetUserState = getUserState(targetUser.id);
-  const globalMessageCount = targetUserState.messageCount || 0;
 
   // Build real-time Discord data
   const roles = targetMember
