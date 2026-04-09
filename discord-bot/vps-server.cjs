@@ -586,22 +586,8 @@ async function countMessagesByAuthor(guild, targetUserId, channelId = null) {
     }
 
     const data = await response.json();
-    // Discord search returns actual messages array, count them
-    const messages = data.messages || [];
-    let totalCount = 0;
-
-    // Flatten the nested array structure and count
-    messages.forEach(chunk => {
-      totalCount += chunk.filter(m => m.author.id === targetUserId).length;
-    });
-
-    // If we got max results (25 per chunk), there might be more
-    // For now, return what we found + estimate if hitting limit
-    if (totalCount >= 25) {
-      console.log(`⚠️ Hit search limit for ${targetUserId}, actual count may be higher`);
-    }
-
-    return totalCount;
+    // USE total_results - this is the ACTUAL count from Discord!
+    return data.total_results || 0;
   } catch (err) {
     console.error('Error counting messages:', err.message);
     return 0;
@@ -623,18 +609,8 @@ async function countMentionsOfUser(guild, targetUserId, channelId) {
     }
 
     const data = await response.json();
-    const messages = data.messages || [];
-    let totalCount = 0;
-
-    messages.forEach(chunk => {
-      totalCount += chunk.filter(m => m.mentions?.users?.some(u => u.id === targetUserId)).length;
-    });
-
-    if (totalCount >= 25) {
-      console.log(`⚠️ Hit search limit for mentions ${targetUserId}, actual count may be higher`);
-    }
-
-    return totalCount;
+    // USE total_results - this is the ACTUAL count from Discord!
+    return data.total_results || 0;
   } catch (err) {
     console.error('Error counting mentions:', err.message);
     return 0;
@@ -742,12 +718,15 @@ async function handleCheck(interaction) {
   const displayName = targetMember?.displayName || targetUser.username;
   const avatar = targetUser.displayAvatarURL({ size: 256 });
 
-  // Build request data with real-time Discord info + scanned stats
-  // Note: globalMessageCount from Search API is limited to 25, we'll get real count from old API
+  // Log the fresh data
+  console.log(`Fresh data for ${displayName}:`, {
+    global: globalMessageCount,
+    contributions: contributionCount,
+    events: eventParticipationCount,
+  });
 
-  // First, call old /api/analyze to get the good AI response and REAL global count
+  // Call old /api/analyze to get the good AI response format
   let analysisText = '';
-  let realGlobalCount = 0;
 
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
@@ -759,20 +738,14 @@ async function handleCheck(interaction) {
     if (response.ok) {
       const data = await response.json();
 
-      // Extract real global count from old API response
-      const globalMatch = (data.analysis || '').match(/🌎 Global Messages:\s*([\d,]+)/);
-      if (globalMatch) {
-        realGlobalCount = parseInt(globalMatch[1].replace(/,/g, ''));
-      }
-
       // Get the analysis text (everything after the stats block)
       const fullText = data.analysis || '';
       const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
       if (splitIndex !== -1) {
-        // Keep the intelligence part, rebuild stats with fresh data
+        // Keep the intelligence part, rebuild stats with FRESH Search API data
         const intelligencePart = fullText.substring(splitIndex);
         const statsBlock = `@${displayName}
-🌎 Global Messages: ${realGlobalCount.toLocaleString()}
+🌎 Global Messages: ${globalMessageCount.toLocaleString()}
 📝 Contributions: ${contributionCount} msgs
 🎉 Events: ${eventParticipationCount} participations
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
@@ -790,7 +763,7 @@ async function handleCheck(interaction) {
   // Fallback if API failed
   if (!analysisText) {
     const statsBlock = `@${displayName}
-🌎 Global Messages: ${realGlobalCount.toLocaleString()}
+🌎 Global Messages: ${globalMessageCount.toLocaleString()}
 📝 Contributions: ${contributionCount} msgs
 🎉 Events: ${eventParticipationCount} participations
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
