@@ -664,10 +664,10 @@ async function handleCheck(interaction) {
     avatar: targetUser.displayAvatarURL({ size: 256 }),
     joinDate: targetMember?.joinedAt?.toLocaleDateString(),
     roles: targetMember
-      ? targetMember.roles.cache
+      ? [...targetMember.roles.cache
           .filter(r => r.id !== interaction.guild.id)
+          .values()]
           .map(r => r.name)
-          .toArray()
       : [],
     isBot: targetUser.bot,
     userId: targetUser.id,
@@ -755,7 +755,7 @@ Provide a fun, brief analysis of their Ritual journey. Be playful and encouragin
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     console.error('Check command error:', error);
-    await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This now uses live Discord API data from the Ritual server!*`);
+    await interaction.editReply('❌ Gagal mengambil data. Coba lagi nanti ya!');
   }
 }
 
