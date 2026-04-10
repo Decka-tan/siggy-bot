@@ -1,7 +1,8 @@
 /**
- * USER TOKEN EXTRACTOR - The Working Version
+ * USER TOKEN EXTRACTOR - Full Channel Scan
  *
- * Scan channels, collect all users, check their roles, count messages
+ * Scan ALL messages in accessible channels
+ * Count per user, filter by Initiate role
  */
 
 const fs = require('fs');
@@ -15,59 +16,53 @@ const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
 const INITIATE_ROLE_ID = '1212485735039508561';
 const OUTPUT_DIR = path.join(__dirname, '../extracted-data');
 
-// Data structures
-const userData = new Map(); // userId -> { username, displayName, globalMessages, contributions, roles, isInitiate }
-const memberCache = new Map(); // userId -> member info (cache to avoid repeated fetches)
+// Per-user message counts
+const userGlobalCount = new Map(); // userId -> count
+const userContribCount = new Map();
+const userInfo = new Map(); // userId -> { username, roles }
 
-// Fetch helper
-async function fetchAPI(url) {
-  const response = await fetch(url, {
-    headers: { 'Authorization': USER_TOKEN }
-  });
-  if (!response.ok) {
-    throw new Error(`API ${response.status}: ${response.statusText}`);
-  }
-  return response.json();
-}
-
-// Check if user is Initiate (with cache)
-async function checkIfInitiate(userId) {
-  if (memberCache.has(userId)) {
-    return memberCache.get(userId)?.isInitiate || false;
-  }
+// Check if user is Initiate (cached)
+const roleCache = new Map();
+async function isInitiate(userId) {
+  if (roleCache.has(userId)) return roleCache.get(userId);
 
   try {
-    const member = await fetchAPI(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/members/${userId}`);
-
-    const isInitiate = member.roles?.includes(INITIATE_ROLE_ID) || false;
-
-    memberCache.set(userId, {
-      username: member.user.username,
-      displayName: member.nick || member.user.global_name || member.user.username,
-      roles: member.roles || [],
-      isInitiate: isInitiate
+    const response = await fetch(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/members/${userId}`, {
+      headers: { 'Authorization': USER_TOKEN }
     });
 
-    return isInitiate;
+    if (!response.ok) {
+      roleCache.set(userId, false);
+      return false;
+    }
+
+    const member = await response.json();
+    const hasInitiate = member.roles?.includes(INITIATE_ROLE_ID) || false;
+
+    roleCache.set(userId, hasInitiate);
+    userInfo.set(userId, {
+      username: member.user.username,
+      displayName: member.nick || member.user.global_name || member.user.username,
+      roles: member.roles || []
+    });
+
+    return hasInitiate;
   } catch (e) {
-    memberCache.set(userId, { isInitiate: false });
+    roleCache.set(userId, false);
     return false;
   }
 }
 
-// Scan channel
+// Scan ONE channel completely
 async function scanChannel(channel) {
   console.log(`\n📡 #${channel.name}`);
 
-  let totalMessages = 0;
-  let initiateMessages = 0;
+  let totalMsgs = 0;
+  let initiateMsgs = 0;
   let lastId = null;
   let hasMore = true;
-  let iterations = 0;
 
-  while (hasMore && iterations < 1000) { // Max 1000 iterations = 100k messages
-    iterations++;
-
+  while (hasMore) {
     try {
       const params = new URLSearchParams({ limit: 100 });
       if (lastId) params.set('before', lastId);
@@ -78,10 +73,11 @@ async function scanChannel(channel) {
 
       if (!response.ok) {
         if (response.status === 429) {
-          console.log(`   Rate limited. Waiting 5s...`);
+          console.log(`\n   Rate limited. Waiting 5s...`);
           await new Promise(r => setTimeout(r, 5000));
           continue;
         }
+        console.log(`\n   Error: ${response.status}`);
         break;
       }
 
@@ -95,35 +91,25 @@ async function scanChannel(channel) {
       for (const msg of messages) {
         if (msg.author?.bot) continue;
 
+        totalMsgs++;
+
+        // Store user info and count
         const userId = msg.author.id;
+        userGlobalCount.set(userId, (userGlobalCount.get(userId) || 0) + 1);
 
-        // Initialize user data if not exists
-        if (!userData.has(userId)) {
-          const isInitiate = await checkIfInitiate(userId);
-
-          const member = memberCache.get(userId);
-          userData.set(userId, {
-            userId,
-            username: member?.username || msg.author.username,
-            displayName: member?.displayName || msg.author.username,
-            globalMessages: 0,
-            contributions: 0,
-            events: 0,
-            roles: member?.roles || [],
-            isInitiate: isInitiate
+        if (!userInfo.has(userId)) {
+          userInfo.set(userId, {
+            username: msg.author.username,
+            displayName: msg.author.username,
+            roles: []
           });
         }
 
-        // Count message
-        const user = userData.get(userId);
-        user.globalMessages++;
-
-        totalMessages++;
         lastId = msg.id;
       }
 
-      if (iterations % 5 === 0) {
-        process.stdout.write(`\r   ${totalMessages} messages, ${userData.size} users`);
+      if (totalMsgs % 1000 === 0) {
+        process.stdout.write(`\r   ${totalMsgs} messages, ${userGlobalCount.size} users`);
       }
 
     } catch (e) {
@@ -132,26 +118,17 @@ async function scanChannel(channel) {
     }
   }
 
-  console.log(`\r   ✓ ${totalMessages} messages, ${userData.size} unique users${' '.repeat(20)}`);
+  console.log(`\r   ✓ ${totalMsgs} total messages, ${userGlobalCount.size} users${' '.repeat(20)}`);
 }
 
-// Scan contributions channel
-async function scanContributions(channels) {
-  const channel = channels.find(c => c.id === CONTRIBUTIONS_CHANNEL_ID);
-  if (!channel) {
-    console.log(`\n⚠️  Contributions channel not found`);
-    return;
-  }
+async function scanContributions(channel) {
+  console.log(`\n📝 #${channel.name}`);
 
-  console.log(`\n📝 Scanning #contributions...`);
-
+  let totalMsgs = 0;
   let lastId = null;
   let hasMore = true;
-  let iterations = 0;
 
-  while (hasMore && iterations < 1000) {
-    iterations++;
-
+  while (hasMore) {
     try {
       const params = new URLSearchParams({ limit: 100 });
       if (lastId) params.set('before', lastId);
@@ -177,73 +154,90 @@ async function scanContributions(channels) {
 
       for (const msg of messages) {
         if (msg.author?.bot) continue;
+        totalMsgs++;
 
         const userId = msg.author.id;
-        if (userData.has(userId)) {
-          userData.get(userId).contributions++;
-        }
-
+        userContribCount.set(userId, (userContribCount.get(userId) || 0) + 1);
         lastId = msg.id;
       }
 
-      process.stdout.write(`\r   Iteration ${iterations}`);
+      process.stdout.write(`\r   ${totalMsgs} messages`);
 
     } catch (e) {
       hasMore = false;
     }
   }
 
-  console.log(`\r   ✓ Done${' '.repeat(20)}`);
+  console.log(`\r   ✓ ${totalMsgs} messages${' '.repeat(20)}`);
 }
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('USER TOKEN EXTRACTOR');
+  console.log('USER TOKEN EXTRACTOR - Full Scan');
   console.log('='.repeat(60));
 
-  // Fetch all channels
-  console.log(`\n📡 Fetching channels...`);
-  const channels = await fetchAPI(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/channels`);
+  // Fetch channels
+  const channels = await fetch(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/channels`, {
+    headers: { 'Authorization': USER_TOKEN }
+  }).then(r => r.json());
+
   const textChannels = channels.filter(c => c.type === 0);
+  console.log(`📡 ${textChannels.length} channels\n`);
 
-  console.log(`   Found ${textChannels.length} text channels\n`);
-
-  // Scan all channels for global messages
-  for (const channel of textChannels.slice(0, 50)) { // Limit to first 50 to start
+  // Scan regular channels
+  for (const channel of textChannels.slice(0, 20)) { // Start with 20
     if (channel.id === CONTRIBUTIONS_CHANNEL_ID) continue;
     await scanChannel(channel);
   }
 
   // Scan contributions
-  await scanContributions(textChannels);
+  const contribChannel = textChannels.find(c => c.id === CONTRIBUTIONS_CHANNEL_ID);
+  if (contribChannel) {
+    await scanContributions(contribChannel);
+  }
 
-  // Generate output - only Initiate members
-  console.log(`\n📊 Generating output...`);
+  // Get Initiate role status for users
+  console.log(`\n🎭 Checking Initiate status for ${userGlobalCount.size} users...`);
 
-  const initiateMembers = Array.from(userData.values()).filter(u => u.isInitiate);
+  const initiateUsers = [];
 
-  console.log(`   Initiate members found: ${initiateMembers.length}`);
+  for (const [userId, count] of userGlobalCount) {
+    const isInit = await isInitiate(userId);
+    if (isInit) {
+      initiateUsers.push(userId);
+    }
 
-  const outputMembers = initiateMembers.map(u => ({
-    userId: u.userId,
-    username: u.username,
-    displayName: u.displayName,
-    globalMessages: u.globalMessages,
-    contributionsCount: u.contributions,
-    eventsCount: u.events,
-    roles: u.roles
-  })).sort((a, b) => b.globalMessages - a.globalMessages);
+    if (initiateUsers.length % 10 === 0) {
+      process.stdout.write(`\r   ${initiateUsers.length} Initiate found...`);
+    }
+  }
+
+  console.log(`\r   ✓ ${initiateUsers.length} Initiate members${' '.repeat(20)}`);
+
+  // Generate output - only Initiate
+  const output = initiateUsers.map(userId => {
+    const info = userInfo.get(userId);
+    const roles = roleCache.get(userId) ? info.roles : [];
+
+    return {
+      userId,
+      username: info?.username || userId,
+      displayName: info?.displayName || userId,
+      globalMessages: userGlobalCount.get(userId) || 0,
+      contributionsCount: userContribCount.get(userId) || 0,
+      eventsCount: 0,
+      roles
+    };
+  }).sort((a, b) => b.globalMessages - a.globalMessages);
 
   fs.writeFileSync(
     path.join(OUTPUT_DIR, 'member-activity-analysis.json'),
-    JSON.stringify({ members: outputMembers }, null, 2),
+    JSON.stringify({ members: output }, null, 2),
     'utf8'
   );
 
-  console.log(`   ✓ Wrote ${outputMembers.length} Initiate members\n`);
-
-  console.log(`${'='.repeat(60)}`);
-  console.log(`✅ Done!`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`✅ Done! ${output.length} Initiate members`);
   console.log(`${'='.repeat(60)}\n`);
 }
 
