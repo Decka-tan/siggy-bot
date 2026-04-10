@@ -1,17 +1,17 @@
 /**
  * TEST /check COMMAND
- * Usage: cd discord-bot && node ../scripts/test-check.cjs <username>
+ * Usage: cd /home/ubuntu/siggy-bot && node scripts/test-check.cjs <username>
  */
 
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config();
 const { Client, GatewayIntentBits } = require('discord.js');
 
 const RITUAL_GUILD_ID = '8795483243035488115';
 const username = process.argv[2];
 
 if (!username) {
-  console.log('Usage: node test-check.cjs <username>');
-  console.log('Example: node test-check.cjs decka_tan');
+  console.log('Usage: node scripts/test-check.cjs <username>');
+  console.log('Example: node scripts/test-check.cjs decka_tan');
   process.exit(1);
 }
 
@@ -64,11 +64,11 @@ client.once('ready', async () => {
     // Load extracted data
     const fs = require('fs');
     const path = require('path');
-    const dataDir = path.join(__dirname, '../extracted-data');
+    const dataDir = './extracted-data';
 
     console.log(`\n📂 Extracted Data (from ${dataDir}):`);
 
-    // Check member-activity-analysis.json
+    // Check member-stylesheet.analysis.json
     const activityPath = path.join(dataDir, 'member-activity-analysis.json');
     if (fs.existsSync(activityPath)) {
       const data = JSON.parse(fs.readFileSync(activityPath, 'utf8'));
