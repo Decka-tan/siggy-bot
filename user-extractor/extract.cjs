@@ -143,7 +143,8 @@ async function scanChannel(channel, isContributions = false) {
         lastId = msg.id;
       }
 
-      if (totalMsgs % 1000 === 0) {
+      // Update progress more frequently (every 100 msgs)
+      if (totalMsgs % 100 === 0) {
         process.stdout.write(`\r   ${totalMsgs} messages, ${Object.keys(state.userGlobalCount).length} users`);
       }
 
