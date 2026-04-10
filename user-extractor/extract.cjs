@@ -59,6 +59,12 @@ async function getUserCounts(userId, username) {
   try {
     // Global messages (all channels)
     const globalResult = await searchMessages({ authorId: userId });
+
+    // Debug: log first result
+    if (globalResult.total_count === 0) {
+      console.log(`      DEBUG: ${JSON.stringify(globalResult).substring(0, 200)}`);
+    }
+
     const globalCount = globalResult.total_count || 0;
 
     // Contributions (contributions channel only)
@@ -70,6 +76,7 @@ async function getUserCounts(userId, username) {
 
     return { globalCount, contribCount, error: null };
   } catch (error) {
+    console.log(`      ERROR: ${error.message}`);
     return { globalCount: 0, contribCount: 0, error: error.message };
   }
 }
