@@ -110,10 +110,11 @@ let startTime = Date.now();
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
   ],
-  partials: [Partials.Channel],
+  partials: [Partials.Channel, Partials.Message, Partials.Reaction],
 });
 
 function initOutputDir() {
@@ -251,7 +252,8 @@ async function extractMemberData(guild) {
   console.log(`\n👥 Extracting member data...`);
 
   try {
-    const members = await guild.members.fetch();
+    // Fetch with query to force loading
+    const members = await guild.members.fetch({ query: '', limit: 0 });
     const total = members.size;
     let processed = 0;
 
