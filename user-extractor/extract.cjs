@@ -188,33 +188,53 @@ async function extractInitiateMembers(guildId, initiateRoleId) {
     return;
   }
 
-  console.log(`\n👥 Extracting Initiate members only...`);
+  console.log(`\n👥 Extracting Initiate members...`);
 
   try {
+    // Method 1: Try guild members endpoint with query
     let allMembers = [];
-    let lastId = null;
-    let keepGoing = true;
-    let initiateCount = 0;
 
-    while (keepGoing) {
-      const params = new URLSearchParams({ limit: 1000 });
-      if (lastId) params.set('after', lastId);
+    // Try fetching with query parameter (works for user tokens in large servers)
+    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/search?query=&limit=1000`, {
+      headers: { 'Authorization': USER_TOKEN }
+    });
 
-      const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?${params}`, {
-        headers: { 'Authorization': USER_TOKEN }
-      });
-
-      if (!response.ok) break;
-
+    if (response.ok) {
       const batch = await response.json();
-      if (!Array.isArray(batch) || batch.length === 0) break;
-
-      allMembers = allMembers.concat(batch);
-      lastId = batch[batch.length - 1].user.id;
-      keepGoing = batch.length === 1000;
+      if (Array.isArray(batch)) {
+        allMembers = allMembers.concat(batch);
+        console.log(`   Fetched ${batch.length} members via search`);
+      }
     }
 
-    // Filter only Initiate role members
+    // If search didn't work, try regular members with smaller limit
+    if (allMembers.length === 0) {
+      let lastId = null;
+      for (let i = 0; i < 10; i++) { // Max 10 attempts
+        const params = new URLSearchParams({ limit: 100 });
+        if (lastId) params.set('after', lastId);
+
+        const resp = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?${params}`, {
+          headers: { 'Authorization': USER_TOKEN }
+        });
+
+        if (!resp.ok) break;
+
+        const batch = await resp.json();
+        if (!Array.isArray(batch) || batch.length === 0) break;
+
+        allMembers = allMembers.concat(batch);
+        lastId = batch[batch.length - 1].user?.id;
+        if (!lastId) break;
+
+        console.log(`   Fetched ${allMembers.length} members...`);
+      }
+    }
+
+    console.log(`   Total members fetched: ${allMembers.length}`);
+
+    // Filter for Initiate role
+    let initiateCount = 0;
     for (const member of allMembers) {
       if (member.user?.bot) continue;
 
@@ -233,7 +253,39 @@ async function extractInitiateMembers(guildId, initiateRoleId) {
       });
     }
 
-    console.log(`   ✓ ${initiateCount} Initiate members found (out of ${allMembers.length} total)`);
+    console.log(`   ✓ ${initiateCount} Initiate members found`);
+
+    // If still no members, try loading from baseline as fallback
+    if (initiateCount === 0) {
+      console.log(`   ⚠️  No Initiate members found, checking baseline data...`);
+
+      // Load from roles summary if available
+      const rolesPath = path.join(OUTPUT_DIR, 'user-roles-summary.json');
+      if (fs.existsSync(rolesPath)) {
+        const data = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
+        if (data.members) {
+          for (const m of data.members) {
+            if (m.roles?.includes(initiateRoleId)) {
+              memberData.set(m.userId, {
+                userId: m.userId,
+                username: m.username,
+                displayName: m.displayName || m.username,
+                avatar: m.avatar,
+                roles: m.roles || [],
+                joinedAt: m.joinedAt
+              });
+              initiateCount++;
+            }
+          }
+          console.log(`   ✓ Loaded ${initiateCount} Initiate members from baseline`);
+        }
+      }
+    }
+
+    if (initiateCount === 0) {
+      console.log(`   ❌ Still no Initiate members! The role might not exist or no one has it.`);
+    }
+
   } catch (error) {
     console.log(`   ⚠️  Error: ${error.message}`);
   }
