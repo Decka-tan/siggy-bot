@@ -84,8 +84,9 @@ async function main() {
   console.log(`📂 Loaded ${members.length} members from baseline\n`);
 
   // Filter Initiate only
+  const INITIATE_ROLE_ID = '1212485735039508561';
   const initiateMembers = members.filter(m =>
-    m.roles && m.roles.some(r => r === 'Initiate' || r?.name === 'Initiate')
+    m.roles && m.roles.includes(INITIATE_ROLE_ID)
   );
 
   console.log(`🎭 Found ${initiateMembers.length} Initiate members`);
