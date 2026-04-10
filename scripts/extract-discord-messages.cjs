@@ -4,13 +4,13 @@
  * Usage: cd C:\Codingers\siggy-bot\discord-bot && node ../scripts/extract-discord-messages.cjs
  */
 
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: './discord-bot/.env' });
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const RITUAL_GUILD_ID = '8795483243035488115'; // Ritual Discord Guild ID
+const RITUAL_GUILD_ID = '1210468736205852672'; // Ritual Discord Guild ID
 const OUTPUT_DIR = path.join(__dirname, '../extracted-data');
 
 // Data structures
