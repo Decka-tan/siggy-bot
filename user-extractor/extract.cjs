@@ -60,10 +60,8 @@ async function getUserCounts(userId, username) {
     // Global messages (all channels)
     const globalResult = await searchMessages({ authorId: userId });
 
-    // Debug: log first result
-    if (globalResult.total_count === 0) {
-      console.log(`      DEBUG: ${JSON.stringify(globalResult).substring(0, 200)}`);
-    }
+    // Debug: always log to see response
+    console.log(`      DEBUG: ${JSON.stringify(globalResult).substring(0, 300)}`);
 
     const globalCount = globalResult.total_count || 0;
 
