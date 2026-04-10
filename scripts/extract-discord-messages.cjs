@@ -1,17 +1,23 @@
 /**
  * DISCORD MESSAGE EXTRACTOR
  * Extracts message counts, contributions, and event participation from Discord
- * Usage: cd C:\Codingers\siggy-bot\discord-bot && node ../scripts/extract-discord-messages.cjs
+ * Usage: cd /home/ubuntu/siggy-bot && node scripts/extract-discord-messages.cjs
  */
 
-require('dotenv').config({ path: './discord-bot/.env' });
-const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 
+// Load modules from discord-bot/node_modules
+const discordBotPath = path.join(__dirname, '../discord-bot');
+const dotenvPath = path.join(discordBotPath, 'node_modules', 'dotenv');
+const discordPath = path.join(discordBotPath, 'node_modules', 'discord.js');
+
+require(dotenvPath).config({ path: path.join(discordBotPath, '.env') });
+const { Client, GatewayIntentBits, Partials } = require(discordPath);
+
 // Configuration
 const RITUAL_GUILD_ID = '1210468736205852672'; // Ritual Discord Guild ID
-const OUTPUT_DIR = path.join(__dirname, '../extracted-data');
+const OUTPUT_DIR = path.join(__dirname, '../extracted-data'); // Root extracted-data folder
 
 // Data structures
 const userMessages = new Map(); // userId -> { count, firstMessage, lastMessage, samples }
