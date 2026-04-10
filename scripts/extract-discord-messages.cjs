@@ -19,6 +19,63 @@ const userContributions = new Map(); // userId -> { count, samples: [] }
 const eventParticipants = new Map(); // userId -> count (event participations)
 const memberData = new Map(); // userId -> { username, displayName, avatar, roles, joinedAt }
 
+// Existing data from extraction (for merging)
+const existingData = {
+  messages: new Map(),
+  contributions: new Map(),
+  events: new Map(),
+  members: new Map()
+};
+
+function loadExistingData() {
+  console.log(`\n📂 Loading existing data for merging...`);
+
+  // Load member-activity-analysis.json
+  const activityPath = path.join(OUTPUT_DIR, 'member-activity-analysis.json');
+  if (fs.existsSync(activityPath)) {
+    const data = JSON.parse(fs.readFileSync(activityPath, 'utf8'));
+    if (data.members) {
+      data.members.forEach(m => {
+        existingData.messages.set(m.userId, {
+          userId: m.userId,
+          username: m.username,
+          displayName: m.displayName,
+          globalMessages: m.globalMessages || 0,
+          contributionsCount: m.contributionsCount || 0,
+          eventsCount: m.eventsCount || 0
+        });
+      });
+      console.log(`   ✓ Loaded ${data.members.length} users from activity analysis`);
+    }
+  }
+
+  // Load events-participation.json
+  const eventsPath = path.join(OUTPUT_DIR, 'events-participation.json');
+  if (fs.existsSync(eventsPath)) {
+    const data = JSON.parse(fs.readFileSync(eventsPath, 'utf8'));
+    if (data.mentionCounts) {
+      Object.entries(data.mentionCounts).forEach(([userId, count]) => {
+        existingData.events.set(userId, count);
+      });
+      console.log(`   ✓ Loaded ${Object.keys(data.mentionCounts).length} users from events`);
+    }
+  }
+
+  // Load user-roles-summary.json
+  const rolesPath = path.join(OUTPUT_DIR, 'user-roles-summary.json');
+  if (fs.existsSync(rolesPath)) {
+    const data = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
+    if (data.members) {
+      data.members.forEach(m => {
+        existingData.members.set(m.userId, m);
+      });
+      console.log(`   ✓ Loaded ${data.members.length} users from roles`);
+    }
+  }
+
+  console.log(`   📊 Baseline: ${existingData.messages.size} users, ${existingData.events.size} event participants\n`);
+}
+
 // Event channel patterns ( Ritual channels that typically host events )
 const EVENT_CHANNEL_PATTERNS = [
   /event/i,
@@ -55,7 +112,7 @@ const client = new Client({
 
 function initOutputDir() {
   if (!fs.existsSync(OUTPUT_DIR)) {
-    fs.mkdirSync(UTC_DIR, { recursive: true });
+    fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 }
 
@@ -213,16 +270,36 @@ async function extractMemberData(guild) {
 }
 
 function generateOutputFiles() {
-  console.log(`\n📊 Generating output files...`);
+  console.log(`\n📊 Generating output files (MERGING with existing data)...`);
 
-  // 1. member-activity-analysis.json
-  const memberActivityArray = Array.from(userMessages.values()).map(u => ({
-    userId: u.userId,
-    username: u.username,
-    displayName: u.displayName,
-    globalMessages: u.count,
-    contributionsCount: userContributions.get(u.userId)?.count || 0,
-    eventsCount: eventParticipants.get(u.userId) || 0,
+  // MERGE: Combine existing data + newly extracted data
+  const allUsers = new Set([
+    ...Array.from(existingData.messages.keys()),
+    ...Array.from(userMessages.keys())
+  ]);
+
+  const memberActivityArray = Array.from(allUsers).map(userId => {
+    const existing = existingData.messages.get(userId);
+    const extracted = userMessages.get(userId);
+    const existingContrib = existingData.contributions.get(userId);
+    const extractedContrib = userContributions.get(userId);
+    const existingEvents = existingData.events.get(userId) || 0;
+    const extractedEvents = eventParticipants.get(userId) || 0;
+    const memberInfo = memberData.get(userId) || existingData.members.get(userId);
+
+    // Merge: extract data fills in the gap
+    return {
+      userId: userId,
+      username: extracted?.username || existing?.username || memberInfo?.username || userId,
+      displayName: extracted?.displayName || existing?.displayName || memberInfo?.displayName || '',
+      globalMessages: (existing?.globalMessages || 0) + (extracted?.count || 0),
+      contributionsCount: (existing?.contributionsCount || 0) + (extractedContrib?.count || 0),
+      eventsCount: existingEvents + extractedEvents,
+      firstPost: existing?.firstPost || extracted?.firstMessage,
+      lastPost: extracted?.lastMessage || existing?.lastPost,
+      roles: memberInfo?.roles || existing?.roles || []
+    };
+  }).sort((a, b) => b.globalMessages - a.globalMessages);
     firstPost: u.firstMessage,
     lastPost: u.lastMessage,
     roles: memberData.get(u.userId)?.roles || []
@@ -327,6 +404,8 @@ async function main() {
   console.log('DISCORD MESSAGE EXTRACTOR');
   console.log('='.repeat(60));
 
+  initOutputDir();
+
   const token = process.env.DISCORD_BOT_TOKEN;
   if (!token) {
     console.error('❌ DISCORD_BOT_TOKEN not found in .env file!');
@@ -352,6 +431,9 @@ async function main() {
 
       console.log(`\n📋 Guild: ${guild.name}`);
       console.log(`👥 Members: ${guild.memberCount}`);
+
+      // Load existing data for merging
+      loadExistingData();
 
       // Extract member data first
       await extractMemberData(guild);
