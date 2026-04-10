@@ -19,7 +19,7 @@ require(dotenvPath).config({ path: path.join(__dirname, 'discord-bot', '.env') }
 const discordPath = path.join(__dirname, 'discord-bot', 'node_modules', 'discord.js');
 const { Client, GatewayIntentBits } = require(discordPath);
 
-const RITUAL_GUILD_ID = '1164825060440281128';
+const RITUAL_GUILD_ID = '1210468736205852672';
 const username = process.argv[2];
 
 if (!username) {
