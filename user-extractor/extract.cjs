@@ -1,11 +1,9 @@
 /**
  * USER TOKEN EXTRACTOR
- * Daily extraction at 3 AM - Tracks Initiate members only
+ * Daily extraction - works without member list access
  *
- * Metrics:
- * - GlobalMessageCount: All messages in ALL channels
- * - ContributionCount: Messages in #contributions channel only
- * - EventParticipationCount: Mentions in #events channel only
+ * Strategy: Extract ALL messages, track ALL users
+ * Filter by Initiate role when DISPLAYING (in /check command)
  *
  * Usage: cd /home/ubuntu/siggy-bot/user-extractor && node extract.cjs
  */
@@ -31,22 +29,21 @@ const STATE_FILE = path.join(__dirname, 'last-extract-state.json');
 // ===== STATE =====
 let extractState = {
   lastExtractTime: null,
-  lastMessageIds: {},
-  initiateRoleId: null  // Will be auto-detected
+  lastMessageIds: {}
 };
 
-// ===== DATA STRUCTURES =====
-// For Initiate members only:
-const globalMessages = new Map();      // userId -> message count (ALL channels)
-const contributionMessages = new Map(); // userId -> message count (contributions channel ONLY)
-const eventMentions = new Map();        // userId -> mention count (events channel ONLY)
-const memberData = new Map();           // userId -> { username, displayName, roles, joinedAt }
+// ===== DATA TRACKING =====
+// Track ALL users (will filter by Initiate role when displaying)
+const globalMessages = new Map();      // userId -> { count, username, firstMessage, lastMessage }
+const contributionMessages = new Map(); // userId -> { count, username }
+const eventMentions = new Map();        // userId -> count
 
 // Existing data for merging
 const existingData = {
   globalMessages: new Map(),
   contributions: new Map(),
-  events: new Map()
+  events: new Map(),
+  members: new Map()
 };
 
 // ===== HTTP HELPERS =====
@@ -55,7 +52,8 @@ async function fetchAPI(endpoint) {
     headers: { 'Authorization': USER_TOKEN }
   });
   if (!response.ok) {
-    throw new Error(`API ${response.status}: ${response.statusText}`);
+    const err = await response.text();
+    throw new Error(`API ${response.status}: ${err}`);
   }
   return response.json();
 }
@@ -87,10 +85,7 @@ function loadState() {
   if (fs.existsSync(STATE_FILE)) {
     try {
       extractState = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-      console.log(`📂 Last extract: ${extractState.lastExtractTime ? new Date(extractState.lastExtractTime).toLocaleString() : 'Never'}`);
-      if (extractState.initiateRoleId) {
-        console.log(`🎭 Initiate Role ID: ${extractState.initiateRoleId}`);
-      }
+      console.log(`📂 Last extract: ${extractState.lastExtractTime ? new Date(extractState.lastExtractTime).toLocaleString() : 'First run'}`);
     } catch (err) {
       console.log(`⚠️  Could not load state: ${err.message}`);
     }
@@ -113,187 +108,48 @@ function loadExistingData() {
         existingData.globalMessages.set(m.userId, m.globalMessages || 0);
         existingData.contributions.set(m.userId, m.contributionsCount || 0);
         existingData.events.set(m.userId, m.eventsCount || 0);
+        existingData.members.set(m.userId, {
+          username: m.username,
+          displayName: m.displayName,
+          roles: m.roles || []
+        });
       });
       console.log(`   ✓ Loaded ${data.members.length} users from baseline`);
     }
   }
+
+  const rolesPath = path.join(OUTPUT_DIR, 'user-roles-summary.json');
+  if (fs.existsSync(rolesPath)) {
+    const data = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
+    if (data.members) {
+      data.members.forEach(m => {
+        existingData.members.set(m.userId, {
+          username: m.username,
+          displayName: m.displayName,
+          roles: m.roles || []
+        });
+      });
+    }
+  }
+
   console.log(`   📊 Baseline: ${existingData.globalMessages.size} users\n`);
 }
 
-// ===== ROLE DETECTION =====
-async function findInitiateRole(guildId) {
-  console.log(`\n🎭 Finding 'Initiate' role...`);
+// ===== CHANNEL FETCHING =====
+async function getAllChannels() {
+  console.log(`\n📡 Fetching channels...`);
 
-  try {
-    const roles = await fetchAPI(`/guilds/${guildId}/roles`);
+  const channels = await fetchAPI(`/guilds/${RITUAL_GUILD_ID}/channels`);
+  const textChannels = channels.filter(c => c.type === 0); // GuildText
 
-    // Find role named "Initiate" (case-insensitive)
-    const initiateRole = roles.find(r => r.name.toLowerCase() === 'initiate');
+  console.log(`   Found ${textChannels.length} text channels\n`);
 
-    if (initiateRole) {
-      extractState.initiateRoleId = initiateRole.id;
-      console.log(`   ✓ Found Initiate role: ${initiateRole.id}`);
-      saveState();
-      return initiateRole.id;
-    } else {
-      console.log(`   ⚠️  'Initiate' role not found! Available roles:`);
-      roles.slice(0, 10).forEach(r => console.log(`      - ${r.name} (${r.id})`));
-      return null;
-    }
-  } catch (error) {
-    console.log(`   ❌ Error fetching roles: ${error.message}`);
-    return null;
-  }
-}
-
-// ===== CHANNEL PERMISSION CHECK =====
-async function canInitiateSendMessages(channelId, roleId) {
-  try {
-    const channel = await fetchAPI(`/channels/${channelId}`);
-
-    // Check permission overwrites for this role
-    if (channel.permission_overwrites) {
-      const overwrite = channel.permission_overwrites.find(o => o.id === roleId);
-
-      if (overwrite) {
-        // If explicitly denied, return false
-        if (overwrite.deny && (overwrite.deny & 0x800)) { // 0x800 = SEND_MESSAGES
-          return false;
-        }
-        // If explicitly allowed, return true
-        if (overwrite.allow && (overwrite.allow & 0x800)) {
-          return true;
-        }
-      }
-    }
-
-    // Check role permissions (default allow)
-    const roles = await fetchAPI(`/guilds/${RITUAL_GUILD_ID}/roles`);
-    const role = roles.find(r => r.id === roleId);
-    if (role && role.permissions && (role.permissions & 0x800)) {
-      return true;
-    }
-
-    return false;
-  } catch (error) {
-    console.log(`      ⚠️  Permission check error: ${error.message}`);
-    return true; // Assume allowed if can't check
-  }
-}
-
-// ===== MEMBER EXTRACTION (Initiate only) =====
-async function extractInitiateMembers(guildId, initiateRoleId) {
-  if (!initiateRoleId) {
-    console.log(`\n⚠️  Skipping member extraction (no Initiate role)`);
-    return;
-  }
-
-  console.log(`\n👥 Extracting Initiate members...`);
-
-  try {
-    // Method 1: Try guild members endpoint with query
-    let allMembers = [];
-
-    // Try fetching with query parameter (works for user tokens in large servers)
-    const response = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/search?query=&limit=1000`, {
-      headers: { 'Authorization': USER_TOKEN }
-    });
-
-    if (response.ok) {
-      const batch = await response.json();
-      if (Array.isArray(batch)) {
-        allMembers = allMembers.concat(batch);
-        console.log(`   Fetched ${batch.length} members via search`);
-      }
-    }
-
-    // If search didn't work, try regular members with smaller limit
-    if (allMembers.length === 0) {
-      let lastId = null;
-      for (let i = 0; i < 10; i++) { // Max 10 attempts
-        const params = new URLSearchParams({ limit: 100 });
-        if (lastId) params.set('after', lastId);
-
-        const resp = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?${params}`, {
-          headers: { 'Authorization': USER_TOKEN }
-        });
-
-        if (!resp.ok) break;
-
-        const batch = await resp.json();
-        if (!Array.isArray(batch) || batch.length === 0) break;
-
-        allMembers = allMembers.concat(batch);
-        lastId = batch[batch.length - 1].user?.id;
-        if (!lastId) break;
-
-        console.log(`   Fetched ${allMembers.length} members...`);
-      }
-    }
-
-    console.log(`   Total members fetched: ${allMembers.length}`);
-
-    // Filter for Initiate role
-    let initiateCount = 0;
-    for (const member of allMembers) {
-      if (member.user?.bot) continue;
-
-      const hasInitiate = member.roles?.includes(initiateRoleId);
-      if (!hasInitiate) continue;
-
-      initiateCount++;
-
-      memberData.set(member.user.id, {
-        userId: member.user.id,
-        username: member.user.username,
-        displayName: member.nick || member.user.global_name || member.user.username,
-        avatar: member.user.avatar,
-        roles: member.roles || [],
-        joinedAt: member.joined_at
-      });
-    }
-
-    console.log(`   ✓ ${initiateCount} Initiate members found`);
-
-    // If still no members, try loading from baseline as fallback
-    if (initiateCount === 0) {
-      console.log(`   ⚠️  No Initiate members found, checking baseline data...`);
-
-      // Load from roles summary if available
-      const rolesPath = path.join(OUTPUT_DIR, 'user-roles-summary.json');
-      if (fs.existsSync(rolesPath)) {
-        const data = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
-        if (data.members) {
-          for (const m of data.members) {
-            if (m.roles?.includes(initiateRoleId)) {
-              memberData.set(m.userId, {
-                userId: m.userId,
-                username: m.username,
-                displayName: m.displayName || m.username,
-                avatar: m.avatar,
-                roles: m.roles || [],
-                joinedAt: m.joinedAt
-              });
-              initiateCount++;
-            }
-          }
-          console.log(`   ✓ Loaded ${initiateCount} Initiate members from baseline`);
-        }
-      }
-    }
-
-    if (initiateCount === 0) {
-      console.log(`   ❌ Still no Initiate members! The role might not exist or no one has it.`);
-    }
-
-  } catch (error) {
-    console.log(`   ⚠️  Error: ${error.message}`);
-  }
+  return textChannels;
 }
 
 // ===== MESSAGE EXTRACTION =====
-async function extractMessagesFromChannel(channelId, channelName, isGlobal = true) {
-  console.log(`\n📡 Processing: #${channelName}`);
+async function extractMessagesFromChannel(channel) {
+  console.log(`📡 #${channel.name}`);
 
   let messageCount = 0;
   let lastId = null;
@@ -301,11 +157,8 @@ async function extractMessagesFromChannel(channelId, channelName, isGlobal = tru
   let iterations = 0;
   const MAX_ITERATIONS = 5000;
 
-  // For incremental: fetch after last message
+  const channelId = channel.id;
   const isIncremental = extractState.lastMessageIds[channelId];
-  if (isIncremental) {
-    console.log(`   📅 Incremental mode: after ${extractState.lastMessageIds[channelId]}`);
-  }
 
   while (hasMore && iterations < MAX_ITERATIONS) {
     iterations++;
@@ -333,26 +186,32 @@ async function extractMessagesFromChannel(channelId, channelName, isGlobal = tru
         if (msg.author?.bot) continue;
 
         const userId = msg.author.id;
+        const username = msg.author.username;
 
-        // ONLY count Initiate members
-        if (!memberData.has(userId)) continue;
-
-        // Count based on channel type
-        if (isGlobal) {
-          // All channels count to global
-          globalMessages.set(userId, (globalMessages.get(userId) || 0) + 1);
+        // Track global messages
+        if (!globalMessages.has(userId)) {
+          globalMessages.set(userId, {
+            count: 0,
+            username: username,
+            firstMessage: msg.timestamp,
+            lastMessage: msg.timestamp
+          });
         }
 
-        // Track for state
+        const userData = globalMessages.get(userId);
+        userData.count++;
+        if (msg.timestamp < userData.firstMessage) userData.firstMessage = msg.timestamp;
+        if (msg.timestamp > userData.lastMessage) userData.lastMessage = msg.timestamp;
+
         messageCount++;
         lastId = msg.id;
       }
 
       if (iterations % 10 === 0) {
-        process.stdout.write(`\r   Processed ${messageCount} messages...`);
+        process.stdout.write(`\r   ${messageCount} messages...`);
       }
 
-      // Incremental: stop after first batch (only new messages)
+      // Incremental: stop after first batch
       if (isIncremental) {
         hasMore = false;
       }
@@ -362,7 +221,6 @@ async function extractMessagesFromChannel(channelId, channelName, isGlobal = tru
         console.log(`\n   ⚠️  Rate limited. Waiting 5s...`);
         await new Promise(r => setTimeout(r, 5000));
       } else {
-        console.log(`\n   ⚠️  Error: ${error.message}`);
         hasMore = false;
       }
     }
@@ -373,12 +231,13 @@ async function extractMessagesFromChannel(channelId, channelName, isGlobal = tru
     extractState.lastMessageIds[channelId] = lastId;
   }
 
-  console.log(`\r   ✓ ${messageCount} messages${' '.repeat(20)}`);
+  console.log(`\r   ✓ ${messageCount} messages`);
+  return messageCount;
 }
 
-// Extract contributions from #contributions channel
+// Extract from #contributions channel
 async function extractContributions() {
-  console.log(`\n📝 Extracting contributions (Initiate only)...`);
+  console.log(`\n📝 Extracting contributions (#contributions)...`);
 
   try {
     const channel = await fetchAPI(`/channels/${CONTRIBUTIONS_CHANNEL_ID}`);
@@ -404,14 +263,13 @@ async function extractContributions() {
 
       for (const msg of messages) {
         if (msg.author?.bot) continue;
-        if (!memberData.has(msg.author.id)) continue;
 
-        contributionMessages.set(msg.author.id, (contributionMessages.get(msg.author.id) || 0) + 1);
+        const userId = msg.author.id;
+        contributionMessages.set(userId, (contributionMessages.get(userId) || 0) + 1);
         messageCount++;
         lastId = msg.id;
       }
 
-      // Incremental: stop after first batch
       if (options.after) hasMore = false;
     }
 
@@ -427,7 +285,7 @@ async function extractContributions() {
 
 // Extract mentions from #events channel
 async function extractEventMentions() {
-  console.log(`\n🎉 Extracting event mentions (Initiate only)...`);
+  console.log(`\n🎉 Extracting event mentions (#events)...`);
 
   try {
     const channel = await fetchAPI(`/channels/${EVENTS_CHANNEL_ID}`);
@@ -452,13 +310,11 @@ async function extractEventMentions() {
       }
 
       for (const msg of messages) {
-        // Count mentions of Initiate members
+        // Count mentions
         if (msg.mentions) {
-          const mentionedIds = msg.mentions.users || [];
-          for (const mentionedUser of mentionedIds) {
+          const mentionedUsers = msg.mentions.users || [];
+          for (const mentionedUser of mentionedUsers) {
             if (mentionedUser.bot) continue;
-            if (!memberData.has(mentionedUser.id)) continue;
-
             eventMentions.set(mentionedUser.id, (eventMentions.get(mentionedUser.id) || 0) + 1);
           }
         }
@@ -466,7 +322,6 @@ async function extractEventMentions() {
         lastId = msg.id;
       }
 
-      // Incremental: stop after first batch
       if (options.after) hasMore = false;
     }
 
@@ -475,7 +330,7 @@ async function extractEventMentions() {
     }
 
     console.log(`   ✓ ${messageCount} event messages scanned`);
-    console.log(`   ✓ ${eventMentions.size} Initiate members mentioned`);
+    console.log(`   ✓ ${eventMentions.size} users mentioned`);
   } catch (error) {
     console.log(`   ⚠️  Error: ${error.message}`);
   }
@@ -488,28 +343,31 @@ function generateOutputFiles() {
   // All user IDs from both sources
   const allUserIds = new Set([
     ...Array.from(existingData.globalMessages.keys()),
-    ...Array.from(memberData.keys())
+    ...Array.from(globalMessages.keys())
   ]);
 
   const members = Array.from(allUserIds).map(userId => {
-    const member = memberData.get(userId);
+    const existingMember = existingData.members.get(userId);
     const existingGlobal = existingData.globalMessages.get(userId) || 0;
     const existingContrib = existingData.contributions.get(userId) || 0;
     const existingEvents = existingData.events.get(userId) || 0;
 
-    const newGlobal = globalMessages.get(userId) || 0;
+    const newGlobal = globalMessages.get(userId)?.count || 0;
     const newContrib = contributionMessages.get(userId) || 0;
     const newEvents = eventMentions.get(userId) || 0;
 
+    const newGlobalData = globalMessages.get(userId);
+
     return {
       userId: userId,
-      username: member?.username || userId,
-      displayName: member?.displayName || '',
+      username: newGlobalData?.username || existingMember?.username || userId,
+      displayName: existingMember?.displayName || '',
       globalMessages: existingGlobal + newGlobal,
       contributionsCount: existingContrib + newContrib,
       eventsCount: existingEvents + newEvents,
-      roles: member?.roles || [],
-      joinedAt: member?.joinedAt || null
+      firstPost: newGlobalData?.firstMessage,
+      lastPost: newGlobalData?.lastMessage,
+      roles: existingMember?.roles || []
     };
   }).sort((a, b) => b.globalMessages - a.globalMessages);
 
@@ -519,7 +377,7 @@ function generateOutputFiles() {
     JSON.stringify({ members }, null, 2),
     'utf8'
   );
-  console.log(`   ✓ member-activity-analysis.json (${members.length} Initiate members)`);
+  console.log(`   ✓ member-activity-analysis.json (${members.length} users)`);
 
   // Write events-participation.json
   const eventsData = {};
@@ -533,26 +391,22 @@ function generateOutputFiles() {
   );
   console.log(`   ✓ events-participation.json`);
 
-  // Write user-roles-summary.json
-  const rolesArray = Array.from(memberData.values()).map(m => ({
-    userId: m.userId,
-    username: m.username,
-    displayName: m.displayName,
-    roles: m.roles,
-    joinedAt: m.joinedAt
-  }));
-  fs.writeFileSync(
-    path.join(OUTPUT_DIR, 'user-roles-summary.json'),
-    JSON.stringify({ members: rolesArray }, null, 2),
-    'utf8'
-  );
-  console.log(`   ✓ user-roles-summary.json`);
+  // Write user-roles-summary.json (keep existing, just update timestamps)
+  if (fs.existsSync(path.join(OUTPUT_DIR, 'user-roles-summary.json'))) {
+    const rolesData = JSON.parse(fs.readFileSync(path.join(OUTPUT_DIR, 'user-roles-summary.json'), 'utf8'));
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, 'user-roles-summary.json'),
+      JSON.stringify(rolesData, null, 2),
+      'utf8'
+    );
+    console.log(`   ✓ user-roles-summary.json (preserved)`);
+  }
 }
 
 // ===== MAIN =====
 async function main() {
   console.log('='.repeat(60));
-  console.log('USER TOKEN EXTRACTOR - Initiate Members Only');
+  console.log('USER TOKEN EXTRACTOR - All Users');
   console.log('='.repeat(60));
   console.log(`🔑 Token: ${USER_TOKEN.substring(0, 20)}...`);
   console.log(`📂 Output: ${OUTPUT_DIR}\n`);
@@ -561,44 +415,29 @@ async function main() {
   loadState();
   loadExistingData();
 
-  // Find Initiate role
-  const initiateRoleId = extractState.initiateRoleId || await findInitiateRole(RITUAL_GUILD_ID);
+  // Get all channels
+  const channels = await getAllChannels();
 
-  if (!initiateRoleId) {
-    console.error(`❌ Could not find Initiate role! Exiting.`);
-    process.exit(1);
+  // Extract global messages from ALL channels (except contributions/events which are separate)
+  const contribChannel = channels.find(c => c.id === CONTRIBUTIONS_CHANNEL_ID);
+  const eventChannel = channels.find(c => c.id === EVENTS_CHANNEL_ID);
+
+  const normalChannels = channels.filter(c =>
+    c.id !== CONTRIBUTIONS_CHANNEL_ID &&
+    c.id !== EVENTS_CHANNEL_ID
+  );
+
+  let totalMessages = 0;
+
+  for (const channel of normalChannels) {
+    const count = await extractMessagesFromChannel(channel);
+    totalMessages += count;
   }
 
-  // Extract Initiate members
-  await extractInitiateMembers(RITUAL_GUILD_ID, initiateRoleId);
-
-  if (memberData.size === 0) {
-    console.error(`❌ No Initiate members found! Exiting.`);
-    process.exit(1);
-  }
-
-  // Fetch all channels
-  console.log(`\n📡 Fetching channels...`);
-  const channels = await fetchAPI(`/guilds/${RITUAL_GUILD_ID}/channels`);
-  const textChannels = channels.filter(c => c.type === 0);
-  console.log(`Found ${textChannels.length} text channels`);
-
-  // Extract global messages from accessible channels
-  for (const channel of textChannels) {
-    // Skip channels where Initiate can't send
-    const canSend = await canInitiateSendMessages(channel.id, initiateRoleId);
-    if (!canSend) {
-      console.log(`   ⏭️  Skipping #${channel.name} (Initiate cannot send)`);
-      continue;
-    }
-
-    await extractMessagesFromChannel(channel.id, channel.name, true);
-  }
-
-  // Extract contributions (separate channel)
+  // Extract contributions separately
   await extractContributions();
 
-  // Extract event mentions (separate channel)
+  // Extract event mentions separately
   await extractEventMentions();
 
   // Generate output
@@ -609,9 +448,10 @@ async function main() {
 
   console.log(`\n${'='.repeat(60)}`);
   console.log(`✅ EXTRACTION COMPLETE!`);
-  console.log(`📊 New global messages: ${Array.from(globalMessages.values()).reduce((a,b) => a+b, 0)}`);
-  console.log(`📝 New contributions: ${Array.from(contributionMessages.values()).reduce((a,b) => a+b, 0)}`);
-  console.log(`🎉 New event mentions: ${eventMentions.size} members`);
+  console.log(`📊 Total new messages: ${totalMessages.toLocaleString()}`);
+  console.log(`👥 Users tracked: ${globalMessages.size}`);
+  console.log(`📝 Contributions: ${contributionMessages.size} users`);
+  console.log(`🎉 Event mentions: ${eventMentions.size} users`);
   console.log(`${'='.repeat(60)}\n`);
 }
 
