@@ -300,10 +300,6 @@ function generateOutputFiles() {
       roles: memberInfo?.roles || existing?.roles || []
     };
   }).sort((a, b) => b.globalMessages - a.globalMessages);
-    firstPost: u.firstMessage,
-    lastPost: u.lastMessage,
-    roles: memberData.get(u.userId)?.roles || []
-  })).sort((a, b) => b.globalMessages - a.globalMessages);
 
   fs.writeFileSync(
     path.join(OUTPUT_DIR, 'member-activity-analysis.json'),
