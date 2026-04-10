@@ -252,9 +252,14 @@ async function extractMemberData(guild) {
 
   try {
     const members = await guild.members.fetch();
+    const total = members.size;
+    let processed = 0;
 
     for (const [_, member] of members) {
-      if (member.user.bot) continue;
+      if (member.user.bot) {
+        processed++;
+        continue;
+      }
 
       const roles = member.roles.cache.map(r => r.name).filter(n => n !== '@everyone');
 
@@ -267,11 +272,17 @@ async function extractMemberData(guild) {
         joinedAt: member.joinedAt?.toISOString(),
         inServer: true
       });
+
+      processed++;
+      if (processed % 10000 === 0) {
+        const percent = ((processed / total) * 100).toFixed(1);
+        process.stdout.write(`\r   Processing: ${processed.toLocaleString()}/${total.toLocaleString()} (${percent}%)`);
+      }
     }
 
-    console.log(`   ✓ ${memberData.size} members extracted`);
+    console.log(`\r   ✓ ${memberData.size.toLocaleString()} members extracted${' '.repeat(20)}`);
   } catch (error) {
-    console.log(`   ⚠️  Could not fetch members: ${error.message}`);
+    console.log(`\n   ⚠️  Could not fetch members: ${error.message}`);
   }
 }
 
