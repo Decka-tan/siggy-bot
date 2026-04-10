@@ -3,8 +3,21 @@
  * Usage: cd /home/ubuntu/siggy-bot && node scripts/test-check.cjs <username>
  */
 
-require('dotenv').config();
-const { Client, GatewayIntentBits } = require('discord.js');
+// Load modules from discord-bot/node_modules (VPS structure)
+const path = require('path');
+
+// Try to load dotenv - check both locations
+let dotenvPath;
+if (require('fs').existsSync(path.join(__dirname, 'node_modules', 'dotenv'))) {
+  dotenvPath = path.join(__dirname, 'node_modules', 'dotenv');
+} else {
+  dotenvPath = path.join(__dirname, 'discord-bot', 'node_modules', 'dotenv');
+}
+require(dotenvPath).config({ path: path.join(__dirname, 'discord-bot', '.env') });
+
+// Load discord.js from discord-bot/node_modules
+const discordPath = path.join(__dirname, 'discord-bot', 'node_modules', 'discord.js');
+const { Client, GatewayIntentBits } = require(discordPath);
 
 const RITUAL_GUILD_ID = '8795483243035488115';
 const username = process.argv[2];
@@ -64,7 +77,7 @@ client.once('ready', async () => {
     // Load extracted data
     const fs = require('fs');
     const path = require('path');
-    const dataDir = './extracted-data';
+    const dataDir = path.join(__dirname, 'extracted-data');
 
     console.log(`\n📂 Extracted Data (from ${dataDir}):`);
 
