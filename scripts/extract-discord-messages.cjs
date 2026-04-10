@@ -135,6 +135,18 @@ function isMeaningfulMessage(content) {
 async function processChannel(channel) {
   console.log(`\n📡 Processing: #${channel.name} (${channel.type})`);
 
+  // Quick check - try to fetch first batch, skip if empty
+  try {
+    const firstBatch = await channel.messages.fetch({ limit: 1 });
+    if (firstBatch.size === 0) {
+      console.log(`   ⏭️  Skipping empty channel`);
+      return;
+    }
+  } catch (err) {
+    console.log(`   ⏭️  Cannot access channel: ${err.message}`);
+    return;
+  }
+
   let channelMessageCount = 0;
   let lastId = null;
   let hasMore = true;
