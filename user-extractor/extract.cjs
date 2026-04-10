@@ -1,9 +1,10 @@
 /**
- * USER TOKEN EXTRACTOR
- * Daily extraction - works without member list access
+ * USER TOKEN EXTRACTOR - Initiate Members Only
  *
- * Strategy: Extract ALL messages, track ALL users
- * Filter by Initiate role when DISPLAYING (in /check command)
+ * Strategy:
+ * 1. Load Initiate members from baseline (user-roles-summary.json)
+ * 2. Only count messages from those users
+ * 3. Skip all other messages
  *
  * Usage: cd /home/ubuntu/siggy-bot/user-extractor && node extract.cjs
  */
@@ -32,18 +33,19 @@ let extractState = {
   lastMessageIds: {}
 };
 
-// ===== DATA TRACKING =====
-// Track ALL users (will filter by Initiate role when displaying)
-const globalMessages = new Map();      // userId -> { count, username, firstMessage, lastMessage }
-const contributionMessages = new Map(); // userId -> { count, username }
+// ===== INITIATE MEMBERS (loaded from baseline) =====
+const initiateMembers = new Map(); // userId -> { username, displayName, roles }
+
+// ===== DATA TRACKING (Initiate only) =====
+const globalMessages = new Map();      // userId -> count
+const contributionMessages = new Map(); // userId -> count
 const eventMentions = new Map();        // userId -> count
 
 // Existing data for merging
 const existingData = {
   globalMessages: new Map(),
   contributions: new Map(),
-  events: new Map(),
-  members: new Map()
+  events: new Map()
 };
 
 // ===== HTTP HELPERS =====
@@ -52,8 +54,7 @@ async function fetchAPI(endpoint) {
     headers: { 'Authorization': USER_TOKEN }
   });
   if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`API ${response.status}: ${err}`);
+    throw new Error(`API ${response.status}: ${response.statusText}`);
   }
   return response.json();
 }
@@ -108,31 +109,71 @@ function loadExistingData() {
         existingData.globalMessages.set(m.userId, m.globalMessages || 0);
         existingData.contributions.set(m.userId, m.contributionsCount || 0);
         existingData.events.set(m.userId, m.eventsCount || 0);
-        existingData.members.set(m.userId, {
-          username: m.username,
-          displayName: m.displayName,
-          roles: m.roles || []
-        });
       });
-      console.log(`   ✓ Loaded ${data.members.length} users from baseline`);
-    }
-  }
-
-  const rolesPath = path.join(OUTPUT_DIR, 'user-roles-summary.json');
-  if (fs.existsSync(rolesPath)) {
-    const data = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
-    if (data.members) {
-      data.members.forEach(m => {
-        existingData.members.set(m.userId, {
-          username: m.username,
-          displayName: m.displayName,
-          roles: m.roles || []
-        });
-      });
+      console.log(`   ✓ Loaded ${data.members.length} users from activity analysis`);
     }
   }
 
   console.log(`   📊 Baseline: ${existingData.globalMessages.size} users\n`);
+}
+
+// ===== LOAD INITIATE MEMBERS FROM BASELINE =====
+function loadInitiateMembers() {
+  console.log(`\n🎭 Loading Initiate members from baseline...`);
+
+  // Load from user-roles-summary.json
+  const rolesPath = path.join(OUTPUT_DIR, 'user-roles-summary.json');
+  if (!fs.existsSync(rolesPath)) {
+    console.log(`   ❌ user-roles-summary.json not found!`);
+    console.log(`   ⚠️  Will track ALL users. This will be VERY slow.`);
+    return;
+  }
+
+  const data = JSON.parse(fs.readFileSync(rolesPath, 'utf8'));
+  if (!data.members) {
+    console.log(`   ❌ No members in roles summary!`);
+    return;
+  }
+
+  // Find "Initiate" role ID first
+  let initiateRoleId = null;
+  for (const member of data.members) {
+    if (member.roles) {
+      const initiateRole = member.roles.find(r => {
+        // Check if role name contains "initiate" (case insensitive)
+        return typeof r === 'object' ? r.name?.toLowerCase() === 'initiate' : false;
+      });
+      // Actually roles is array of strings (role IDs) or objects
+      // Let's check the structure
+    }
+  }
+
+  // Load all members and their roles
+  let initiateCount = 0;
+  for (const member of data.members) {
+    // member.roles could be array of role IDs (strings)
+    const hasInitiate = member.roles && member.roles.some(r => {
+      // If it's a role ID string, we need to check against known Initiate role
+      // For now, let's assume we need to find the role ID
+      return typeof r === 'string' && r === '1212485735039508561'; // Initiate role ID from earlier
+    });
+
+    if (hasInitiate) {
+      initiateMembers.set(member.userId, {
+        userId: member.userId,
+        username: member.username,
+        displayName: member.displayName || member.username
+      });
+      initiateCount++;
+    }
+  }
+
+  console.log(`   ✓ Loaded ${initiateCount} Initiate members`);
+
+  if (initiateCount === 0) {
+    console.log(`   ⚠️  No Initiate members found in baseline!`);
+    console.log(`   ⚠️  Will track ALL users. This will be VERY slow.`);
+  }
 }
 
 // ===== CHANNEL FETCHING =====
@@ -140,22 +181,23 @@ async function getAllChannels() {
   console.log(`\n📡 Fetching channels...`);
 
   const channels = await fetchAPI(`/guilds/${RITUAL_GUILD_ID}/channels`);
-  const textChannels = channels.filter(c => c.type === 0); // GuildText
+  const textChannels = channels.filter(c => c.type === 0);
 
   console.log(`   Found ${textChannels.length} text channels\n`);
 
   return textChannels;
 }
 
-// ===== MESSAGE EXTRACTION =====
+// ===== MESSAGE EXTRACTION (Initiate only) =====
 async function extractMessagesFromChannel(channel) {
   console.log(`📡 #${channel.name}`);
 
   let messageCount = 0;
+  let initiateMessageCount = 0;
   let lastId = null;
   let hasMore = true;
   let iterations = 0;
-  const MAX_ITERATIONS = 5000;
+  const MAX_ITERATIONS = 10000;
 
   const channelId = channel.id;
   const isIncremental = extractState.lastMessageIds[channelId];
@@ -166,7 +208,6 @@ async function extractMessagesFromChannel(channel) {
     try {
       const options = { limit: 100 };
 
-      // Incremental: only fetch new messages
       if (isIncremental) {
         options.after = extractState.lastMessageIds[channelId];
       }
@@ -186,32 +227,22 @@ async function extractMessagesFromChannel(channel) {
         if (msg.author?.bot) continue;
 
         const userId = msg.author.id;
-        const username = msg.author.username;
 
-        // Track global messages
-        if (!globalMessages.has(userId)) {
-          globalMessages.set(userId, {
-            count: 0,
-            username: username,
-            firstMessage: msg.timestamp,
-            lastMessage: msg.timestamp
-          });
+        // ONLY count if Initiate member
+        if (initiateMembers.size > 0 && !initiateMembers.has(userId)) {
+          continue; // Skip non-Initiate
         }
 
-        const userData = globalMessages.get(userId);
-        userData.count++;
-        if (msg.timestamp < userData.firstMessage) userData.firstMessage = msg.timestamp;
-        if (msg.timestamp > userData.lastMessage) userData.lastMessage = msg.timestamp;
-
+        globalMessages.set(userId, (globalMessages.get(userId) || 0) + 1);
+        initiateMessageCount++;
         messageCount++;
         lastId = msg.id;
       }
 
       if (iterations % 10 === 0) {
-        process.stdout.write(`\r   ${messageCount} messages...`);
+        process.stdout.write(`\r   ${initiateMessageCount} Initiate messages (${messageCount} total)...`);
       }
 
-      // Incremental: stop after first batch
       if (isIncremental) {
         hasMore = false;
       }
@@ -226,13 +257,12 @@ async function extractMessagesFromChannel(channel) {
     }
   }
 
-  // Save last message ID
   if (lastId) {
     extractState.lastMessageIds[channelId] = lastId;
   }
 
-  console.log(`\r   ✓ ${messageCount} messages`);
-  return messageCount;
+  console.log(`\r   ✓ ${initiateMessageCount} Initiate messages${' '.repeat(20)}`);
+  return initiateMessageCount;
 }
 
 // Extract from #contributions channel
@@ -244,6 +274,7 @@ async function extractContributions() {
     console.log(`   Channel: #${channel.name}`);
 
     let messageCount = 0;
+    let initiateCount = 0;
     let lastId = null;
     let hasMore = true;
 
@@ -265,7 +296,13 @@ async function extractContributions() {
         if (msg.author?.bot) continue;
 
         const userId = msg.author.id;
+
+        if (initiateMembers.size > 0 && !initiateMembers.has(userId)) {
+          continue;
+        }
+
         contributionMessages.set(userId, (contributionMessages.get(userId) || 0) + 1);
+        initiateCount++;
         messageCount++;
         lastId = msg.id;
       }
@@ -277,7 +314,7 @@ async function extractContributions() {
       extractState.lastMessageIds[CONTRIBUTIONS_CHANNEL_ID] = lastId;
     }
 
-    console.log(`   ✓ ${messageCount} contribution messages`);
+    console.log(`   ✓ ${initiateCount} Initiate contribution messages`);
   } catch (error) {
     console.log(`   ⚠️  Error: ${error.message}`);
   }
@@ -310,12 +347,18 @@ async function extractEventMentions() {
       }
 
       for (const msg of messages) {
-        // Count mentions
         if (msg.mentions) {
           const mentionedUsers = msg.mentions.users || [];
           for (const mentionedUser of mentionedUsers) {
             if (mentionedUser.bot) continue;
-            eventMentions.set(mentionedUser.id, (eventMentions.get(mentionedUser.id) || 0) + 1);
+
+            const userId = mentionedUser.id;
+
+            if (initiateMembers.size > 0 && !initiateMembers.has(userId)) {
+              continue;
+            }
+
+            eventMentions.set(userId, (eventMentions.get(userId) || 0) + 1);
           }
         }
         messageCount++;
@@ -329,8 +372,7 @@ async function extractEventMentions() {
       extractState.lastMessageIds[EVENTS_CHANNEL_ID] = lastId;
     }
 
-    console.log(`   ✓ ${messageCount} event messages scanned`);
-    console.log(`   ✓ ${eventMentions.size} users mentioned`);
+    console.log(`   ✓ ${eventMentions.size} Initiate members mentioned`);
   } catch (error) {
     console.log(`   ⚠️  Error: ${error.message}`);
   }
@@ -340,34 +382,31 @@ async function extractEventMentions() {
 function generateOutputFiles() {
   console.log(`\n📊 Generating output files (MERGED with baseline)...`);
 
-  // All user IDs from both sources
+  // All user IDs
   const allUserIds = new Set([
     ...Array.from(existingData.globalMessages.keys()),
     ...Array.from(globalMessages.keys())
   ]);
 
   const members = Array.from(allUserIds).map(userId => {
-    const existingMember = existingData.members.get(userId);
     const existingGlobal = existingData.globalMessages.get(userId) || 0;
     const existingContrib = existingData.contributions.get(userId) || 0;
     const existingEvents = existingData.events.get(userId) || 0;
 
-    const newGlobal = globalMessages.get(userId)?.count || 0;
+    const newGlobal = globalMessages.get(userId) || 0;
     const newContrib = contributionMessages.get(userId) || 0;
     const newEvents = eventMentions.get(userId) || 0;
 
-    const newGlobalData = globalMessages.get(userId);
+    const member = initiateMembers.get(userId);
 
     return {
       userId: userId,
-      username: newGlobalData?.username || existingMember?.username || userId,
-      displayName: existingMember?.displayName || '',
+      username: member?.username || userId,
+      displayName: member?.displayName || '',
       globalMessages: existingGlobal + newGlobal,
       contributionsCount: existingContrib + newContrib,
       eventsCount: existingEvents + newEvents,
-      firstPost: newGlobalData?.firstMessage,
-      lastPost: newGlobalData?.lastMessage,
-      roles: existingMember?.roles || []
+      roles: member?.roles || []
     };
   }).sort((a, b) => b.globalMessages - a.globalMessages);
 
@@ -390,23 +429,12 @@ function generateOutputFiles() {
     'utf8'
   );
   console.log(`   ✓ events-participation.json`);
-
-  // Write user-roles-summary.json (keep existing, just update timestamps)
-  if (fs.existsSync(path.join(OUTPUT_DIR, 'user-roles-summary.json'))) {
-    const rolesData = JSON.parse(fs.readFileSync(path.join(OUTPUT_DIR, 'user-roles-summary.json'), 'utf8'));
-    fs.writeFileSync(
-      path.join(OUTPUT_DIR, 'user-roles-summary.json'),
-      JSON.stringify(rolesData, null, 2),
-      'utf8'
-    );
-    console.log(`   ✓ user-roles-summary.json (preserved)`);
-  }
 }
 
 // ===== MAIN =====
 async function main() {
   console.log('='.repeat(60));
-  console.log('USER TOKEN EXTRACTOR - All Users');
+  console.log('USER TOKEN EXTRACTOR - Initiate Members Only');
   console.log('='.repeat(60));
   console.log(`🔑 Token: ${USER_TOKEN.substring(0, 20)}...`);
   console.log(`📂 Output: ${OUTPUT_DIR}\n`);
@@ -415,29 +443,23 @@ async function main() {
   loadState();
   loadExistingData();
 
+  // Load Initiate members from baseline
+  loadInitiateMembers();
+
   // Get all channels
   const channels = await getAllChannels();
 
-  // Extract global messages from ALL channels (except contributions/events which are separate)
-  const contribChannel = channels.find(c => c.id === CONTRIBUTIONS_CHANNEL_ID);
-  const eventChannel = channels.find(c => c.id === EVENTS_CHANNEL_ID);
+  let totalInitiateMessages = 0;
 
-  const normalChannels = channels.filter(c =>
-    c.id !== CONTRIBUTIONS_CHANNEL_ID &&
-    c.id !== EVENTS_CHANNEL_ID
-  );
-
-  let totalMessages = 0;
-
-  for (const channel of normalChannels) {
+  for (const channel of channels) {
     const count = await extractMessagesFromChannel(channel);
-    totalMessages += count;
+    totalInitiateMessages += count;
   }
 
-  // Extract contributions separately
+  // Extract contributions
   await extractContributions();
 
-  // Extract event mentions separately
+  // Extract event mentions
   await extractEventMentions();
 
   // Generate output
@@ -448,10 +470,8 @@ async function main() {
 
   console.log(`\n${'='.repeat(60)}`);
   console.log(`✅ EXTRACTION COMPLETE!`);
-  console.log(`📊 Total new messages: ${totalMessages.toLocaleString()}`);
-  console.log(`👥 Users tracked: ${globalMessages.size}`);
-  console.log(`📝 Contributions: ${contributionMessages.size} users`);
-  console.log(`🎉 Event mentions: ${eventMentions.size} users`);
+  console.log(`📊 Total Initiate messages: ${totalInitiateMessages.toLocaleString()}`);
+  console.log(`👥 Initiate members tracked: ${initiateMembers.size}`);
   console.log(`${'='.repeat(60)}\n`);
 }
 
