@@ -1,0 +1,12 @@
+{
+  "name": "user-extractor",
+  "version": "1.0.0",
+  "description": "Daily Discord data extractor using user token",
+  "main": "extract.cjs",
+  "scripts": {
+    "start": "node extract.cjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  }
+}
