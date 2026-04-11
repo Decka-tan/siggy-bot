@@ -1,260 +1,175 @@
 /**
- * SIGGY EXTRACTOR - Targeted Extraction (March 15 Method)
+ * SIGGY EXTRACTOR - Simplified (No Global Messages)
  *
- * 1. Contributions = Scan ONLY contributions channel
- * 2. Events = Scan ONLY events channel for mentions
- * 3. Roles = Guild Members API
- * 4. Global = Use baseline
+ * Only extracts:
+ * 1. Roles + Join Date (Guild Members API)
+ * 2. Contributions (contributions channel only)
+ * 3. Events (events channel only)
+ *
+ * Usage: cd /home/ubuntu/siggy-bot/user-extractor && node extract.cjs
  */
 
 const fs = require('fs');
 const path = require('path');
 
-require('dotenv').config({ path: path.join(__dirname, '.env') });
+require('dotenv').config({ path: path.join(__dirname, '../discord-bot/.env') });
 
-const USER_TOKEN = process.env.USER_TOKEN;
+const { Client, GatewayIntentBits } = require('../discord-bot/node_modules/discord.js');
+
+const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const RITUAL_GUILD_ID = '1210468736205852672';
 const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
 const EVENTS_CHANNEL_ID = '1389298240762937414';
 const INITIATE_ROLE_ID = '1212485735039508561';
 const OUTPUT_DIR = path.join(__dirname, '../extracted-data');
 
-async function fetchMessages(channelId, options = {}) {
-  const params = new URLSearchParams({ limit: (options.limit || 100).toString() });
-  if (options.before) params.set('before', options.before);
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+  ],
+});
 
-  const response = await fetch(`https://discord.com/api/v10/channels/${channelId}/messages?${params}`, {
-    headers: { 'Authorization': USER_TOKEN }
-  });
-
-  if (!response.ok) throw new Error(`Fetch ${response.status}`);
-  return response.json();
-}
-
-// 1. Scan Contributions Channel (ONE channel only)
-async function scanContributions() {
-  console.log(`\n📝 Scanning Contributions Channel...`);
-
-  const contributions = new Map();
-  let lastId = null, hasMore = true, total = 0, iter = 0;
-
-  while (hasMore && iter < 5000) {
-    iter++;
-    try {
-      const messages = await fetchMessages(CONTRIBUTIONS_CHANNEL_ID, { before: lastId });
-      if (!Array.isArray(messages) || messages.length === 0) { hasMore = false; break; }
-
-      for (const msg of messages) {
-        if (msg.author?.bot) continue;
-        contributions.set(msg.author.id, (contributions.get(msg.author.id) || 0) + 1);
-        total++;
-        lastId = msg.id;
-      }
-
-      if (iter % 10 === 0) process.stdout.write(`\r   ${total} msgs, ${contributions.size} users`);
-
-    } catch (e) {
-      if (e.message.includes('429')) { await new Promise(r => setTimeout(r, 5000)); }
-      else hasMore = false;
-    }
-  }
-
-  console.log(`\r   ✓ ${total} messages, ${contributions.size} contributors${' '.repeat(20)}`);
-  return contributions;
-}
-
-// 2. Scan Events Channel for mentions (ONE channel only)
-async function scanEvents() {
-  console.log(`\n🎉 Scanning Events Channel...`);
-
-  const mentions = new Map();
-  let lastId = null, hasMore = true, total = 0, iter = 0;
-
-  while (hasMore && iter < 100) {
-    iter++;
-    try {
-      const messages = await fetchMessages(EVENTS_CHANNEL_ID, { before: lastId });
-      if (!Array.isArray(messages) || messages.length === 0) { hasMore = false; break; }
-
-      for (const msg of messages) {
-        if (msg.mentions?.length) {
-          for (const u of msg.mentions) {
-            if (u.bot) continue;
-            mentions.set(u.id, (mentions.get(u.id) || 0) + 1);
-          }
-        }
-        total++;
-        lastId = msg.id;
-      }
-
-      if (iter % 5 === 0) process.stdout.write(`\r   ${total} msgs, ${mentions.size} mentioned`);
-
-    } catch (e) {
-      if (e.message.includes('429')) await new Promise(r => setTimeout(r, 5000));
-      else hasMore = false;
-    }
-  }
-
-  console.log(`\r   ✓ ${total} messages, ${mentions.size} mentioned${' '.repeat(20)}`);
-  return mentions;
-}
-
-// 3. Search API for Global Messages (per user)
-async function searchGlobalMessages(userId) {
-  try {
-    const params = new URLSearchParams({ author_id: userId });
-    const response = await fetch(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/messages/search?${params}`, {
-      headers: { 'Authorization': USER_TOKEN }
-    });
-
-    if (!response.ok) return 0;
-
-    const result = await response.json();
-
-    // Parse total_results from response
-    if (result.total_results !== undefined) {
-      return result.total_results;
-    }
-
-    // Fallback: count messages in response
-    let count = 0;
-    if (result.messages && Array.isArray(result.messages)) {
-      for (const arr of result.messages) {
-        count += arr.length;
-      }
-    }
-
-    return count;
-  } catch (e) {
-    return 0;
-  }
-}
-
-// 4. Fetch Guild Members
-async function fetchMembers() {
-  console.log(`\n👥 Fetching Guild Members...`);
-
-  const members = new Map();
-  let lastId = null, hasMore = true, iter = 0;
-
-  while (hasMore && iter < 200) {
-    iter++;
-    try {
-      const params = new URLSearchParams({ limit: 1000 });
-      if (lastId) params.set('after', lastId);
-
-      const response = await fetch(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/members?${params}`, {
-        headers: { 'Authorization': USER_TOKEN }
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) { await new Promise(r => setTimeout(r, 10000)); continue; }
-        break;
-      }
-
-      const batch = await response.json();
-      if (!Array.isArray(batch) || batch.length === 0) { hasMore = false; break; }
-
-      for (const m of batch) {
-        if (m.user?.bot) continue;
-        members.set(m.user.id, {
-          userId: m.user.id,
-          username: m.user.username,
-          displayName: m.nick || m.user.global_name || m.user.username,
-          roles: m.roles || [],
-          joinedAt: m.joined_at
-        });
-        lastId = m.user.id;
-      }
-
-      process.stdout.write(`\r   ${members.size} members`);
-
-    } catch (e) { hasMore = false; }
-  }
-
-  console.log(`\r   ✓ ${members.size} members${' '.repeat(20)}`);
-  return members;
-}
-
-// Main
 async function main() {
   console.log('='.repeat(60));
-  console.log('SIGGY EXTRACTOR - Targeted Extraction');
+  console.log('SIGGY EXTRACTOR - Simplified');
   console.log('='.repeat(60));
 
-  // Load baseline for non-Initiate
-  let baselineData = [];
-  try {
-    const baseline = JSON.parse(fs.readFileSync(path.join(OUTPUT_DIR, 'member-activity-analysis.json'), 'utf8'));
-    baselineData = baseline.members || [];
-  } catch (e) {}
+  await client.login(BOT_TOKEN);
 
-  const contributions = await scanContributions();
-  const events = await scanEvents();
-  const members = await fetchMembers();
+  client.once('ready', async () => {
+    console.log(`✅ Logged in as ${client.user.tag}\n`);
 
-  // Filter Initiate
-  console.log(`\n🎭 Filtering Initiate...`);
-  const initiate = [];
-  for (const [id, m] of members) {
-    if (m.roles.includes(INITIATE_ROLE_ID)) {
-      initiate.push({ id, m });
+    const guild = await client.guilds.fetch(RITUAL_GUILD_ID);
+
+    // 1. Fetch all members (roles + join date)
+    console.log(`👥 Fetching all members...`);
+    const members = await guild.members.fetch();
+    console.log(`   ✓ ${members.size} members\n`);
+
+    // 2. Scan contributions channel
+    console.log(`📝 Scanning contributions channel...`);
+    const contributions = new Map();
+    try {
+      const contribChannel = await client.channels.fetch(CONTRIBUTIONS_CHANNEL_ID);
+      let lastId = null, hasMore = true, total = 0, iter = 0;
+
+      while (hasMore && iter < 5000) {
+        iter++;
+        try {
+          const messages = await contribChannel.messages.fetch({ limit: 100, before: lastId });
+          if (messages.size === 0) { hasMore = false; break; }
+
+          for (const msg of messages.values()) {
+            if (msg.author.bot) continue;
+            contributions.set(msg.author.id, (contributions.get(msg.author.id) || 0) + 1);
+            total++;
+            lastId = msg.id;
+          }
+
+          if (iter % 10 === 0) process.stdout.write(`\r   ${total} messages, ${contributions.size} contributors`);
+
+        } catch (e) {
+          if (e.message.includes('429')) await new Promise(r => setTimeout(r, 5000));
+          else hasMore = false;
+        }
+      }
+      console.log(`\r   ✓ ${total} messages, ${contributions.size} contributors${' '.repeat(20)}`);
+    } catch (e) {
+      console.log(`   ⚠️  Could not access contributions channel: ${e.message}`);
     }
-  }
-  console.log(`   ✓ ${initiate.length} Initiate`);
 
-  // Search global messages for each Initiate (with rate limit delay)
-  console.log(`\n🔍 Searching global messages for ${initiate.length} Initiate...`);
-  const initiateWithData = [];
+    // 3. Scan events channel
+    console.log(`\n🎉 Scanning events channel...`);
+    const events = new Map();
+    try {
+      const eventsChannel = await client.channels.fetch(EVENTS_CHANNEL_ID);
+      let lastId = null, hasMore = true, total = 0, iter = 0;
 
-  for (let i = 0; i < initiate.length; i++) {
-    const { id, m } = initiate[i];
-    const globalCount = await searchGlobalMessages(id);
+      while (hasMore && iter < 100) {
+        iter++;
+        try {
+          const messages = await eventsChannel.messages.fetch({ limit: 100, before: lastId });
+          if (messages.size === 0) { hasMore = false; break; }
 
-    initiateWithData.push({
-      userId: id,
-      username: m.username,
-      displayName: m.displayName,
-      globalMessages: globalCount,
-      contributionsCount: contributions.get(id) || 0,
-      eventsCount: events.get(id) || 0,
-      roles: m.roles
-    });
+          for (const msg of messages.values()) {
+            if (msg.mentions?.length) {
+              for (const u of msg.mentions.values()) {
+                if (u.bot) continue;
+                events.set(u.id, (events.get(u.id) || 0) + 1);
+              }
+            }
+            total++;
+            lastId = msg.id;
+          }
 
-    console.log(`   ✓ ${m.username}: ${globalCount} global`);
+          if (iter % 5 === 0) process.stdout.write(`\r   ${total} messages, ${events.size} mentioned`);
 
-    // Rate limit delay (1 req per 10s)
-    if (i < initiate.length - 1) {
-      await new Promise(r => setTimeout(r, 10000));
+        } catch (e) {
+          if (e.message.includes('429')) await new Promise(r => setTimeout(r, 5000));
+          else hasMore = false;
+        }
+      }
+      console.log(`\r   ✓ ${total} messages, ${events.size} mentioned${' '.repeat(20)}`);
+    } catch (e) {
+      console.log(`   ⚠️  Could not access events channel: ${e.message}`);
     }
-  }
 
-  // Merge with non-Initiate from baseline
-  const nonInitiate = baselineData.filter(m => !m.roles?.includes(INITIATE_ROLE_ID));
-  const all = [...initiateWithData, ...nonInitiate].sort((a, b) => b.globalMessages - a.globalMessages);
+    // 4. Build member data
+    console.log(`\n📊 Building member data...`);
 
-  // Write output
-  fs.writeFileSync(
-    path.join(OUTPUT_DIR, 'member-activity-analysis.json'),
-    JSON.stringify({ members: all }, null, 2),
-    'utf8'
-  );
+    const memberData = [];
 
-  // Write events
-  const eventsData = {};
-  for (const [id, count] of events) eventsData[id] = count;
-  fs.writeFileSync(
-    path.join(OUTPUT_DIR, 'events-participation.json'),
-    JSON.stringify({ mentionCounts: eventsData }, null, 2),
-    'utf8'
-  );
+    for (const [userId, member] of members) {
+      if (member.user.bot) continue;
 
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`✅ Done!`);
-  console.log(`📝 ${contributions.size} contributors`);
-  console.log(`🎉 ${events.size} event participants`);
-  console.log(`🎭 ${initiateWithData.length} Initiate`);
-  console.log(`${'='.repeat(60)}\n`);
+      memberData.push({
+        userId: userId,
+        username: member.user.username,
+        displayName: member.displayName || member.user.username,
+        globalMessages: 0, // Dropped
+        contributionsCount: contributions.get(userId) || 0,
+        eventsCount: events.get(userId) || 0,
+        roles: Array.from(member.roles.cache.keys()),
+        joinedAt: member.joinedAt?.toISOString(),
+        avatar: member.user.displayAvatarURL()
+      });
+    }
+
+    // 5. Write output
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, 'user-roles-summary.json'),
+      JSON.stringify({ members: memberData }, null, 2),
+      'utf8'
+    );
+    console.log(`   ✓ user-roles-summary.json (${memberData.length} members)`);
+
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, 'member-activity-analysis.json'),
+      JSON.stringify({ members: memberData }, null, 2),
+      'utf8'
+    );
+    console.log(`   ✓ member-activity-analysis.json (${memberData.length} members)`);
+
+    const eventsData = {};
+    for (const [id, count] of events) eventsData[id] = count;
+    fs.writeFileSync(
+      path.join(OUTPUT_DIR, 'events-participation.json'),
+      JSON.stringify({ mentionCounts: eventsData }, null, 2),
+      'utf8'
+    );
+    console.log(`   ✓ events-participation.json`);
+
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`✅ EXTRACTION COMPLETE!`);
+    console.log(`👥 Total members: ${memberData.length}`);
+    console.log(`📝 Contributions: ${contributions.size} contributors`);
+    console.log(`🎉 Events: ${events.size} participants`);
+    console.log(`${'='.repeat(60)}\n`);
+
+    await client.destroy();
+    process.exit(0);
+  });
 }
 
 main().catch(err => {
