@@ -99,7 +99,38 @@ async function scanEvents() {
   return mentions;
 }
 
-// 3. Fetch Guild Members
+// 3. Search API for Global Messages (per user)
+async function searchGlobalMessages(userId) {
+  try {
+    const params = new URLSearchParams({ author_id: userId });
+    const response = await fetch(`https://discord.com/api/v10/guilds/${RITUAL_GUILD_ID}/messages/search?${params}`, {
+      headers: { 'Authorization': USER_TOKEN }
+    });
+
+    if (!response.ok) return 0;
+
+    const result = await response.json();
+
+    // Parse total_results from response
+    if (result.total_results !== undefined) {
+      return result.total_results;
+    }
+
+    // Fallback: count messages in response
+    let count = 0;
+    if (result.messages && Array.isArray(result.messages)) {
+      for (const arr of result.messages) {
+        count += arr.length;
+      }
+    }
+
+    return count;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// 4. Fetch Guild Members
 async function fetchMembers() {
   console.log(`\n👥 Fetching Guild Members...`);
 
@@ -151,15 +182,11 @@ async function main() {
   console.log('SIGGY EXTRACTOR - Targeted Extraction');
   console.log('='.repeat(60));
 
-  // Load baseline
-  let baselineGlobal = new Map();
+  // Load baseline for non-Initiate
   let baselineData = [];
   try {
     const baseline = JSON.parse(fs.readFileSync(path.join(OUTPUT_DIR, 'member-activity-analysis.json'), 'utf8'));
-    if (baseline.members) {
-      baseline.members.forEach(m => baselineGlobal.set(m.userId, m.globalMessages || 0));
-      baselineData = baseline.members;
-    }
+    baselineData = baseline.members || [];
   } catch (e) {}
 
   const contributions = await scanContributions();
@@ -171,22 +198,40 @@ async function main() {
   const initiate = [];
   for (const [id, m] of members) {
     if (m.roles.includes(INITIATE_ROLE_ID)) {
-      initiate.push({
-        userId: id,
-        username: m.username,
-        displayName: m.displayName,
-        globalMessages: baselineGlobal.get(id) || 0,
-        contributionsCount: contributions.get(id) || 0,
-        eventsCount: events.get(id) || 0,
-        roles: m.roles
-      });
+      initiate.push({ id, m });
     }
   }
   console.log(`   ✓ ${initiate.length} Initiate`);
 
+  // Search global messages for each Initiate (with rate limit delay)
+  console.log(`\n🔍 Searching global messages for ${initiate.length} Initiate...`);
+  const initiateWithData = [];
+
+  for (let i = 0; i < initiate.length; i++) {
+    const { id, m } = initiate[i];
+    const globalCount = await searchGlobalMessages(id);
+
+    initiateWithData.push({
+      userId: id,
+      username: m.username,
+      displayName: m.displayName,
+      globalMessages: globalCount,
+      contributionsCount: contributions.get(id) || 0,
+      eventsCount: events.get(id) || 0,
+      roles: m.roles
+    });
+
+    console.log(`   ✓ ${m.username}: ${globalCount} global`);
+
+    // Rate limit delay (1 req per 10s)
+    if (i < initiate.length - 1) {
+      await new Promise(r => setTimeout(r, 10000));
+    }
+  }
+
   // Merge with non-Initiate from baseline
   const nonInitiate = baselineData.filter(m => !m.roles?.includes(INITIATE_ROLE_ID));
-  const all = [...initiate, ...nonInitiate].sort((a, b) => b.globalMessages - a.globalMessages);
+  const all = [...initiateWithData, ...nonInitiate].sort((a, b) => b.globalMessages - a.globalMessages);
 
   // Write output
   fs.writeFileSync(
@@ -208,7 +253,7 @@ async function main() {
   console.log(`✅ Done!`);
   console.log(`📝 ${contributions.size} contributors`);
   console.log(`🎉 ${events.size} event participants`);
-  console.log(`🎭 ${initiate.length} Initiate`);
+  console.log(`🎭 ${initiateWithData.length} Initiate`);
   console.log(`${'='.repeat(60)}\n`);
 }
 
