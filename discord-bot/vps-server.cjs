@@ -411,6 +411,25 @@ function setCache(key, value, ttl = CACHE_TTL) {
   cache.set(key, { value, expire: Date.now() + ttl });
 }
 
+// X Content Analysis Cache (per-user, longer TTL since content style doesn't change often)
+const xContentCache = new Map();
+const X_CONTENT_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
+function getXContentCache(userId) {
+  const data = xContentCache.get(userId);
+  if (!data) return null;
+  if (Date.now() > data.expire) {
+    xContentCache.delete(userId);
+    return null;
+  }
+  return data.value;
+}
+
+function setXContentCache(userId, analysis) {
+  xContentCache.set(userId, { value: analysis, expire: Date.now() + X_CONTENT_CACHE_TTL });
+  console.log(`Cached X content analysis for user ${userId} (24h TTL)`);
+}
+
 // Clear expired cache every minute
 setInterval(() => {
   const now = Date.now();
@@ -567,6 +586,60 @@ client.on('error', (error) => {
   console.error('Discord client error:', error);
 });
 
+// ============ TWITTER/X CONTENT ANALYZER ============
+// Analyze X post content to extract insights (from Discord embeds)
+function analyzeXContent(posts) {
+  const analysis = {
+    keywords: [],
+    mediaTypes: new Set(),
+    topics: [],
+  };
+
+  for (const post of posts) {
+    if (!post.data) continue;
+
+    const text = post.data.text.toLowerCase();
+
+    // Content keyword detection
+    const keywords = {
+      'smart contract': /smart\s*contract|solidity|contract\s*dev/i,
+      'frontend': /frontend|react|vue|next\.js|typescript|ui/i,
+      'art': /art|illustration|drawing|painting|sketch/i,
+      'design': /design|figma|ui\s*design|graphic|brand/i,
+      'game': /game|gaming|unity|unreal|godot/i,
+      'music': /music|audio|sound|production|beat/i,
+      'writing': /writing|story|narrative|lore/i,
+      'community': /community|moderation|event|organiz/i,
+    };
+
+    for (const [keyword, pattern] of Object.entries(keywords)) {
+      if (pattern.test(text) && !analysis.keywords.includes(keyword)) {
+        analysis.keywords.push(keyword);
+      }
+    }
+
+    // Media type detection
+    if (post.includes?.media) {
+      for (const media of post.includes.media) {
+        if (media.type === 'photo') analysis.mediaTypes.add('image');
+        if (media.type === 'video') analysis.mediaTypes.add('video');
+        if (media.type === 'animated_gif') analysis.mediaTypes.add('gif');
+      }
+    }
+
+    // Check if no media = text/code only
+    if (!post.includes?.media && text.length > 50) {
+      analysis.mediaTypes.add('text');
+    }
+  }
+
+  return {
+    keywords: analysis.keywords,
+    mediaTypes: [...analysis.mediaTypes],
+    topics: analysis.keywords.slice(0, 3), // Top keywords as topics
+  };
+}
+
 // ============ COMMANDS ============
 async function handleCheck(interaction) {
   const userId = interaction.user.id;
@@ -678,6 +751,72 @@ async function handleCheck(interaction) {
     console.error('Search API error:', err.message);
   }
 
+  // X Content Analysis - check cache first
+  let contentAnalysis = getXContentCache(targetUser.id);
+
+  if (!contentAnalysis) {
+    // Not cached - fetch last 2 contribution messages for X link analysis
+    let recentContributions = [];
+    try {
+      const contribChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
+      if (contribChannel) {
+        const messages = await contribChannel.messages.fetch({ limit: 100 });
+        const userMessages = messages.filter(m => m.author.id === targetUser.id);
+
+        // Get last 2 messages with X links
+        const xLinkMessages = userMessages
+          .filter(m => m.content.match(/(?:x\.com|twitter\.com)\/\w+\/status\/\d+/))
+          .first(2);
+
+        // Extract data from Discord embeds (FREE - no X API needed!)
+        recentContributions = xLinkMessages.map(m => {
+          // Discord already fetched the tweet content in embeds
+          const embed = m.embeds[0];
+          if (embed) {
+            return {
+              text: embed.description || '', // Tweet text
+              author: embed.author?.name || '', // Author name
+              image: embed.image?.url || null, // Image if exists
+              url: embed.url || m.content.match(/(?:x\.com|twitter\.com)\/\w+\/status\/\d+/)?.[0],
+              timestamp: m.createdAt,
+              fromDiscordEmbed: true, // Flag for debugging
+            };
+          }
+          // Fallback to URL only if no embed
+          return {
+            url: m.content.match(/(?:x\.com|twitter\.com)\/\w+\/status\/\d+/)?.[0],
+            timestamp: m.createdAt,
+            fromDiscordEmbed: false,
+          };
+        }).filter(c => c.url);
+      }
+
+      console.log(`Found ${recentContributions.length} X links from ${displayName} (from embeds: ${recentContributions.filter(c => c.fromDiscordEmbed).length})`);
+    } catch (err) {
+      console.error('Error fetching contribution messages:', err.message);
+    }
+
+    // Convert Discord embed data to format compatible with analyzeXContent
+    let xPosts = [];
+    for (const contrib of recentContributions) {
+      if (contrib.fromDiscordEmbed && contrib.text) {
+        // Discord embed format - already has the data we need!
+        xPosts.push({
+          data: { text: contrib.text },
+          includes: contrib.image ? { media: [{ type: 'photo', url: contrib.image }] } : undefined,
+        });
+      }
+    }
+
+    // Analyze X content and cache the result
+    if (xPosts.length > 0) {
+      contentAnalysis = analyzeXContent(xPosts);
+      setXContentCache(targetUser.id, contentAnalysis);
+    }
+  } else {
+    console.log(`Using cached X content analysis for ${displayName}`);
+  }
+
   // Call old /api/analyze for AI response ONLY
   let analysisText = '';
   let globalMsgFromApi = null;
@@ -732,10 +871,25 @@ async function handleCheck(interaction) {
     console.error('Error calling analyze API:', err.message);
   }
 
+  // Build content insights section
+  let contentInsights = '';
+  if (contentAnalysis) {
+    const parts = [];
+    if (contentAnalysis.keywords.length > 0) {
+      parts.push(`**Focus:** ${contentAnalysis.keywords.slice(0, 3).join(', ')}`);
+    }
+    if (contentAnalysis.mediaTypes.length > 0) {
+      parts.push(`**Media:** ${contentAnalysis.mediaTypes.join(', ')}`);
+    }
+    if (parts.length > 0) {
+      contentInsights = `\n📌 ${parts.join(' | ')}`;
+    }
+  }
+
   // Build stats block (Search API provides real-time contribs/events)
   const statsBlock = `@${displayName}
 🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
-📝 Contributions: ${contributionCount} msgs
+📝 Contributions: ${contributionCount} msgs${contentInsights}
 🎉 Events: ${eventCount} participations
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
