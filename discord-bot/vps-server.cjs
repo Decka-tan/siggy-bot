@@ -650,7 +650,7 @@ async function handleCheck(interaction) {
     if (contribChannel) {
       let lastId = null;
       let batches = 0;
-      const maxBatches = 5; // Max 500 messages
+      const maxBatches = 20; // Max 2000 messages (user has 86, should be enough)
 
       while (batches < maxBatches) {
         const options = { limit: 100 };
@@ -659,6 +659,8 @@ async function handleCheck(interaction) {
         const messages = await contribChannel.messages.fetch(options);
         const batchCount = messages.filter(m => m.author.id === targetUser.id).size;
         contributionCount += batchCount;
+
+        console.log(`Contributions batch ${batches + 1}: found ${batchCount}, total: ${contributionCount}`);
 
         // Stop if we didn't get a full batch (reached end of channel)
         if (messages.size < 100) break;
@@ -675,7 +677,7 @@ async function handleCheck(interaction) {
     if (eventChannel) {
       let lastId = null;
       let batches = 0;
-      const maxBatches = 5; // Max 500 messages
+      const maxBatches = 20; // Max 2000 messages
 
       while (batches < maxBatches) {
         const options = { limit: 100 };
@@ -684,6 +686,8 @@ async function handleCheck(interaction) {
         const messages = await eventChannel.messages.fetch(options);
         const batchCount = messages.filter(m => m.mentions.users.has(targetUser.id)).size;
         eventCount += batchCount;
+
+        console.log(`Events batch ${batches + 1}: found ${batchCount}, total: ${eventCount}`);
 
         if (messages.size < 100) break;
 
