@@ -658,7 +658,7 @@ async function handleCheck(interaction) {
       const data = await response.json();
       const fullText = data.analysis || '';
 
-      // Extract stats from old API (as fallback)
+      // Extract stats from old API (as fallback) BEFORE we strip them
       const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
       const contribMatch = fullText.match(/📝 Contributions:\s*([\d,]+)/);
       const eventsMatch = fullText.match(/🎉 Events:\s*([\d,]+)/);
@@ -667,12 +667,25 @@ async function handleCheck(interaction) {
       if (contribMatch) apiContributionCount = parseInt(contribMatch[1].replace(/,/g, ''));
       if (eventsMatch) apiEventCount = parseInt(eventsMatch[1].replace(/,/g, ''));
 
-      // Get the intelligence part only (after stats block)
+      // Strip the old stats block entirely - get everything AFTER "🔍 Contributor Intelligence:"
       const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
       if (splitIndex !== -1) {
+        // Get everything starting from "🔍 Contributor Intelligence:" line
         analysisText = fullText.substring(splitIndex);
       } else {
-        analysisText = fullText;
+        // Fallback: try to strip the first stats block manually
+        // Stats block ends with "📅 Joined: DATE\n\n"
+        const joinedIndex = fullText.indexOf('📅 Joined:');
+        if (joinedIndex !== -1) {
+          const afterJoined = fullText.indexOf('\n\n', joinedIndex);
+          if (afterJoined !== -1) {
+            analysisText = fullText.substring(afterJoined + 2);
+          } else {
+            analysisText = fullText;
+          }
+        } else {
+          analysisText = fullText;
+        }
       }
     } else {
       console.log(`User ${targetUser.username} not in extracted database`);
