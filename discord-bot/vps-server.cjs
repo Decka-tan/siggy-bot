@@ -901,35 +901,26 @@ async function handleCheck(interaction) {
     console.error('Error calling analyze API:', err.message);
   }
 
-  // Build content insights section
-  let contentInsights = '';
-  if (contentAnalysis) {
-    const parts = [];
-    if (contentAnalysis.keywords.length > 0) {
-      parts.push(`**Focus:** ${contentAnalysis.keywords.slice(0, 3).join(', ')}`);
-    }
-    if (contentAnalysis.mediaTypes.length > 0) {
-      parts.push(`**Media:** ${contentAnalysis.mediaTypes.join(', ')}`);
-    }
-    if (parts.length > 0) {
-      contentInsights = `\n📌 ${parts.join(' | ')}`;
-    }
-  }
-
   // Build stats block (Search API provides real-time contribs/events)
   const statsBlock = `@${displayName}
 🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
-📝 Contributions: ${contributionCount} msgs${contentInsights}
+📝 Contributions: ${contributionCount} msgs
 🎉 Events: ${eventCount} participations
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
+
+  // Build content insights for analysis section
+  let contentInsightText = '';
+  if (contentAnalysis && contentAnalysis.keywords.length > 0) {
+    contentInsightText = `\n\n**📌 Recent Work Focus:** ${contentAnalysis.keywords.slice(0, 3).join(', ')}`;
+  }
 
   // Build final response
   let finalResponse;
 
   if (!analysisText) {
     // User not in extracted data - Siggy-style placeholder
-    finalResponse = `${statsBlock}
+    finalResponse = `${statsBlock}${contentInsightText}
 
 🐱 **Siggy belum terlalu kenal dengan ${displayName}...**
 
@@ -937,7 +928,7 @@ Ayo coba berinteraksi lebih dengan Siggy dan server Ritual untuk tau lebih jauh!
 
 *Data akan terus diupdate seiring waktu~*`;
   } else {
-    finalResponse = `${statsBlock}\n\n${analysisText}`;
+    finalResponse = `${statsBlock}${contentInsightText}\n\n${analysisText}`;
   }
 
   try {
