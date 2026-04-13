@@ -648,21 +648,26 @@ async function handleCheck(interaction) {
     // Fetch contributions (messages by user in #contributions)
     const contribChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
     if (contribChannel) {
-      const messages = await contribChannel.messages.fetch({ limit: 100 });
-      contributionCount = messages.filter(m => m.author.id === targetUser.id).size;
+      let lastId = null;
+      let hasMore = true;
 
-      // If we hit 100, there might be more - fetch more with pagination
-      if (contributionCount === 100) {
-        let lastId = messages.last()?.id;
-        while (lastId) {
-          const batch = await contribChannel.messages.fetch({ limit: 100, before: lastId });
-          const batchCount = batch.filter(m => m.author.id === targetUser.id).size;
-          contributionCount += batchCount;
+      while (hasMore) {
+        const options = { limit: 100 };
+        if (lastId) options.before = lastId;
 
-          if (batch.size < 100) break;
-          lastId = batch.last()?.id;
-        }
+        const messages = await contribChannel.messages.fetch(options);
+        const batchCount = messages.filter(m => m.author.id === targetUser.id).size;
+        contributionCount += batchCount;
+
+        // Continue if we got a full batch (might be more)
+        hasMore = messages.size === 100;
+        lastId = messages.last()?.id;
+
+        // Safety: don't fetch forever (max ~1000 messages = 10 batches)
+        if (contributionCount > 1000) hasMore = false;
       }
+
+      console.log(`Contributions for ${displayName}: ${contributionCount} (fetched from #contributions)`);
     }
 
     // Fetch events (mentions of user in #event)
@@ -724,6 +729,13 @@ async function handleCheck(interaction) {
           analysisText = fullText;
         }
       }
+
+      // Strip hardcoded numeric references from old analysis (e.g., "45 event participations", "86 contribution posts")
+      analysisText = analysisText
+        .replace(/\d+\s+event participations/gi, 'numerous event participations')
+        .replace(/\d+\s+contribution posts/gi, 'many contribution posts')
+        .replace(/\d+\s+global messages/gi, 'thousands of global messages')
+        .replace(/with\s+(over|nearly|almost)\s+\d+/gi, 'with numerous');
     }
   } catch (err) {
     console.error('Error calling analyze API:', err.message);
