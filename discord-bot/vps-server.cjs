@@ -595,10 +595,13 @@ function analyzeXContent(posts) {
     topics: [],
   };
 
+  console.log(`DEBUG: Analyzing ${posts.length} posts`);
+
   for (const post of posts) {
     if (!post.data) continue;
 
     const text = post.data.text.toLowerCase();
+    console.log(`DEBUG: Analyzing text: "${text.substring(0, 200)}"`);
 
     // Content keyword detection
     const keywords = {
@@ -615,8 +618,11 @@ function analyzeXContent(posts) {
     for (const [keyword, pattern] of Object.entries(keywords)) {
       if (pattern.test(text) && !analysis.keywords.includes(keyword)) {
         analysis.keywords.push(keyword);
+        console.log(`DEBUG: Found keyword: ${keyword}`);
       }
     }
+
+    console.log(`DEBUG: Keywords so far: [${analysis.keywords.join(', ')}]`);
 
     // Media type detection
     if (post.includes?.media) {
@@ -632,6 +638,8 @@ function analyzeXContent(posts) {
       analysis.mediaTypes.add('text');
     }
   }
+
+  console.log(`DEBUG: Final analysis - keywords: [${analysis.keywords.join(', ')}], mediaTypes: [${[...analysis.mediaTypes].join(', ')}]`);
 
   return {
     keywords: analysis.keywords,
