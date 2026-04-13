@@ -636,16 +636,61 @@ async function handleCheck(interaction) {
     : [];
   const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
 
-  // Get real-time stats from database (tracked in messageCreate)
-  const dbState = getUserState(targetUser.id);
-  const dbContributionCount = dbState?.contributionCount || 0;
-  const dbEventCount = dbState?.eventParticipationCount || 0;
+  // Channel IDs
+  const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
+  const EVENT_CHANNEL_ID = '1389298240762937414';
 
-  // Call old /api/analyze for AI response
+  // Real-time fetch contributions and events
+  let contributionCount = 0;
+  let eventCount = 0;
+
+  try {
+    // Fetch contributions (messages by user in #contributions)
+    const contribChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
+    if (contribChannel) {
+      const messages = await contribChannel.messages.fetch({ limit: 100 });
+      contributionCount = messages.filter(m => m.author.id === targetUser.id).size;
+
+      // If we hit 100, there might be more - fetch more with pagination
+      if (contributionCount === 100) {
+        let lastId = messages.last()?.id;
+        while (lastId) {
+          const batch = await contribChannel.messages.fetch({ limit: 100, before: lastId });
+          const batchCount = batch.filter(m => m.author.id === targetUser.id).size;
+          contributionCount += batchCount;
+
+          if (batch.size < 100) break;
+          lastId = batch.last()?.id;
+        }
+      }
+    }
+
+    // Fetch events (mentions of user in #event)
+    const eventChannel = await interaction.guild.channels.fetch(EVENT_CHANNEL_ID).catch(() => null);
+    if (eventChannel) {
+      const messages = await eventChannel.messages.fetch({ limit: 100 });
+      eventCount = messages.filter(m => m.mentions.users.has(targetUser.id)).size;
+
+      // Pagination if needed
+      if (messages.size === 100) {
+        let lastId = messages.last()?.id;
+        while (lastId) {
+          const batch = await eventChannel.messages.fetch({ limit: 100, before: lastId });
+          const batchCount = batch.filter(m => m.mentions.users.has(targetUser.id)).size;
+          eventCount += batchCount;
+
+          if (batch.size < 100) break;
+          lastId = batch.last()?.id;
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching real-time stats:', err.message);
+  }
+
+  // Call old /api/analyze for AI response ONLY
   let analysisText = '';
   let globalMsgFromApi = null;
-  let apiContributionCount = null;
-  let apiEventCount = null;
 
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
@@ -658,23 +703,15 @@ async function handleCheck(interaction) {
       const data = await response.json();
       const fullText = data.analysis || '';
 
-      // Extract stats from old API (as fallback) BEFORE we strip them
+      // Extract global message count from old API
       const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
-      const contribMatch = fullText.match(/📝 Contributions:\s*([\d,]+)/);
-      const eventsMatch = fullText.match(/🎉 Events:\s*([\d,]+)/);
-
       if (globalMatch) globalMsgFromApi = parseInt(globalMatch[1].replace(/,/g, ''));
-      if (contribMatch) apiContributionCount = parseInt(contribMatch[1].replace(/,/g, ''));
-      if (eventsMatch) apiEventCount = parseInt(eventsMatch[1].replace(/,/g, ''));
 
-      // Strip the old stats block entirely - get everything AFTER "🔍 Contributor Intelligence:"
+      // Strip the old stats block - get intelligence part only
       const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
       if (splitIndex !== -1) {
-        // Get everything starting from "🔍 Contributor Intelligence:" line
         analysisText = fullText.substring(splitIndex);
       } else {
-        // Fallback: try to strip the first stats block manually
-        // Stats block ends with "📅 Joined: DATE\n\n"
         const joinedIndex = fullText.indexOf('📅 Joined:');
         if (joinedIndex !== -1) {
           const afterJoined = fullText.indexOf('\n\n', joinedIndex);
@@ -687,23 +724,16 @@ async function handleCheck(interaction) {
           analysisText = fullText;
         }
       }
-    } else {
-      console.log(`User ${targetUser.username} not in extracted database`);
     }
   } catch (err) {
     console.error('Error calling analyze API:', err.message);
   }
 
-  // Use real-time DB data, fallback to old API if zero
-  const contributionCount = dbContributionCount > 0 ? dbContributionCount : (apiContributionCount || 0);
-  const eventCount = dbEventCount > 0 ? dbEventCount : (apiEventCount || 0);
-  const showRealtimeBadge = dbContributionCount > 0 || dbEventCount > 0;
-
   // Build stats block
   const statsBlock = `@${displayName}
 🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
-📝 Contributions: ${contributionCount} msgs${showRealtimeBadge ? ' *(real-time)*' : ''}
-🎉 Events: ${eventCount} participations${showRealtimeBadge ? ' *(real-time)*' : ''}
+📝 Contributions: ${contributionCount} msgs *(real-time)*
+🎉 Events: ${eventCount} participations *(real-time)*
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
