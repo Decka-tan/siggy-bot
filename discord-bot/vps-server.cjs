@@ -619,7 +619,7 @@ async function handleCheck(interaction) {
     return interaction.editReply({ embeds: [embed] });
   }
 
-  await interaction.editReply('🔍 Siggy sedang mengintip...');
+  await interaction.editReply('🔍 Analyzing contributor data...');
 
   // Fetch guild member
   let targetMember = null;
@@ -649,9 +649,10 @@ async function handleCheck(interaction) {
     const contribChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
     if (contribChannel) {
       let lastId = null;
-      let hasMore = true;
+      let batches = 0;
+      const maxBatches = 5; // Max 500 messages
 
-      while (hasMore) {
+      while (batches < maxBatches) {
         const options = { limit: 100 };
         if (lastId) options.before = lastId;
 
@@ -659,34 +660,35 @@ async function handleCheck(interaction) {
         const batchCount = messages.filter(m => m.author.id === targetUser.id).size;
         contributionCount += batchCount;
 
-        // Continue if we got a full batch (might be more)
-        hasMore = messages.size === 100;
-        lastId = messages.last()?.id;
+        // Stop if we didn't get a full batch (reached end of channel)
+        if (messages.size < 100) break;
 
-        // Safety: don't fetch forever (max ~1000 messages = 10 batches)
-        if (contributionCount > 1000) hasMore = false;
+        lastId = messages.last()?.id;
+        batches++;
       }
 
-      console.log(`Contributions for ${displayName}: ${contributionCount} (fetched from #contributions)`);
+      console.log(`Contributions for ${displayName}: ${contributionCount} (fetched ${batches + 1} batches)`);
     }
 
     // Fetch events (mentions of user in #event)
     const eventChannel = await interaction.guild.channels.fetch(EVENT_CHANNEL_ID).catch(() => null);
     if (eventChannel) {
-      const messages = await eventChannel.messages.fetch({ limit: 100 });
-      eventCount = messages.filter(m => m.mentions.users.has(targetUser.id)).size;
+      let lastId = null;
+      let batches = 0;
+      const maxBatches = 5; // Max 500 messages
 
-      // Pagination if needed
-      if (messages.size === 100) {
-        let lastId = messages.last()?.id;
-        while (lastId) {
-          const batch = await eventChannel.messages.fetch({ limit: 100, before: lastId });
-          const batchCount = batch.filter(m => m.mentions.users.has(targetUser.id)).size;
-          eventCount += batchCount;
+      while (batches < maxBatches) {
+        const options = { limit: 100 };
+        if (lastId) options.before = lastId;
 
-          if (batch.size < 100) break;
-          lastId = batch.last()?.id;
-        }
+        const messages = await eventChannel.messages.fetch(options);
+        const batchCount = messages.filter(m => m.mentions.users.has(targetUser.id)).size;
+        eventCount += batchCount;
+
+        if (messages.size < 100) break;
+
+        lastId = messages.last()?.id;
+        batches++;
       }
     }
   } catch (err) {
