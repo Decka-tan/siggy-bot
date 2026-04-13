@@ -638,12 +638,14 @@ async function handleCheck(interaction) {
 
   // Get real-time stats from database (tracked in messageCreate)
   const dbState = getUserState(targetUser.id);
-  const contributionCount = dbState?.contributionCount || 0;
-  const eventParticipationCount = dbState?.eventParticipationCount || 0;
+  const dbContributionCount = dbState?.contributionCount || 0;
+  const dbEventCount = dbState?.eventParticipationCount || 0;
 
   // Call old /api/analyze for AI response
   let analysisText = '';
   let globalMsgFromApi = null;
+  let apiContributionCount = null;
+  let apiEventCount = null;
 
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
@@ -656,13 +658,16 @@ async function handleCheck(interaction) {
       const data = await response.json();
       const fullText = data.analysis || '';
 
-      // Extract global message count from API (with disclaimer)
+      // Extract stats from old API (as fallback)
       const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
-      if (globalMatch) {
-        globalMsgFromApi = parseInt(globalMatch[1].replace(/,/g, ''));
-      }
+      const contribMatch = fullText.match(/📝 Contributions:\s*([\d,]+)/);
+      const eventsMatch = fullText.match(/🎉 Events:\s*([\d,]+)/);
 
-      // Get the intelligence part (after stats block)
+      if (globalMatch) globalMsgFromApi = parseInt(globalMatch[1].replace(/,/g, ''));
+      if (contribMatch) apiContributionCount = parseInt(contribMatch[1].replace(/,/g, ''));
+      if (eventsMatch) apiEventCount = parseInt(eventsMatch[1].replace(/,/g, ''));
+
+      // Get the intelligence part only (after stats block)
       const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
       if (splitIndex !== -1) {
         analysisText = fullText.substring(splitIndex);
@@ -670,18 +675,22 @@ async function handleCheck(interaction) {
         analysisText = fullText;
       }
     } else {
-      // API returned non-OK status - user not in extracted data
       console.log(`User ${targetUser.username} not in extracted database`);
     }
   } catch (err) {
     console.error('Error calling analyze API:', err.message);
   }
 
+  // Use real-time DB data, fallback to old API if zero
+  const contributionCount = dbContributionCount > 0 ? dbContributionCount : (apiContributionCount || 0);
+  const eventCount = dbEventCount > 0 ? dbEventCount : (apiEventCount || 0);
+  const showRealtimeBadge = dbContributionCount > 0 || dbEventCount > 0;
+
   // Build stats block
   const statsBlock = `@${displayName}
 🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
-📝 Contributions: ${contributionCount} msgs *(real-time)*
-🎉 Events: ${eventParticipationCount} participations *(real-time)*
+📝 Contributions: ${contributionCount} msgs${showRealtimeBadge ? ' *(real-time)*' : ''}
+🎉 Events: ${eventCount} participations${showRealtimeBadge ? ' *(real-time)*' : ''}
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
