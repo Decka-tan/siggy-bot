@@ -760,10 +760,24 @@ async function handleCheck(interaction) {
     try {
       const contribChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
       if (contribChannel) {
+        // Fetch messages with pagination to find user's posts
         const messages = await contribChannel.messages.fetch({ limit: 100 });
-        const userMessages = messages.filter(m => m.author.id === targetUser.id);
+        let allMessages = messages;
+        let lastId = messages.last()?.id;
 
-        console.log(`DEBUG: User has ${userMessages.size} messages in contributions`);
+        // Keep fetching until we find at least 10 user messages or hit 500 total
+        let userMessages = allMessages.filter(m => m.author.id === targetUser.id);
+        let iterations = 0;
+        while (userMessages.size < 10 && allMessages.size < 500 && lastId && iterations < 10) {
+          const more = await contribChannel.messages.fetch({ limit: 100, before: lastId });
+          if (more.size === 0) break;
+          allMessages = allMessages.concat(more);
+          userMessages = allMessages.filter(m => m.author.id === targetUser.id);
+          lastId = more.last()?.id;
+          iterations++;
+        }
+
+        console.log(`DEBUG: Fetched ${allMessages.size} total messages from channel, user has ${userMessages.size} messages`);
 
         // Debug: log first few message contents
         userMessages.first(3).forEach((m, i) => {
