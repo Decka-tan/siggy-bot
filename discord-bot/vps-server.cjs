@@ -763,9 +763,17 @@ async function handleCheck(interaction) {
         const messages = await contribChannel.messages.fetch({ limit: 100 });
         const userMessages = messages.filter(m => m.author.id === targetUser.id);
 
-        // Get last 2 messages with X links
+        console.log(`DEBUG: User has ${userMessages.size} messages in contributions`);
+
+        // Debug: log first few message contents
+        userMessages.first(3).forEach((m, i) => {
+          console.log(`DEBUG: Message ${i + 1} content: "${m.content.substring(0, 100)}"`);
+          console.log(`DEBUG: Has embeds: ${m.embeds.length}`);
+        });
+
+        // Get last 2 messages with X links (more flexible regex)
         const xLinkMessages = userMessages
-          .filter(m => m.content.match(/(?:x\.com|twitter\.com)\/\w+\/status\/\d+/))
+          .filter(m => m.content.match(/(?:https?:\/\/)?(?:x\.com|twitter\.com)\/[^\/]+\/status\/\d+/))
           .first(2);
 
         // Extract data from Discord embeds (FREE - no X API needed!)
@@ -777,7 +785,7 @@ async function handleCheck(interaction) {
               text: embed.description || '', // Tweet text
               author: embed.author?.name || '', // Author name
               image: embed.image?.url || null, // Image if exists
-              url: embed.url || m.content.match(/(?:x\.com|twitter\.com)\/\w+\/status\/\d+/)?.[0],
+              url: embed.url || m.content.match(/(?:https?:\/\/)?(?:x\.com|twitter\.com)\/[^\/]+\/status\/\d+/)?.[0],
               timestamp: m.createdAt,
               fromDiscordEmbed: true, // Flag for debugging
             };
