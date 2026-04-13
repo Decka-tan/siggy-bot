@@ -586,89 +586,79 @@ client.on('error', (error) => {
   console.error('Discord client error:', error);
 });
 
+// ============ AI ANALYSIS ============
+// Call /api/analyze endpoint with fresh context
+async function generateAIAnalysis(username, displayName, contributionCount, eventCount, roles, contentData) {
+  try {
+    // Build context from X content
+    let xContentContext = '';
+    if (contentData && contentData.insights && contentData.insights.length > 0) {
+      xContentContext = '\n\nRecent X/Twitter posts:\n' + contentData.insights.map(i => `- "${i.content}"`).join('\n');
+    }
+
+    const prompt = `Analyze this Discord contributor named "${displayName}" (@${username}) based on:
+
+Stats:
+- Contributions: ${contributionCount} messages
+- Event participations: ${eventCount}
+- Roles: ${roles.slice(0, 5).join(', ')}${xContentContext}
+
+Provide a concise analysis (under 500 words) in this format:
+**Contributor Archetype**
+[Brief archetype name and style]
+
+**Key Contributions & Impact**
+[2-3 bullet points about what they actually do based on their activity]
+
+**Summary**
+[2-3 sentences summary of their value to the community]
+
+Style: Playful cat-girl AI personality named Siggy. Use Indonesian phrases occasionally like "nya~", "flicks tail", etc. Be specific and insightful, not generic.`;
+
+    const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, context: prompt }),
+    });
+
+    if (!response.ok) {
+      console.error(`API error: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.analysis || null;
+  } catch (err) {
+    console.error('AI analysis error:', err.message);
+    return null;
+  }
+}
+
 // ============ TWITTER/X CONTENT ANALYZER ============
-// Analyze X post content to extract insights (from Discord embeds)
+// Extract X post content for AI analysis (from Discord embeds)
 function analyzeXContent(posts) {
-  const detectedTypes = new Set();
-  const observations = [];
-  let hasImages = false;
-  let hasVideo = false;
-  let techStack = [];
-  let interests = [];
+  const insights = [];
 
   console.log(`DEBUG: Analyzing ${posts.length} posts`);
 
   for (const post of posts) {
     if (!post.data) continue;
 
-    const text = post.data.text.toLowerCase();
+    const text = post.data.text;
+    const hasImage = post.includes?.media?.some(m => m.type === 'photo');
+    const hasVideo = post.includes?.media?.some(m => m.type === 'video');
 
-    // Check media types
-    if (post.includes?.media) {
-      for (const media of post.includes.media) {
-        if (media.type === 'photo') hasImages = true;
-        if (media.type === 'video') hasVideo = true;
-      }
-    }
-
-    // Detect tech stack
-    if (/solidity|rust|contract|evm|web3/i.test(text) && !techStack.includes('Smart Contracts')) techStack.push('Smart Contracts');
-    if (/react|next\.js|vue|frontend|typescript|ui/i.test(text) && !techStack.includes('Frontend')) techStack.push('Frontend');
-    if (/unity|unreal|godot|game/i.test(text) && !techStack.includes('Game Dev')) techStack.push('Game Dev');
-
-    // Detect interests from content
-    if (/art|illustration|drawing|painting|design|creative/i.test(text)) interests.push('artistic');
-    if (/music|audio|sound|beat|production/i.test(text)) interests.push('music production');
-    if (/community|event|moderation|organiz/i.test(text)) interests.push('community building');
-    if (/trading|crypto|defi|market|token/i.test(text)) interests.push('crypto markets');
-    if (/infrastructure|build|value|ritual|philosophy/i.test(text)) interests.push('deep philosophy');
+    insights.push({
+      content: text,
+      hasImage,
+      hasVideo,
+    });
   }
 
-  // Build Siggy's analysis based on detected patterns
-  let analysis = '';
-
-  // Tech-focused analysis
-  if (techStack.length > 0) {
-    analysis = `Seorang **${techStack.join(' & ')} developer**`;
-    if (interests.includes('deep philosophy')) {
-      analysis += ` dengan pemikiran mendalam tentang infrastruktur Web3. Bukan sekadar coder, tapi thinker yang paham value di balik code.`;
-    }
-  }
-  // Creative type
-  else if (interests.includes('artistic')) {
-    analysis = '**Creative soul** yang ekspresif lewat visual. Karya mereka ngomong lebih keras daripada kata-kata.';
-  }
-  // Community focused
-  else if (interests.includes('community building')) {
-    analysis = '**Community builder** sejati. Energy mereka habis buat ngumpulin orang, bikin suasana rame dan hangat.';
-  }
-  // Crypto/trading focused
-  else if (interests.includes('crypto markets')) {
-    analysis = '**Market watcher** yang paham rhythm crypto. Tau kapan time nya HODL dan kapan time nya ambil profit.';
-  }
-  // Philosophy focused
-  else if (interests.includes('deep philosophy')) {
-    analysis = '**Deep thinker** yang lihat beyond surface. Ritual bukan sekadar project, tapi gerakan nilai.';
-  }
-  // Default based on content clues
-  else {
-    const firstPost = posts[0]?.data?.text || '';
-    if (firstPost.length > 50) {
-      analysis = '**Active contributor** yang sering share thoughts. Engaged dan aware tentang apa yang happening di ecosystem.';
-    } else {
-      analysis = '**Silent contributor** - lebih banyak aksi daripada kata. Their work speaks louder.';
-    }
-  }
-
-  // Add media observation
-  if (hasImages) analysis += '\n\n🖼️ *Sering post dengan visual - kemungkinan karya atau dokumentasi.*';
-  if (hasVideo) analysis += '\n\n🎬 *Suka share video content - dynamic communicator!*';
-
-  console.log(`DEBUG: Analysis: "${analysis}"`);
+  console.log(`DEBUG: Extracted ${insights.length} posts for AI analysis`);
 
   return {
-    analysis,
-    detectedTypes: [...detectedTypes],
+    insights,
   };
 }
 
@@ -881,14 +871,22 @@ async function handleCheck(interaction) {
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
-  // Build content insights - Siggy's analysis
-  let contentInsightText = '';
-  if (contentAnalysis && contentAnalysis.analysis) {
-    contentInsightText = `\n\n**💭 Siggy's Impression:**\n${contentAnalysis.analysis}`;
-  }
+  // Generate AI analysis with fresh context
+  await interaction.editReply('🤖 Siggy mikir...');
+
+  const aiAnalysis = await generateAIAnalysis(
+    targetUser.username,
+    displayName,
+    contributionCount,
+    eventCount,
+    roles,
+    contentAnalysis,
+  );
 
   // Build final response
-  const finalResponse = `${statsBlock}${contentInsightText}`;
+  const finalResponse = aiAnalysis
+    ? `${statsBlock}\n\n${aiAnalysis}`
+    : `${statsBlock}\n\n*Siggy lagi blank, coba lagi nanti nya~*`;
 
   try {
     // Cache the result (longer cache since extracted data doesn't change often)
