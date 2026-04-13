@@ -589,84 +589,85 @@ client.on('error', (error) => {
 // ============ TWITTER/X CONTENT ANALYZER ============
 // Analyze X post content to extract insights (from Discord embeds)
 function analyzeXContent(posts) {
-  const insights = [];
   const detectedTypes = new Set();
+  const observations = [];
+  let hasImages = false;
+  let hasVideo = false;
+  let techStack = [];
+  let interests = [];
 
   console.log(`DEBUG: Analyzing ${posts.length} posts`);
 
   for (const post of posts) {
     if (!post.data) continue;
 
-    const text = post.data.text;
-    const hasImage = post.includes?.media?.some(m => m.type === 'photo');
-    const hasVideo = post.includes?.media?.some(m => m.type === 'video');
+    const text = post.data.text.toLowerCase();
 
-    console.log(`DEBUG: Analyzing text: "${text.substring(0, 200)}"`);
-
-    // Detect content type and build insight
-    let typeInfo = '';
-
-    // Art/creative content
-    if (/art|illustration|drawing|painting|sketch|design|figma|graphic|brand/i.test(text)) {
-      detectedTypes.add('Art & Design');
-      typeInfo = '🎨 Art & Design';
-    }
-    // Smart contract/dev
-    else if (/smart\s*contract|solidity|contract\s*dev|rust|evm|web3/i.test(text)) {
-      detectedTypes.add('Smart Contract Dev');
-      typeInfo = '💻 Smart Contract';
-    }
-    // Frontend
-    else if (/frontend|react|vue|next\.js|typescript|ui|css|tailwind/i.test(text)) {
-      detectedTypes.add('Frontend Dev');
-      typeInfo = '🌐 Frontend Dev';
-    }
-    // Game
-    else if (/game|gaming|unity|unreal|godot|minecraft/i.test(text)) {
-      detectedTypes.add('Gaming');
-      typeInfo = '🎮 Gaming';
-    }
-    // Music
-    else if (/music|audio|sound|production|beat|fl studio|ableton/i.test(text)) {
-      detectedTypes.add('Music Production');
-      typeInfo = '🎵 Music';
-    }
-    // Community/Events
-    else if (/community|moderation|event|tournament|organiz/i.test(text)) {
-      detectedTypes.add('Community Building');
-      typeInfo = '👥 Community';
-    }
-    // Crypto/DeFi general
-    else if (/crypto|defi|token|nft|trading|market|bull|bear/i.test(text)) {
-      detectedTypes.add('Crypto & Trading');
-      typeInfo = '📈 Crypto';
-    }
-    // Philosophy/thoughts
-    else if (/infrastructure|value|build|create|ritual|gritual/i.test(text)) {
-      detectedTypes.add('Philosophy & Vision');
-      typeInfo = '💭 Philosophy';
+    // Check media types
+    if (post.includes?.media) {
+      for (const media of post.includes.media) {
+        if (media.type === 'photo') hasImages = true;
+        if (media.type === 'video') hasVideo = true;
+      }
     }
 
-    // Build rich insight with actual content
-    let mediaInfo = '';
-    if (hasImage) mediaInfo = ' 🖼️';
-    if (hasVideo) mediaInfo = ' 🎬';
+    // Detect tech stack
+    if (/solidity|rust|contract|evm|web3/i.test(text) && !techStack.includes('Smart Contracts')) techStack.push('Smart Contracts');
+    if (/react|next\.js|vue|frontend|typescript|ui/i.test(text) && !techStack.includes('Frontend')) techStack.push('Frontend');
+    if (/unity|unreal|godot|game/i.test(text) && !techStack.includes('Game Dev')) techStack.push('Game Dev');
 
-    // Truncate long posts but keep it meaningful
-    const displayText = text.length > 150 ? text.substring(0, 147) + '...' : text;
-
-    insights.push({
-      type: typeInfo || '✨ General',
-      media: mediaInfo,
-      content: displayText,
-      url: post.url,
-    });
+    // Detect interests from content
+    if (/art|illustration|drawing|painting|design|creative/i.test(text)) interests.push('artistic');
+    if (/music|audio|sound|beat|production/i.test(text)) interests.push('music production');
+    if (/community|event|moderation|organiz/i.test(text)) interests.push('community building');
+    if (/trading|crypto|defi|market|token/i.test(text)) interests.push('crypto markets');
+    if (/infrastructure|build|value|ritual|philosophy/i.test(text)) interests.push('deep philosophy');
   }
 
-  console.log(`DEBUG: Generated ${insights.length} insights`);
+  // Build Siggy's analysis based on detected patterns
+  let analysis = '';
+
+  // Tech-focused analysis
+  if (techStack.length > 0) {
+    analysis = `Seorang **${techStack.join(' & ')} developer**`;
+    if (interests.includes('deep philosophy')) {
+      analysis += ` dengan pemikiran mendalam tentang infrastruktur Web3. Bukan sekadar coder, tapi thinker yang paham value di balik code.`;
+    }
+  }
+  // Creative type
+  else if (interests.includes('artistic')) {
+    analysis = '**Creative soul** yang ekspresif lewat visual. Karya mereka ngomong lebih keras daripada kata-kata.';
+  }
+  // Community focused
+  else if (interests.includes('community building')) {
+    analysis = '**Community builder** sejati. Energy mereka habis buat ngumpulin orang, bikin suasana rame dan hangat.';
+  }
+  // Crypto/trading focused
+  else if (interests.includes('crypto markets')) {
+    analysis = '**Market watcher** yang paham rhythm crypto. Tau kapan time nya HODL dan kapan time nya ambil profit.';
+  }
+  // Philosophy focused
+  else if (interests.includes('deep philosophy')) {
+    analysis = '**Deep thinker** yang lihat beyond surface. Ritual bukan sekadar project, tapi gerakan nilai.';
+  }
+  // Default based on content clues
+  else {
+    const firstPost = posts[0]?.data?.text || '';
+    if (firstPost.length > 50) {
+      analysis = '**Active contributor** yang sering share thoughts. Engaged dan aware tentang apa yang happening di ecosystem.';
+    } else {
+      analysis = '**Silent contributor** - lebih banyak aksi daripada kata. Their work speaks louder.';
+    }
+  }
+
+  // Add media observation
+  if (hasImages) analysis += '\n\n🖼️ *Sering post dengan visual - kemungkinan karya atau dokumentasi.*';
+  if (hasVideo) analysis += '\n\n🎬 *Suka share video content - dynamic communicator!*';
+
+  console.log(`DEBUG: Analysis: "${analysis}"`);
 
   return {
-    insights,
+    analysis,
     detectedTypes: [...detectedTypes],
   };
 }
@@ -880,13 +881,10 @@ async function handleCheck(interaction) {
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
-  // Build content insights for analysis section - show actual tweet content
+  // Build content insights - Siggy's analysis
   let contentInsightText = '';
-  if (contentAnalysis && contentAnalysis.insights && contentAnalysis.insights.length > 0) {
-    contentInsightText = '\n\n**📌 Recently Posting About:**\n';
-    for (const insight of contentAnalysis.insights) {
-      contentInsightText += `\n${insight.type}${insight.media}\n> "${insight.content}"`;
-    }
+  if (contentAnalysis && contentAnalysis.analysis) {
+    contentInsightText = `\n\n**💭 Siggy's Impression:**\n${contentAnalysis.analysis}`;
   }
 
   // Build final response
