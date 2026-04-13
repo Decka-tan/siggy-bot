@@ -872,7 +872,7 @@ async function handleCheck(interaction) {
 📅 Joined: ${joinDate}`;
 
   // Generate AI analysis with fresh context
-  await interaction.editReply('🤖 Siggy mikir...');
+  await interaction.editReply('🤖 Analyzing...');
 
   const aiAnalysis = await generateAIAnalysis(
     targetUser.username,
