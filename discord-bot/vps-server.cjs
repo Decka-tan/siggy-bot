@@ -589,62 +589,85 @@ client.on('error', (error) => {
 // ============ TWITTER/X CONTENT ANALYZER ============
 // Analyze X post content to extract insights (from Discord embeds)
 function analyzeXContent(posts) {
-  const analysis = {
-    keywords: [],
-    mediaTypes: new Set(),
-    topics: [],
-  };
+  const insights = [];
+  const detectedTypes = new Set();
 
   console.log(`DEBUG: Analyzing ${posts.length} posts`);
 
   for (const post of posts) {
     if (!post.data) continue;
 
-    const text = post.data.text.toLowerCase();
+    const text = post.data.text;
+    const hasImage = post.includes?.media?.some(m => m.type === 'photo');
+    const hasVideo = post.includes?.media?.some(m => m.type === 'video');
+
     console.log(`DEBUG: Analyzing text: "${text.substring(0, 200)}"`);
 
-    // Content keyword detection
-    const keywords = {
-      'smart contract': /smart\s*contract|solidity|contract\s*dev/i,
-      'frontend': /frontend|react|vue|next\.js|typescript|ui/i,
-      'art': /art|illustration|drawing|painting|sketch/i,
-      'design': /design|figma|ui\s*design|graphic|brand/i,
-      'game': /game|gaming|unity|unreal|godot/i,
-      'music': /music|audio|sound|production|beat/i,
-      'writing': /writing|story|narrative|lore/i,
-      'community': /community|moderation|event|organiz/i,
-    };
+    // Detect content type and build insight
+    let typeInfo = '';
 
-    for (const [keyword, pattern] of Object.entries(keywords)) {
-      if (pattern.test(text) && !analysis.keywords.includes(keyword)) {
-        analysis.keywords.push(keyword);
-        console.log(`DEBUG: Found keyword: ${keyword}`);
-      }
+    // Art/creative content
+    if (/art|illustration|drawing|painting|sketch|design|figma|graphic|brand/i.test(text)) {
+      detectedTypes.add('Art & Design');
+      typeInfo = '🎨 Art & Design';
+    }
+    // Smart contract/dev
+    else if (/smart\s*contract|solidity|contract\s*dev|rust|evm|web3/i.test(text)) {
+      detectedTypes.add('Smart Contract Dev');
+      typeInfo = '💻 Smart Contract';
+    }
+    // Frontend
+    else if (/frontend|react|vue|next\.js|typescript|ui|css|tailwind/i.test(text)) {
+      detectedTypes.add('Frontend Dev');
+      typeInfo = '🌐 Frontend Dev';
+    }
+    // Game
+    else if (/game|gaming|unity|unreal|godot|minecraft/i.test(text)) {
+      detectedTypes.add('Gaming');
+      typeInfo = '🎮 Gaming';
+    }
+    // Music
+    else if (/music|audio|sound|production|beat|fl studio|ableton/i.test(text)) {
+      detectedTypes.add('Music Production');
+      typeInfo = '🎵 Music';
+    }
+    // Community/Events
+    else if (/community|moderation|event|tournament|organiz/i.test(text)) {
+      detectedTypes.add('Community Building');
+      typeInfo = '👥 Community';
+    }
+    // Crypto/DeFi general
+    else if (/crypto|defi|token|nft|trading|market|bull|bear/i.test(text)) {
+      detectedTypes.add('Crypto & Trading');
+      typeInfo = '📈 Crypto';
+    }
+    // Philosophy/thoughts
+    else if (/infrastructure|value|build|create|ritual|gritual/i.test(text)) {
+      detectedTypes.add('Philosophy & Vision');
+      typeInfo = '💭 Philosophy';
     }
 
-    console.log(`DEBUG: Keywords so far: [${analysis.keywords.join(', ')}]`);
+    // Build rich insight with actual content
+    let mediaInfo = '';
+    if (hasImage) mediaInfo = ' 🖼️';
+    if (hasVideo) mediaInfo = ' 🎬';
 
-    // Media type detection
-    if (post.includes?.media) {
-      for (const media of post.includes.media) {
-        if (media.type === 'photo') analysis.mediaTypes.add('image');
-        if (media.type === 'video') analysis.mediaTypes.add('video');
-        if (media.type === 'animated_gif') analysis.mediaTypes.add('gif');
-      }
-    }
+    // Truncate long posts but keep it meaningful
+    const displayText = text.length > 150 ? text.substring(0, 147) + '...' : text;
 
-    // Check if no media = text/code only
-    if (!post.includes?.media && text.length > 50) {
-      analysis.mediaTypes.add('text');
-    }
+    insights.push({
+      type: typeInfo || '✨ General',
+      media: mediaInfo,
+      content: displayText,
+      url: post.url,
+    });
   }
 
-  console.log(`DEBUG: Final analysis - keywords: [${analysis.keywords.join(', ')}], mediaTypes: [${[...analysis.mediaTypes].join(', ')}]`);
+  console.log(`DEBUG: Generated ${insights.length} insights`);
 
   return {
-    keywords: analysis.keywords,
-    mediaTypes: [...analysis.mediaTypes],
-    topics: analysis.keywords.slice(0, 3), // Top keywords as topics
+    insights,
+    detectedTypes: [...detectedTypes],
   };
 }
 
@@ -834,6 +857,9 @@ async function handleCheck(interaction) {
         xPosts.push({
           data: { text: contrib.text },
           includes: contrib.image ? { media: [{ type: 'photo', url: contrib.image }] } : undefined,
+          author: contrib.author,
+          url: contrib.url,
+          timestamp: contrib.timestamp,
         });
       }
     }
@@ -847,89 +873,24 @@ async function handleCheck(interaction) {
     console.log(`Using cached X content analysis for ${displayName}`);
   }
 
-  // Call old /api/analyze for AI response ONLY
-  let analysisText = '';
-  let globalMsgFromApi = null;
-
-  try {
-    const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: targetUser.username }),
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const fullText = data.analysis || '';
-
-      // Extract global message count from old API (contributions/events from Search API)
-      const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
-      if (globalMatch) globalMsgFromApi = parseInt(globalMatch[1].replace(/,/g, ''));
-
-      // Strip the old stats block - get intelligence part only
-      const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
-      if (splitIndex !== -1) {
-        analysisText = fullText.substring(splitIndex);
-      } else {
-        const joinedIndex = fullText.indexOf('📅 Joined:');
-        if (joinedIndex !== -1) {
-          const afterJoined = fullText.indexOf('\n\n', joinedIndex);
-          if (afterJoined !== -1) {
-            analysisText = fullText.substring(afterJoined + 2);
-          } else {
-            analysisText = fullText;
-          }
-        } else {
-          analysisText = fullText;
-        }
-      }
-
-      // Strip hardcoded numeric references from old analysis
-      // Replace various patterns of numbers followed by stat descriptions
-      analysisText = analysisText
-        .replace(/\d+\s+(community\s+)?events/gi, 'numerous community events')
-        .replace(/\d+\s+event\s+participations/gi, 'numerous event participations')
-        .replace(/\d+\s+contribution\s+posts/gi, 'many contribution posts')
-        .replace(/\d+\s+contributions/gi, 'many contributions')
-        .replace(/\d+\s+(global\s+)?messages/gi, 'thousands of messages')
-        .replace(/\d+\s+global\s+message/gi, 'thousands of global messages')
-        .replace(/with\s+(over|nearly|almost|approximately)\s+\d+/gi, 'with numerous')
-        .replace(/,\s*\d+\s+global\s+messages/gi, ', with thousands of global messages')
-        .replace(/\(\d+\s+global\s+messages\)/gi, '(thousands of global messages)');
-    }
-  } catch (err) {
-    console.error('Error calling analyze API:', err.message);
-  }
-
   // Build stats block (Search API provides real-time contribs/events)
   const statsBlock = `@${displayName}
-🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
 📝 Contributions: ${contributionCount} msgs
 🎉 Events: ${eventCount} participations
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
-  // Build content insights for analysis section
+  // Build content insights for analysis section - show actual tweet content
   let contentInsightText = '';
-  if (contentAnalysis && contentAnalysis.keywords.length > 0) {
-    contentInsightText = `\n\n**📌 Recent Work Focus:** ${contentAnalysis.keywords.slice(0, 3).join(', ')}`;
+  if (contentAnalysis && contentAnalysis.insights && contentAnalysis.insights.length > 0) {
+    contentInsightText = '\n\n**📌 Recently Posting About:**\n';
+    for (const insight of contentAnalysis.insights) {
+      contentInsightText += `\n${insight.type}${insight.media}\n> "${insight.content}"`;
+    }
   }
 
   // Build final response
-  let finalResponse;
-
-  if (!analysisText) {
-    // User not in extracted data - Siggy-style placeholder
-    finalResponse = `${statsBlock}${contentInsightText}
-
-🐱 **Siggy belum terlalu kenal dengan ${displayName}...**
-
-Ayo coba berinteraksi lebih dengan Siggy dan server Ritual untuk tau lebih jauh! Posting di #contributions, ikutan event, atau ngobrol di biar Siggy bisa belajar lebih banyak tentang kamu! <:nya:1143104953896714330>
-
-*Data akan terus diupdate seiring waktu~*`;
-  } else {
-    finalResponse = `${statsBlock}${contentInsightText}\n\n${analysisText}`;
-  }
+  const finalResponse = `${statsBlock}${contentInsightText}`;
 
   try {
     // Cache the result (longer cache since extracted data doesn't change often)
