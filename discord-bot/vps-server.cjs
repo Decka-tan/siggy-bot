@@ -632,7 +632,9 @@ async function handleCheck(interaction) {
   const displayName = targetMember?.displayName || targetUser.username;
   const avatar = targetUser.displayAvatarURL({ size: 256 });
   const roles = targetMember
-    ? [...targetMember.roles.cache.filter(r => r.id !== interaction.guild.id).values()].map(r => r.name)
+    ? [...targetMember.roles.cache.filter(r => r.id !== interaction.guild.id).values()]
+        .sort((a, b) => b.position - a.position)
+        .map(r => r.name)
     : [];
   const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
 
@@ -640,63 +642,40 @@ async function handleCheck(interaction) {
   const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
   const EVENT_CHANNEL_ID = '1389298240762937414';
 
-  // Real-time fetch contributions and events
+  // Real-time fetch using Discord Search API
   let contributionCount = 0;
   let eventCount = 0;
 
   try {
-    // Fetch contributions (messages by user in #contributions)
-    const contribChannel = await interaction.guild.channels.fetch(CONTRIBUTIONS_CHANNEL_ID).catch(() => null);
-    if (contribChannel) {
-      let lastId = null;
-      let batches = 0;
-      const maxBatches = 20; // Max 2000 messages (user has 86, should be enough)
+    // Use Search API for contributions (fast, server-side filtering)
+    const contribSearchUrl = `https://discord.com/api/v10/guilds/${interaction.guild.id}/messages/search?author_id=${targetUser.id}&channel_id=${CONTRIBUTIONS_CHANNEL_ID}`;
+    const contribResponse = await fetch(contribSearchUrl, {
+      headers: { 'Authorization': `Bot ${CONFIG.token}` },
+    });
 
-      while (batches < maxBatches) {
-        const options = { limit: 100 };
-        if (lastId) options.before = lastId;
-
-        const messages = await contribChannel.messages.fetch(options);
-        const batchCount = messages.filter(m => m.author.id === targetUser.id).size;
-        contributionCount += batchCount;
-
-        console.log(`Contributions batch ${batches + 1}: found ${batchCount}, total: ${contributionCount}`);
-
-        // Stop if we didn't get a full batch (reached end of channel)
-        if (messages.size < 100) break;
-
-        lastId = messages.last()?.id;
-        batches++;
-      }
-
-      console.log(`Contributions for ${displayName}: ${contributionCount} (fetched ${batches + 1} batches)`);
+    if (contribResponse.ok) {
+      const contribData = await contribResponse.json();
+      contributionCount = contribData.total_results || 0;
+      console.log(`Search API contributions for ${displayName}: ${contributionCount}`);
+    } else {
+      console.log(`Search API contributions failed: ${contribResponse.status}`);
     }
 
-    // Fetch events (mentions of user in #event)
-    const eventChannel = await interaction.guild.channels.fetch(EVENT_CHANNEL_ID).catch(() => null);
-    if (eventChannel) {
-      let lastId = null;
-      let batches = 0;
-      const maxBatches = 20; // Max 2000 messages
+    // Use Search API for events (mentions)
+    const eventSearchUrl = `https://discord.com/api/v10/guilds/${interaction.guild.id}/messages/search?mentions=${targetUser.id}&channel_id=${EVENT_CHANNEL_ID}`;
+    const eventResponse = await fetch(eventSearchUrl, {
+      headers: { 'Authorization': `Bot ${CONFIG.token}` },
+    });
 
-      while (batches < maxBatches) {
-        const options = { limit: 100 };
-        if (lastId) options.before = lastId;
-
-        const messages = await eventChannel.messages.fetch(options);
-        const batchCount = messages.filter(m => m.mentions.users.has(targetUser.id)).size;
-        eventCount += batchCount;
-
-        console.log(`Events batch ${batches + 1}: found ${batchCount}, total: ${eventCount}`);
-
-        if (messages.size < 100) break;
-
-        lastId = messages.last()?.id;
-        batches++;
-      }
+    if (eventResponse.ok) {
+      const eventData = await eventResponse.json();
+      eventCount = eventData.total_results || 0;
+      console.log(`Search API events for ${displayName}: ${eventCount}`);
+    } else {
+      console.log(`Search API events failed: ${eventResponse.status}`);
     }
   } catch (err) {
-    console.error('Error fetching real-time stats:', err.message);
+    console.error('Search API error:', err.message);
   }
 
   // Call old /api/analyze for AI response ONLY
@@ -714,7 +693,7 @@ async function handleCheck(interaction) {
       const data = await response.json();
       const fullText = data.analysis || '';
 
-      // Extract global message count from old API
+      // Extract global message count from old API (contributions/events from Search API)
       const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
       if (globalMatch) globalMsgFromApi = parseInt(globalMatch[1].replace(/,/g, ''));
 
@@ -736,23 +715,29 @@ async function handleCheck(interaction) {
         }
       }
 
-      // Strip hardcoded numeric references from old analysis (e.g., "45 event participations", "86 contribution posts")
+      // Strip hardcoded numeric references from old analysis
+      // Replace various patterns of numbers followed by stat descriptions
       analysisText = analysisText
-        .replace(/\d+\s+event participations/gi, 'numerous event participations')
-        .replace(/\d+\s+contribution posts/gi, 'many contribution posts')
-        .replace(/\d+\s+global messages/gi, 'thousands of global messages')
-        .replace(/with\s+(over|nearly|almost)\s+\d+/gi, 'with numerous');
+        .replace(/\d+\s+(community\s+)?events/gi, 'numerous community events')
+        .replace(/\d+\s+event\s+participations/gi, 'numerous event participations')
+        .replace(/\d+\s+contribution\s+posts/gi, 'many contribution posts')
+        .replace(/\d+\s+contributions/gi, 'many contributions')
+        .replace(/\d+\s+(global\s+)?messages/gi, 'thousands of messages')
+        .replace(/\d+\s+global\s+message/gi, 'thousands of global messages')
+        .replace(/with\s+(over|nearly|almost|approximately)\s+\d+/gi, 'with numerous')
+        .replace(/,\s*\d+\s+global\s+messages/gi, ', with thousands of global messages')
+        .replace(/\(\d+\s+global\s+messages\)/gi, '(thousands of global messages)');
     }
   } catch (err) {
     console.error('Error calling analyze API:', err.message);
   }
 
-  // Build stats block
+  // Build stats block (Search API provides real-time contribs/events)
   const statsBlock = `@${displayName}
 🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
-📝 Contributions: ${contributionCount} msgs *(real-time)*
-🎉 Events: ${eventCount} participations *(real-time)*
-🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
+📝 Contributions: ${contributionCount} msgs
+🎉 Events: ${eventCount} participations
+🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
   // Build final response
