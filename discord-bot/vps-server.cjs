@@ -568,54 +568,6 @@ client.on('error', (error) => {
 });
 
 // ============ COMMANDS ============
-// Helper function to count messages using Discord Search API (FAST!)
-async function countMessagesByAuthor(guild, targetUserId, channelId = null) {
-  try {
-    const endpoint = channelId
-      ? `https://discord.com/api/v10/guilds/${guild.id}/messages/search?author_id=${targetUserId}&channel_id=${channelId}`
-      : `https://discord.com/api/v10/guilds/${guild.id}/messages/search?author_id=${targetUserId}`;
-
-    const response = await fetch(endpoint, {
-      headers: { 'Authorization': `Bot ${CONFIG.token}` },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Search API error:', response.status, errorText);
-      return 0;
-    }
-
-    const data = await response.json();
-    return data.total_results || 0;
-  } catch (err) {
-    console.error('Error counting messages:', err.message);
-    return 0;
-  }
-}
-
-// Helper function to count mentions using Discord Search API (FAST!)
-async function countMentionsOfUser(guild, targetUserId, channelId) {
-  try {
-    const endpoint = `https://discord.com/api/v10/guilds/${guild.id}/messages/search?mentions=${targetUserId}&channel_id=${channelId}`;
-
-    const response = await fetch(endpoint, {
-      headers: { 'Authorization': `Bot ${CONFIG.token}` },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Search API error:', response.status, errorText);
-      return 0;
-    }
-
-    const data = await response.json();
-    return data.total_results || 0;
-  } catch (err) {
-    console.error('Error counting mentions:', err.message);
-    return 0;
-  }
-}
-
 async function handleCheck(interaction) {
   const userId = interaction.user.id;
   const rateLimit = checkRateLimit(userId, 'check');
@@ -635,15 +587,14 @@ async function handleCheck(interaction) {
     return interaction.editReply('❌ Could not find that user.');
   }
 
-  // Check cache first (shorter cache for fresh data)
-  const cacheKey = `check_${targetUser.id}`;
-  const cached = getCache(cacheKey);
-
   // Track this command as a message for relationship
   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
 
+  // Check cache first
+  const cacheKey = `check_${targetUser.id}`;
+  const cached = getCache(cacheKey);
+
   if (cached) {
-    // Parse cached data
     let analysisText = cached;
     let avatarUrl = null;
 
@@ -653,18 +604,14 @@ async function handleCheck(interaction) {
         analysisText = parsed.analysis;
         avatarUrl = parsed.avatar;
       }
-    } catch {
-      // Old cache format - just use the string
-    }
+    } catch {}
 
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
       .setDescription(analysisText);
 
-    if (avatarUrl) {
-      embed.setThumbnail(avatarUrl);
-    }
+    if (avatarUrl) embed.setThumbnail(avatarUrl);
 
     embed.setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
@@ -672,10 +619,9 @@ async function handleCheck(interaction) {
     return interaction.editReply({ embeds: [embed] });
   }
 
-  // Update with scanning status
-  await interaction.editReply('🔍 Scanning messages...');
+  await interaction.editReply('🔍 Siggy sedang mengintip...');
 
-  // Fetch guild member for real-time roles and join date
+  // Fetch guild member
   let targetMember = null;
   try {
     targetMember = await interaction.guild.members.fetch(targetUser.id);
@@ -683,50 +629,21 @@ async function handleCheck(interaction) {
     console.error('Could not fetch guild member:', err.message);
   }
 
-  // Get channel IDs
-  const RITUAL_GUILD_ID = '1210468736205852672';
-  const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
-  const EVENT_CHANNEL_ID = '1389298240762937414';
-
-  // Scan using Discord Search API (FAST - server-side filtering!)
-  let globalMessageCount = 0;
-  let contributionCount = 0;
-  let eventParticipationCount = 0;
-
-  try {
-    // Global messages - search entire guild
-    globalMessageCount = await countMessagesByAuthor(interaction.guild, targetUser.id);
-
-    // Contribution count - search #contributions channel
-    contributionCount = await countMessagesByAuthor(interaction.guild, targetUser.id, CONTRIBUTIONS_CHANNEL_ID);
-
-    // Event participation - search mentions in #event channel
-    eventParticipationCount = await countMentionsOfUser(interaction.guild, targetUser.id, EVENT_CHANNEL_ID);
-  } catch (err) {
-    console.error('Error scanning messages:', err);
-  }
-
-  // Build real-time Discord data
-  const roles = targetMember
-    ? [...targetMember.roles.cache
-        .filter(r => r.id !== interaction.guild.id)
-        .values()]
-        .map(r => r.name)
-    : [];
-  const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
   const displayName = targetMember?.displayName || targetUser.username;
   const avatar = targetUser.displayAvatarURL({ size: 256 });
+  const roles = targetMember
+    ? [...targetMember.roles.cache.filter(r => r.id !== interaction.guild.id).values()].map(r => r.name)
+    : [];
+  const joinDate = targetMember?.joinedAt?.toLocaleDateString() || 'Unknown';
 
-  // Log the fresh data
-  console.log(`Fresh data for ${displayName}:`, {
-    global: globalMessageCount,
-    contributions: contributionCount,
-    events: eventParticipationCount,
-  });
+  // Get real-time stats from database (tracked in messageCreate)
+  const dbState = getUserState(targetUser.id);
+  const contributionCount = dbState?.contributionCount || 0;
+  const eventParticipationCount = dbState?.eventParticipationCount || 0;
 
-  // Call old /api/analyze to get the good AI response format
+  // Call old /api/analyze for AI response
   let analysisText = '';
-  let oldApiStats = { global: 0, contributions: 0, events: 0 };
+  let globalMsgFromApi = null;
 
   try {
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
@@ -739,57 +656,59 @@ async function handleCheck(interaction) {
       const data = await response.json();
       const fullText = data.analysis || '';
 
-      // Extract old API stats as fallback
+      // Extract global message count from API (with disclaimer)
       const globalMatch = fullText.match(/🌎 Global Messages:\s*([\d,]+)/);
-      const contribMatch = fullText.match(/📝 Contributions:\s*([\d,]+)/);
-      const eventsMatch = fullText.match(/🎉 Events:\s*([\d,]+)/);
+      if (globalMatch) {
+        globalMsgFromApi = parseInt(globalMatch[1].replace(/,/g, ''));
+      }
 
-      if (globalMatch) oldApiStats.global = parseInt(globalMatch[1].replace(/,/g, ''));
-      if (contribMatch) oldApiStats.contributions = parseInt(contribMatch[1].replace(/,/g, ''));
-      if (eventsMatch) oldApiStats.events = parseInt(eventsMatch[1].replace(/,/g, ''));
-
-      console.log(`Old API stats:`, oldApiStats);
-
-      // Get the analysis text (everything after the stats block)
+      // Get the intelligence part (after stats block)
       const splitIndex = fullText.indexOf('🔍 Contributor Intelligence:');
       if (splitIndex !== -1) {
-        // Keep the intelligence part, rebuild stats with fresh data (or old API as fallback)
-        const intelligencePart = fullText.substring(splitIndex);
-        const statsBlock = `@${displayName}
-🌎 Global Messages: ${(globalMessageCount || oldApiStats.global).toLocaleString()}
-📝 Contributions: ${(contributionCount || oldApiStats.contributions)} msgs
-🎉 Events: ${(eventParticipationCount || oldApiStats.events)} participations
-🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
-📅 Joined: ${joinDate}`;
-
-        analysisText = `${statsBlock}\n\n${intelligencePart}`;
+        analysisText = fullText.substring(splitIndex);
       } else {
         analysisText = fullText;
       }
+    } else {
+      // API returned non-OK status - user not in extracted data
+      console.log(`User ${targetUser.username} not in extracted database`);
     }
   } catch (err) {
-    console.error('Error calling analyze API:', err);
+    console.error('Error calling analyze API:', err.message);
   }
 
-  // Fallback if API failed
-  if (!analysisText) {
-    const statsBlock = `@${displayName}
-🌎 Global Messages: ${(globalMessageCount || oldApiStats.global).toLocaleString()}
-📝 Contributions: ${(contributionCount || oldApiStats.contributions)} msgs
-🎉 Events: ${(eventParticipationCount || oldApiStats.events)} participations
+  // Build stats block
+  const statsBlock = `@${displayName}
+🌎 Global Messages: ${globalMsgFromApi ? `${globalMsgFromApi.toLocaleString()} *(as of March 15)*` : 'N/A'}
+📝 Contributions: ${contributionCount} msgs *(real-time)*
+🎉 Events: ${eventParticipationCount} participations *(real-time)*
 🎭 Roles: ${roles.slice(0, 5).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
-    analysisText = statsBlock;
+
+  // Build final response
+  let finalResponse;
+
+  if (!analysisText) {
+    // User not in extracted data - Siggy-style placeholder
+    finalResponse = `${statsBlock}
+
+🐱 **Siggy belum terlalu kenal dengan ${displayName}...**
+
+Ayo coba berinteraksi lebih dengan Siggy dan server Ritual untuk tau lebih jauh! Posting di #contributions, ikutan event, atau ngobrol di biar Siggy bisa belajar lebih banyak tentang kamu! <:nya:1143104953896714330>
+
+*Data akan terus diupdate seiring waktu~*`;
+  } else {
+    finalResponse = `${statsBlock}\n\n${analysisText}`;
   }
 
   try {
-    // Cache the result
-    setCache(cacheKey, JSON.stringify({ analysis: analysisText, avatar }));
+    // Cache the result (longer cache since extracted data doesn't change often)
+    setCache(cacheKey, JSON.stringify({ analysis: finalResponse, avatar }));
 
     const embed = new EmbedBuilder()
       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-      .setDescription(analysisText.substring(0, 4096))
+      .setDescription(finalResponse.substring(0, 4096))
       .setThumbnail(avatar)
       .setFooter({ text: `Multi-dimensional Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)}` })
       .setTimestamp();
