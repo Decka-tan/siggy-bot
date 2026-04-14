@@ -96,11 +96,12 @@ process.on('SIGTERM', shutdown);
 
 // ============ USER STATES ============
 
-function getUserState(userId) {
+function getUserState(userId, guildId = null) {
   if (!db.userStates[userId]) {
     // Create default state for new user
     db.userStates[userId] = {
       userId,
+      guildId, // Store which guild this user is from
       userName: null,
       mood: 'DEFAULT',
       form: 'ANIME',
@@ -110,6 +111,10 @@ function getUserState(userId) {
       eventParticipationCount: 0, // Track event participation (mentions in #event channel)
       lastInteraction: Date.now(),
     };
+    saveDatabase();
+  } else if (guildId && !db.userStates[userId].guildId) {
+    // Update guildId if not set
+    db.userStates[userId].guildId = guildId;
     saveDatabase();
   }
   return db.userStates[userId];
@@ -222,8 +227,15 @@ function getGlobalStats() {
   };
 }
 
-function getTopUsers(limit = 10) {
-  return Object.values(db.userStates)
+function getTopUsers(limit = 10, guildId = null) {
+  let users = Object.values(db.userStates);
+
+  // Filter by guild if specified
+  if (guildId) {
+    users = users.filter(u => u.guildId === guildId);
+  }
+
+  return users
     .filter(u => u.userName)
     .sort((a, b) => (b.messageCount || 0) - (a.messageCount || 0))
     .slice(0, limit)
@@ -236,11 +248,18 @@ function getTopUsers(limit = 10) {
     }));
 }
 
-function getUserRank(userId) {
+function getUserRank(userId, guildId = null) {
   const userMessageCount = db.userStates[userId]?.messageCount || 0;
   if (userMessageCount === 0) return null;
 
-  const rank = Object.values(db.userStates)
+  let users = Object.values(db.userStates);
+
+  // Filter by guild if specified
+  if (guildId) {
+    users = users.filter(u => u.guildId === guildId);
+  }
+
+  const rank = users
     .filter(u => (u.messageCount || 0) > userMessageCount)
     .length;
 

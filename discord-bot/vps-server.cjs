@@ -457,8 +457,8 @@ setInterval(() => {
 
 // ============ USER STATE TRACKING ============
 // Track command as message for relationship (now with DB persistence)
-function trackCommandAsMessage(userId, userName, commandName) {
-  const state = getUserState(userId);
+function trackCommandAsMessage(userId, userName, commandName, guildId = null) {
+  const state = getUserState(userId, guildId);
   // Update username if changed
   state.userName = userName;
   state.messageCount = (state.messageCount || 0) + 1;
@@ -687,7 +687,7 @@ async function handleCheck(interaction) {
   }
 
   // Track this command as a message for relationship
-  const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
+  const state = trackCommandAsMessage(userId, interaction.user.username, 'check', interaction.guildId);
 
   // Check cache first
   const cacheKey = `check_${targetUser.id}`;
@@ -944,7 +944,7 @@ async function handleCheck(interaction) {
 //   const cached = getCache(cacheKey);
 //
 //   // Track this command as a message for relationship
-//   const state = trackCommandAsMessage(userId, interaction.user.username, 'check');
+//   const state = trackCommandAsMessage(userId, interaction.user.username, 'check', interaction.guildId);
 //
 //   if (cached) {
 //     // Parse cached data - support both old format (string) and new format (JSON with avatar)
@@ -1054,7 +1054,7 @@ async function handleResearch(interaction) {
   const cached = getCache(cacheKey);
 
   // Track this command as a message for relationship
-  const state = trackCommandAsMessage(userId, interaction.user.username, 'research');
+  const state = trackCommandAsMessage(userId, interaction.user.username, 'research', interaction.guildId);
 
   if (cached) {
     const embed = new EmbedBuilder()
@@ -1128,7 +1128,7 @@ async function handleResearch(interaction) {
 
 async function handleTransform(interaction) {
   const userId = interaction.user.id;
-  const state = getUserState(userId);
+  const state = getUserState(userId, interaction.guildId);
   const currentForm = state.form;
 
   // Get the form option (optional)
@@ -1174,7 +1174,7 @@ async function handleTransform(interaction) {
 
 async function handleMood(interaction) {
   const userId = interaction.user.id;
-  const state = getUserState(userId);
+  const state = getUserState(userId, interaction.guildId);
 
   const embed = new EmbedBuilder()
     .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
@@ -1250,8 +1250,10 @@ async function handleTop(interaction) {
   await interaction.deferReply();
 
   try {
-    const topUsers = getTopUsers(10);
-    const userRank = getUserRank(interaction.user.id);
+    // Only show users from this server (guild)
+    const guildId = interaction.guildId;
+    const topUsers = getTopUsers(10, guildId);
+    const userRank = getUserRank(interaction.user.id, guildId);
 
     if (topUsers.length === 0) {
       return interaction.editReply('No users yet! Be the first to chat with me! 🐱');
@@ -1535,7 +1537,7 @@ client.on('interactionCreate', async (interaction) => {
 
       const { message } = options;
       const userId = interaction.user.id;
-      const state = getUserState(userId);
+      const state = getUserState(userId, interaction.guildId);
 
       if (!state || !message) {
         return interaction.editReply({ content: '❌ Could not reload chat message.', components: [] });
@@ -2190,7 +2192,7 @@ client.on('messageCreate', async (message) => {
 
   if (message.guildId === RITUAL_GUILD_ID &&
       message.channelId === CONTRIBUTIONS_CHANNEL_ID) {
-    const state = getUserState(message.author.id);
+    const state = getUserState(message.author.id, message.guildId);
     state.contributionCount = (state.contributionCount || 0) + 1;
     saveUserState(state);
   }
@@ -2201,7 +2203,7 @@ client.on('messageCreate', async (message) => {
     // Count all @mentions in the message and increment their event participation
     const mentionedUsers = message.mentions.users.filter(u => !u.bot);
     for (const [userId, user] of mentionedUsers) {
-      const state = getUserState(userId);
+      const state = getUserState(userId, interaction.guildId);
       state.eventParticipationCount = (state.eventParticipationCount || 0) + 1;
       saveUserState(state);
     }
@@ -2231,7 +2233,7 @@ client.on('messageCreate', async (message) => {
 
   // Get user state and history from database
   const userId = message.author.id;
-  const state = getUserState(userId);
+  const state = getUserState(userId, message.guildId);
   state.userName = message.author.username; // Update username
   saveUserState(state);
   const history = getConversationHistory(userId, 10);
