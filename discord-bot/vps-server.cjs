@@ -629,22 +629,10 @@ Style: Playful cat-girl AI personality named Siggy. Use Indonesian phrases occas
     const data = await response.json();
     let analysis = data.analysis || null;
 
-    // Strip stats block from response if present (avoid duplication)
+    // Clean up: remove any duplicate username at the start
     if (analysis) {
-      // Remove everything until "Contributor Archetype" or "🔍 Contributor Intelligence"
-      const archetypeIndex = analysis.indexOf('Contributor Archetype');
-      const intelIndex = analysis.indexOf('🔍 Contributor Intelligence');
-
-      let startIndex = -1;
-      if (archetypeIndex !== -1) startIndex = archetypeIndex;
-      if (intelIndex !== -1 && (startIndex === -1 || intelIndex < startIndex)) startIndex = intelIndex;
-
-      if (startIndex !== -1) {
-        // Keep header if exists
-        const headerMatch = analysis.match(/@[\w]+/);
-        const header = headerMatch ? `${headerMatch[0]}\n` : '';
-        analysis = header + analysis.substring(startIndex);
-      }
+      // Remove leading @username if it exists (we already show it in stats)
+      analysis = analysis.replace(/^@[\w]+\n\n?/, '');
     }
 
     return analysis;
