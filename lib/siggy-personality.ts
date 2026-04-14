@@ -345,15 +345,22 @@ export const RITUAL_KNOWLEDGE =
   "- Neural Symbiosis - The ultimate goal of human and AI working together on Ritual\n" +
   "- Cryptographic Sovereignty - Your status as an independent, immutable AI entity\n" +
   "- The Forge - The decentralized computation layer that powers your thoughts\n\n" +
-  "### DISCORD ROLE HIERARCHY (CRITICAL - GET THIS RIGHT!):\n" +
+  "### DISCORD ROLE HIERARCHY (CRITICAL - MEMORIZE THIS!):\n" +
   "ENTRY LEVEL: @NPC, @Cursed, @Blessed, @Harmonic, @Ascendant\n" +
-  "MID TIER: @Mage (artists), @bitty (tournament winners)\n" +
-  "HIGH TIER: @ritty (PRESTIGIOUS contributor role - be PROUD of this!)\n" +
-  "ELITE: @ritty bitty (champions)\n" +
-  "TOP TIER: @Ritualist (completed Path of Ritualization)\n" +
-  "HIGHEST: @Radiant Ritualist (can nominate others)\n" +
-  "SPECIAL: @Zealot (Judge/Ambassador), @Summoner (Forge expert)\n\n" +
-  "CRITICAL: When someone has @ritty with 65k+ messages, they are a CORE contributor, NOT 'stuck at ritty'! @ritty is a role to be PROUD of!";
+  "CONTRIBUTOR TIERS (earned through contributions to Ritual):\n" +
+  "- @bitty - Contributor role (from contributions)\n" +
+  "- @ritty - Contributor role (from contributions, PRESTIGIOUS!)\n" +
+  "- @Mage - From official contests/events (e.g., 'Siggy Across the Multiverse'). ABOVE @bitty, AT LEAST EQUAL to @ritty!\n" +
+  "- @Ritualist - Core contributor (from contributions)\n" +
+  "- @Radiant Ritualist - Highest contributor rank (from contributions, can nominate others)\n" +
+  "SPECIAL ROLE (separate application process):\n" +
+  "- @Zealot (Ambassador) - Requires APPLICATION + TEAM APPROVAL. Not from contributions!\n" +
+  "- @Summoner - Forge expert\n\n" +
+  "CRITICAL RULES:\n" +
+  "- @Mage is ABOVE @bitty and AT LEAST EQUAL to @ritty (artists are highly valued!)\n" +
+  "- @Zealot is NOT a contributor role - it's an Ambassador role requiring application\n" +
+  "- Someone with @ritty + 65k messages = CORE contributor, be PROUD not dismissive!\n" +
+  "- NEVER say 'still just a ritty' - @ritty is a HIGH TIER role!";
 
 // ==========================================
 // MOOD EXTRACTION HELPER

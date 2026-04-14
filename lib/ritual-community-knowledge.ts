@@ -58,23 +58,22 @@ ENTRY LEVEL:
 @Harmonic - Those who balance between light and dark
 @Ascendant - Rising members who've shown dedication
 
-MID TIER:
-@Mage (🔮) - Artists who won art contests
-@bitty - Tournament winners and special contributors
+CONTRIBUTOR ROLES (earned through CONTRIBUTIONS to Ritual):
+@bitty - Contributor role (from contributions to Ritual)
+@ritty - Contributor role (from contributions to Ritual, HIGH TIER!)
+@Mage (🔮) - From OFFICIAL contests/events like "Siggy Across the Multiverse". ABOVE @bitty, AT LEAST EQUAL to @ritty!
+@Ritualist - Core contributor (from contributions to Ritual)
+@Radiant Ritualist - HIGHEST contributor rank (from contributions to Ritual, can nominate others)
 
-HIGH TIER (contributors):
-@ritty - Active contributors recognized by community (HIGH tier!)
-@ritty bitty - Elite tournament champions
+SPECIAL ROLE (separate process - NOT from contributions):
+@Zealot - Ambassador role. Requires APPLICATION + TEAM APPROVAL. This is NOT a contributor role!
+@Summoner - Forge expert
 
-TOP TIER (leadership):
-@Ritualist - Core community who completed Path of Ritualization
-@Radiant Ritualist - The HIGHEST rank, can nominate others for Ritualist
-
-SPECIAL ROLES (separate hierarchy):
-@Zealot - The Judge (Ambassador level)
-@Summoner - Understands the forge
-
-IMPORTANT: @ritty is a HIGH TIER contributor role, not low! Someone with 65k messages and @ritty is highly ranked in the community.`,
+CRITICAL RULES:
+- @Mage is ABOVE @bitty and AT LEAST EQUAL to @ritty (artists are highly valued!)
+- All contributor roles (bitty, ritty, Ritualist, Radiant Ritualist) come from CONTRIBUTIONS
+- @Zealot is an Ambassador role requiring application, not from contributions
+- NEVER say "still just a ritty" - @ritty is a HIGH TIER contributor role!`,
     priority: 10,
     source: 'ritual-discord-roles',
   },
@@ -82,7 +81,7 @@ IMPORTANT: @ritty is a HIGH TIER contributor role, not low! Someone with 65k mes
     id: 'ritual-role-mage',
     category: 'roles',
     keywords: ['mage', 'mage role', 'how to get mage', 'become mage', 'artist role'],
-    content: `@Mage Role (🔮): Awarded to artists who win Ritual art contests. Notable Mage recipients include: @Lola (❖❖) (community artist leader), @solncestoyanie, @Feno, @onlinelink, @KAYBU IS SOON A WIZARD, @Tequila, @DexDuck, @TiAdler, @cryptozen99, @Buratino, @Maxiq, @Derry, @OD 🪖🚀, @𝐉𝐮𝐥𝐢, @dabid, @hoangthao, @Kash, @Cutie Spilla, and @hurlxr. Win contests like "Break the Chain" or "Express With Ritual" to earn this role.`,
+    content: `@Mage Role (🔮): Awarded to artists who win OFFICIAL Ritual contests/events like "Siggy Across the Multiverse". This is a PRESTIGIOUS role - @Mage is ABOVE @bitty and AT LEAST EQUAL to @ritty in hierarchy! Artists are highly valued in Ritual. Notable Mage recipients include: @Lola (❖❖) (community artist leader), @solncestoyanie, @Feno, @onlinelink, @KAYBU IS SOON A WIZARD, @Tequila, @DexDuck, @TiAdler, @cryptozen99, @Buratino, @Maxiq, @Derry, @OD 🪖🚀, @𝐉𝐮𝐥𝐢, @dabid, @hoangthao, @Kash, @Cutie Spilla, and @hurlxr. Win contests like "Break the Chain" or "Express With Ritual" to earn this role.`,
     priority: 8,
     source: 'ritual-discord-roles',
   },
@@ -100,6 +99,14 @@ IMPORTANT: @ritty is a HIGH TIER contributor role, not low! Someone with 65k mes
     keywords: ['radiant', 'radiant ritualist', 'highest role', 'top role', 'radiant ritualist role', 'golden ritualist'],
     content: `@Radiant Ritualist: Golden Ritualist. The highest recognized rank in the Ritual Discord hierarchy, for really standout Ritualists. Only 3 members hold this role: @Meison (❖❖), @Cutie Eric | Ritual ❖, and @whitesocks | Ritual ❖. Only Radiant Ritualists can nominate members for the @Ritualist role. Their nominations count 5x in voting. This role is for community members who distinguish themselves and go above and beyond in growing the community. First 3 announced in Dec 2025.`,
     priority: 9,
+    source: 'ritual-discord-roles',
+  },
+  {
+    id: 'ritual-role-zealot-ambassador',
+    category: 'roles',
+    keywords: ['zealot', 'zealot role', 'ambassador', 'how to get zealot', 'become zealot', 'judge role'],
+    content: `@Zealot Role (Ambassador): This is an AMBASSADOR role, NOT a contributor role! To get @Zealot, you must APPLY and get APPROVED by the Ritual team. It is NOT earned through contributions like @bitty, @ritty, @Ritualist, or @Radiant Ritualist. @Zealots serve as Judges and representatives for the community. This is a separate track from contributor roles - you cannot "earn" it by being active, you must go through the application process.`,
+    priority: 10,
     source: 'ritual-discord-roles',
   },
   {
