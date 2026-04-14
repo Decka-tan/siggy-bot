@@ -280,38 +280,38 @@ Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST "Contributor Intelligence"
 - ADVOCATE: Social amplifier detected via X/Twitter links and heraldry.
 - STEADY_CONTRIBUTOR: Consistent daily activity but no specialized role yet.
 
-### OUTPUT FORMAT - COPY THIS EXACT STRUCTURE:
+### OUTPUT FORMAT - USE XML TAGS:
 🔍 Contributor Intelligence
 
 Contributor Archetype
-🎭 **${archetype.replace(/_/g, ' ')}** (Style: ${styleAttr})
-Explanation of archetype here (normal text, no bold)
+<ARCHETYPE>${archetype.replace(/_/g, ' ')}</ARCHETYPE> (Style: ${styleAttr})
+<EXPLANATION>Why this archetype was assigned...</EXPLANATION>
 
 Key Contributions & Impact (Based on recent activity)
-1. **Title Here**: Description here (normal text, no bold)
-2. **Title Here**: Description here (normal text, no bold)
-3. **Title Here**: Description here (normal text, no bold)
+<ITEM>
+<TITLE>Substantive Title</TITLE>
+<DESC>Analysis based on specific samples</DESC>
+</ITEM>
+<ITEM>
+<TITLE>Another Title</TITLE>
+<DESC>Another insight from samples</DESC>
+</ITEM>
+<ITEM>
+<TITLE>Third Title</TITLE>
+<DESC>A third insight</DESC>
+</ITEM>
 
-**Summary**
-Summary text here (normal text, no bold)
+<HEADER>Summary</HEADER>
+<SUMMARY>2-3 sentence executive summary with optional cat mannerisms</SUMMARY>
 
-### MARKDOWN BOLD SYNTAX - READ CAREFULLY:
-- To make text bold in Discord markdown: wrap with double asterisks: **text**
-- Only wrap the TITLE in ** **
-- Do NOT wrap the entire line in ** **
-- Do NOT wrap descriptions in ** **
-
-EXAMPLES:
-- ✅ CORRECT: 1. **Conceptual Framing Specialist**: Creates educational content about physics
-- ❌ WRONG: 1. **Conceptual Framing Specialist: Creates educational content about physics**
-- ❌ WRONG: **1. Conceptual Framing Specialist**: **Creates educational content about physics**
-
-### OTHER RULES:
+### CRITICAL RULES:
+- Use the XML tags exactly: <ARCHETYPE>, <EXPLANATION>, <ITEM>, <TITLE>, <DESC>, <HEADER>, <SUMMARY>
+- DO NOT use markdown **bold** syntax anywhere - let the system handle formatting
 - DO NOT repeat Discord Roles, Global Messages, Contributions, or Events
 - DO NOT use placeholders - use actual titles based on samples
 - USE THE SAMPLES: ${JSON.stringify(samples)}
 - If samples are X links, analyze the intent
-- When mentioning usernames: **@username**
+- When mentioning usernames: @username (no bold needed)
 - NO [MOOD:...] tags
 - Save cat personality for Summary only
 `;
@@ -345,13 +345,41 @@ Provide a detailed, evidence-based report.`;
 
       let rawResponse = response.choices[0]?.message?.content || 'No analysis available meow!';
 
-      // Remove ALL [MOOD:...] tags (they can appear multiple times)
+      // Remove ALL [MOOD:...] tags
       rawResponse = rawResponse.replace(/\[MOOD:[^\]]+\]\s*/g, '');
-
-      // Also remove any standalone MOOD tags that might have different formatting
       rawResponse = rawResponse.replace(/\[MOOD:\s*[A-Z]+\]/gi, '');
 
-      return `${basicStats}\n\n${rawResponse}`;
+      // Parse XML tags and format with Discord markdown
+      let formatted = rawResponse;
+
+      // Format archetype: <ARCHETYPE>Name</ARCHETYPE> -> 🎭 **Name**
+      formatted = formatted.replace(/<ARCHETYPE>(.*?)<\/ARCHETYPE>/g, '🎭 **$1**');
+
+      // Format summary header: <HEADER>Summary</HEADER> -> **Summary**
+      formatted = formatted.replace(/<HEADER>(.*?)<\/HEADER>/g, '**$1**');
+
+      // Format items: <ITEM>\n<TITLE>Title</TITLE>\n<DESC>Desc</DESC>\n</ITEM> -> 1. **Title**: Desc
+      formatted = formatted.replace(/<ITEM>\s*<TITLE>(.*?)<\/TITLE>\s*<DESC>(.*?)<\/DESC>\s*<\/ITEM>/gs, (_, title, desc) => {
+        return `1. **${title}**: ${desc.trim()}`;
+      });
+
+      // Fix numbering - increment correctly
+      const lines = formatted.split('\n');
+      let itemNum = 1;
+      const numberedLines = lines.map(line => {
+        if (line.match(/^\d+\.\s+\*\*/)) {
+          const newLine = line.replace(/^\d+\./, `${itemNum}.`);
+          itemNum++;
+          return newLine;
+        }
+        return line;
+      });
+      formatted = numberedLines.join('\n');
+
+      // Remove any remaining XML tags
+      formatted = formatted.replace(/<\/?[A-Z]+>/gi, '');
+
+      return `${basicStats}\n\n${formatted}`;
     } catch (e: any) {
       console.error('DeepSeek analysis error:', e?.message || e);
       return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched (${e?.message || 'unknown error'}), but your stats are looking grit nyann~! 🐱`;
