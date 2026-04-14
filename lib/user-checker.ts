@@ -280,34 +280,40 @@ Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST "Contributor Intelligence"
 - ADVOCATE: Social amplifier detected via X/Twitter links and heraldry.
 - STEADY_CONTRIBUTOR: Consistent daily activity but no specialized role yet.
 
-### OUTPUT FORMAT (FOLLOW EXACTLY):
+### OUTPUT FORMAT - COPY THIS EXACT STRUCTURE:
 🔍 Contributor Intelligence
 
 Contributor Archetype
 🎭 **${archetype.replace(/_/g, ' ')}** (Style: ${styleAttr})
-This archetype was assigned because... (EXPLANATION NOT BOLDED)
+Explanation of archetype here (normal text, no bold)
 
 Key Contributions & Impact (Based on recent activity)
-1. **Substantive Title**: Analysis based on specific samples (THIS DESCRIPTION NOT BOLDED)
-2. **Another Title**: Another insight from samples (THIS DESCRIPTION NOT BOLDED)
-3. **Third Title**: A third insight (THIS DESCRIPTION NOT BOLDED)
+1. **Title Here**: Description here (normal text, no bold)
+2. **Title Here**: Description here (normal text, no bold)
+3. **Title Here**: Description here (normal text, no bold)
 
 **Summary**
-Executive summary text (NOT BOLDED)
+Summary text here (normal text, no bold)
 
-### CRITICAL FORMATTING RULES:
-- The ARCHETYPE NAME with emoji must be **bold**: 🎭 **Theoretician Evangelist**
-- The NUMBERED ITEM TITLES must be **bold**: 1. **Conceptual Framing Specialist**:
-- Everything AFTER the colon (:) must be normal text (NOT bold)
-- The "Summary" header is **bold** but the summary text is NOT bold
-- Section headers (Contributor Archetype, Key Contributions & Impact) are NOT bold
-- DO NOT repeat Discord Roles, Global Messages, Contributions, or Events - these are already shown in the stats block above!
-- DO NOT use placeholders like [Substantive Title] or [...] - use actual descriptive titles based on the samples.
+### MARKDOWN BOLD SYNTAX - READ CAREFULLY:
+- To make text bold in Discord markdown: wrap with double asterisks: **text**
+- Only wrap the TITLE in ** **
+- Do NOT wrap the entire line in ** **
+- Do NOT wrap descriptions in ** **
+
+EXAMPLES:
+- ✅ CORRECT: 1. **Conceptual Framing Specialist**: Creates educational content about physics
+- ❌ WRONG: 1. **Conceptual Framing Specialist: Creates educational content about physics**
+- ❌ WRONG: **1. Conceptual Framing Specialist**: **Creates educational content about physics**
+
+### OTHER RULES:
+- DO NOT repeat Discord Roles, Global Messages, Contributions, or Events
+- DO NOT use placeholders - use actual titles based on samples
 - USE THE SAMPLES: ${JSON.stringify(samples)}
-- If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
-- When mentioning usernames, ALWAYS format as **@username**.
-- **CRITICAL**: Do NOT include any [MOOD:...] tags anywhere in your response.
-- Keep it professional and analytical. Save cat personality for the Summary only.
+- If samples are X links, analyze the intent
+- When mentioning usernames: **@username**
+- NO [MOOD:...] tags
+- Save cat personality for Summary only
 `;
 
     let userPrompt = `Analyze this contributor nya~!
