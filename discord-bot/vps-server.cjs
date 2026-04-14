@@ -54,6 +54,7 @@ const {
   handleInvoiceButton,
   buildMarkPaidModal,
   buildAddPeopleModal,
+  processMarkPaidModal,
   invoiceCommandsSimple,
   sendPaidNotification,
 } = require('./commands/invoice-simple.cjs');
@@ -689,8 +690,8 @@ async function handleCheck(interaction) {
   // Track this command as a message for relationship
   const state = trackCommandAsMessage(userId, interaction.user.username, 'check', interaction.guildId);
 
-  // Check cache first
-  const cacheKey = `check_${targetUser.id}`;
+  // Check cache first (include username in key to handle username changes)
+  const cacheKey = `check_${targetUser.username}_${targetUser.id}`;
   const cached = getCache(cacheKey);
 
   if (cached) {
@@ -1663,6 +1664,13 @@ client.on('interactionCreate', async (interaction) => {
       await handleInvoiceModal(interaction, 'invoice_create');
     } else if (customId === 'invoice_add_participants') {
       await handleInvoiceModal(interaction, 'invoice_add_participants');
+    } else if (customId.startsWith('mark_paid_modal_')) {
+      // New: Use modal instead of dropdown for mark paid
+      const invoiceId = customId.replace('mark_paid_modal_', '');
+      await processMarkPaidModal(interaction, invoiceId);
+    } else if (customId.startsWith('mark_paid_select_')) {
+      // Old: Handle dropdown selection (backward compatibility)
+      await handleInvoiceModal(interaction, customId);
     } else if (customId.startsWith('mark_paid_')) {
       await handleInvoiceModal(interaction, customId);
     } else if (customId.startsWith('add_people_modal_')) {

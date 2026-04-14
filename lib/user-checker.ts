@@ -184,12 +184,20 @@ export class UserChecker {
 
   public findUser(query: string): EnrichedUser | null {
     const q = query.toLowerCase().replace('@', '').trim();
+
+    // 1. Exact username match (highest priority)
     if (this.memberMap.has(q)) return this.memberMap.get(q)!;
+
+    // 2. Lookup by username index
     const userIdByUsername = this.usernameToIndex.get(q);
     if (userIdByUsername) return this.memberMap.get(userIdByUsername)!;
+
+    // 3. displayName STARTS WITH match (not includes - too error-prone)
+    // This handles cases where displayName is "Firstname Lastname" and username is "firstname"
     for (const profile of this.memberMap.values()) {
-      if (profile.displayName.toLowerCase().includes(q)) return profile;
+      if (profile.displayName && profile.displayName.toLowerCase().startsWith(q)) return profile;
     }
+
     return null;
   }
 

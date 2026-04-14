@@ -554,7 +554,7 @@ async function handleInvoiceButton(interaction, action) {
     }
 
     if (action === 'pay') {
-      // Show select menu for marking people as paid
+      // Show MODAL for marking people as paid (better than dropdown - doesn't get lost when scrolling)
       const unpaid = invoice.participants.filter(p => !p.paid);
       if (unpaid.length === 0) {
         return interaction.reply({
@@ -563,27 +563,39 @@ async function handleInvoiceButton(interaction, action) {
         });
       }
 
-      const { components, customId: selectMenuCustomId } = buildMarkPaidModal(invoiceId, unpaid);
+      // Build modal with text inputs for each unpaid person
+      const modal = new ModalBuilder()
+        .setCustomId(`mark_paid_modal_${invoiceId}`)
+        .setTitle(`Tandai Lunas - ${invoice.title || 'Invoice'}`);
 
-      const row = new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId(`mark_paid_select_${invoiceId}`)
-          .setPlaceholder('Pilih orang yang sudah lunas...')
-          .setMinValues(1)
-          .setMaxValues(unpaid.length)
-          .addOptions(unpaid.slice(0, 25).map((p, i) =>
-            new StringSelectMenuOptionBuilder()
-              .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
-              .setValue(p.userId || `index_${i}`)
-              .setDescription(`Rp ${p.amount.toLocaleString('id-ID')}`)
-          ))
-      );
+      const maxInputs = 5; // Discord limit is 5
+      const rows = [];
 
-      return interaction.reply({
-        content: '✅ Pilih orang yang sudah bayar:',
-        components: [row],
-        ephemeral: true
-      });
+      for (let i = 0; i < Math.min(unpaid.length, maxInputs); i++) {
+        const p = unpaid[i];
+        const input = new TextInputBuilder()
+          .setCustomId(`paid_${i}`)
+          .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
+          .setPlaceholder('Ketik "yes" atau "✓" untuk tandai lunas')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false);
+        rows.push(new ActionRowBuilder().addComponents(input));
+      }
+
+      if (unpaid.length > maxInputs) {
+        // Add note about remaining participants
+        const noteInput = new TextInputBuilder()
+          .setCustomId('paid_note')
+          .setLabel(`...dan ${unpaid.length - maxInputs} lainnya`)
+          .setValue(`Total ${unpaid.length} orang belum lunas. Centang di atas, submit berkali-kali.`)
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false);
+        rows.push(new ActionRowBuilder().addComponents(noteInput));
+      }
+
+      modal.addComponents(...rows);
+
+      return interaction.showModal(modal);
 
     } else if (action === 'bayar') {
       // Delegate to payment.cjs handleBayar
@@ -742,6 +754,68 @@ async function handleInvoiceMerge(interaction) {
 
   await interaction.reply({
     embeds: [embed],
+    ephemeral: true
+  });
+}
+
+/**
+ * Process mark paid modal submit - marks selected users as paid
+ */
+async function processMarkPaidModal(interaction, invoiceId) {
+  const invoice = getInvoice(invoiceId);
+  if (!invoice) {
+    return interaction.reply({
+      content: '❌ Invoice tidak ditemukan.',
+      ephemeral: true
+    });
+  }
+
+  // Permission check - only creator can mark paid
+  if (invoice.creator.id !== interaction.user.id) {
+    return interaction.reply({
+      content: '❌ Hanya pembuat invoice yang bisa mark paid.',
+      ephemeral: true
+    });
+  }
+
+  const unpaid = invoice.participants.filter(p => !p.paid);
+  const nowPaid = [];
+
+  // Check each input field (max 5 + 1 note field)
+  for (let i = 0; i < Math.min(unpaid.length, 5); i++) {
+    const value = interaction.fields.getTextInputValue(`paid_${i}`);
+    if (value && (value.toLowerCase().trim() === 'yes' || value.trim() === '✓' || value.toLowerCase().trim() === 'y')) {
+      const p = unpaid[i];
+      markMultiplePaid(invoiceId, [p.userId]);
+      nowPaid.push(p.username);
+    }
+  }
+
+  // Update invoice message
+  const updated = getInvoice(invoiceId);
+  const newEmbed = renderInvoiceEmbed(updated);
+
+  // Update the original message if we have the info
+  if (invoice.messageId && invoice.channelId) {
+    try {
+      const channel = await interaction.guild.channels.fetch(invoice.channelId);
+      const msg = await channel.messages.fetch(invoice.messageId);
+      await msg.edit({
+        embeds: [newEmbed],
+        components: [buildInvoiceButtons(invoiceId)]
+      });
+    } catch (err) {
+      console.error('Error updating invoice message:', err);
+    }
+  }
+
+  // Send notifications to newly paid users
+  await sendPaidNotification(invoice, nowPaid);
+
+  const remaining = updated.participants.filter(p => !p.paid).length;
+
+  return interaction.reply({
+    content: `✅ Berhasil menandai ${nowPaid.length} orang sebagai LUNAS!\n${remaining > 0 ? `Sisa ${remaining} orang belum lunas.` : '🎉 Semua lunas!'}`,
     ephemeral: true
   });
 }
@@ -1352,6 +1426,7 @@ const invoiceCommandsSimple = [
 module.exports = {
   handleInvoiceCreateSimple,
   processInvoiceCreateModal,
+  processMarkPaidModal,
   handleInvoiceRecap,
   handleInvoiceSearch,
   handleInvoiceAnalytics,

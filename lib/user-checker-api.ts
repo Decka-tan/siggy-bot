@@ -110,10 +110,11 @@ export class UserCheckerAPI {
           const found = members.find((m: any) => {
             const username = m.user?.username?.toLowerCase() || '';
             const displayName = m.nick?.toLowerCase() || m.user?.global_name?.toLowerCase() || '';
-            return username === query.toLowerCase() ||
-                   displayName === query.toLowerCase() ||
-                   username.includes(query.toLowerCase()) ||
-                   displayName.includes(query.toLowerCase());
+            const q = query.toLowerCase();
+            // Exact match first, then startsWith for displayName
+            return username === q ||
+                   displayName === q ||
+                   displayName.startsWith(q);
           });
 
           if (found) {
