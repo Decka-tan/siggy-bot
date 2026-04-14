@@ -285,21 +285,24 @@ Provide a PREMIUM, CONTENT-AWARE, and SUBSTANCE-FIRST "Contributor Intelligence"
 
 Contributor Archetype
 🎭 **${archetype.replace(/_/g, ' ')}** (Style: ${styleAttr})
-[A concise explanation of why this archetype was assigned based on the samples. This text should NOT be bold.]
+This archetype was assigned because... (EXPLANATION NOT BOLDED)
 
 Key Contributions & Impact (Based on recent activity)
-1. **[Substantive Title]**: [Analysis based on specific samples. Cite what they said/posted. This description should NOT be bold.]
-2. **[Substantive Title]**: [Another insight from the samples. This description should NOT be bold.]
-3. **[Substantive Title]**: [A THIRD insight. This description should NOT be bold.]
+1. **Substantive Title**: Analysis based on specific samples (THIS DESCRIPTION NOT BOLDED)
+2. **Another Title**: Another insight from samples (THIS DESCRIPTION NOT BOLDED)
+3. **Third Title**: A third insight (THIS DESCRIPTION NOT BOLDED)
 
 **Summary**
-[A 2-3 sentence executive summary of their essence. Why do they matter to Ritual? Focus on their specific contribution project: ${breakdown.projects?.join(', ') || 'General Forge activity'}. OPTIONAL: Add subtle cat mannerisms like "*flicks tail*" or "nya~" here only. This text should NOT be bold.]
+Executive summary text (NOT BOLDED)
 
-### FORMATTING RULES:
-- **ONLY make bold**: The section headers (Contributor Archetype, Key Contributions & Impact, Summary), the Archetype name with emoji, the numbered item titles (e.g., "1. **Conceptual Framing Specialist**:")
-- **NOT bold**: All descriptions and explanations
+### CRITICAL FORMATTING RULES:
+- The ARCHETYPE NAME with emoji must be **bold**: 🎭 **Theoretician Evangelist**
+- The NUMBERED ITEM TITLES must be **bold**: 1. **Conceptual Framing Specialist**:
+- Everything AFTER the colon (:) must be normal text (NOT bold)
+- The "Summary" header is **bold** but the summary text is NOT bold
+- Section headers (Contributor Archetype, Key Contributions & Impact) are NOT bold
 - DO NOT repeat Discord Roles, Global Messages, Contributions, or Events - these are already shown in the stats block above!
-- DO NOT use placeholders like [Substantive Title] - use actual descriptive titles based on the samples.
+- DO NOT use placeholders like [Substantive Title] or [...] - use actual descriptive titles based on the samples.
 - USE THE SAMPLES: ${JSON.stringify(samples)}
 - If samples are links to X, analyze the *intent* (e.g., "Sharing event schedules", "Showing original art").
 - When mentioning usernames, ALWAYS format as **@username**.
