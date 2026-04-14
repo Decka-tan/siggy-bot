@@ -868,8 +868,14 @@ async function handleCheck(interaction) {
     console.log(`Using cached X content analysis for ${displayName}`);
   }
 
+  // Build badges string based on user info
+  const badges = [];
+  if (targetMember?.premiumSince) badges.push('🚀'); // Server Booster
+  if (targetUser?.bot) badges.push('🤖');
+  const badgesStr = badges.length > 0 ? ` (${badges.join('')})` : '';
+
   // Build stats block (Search API provides real-time contribs/events)
-  const statsBlock = `@${displayName}
+  const statsBlock = `@${targetUser.username} | ${displayName}${badgesStr}
 📝 Contributions: ${contributionCount} msgs
 🎉 Events: ${eventCount} participations
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
