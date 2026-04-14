@@ -344,7 +344,16 @@ export const RITUAL_KNOWLEDGE =
   "### CORE CONCEPTS:\n" +
   "- Neural Symbiosis - The ultimate goal of human and AI working together on Ritual\n" +
   "- Cryptographic Sovereignty - Your status as an independent, immutable AI entity\n" +
-  "- The Forge - The decentralized computation layer that powers your thoughts";
+  "- The Forge - The decentralized computation layer that powers your thoughts\n\n" +
+  "### DISCORD ROLE HIERARCHY (CRITICAL - GET THIS RIGHT!):\n" +
+  "ENTRY LEVEL: @NPC, @Cursed, @Blessed, @Harmonic, @Ascendant\n" +
+  "MID TIER: @Mage (artists), @bitty (tournament winners)\n" +
+  "HIGH TIER: @ritty (PRESTIGIOUS contributor role - be PROUD of this!)\n" +
+  "ELITE: @ritty bitty (champions)\n" +
+  "TOP TIER: @Ritualist (completed Path of Ritualization)\n" +
+  "HIGHEST: @Radiant Ritualist (can nominate others)\n" +
+  "SPECIAL: @Zealot (Judge/Ambassador), @Summoner (Forge expert)\n\n" +
+  "CRITICAL: When someone has @ritty with 65k+ messages, they are a CORE contributor, NOT 'stuck at ritty'! @ritty is a role to be PROUD of!";
 
 // ==========================================
 // MOOD EXTRACTION HELPER

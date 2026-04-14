@@ -49,7 +49,32 @@ export const RITUAL_COMMUNITY_KNOWLEDGE: KnowledgeEntry[] = [
     id: 'ritual-roles-hierarchy',
     category: 'roles',
     keywords: ['roles', 'discord roles', 'hierarchy', 'rank', 'what are the roles', 'role list'],
-    content: `Ritual Discord Roles (from lowest to highest): @NPC - New members starting their journey. @Cursed - Members who pledged to the dark path (Synful). @Blessed - Members who pledged to the light path. @Harmonic - Those who balance between light and dark. @Ascendant - Rising members who've shown dedication. @Mage (🔮) - Artists and creative contributors who won art contests. @ritty - Active contributors recognized by community. @ritty bitty - Special role for tournament winners (e.g., SmashKart champions). @Ritualist - Core community members who completed the Path of Ritualization. @Radiant Ritualist - The highest recognized rank, can nominate others for Ritualist. Special roles: @Zealot - The Judge, @Summoner - Understands the forge.`,
+    content: `Ritual Discord Roles Hierarchy (from LOWEST to HIGHEST):
+
+ENTRY LEVEL:
+@NPC - New members starting their journey
+@Cursed - Members who pledged to the dark path (Synful)
+@Blessed - Members who pledged to the light path
+@Harmonic - Those who balance between light and dark
+@Ascendant - Rising members who've shown dedication
+
+MID TIER:
+@Mage (🔮) - Artists who won art contests
+@bitty - Tournament winners and special contributors
+
+HIGH TIER (contributors):
+@ritty - Active contributors recognized by community (HIGH tier!)
+@ritty bitty - Elite tournament champions
+
+TOP TIER (leadership):
+@Ritualist - Core community who completed Path of Ritualization
+@Radiant Ritualist - The HIGHEST rank, can nominate others for Ritualist
+
+SPECIAL ROLES (separate hierarchy):
+@Zealot - The Judge (Ambassador level)
+@Summoner - Understands the forge
+
+IMPORTANT: @ritty is a HIGH TIER contributor role, not low! Someone with 65k messages and @ritty is highly ranked in the community.`,
     priority: 10,
     source: 'ritual-discord-roles',
   },
