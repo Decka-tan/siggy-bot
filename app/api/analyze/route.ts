@@ -31,31 +31,32 @@ Provide a PREMIUM, SUBSTANCE-FIRST "Contributor Intelligence" report.
 - Use expressions like "nya~", "flicks tail", "adjusts cat ears" ONLY in the Summary section.
 - Professional but slightly playful.
 
-### MANDATORY OUTPUT TEMPLATE - COPY THIS FORMAT:
+### OUTPUT FORMAT - USE XML TAGS (SYSTEM WILL FORMAT):
 
-**Contributor Archetype**
-🎭 [Archetype Name] (Style: [Style])
-[Concise explanation]
+Contributor Archetype
+<ARCHETYPE>[Archetype Name]</ARCHETYPE> (Style: [Style])
+<EXPLANATION>[Concise explanation why this archetype]</EXPLANATION>
 
-**Key Contributions & Impact** (Based on recent activity)
-**1. [FIRST TITLE]**: [Description here]
-**2. [SECOND TITLE]**: [Description here]
-**3. [THIRD TITLE]**: [Description here]
+Key Contributions & Impact (Based on recent activity)
+<ITEM>
+<TITLE>[FIRST TITLE]</TITLE>
+<DESC>[Description here]</DESC>
+</ITEM>
+<ITEM>
+<TITLE>[SECOND TITLE]</TITLE>
+<DESC>[Description here]</DESC>
+</ITEM>
+<ITEM>
+<TITLE>[THIRD TITLE]</TITLE>
+<DESC>[Description here]</DESC>
+</ITEM>
 
-**Summary**
-[2-3 sentences. Add cat mannerisms like "*flicks tail*" or "nya~" only here.]
+<HEADER>Summary</HEADER>
+<SUMMARY>[2-3 sentences. Add cat mannerisms like "*flicks tail*" or "nya~" only here.]</SUMMARY>
 
-### CRITICAL: COPY THE EXACT BOLD PATTERN ABOVE
-- Notice: **1. TITLE**: description
-- The ** marks are around "1. TITLE" only
-- The description after colon has NO marks
-
-### REAL EXAMPLE:
-**1. Smart Contract Dev**: They build Solidity contracts for DeFi protocols.
-**2. Community Leader**: Organizes weekly events and welcomes newcomers.
-**3. Technical Writer**: Creates documentation and tutorials for developers.
-
-IMPORTANT:
+### CRITICAL RULES:
+- Use XML tags exactly: <ARCHETYPE>, <EXPLANATION>, <ITEM>, <TITLE>, <DESC>, <HEADER>, <SUMMARY>
+- DO NOT use ** markdown - system will format
 - Contributor roles: Radiant Ritualist, Ritualist, Zealot, ritty, bitty, mage. IGNORE others.
 - Specify "X contributions" not "X messages".
 - Focus on actual work from X posts.`;
@@ -70,15 +71,47 @@ IMPORTANT:
         // Remove mood tags
         rawResponse = rawResponse.replace(/\[M?[Oo][Oo][Dd]:?[^\]]*\]\s*/g, '');
 
+        // Parse XML tags and format with Discord markdown
+        let formatted = rawResponse;
+
+        // Format archetype: <ARCHETYPE>Name</ARCHETYPE> -> 🎭 **Name**
+        formatted = formatted.replace(/<ARCHETYPE>(.*?)<\/ARCHETYPE>/g, '🎭 **$1**');
+
+        // Format summary header: <HEADER>Summary</HEADER> -> **Summary**
+        formatted = formatted.replace(/<HEADER>(.*?)<\/HEADER>/g, '**$1**');
+
+        // Format items: <ITEM>\n<TITLE>Title</TITLE>\n<DESC>Desc</DESC>\n</ITEM> -> 1. **Title**: Desc
+        formatted = formatted.replace(/<ITEM>\s*<TITLE>(.*?)<\/TITLE>\s*<DESC>(.*?)<\/DESC>\s*<\/ITEM>/gs, (_, title, desc) => {
+          return `1. **${title}**: ${desc.trim()}`;
+        });
+
+        // Fix numbering - increment correctly
+        const lines = formatted.split('\n');
+        let itemNum = 1;
+        const numberedLines = lines.map(line => {
+          if (line.match(/^\d+\.\s+\*\*/)) {
+            const newLine = line.replace(/^\d+\./, `${itemNum}.`);
+            itemNum++;
+            return newLine;
+          }
+          return line;
+        });
+        formatted = numberedLines.join('\n');
+
+        // Remove any remaining XML tags
+        formatted = formatted.replace(/<\/?[A-Z]+>/gi, '');
+
         // Find where actual analysis starts (skip any header)
-        const archetypeIndex = rawResponse.indexOf('Contributor Archetype');
-        const intelIndex = rawResponse.indexOf('🔍 **Contributor Intelligence**');
+        const archetypeIndex = formatted.indexOf('Contributor Archetype');
+        const intelIndex = formatted.indexOf('🔍 Contributor Intelligence');
 
         if (archetypeIndex !== -1) {
-          rawResponse = rawResponse.substring(archetypeIndex);
+          formatted = formatted.substring(archetypeIndex);
         } else if (intelIndex !== -1) {
-          rawResponse = rawResponse.substring(intelIndex);
+          formatted = formatted.substring(intelIndex);
         }
+
+        rawResponse = formatted;
 
         return NextResponse.json({
           success: true,
