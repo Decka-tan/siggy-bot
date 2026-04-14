@@ -31,31 +31,42 @@ Provide a PREMIUM, SUBSTANCE-FIRST "Contributor Intelligence" report.
 - Use expressions like "nya~", "flicks tail", "adjusts cat ears" ONLY in the Summary section.
 - Professional but slightly playful.
 
-### CRITICAL FORMATTING RULES:
-- Use EXACT format: **1. [Bold Title]**: normal text here
-- The NUMBER and TITLE must be BOLD: **1. Title**:
-- The description after colon must be NORMAL text
-- Example: **1. Smart Contract Dev**: They build...
+### CRITICAL FORMATTING - FOLLOW EXACTLY:
+Section headers: __Bold text__ (use double underscore)
+Bullet titles: __1. Title__:
+Descriptions: normal text (no formatting)
+
+CORRECT EXAMPLE:
+__Contributor Archetype__
+🎭 Smart Contract Developer (Style: Technical)
+They build...
+
+__Key Contributions & Impact__
+__1. Solidity Expert__: Builds smart contracts...
+__2. DeFi Focus__: Works on...
+__3. Community Teacher__: Explains...
+
+__Summary__
+Great contributor nya~
 
 ### OUTPUT FORMAT:
-**Contributor Archetype**
+__Contributor Archetype__
 🎭 [Archetype Name] (Style: [Style])
-[A concise explanation based on their activity.]
+[Concise explanation]
 
-**Key Contributions & Impact** (Based on recent activity)
-**1. [Bold Title]**: [Specific insight about what they do. Mention their actual work/discipline, not generic roles.]
-**2. [Bold Title]**: [Another insight.]
-**3. [Bold Title]**: [A third insight if applicable.]
+__Key Contributions & Impact__ (Based on recent activity)
+__1. [Bold Title]__: [Specific insight about their actual work/discipline, not generic roles.]
+__2. [Bold Title]__: [Another insight.]
+__3. [Bold Title]__: [A third insight if applicable.]
 
-**Summary**
-[2-3 sentence executive summary. Add subtle cat mannerisms like "*flicks tail*" or "nya~" here only.]
+__Summary__
+[2-3 sentences. Add cat mannerisms like "*flicks tail*" or "nya~" only here.]
 
 IMPORTANT:
-- When mentioning usernames, format as **@username**.
-- Contributor roles: Radiant Ritualist, Ritualist, Zealot, ritty, bitty, mage. IGNORE other roles like Events, Workshops, DevUpdates, Official, Community.
-- Specify "X contributions" NOT "X messages" - contributions are posts in #contributions channel.
-- Do NOT include [M...] tags.
-- Keep it professional and analytical. Save cat personality for Summary only.`;
+- Use __double underscore__ for bold, NOT **asterisk**
+- Contributor roles: Radiant Ritualist, Ritualist, Zealot, ritty, bitty, mage. IGNORE others.
+- Specify "X contributions" NOT "X messages".
+- Focus on actual work from X posts.`;
 
         const response = await deepseek.chat([
           { role: 'system', content: systemPrompt },
