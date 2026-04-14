@@ -590,6 +590,10 @@ client.on('error', (error) => {
 // Call /api/analyze endpoint with fresh context
 async function generateAIAnalysis(username, displayName, contributionCount, eventCount, roles, contentData) {
   try {
+    // Filter to contributor roles only
+    const contributorRoles = ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty', 'mage'];
+    const filteredRoles = roles.filter(r => contributorRoles.includes(r));
+
     // Build context from X content
     let xContentContext = '';
     if (contentData && contentData.insights && contentData.insights.length > 0) {
@@ -599,21 +603,13 @@ async function generateAIAnalysis(username, displayName, contributionCount, even
     const prompt = `Analyze this Discord contributor named "${displayName}" (@${username}) based on:
 
 Stats:
-- Contributions: ${contributionCount} messages
+- Contributions: ${contributionCount} posts in #contributions channel
 - Event participations: ${eventCount}
-- Roles: ${roles.slice(0, 5).join(', ')}${xContentContext}
+- Contributor roles: ${filteredRoles.length > 0 ? filteredRoles.join(', ') : 'None yet'}${xContentContext}
 
-Provide a concise analysis (under 500 words) in this format:
-**Contributor Archetype**
-[Brief archetype name and style]
+Focus on what they actually DO based on their X posts, not just their roles. If they posted about smart contracts, call them a smart contract developer. If they posted art, call them an artist.
 
-**Key Contributions & Impact**
-[2-3 bullet points about what they actually do based on their activity]
-
-**Summary**
-[2-3 sentences summary of their value to the community]
-
-Style: Playful cat-girl AI personality named Siggy. Use Indonesian phrases occasionally like "nya~", "flicks tail", etc. Be specific and insightful, not generic.`;
+Provide a concise analysis (under 500 words). Be specific and insightful, not generic.`;
 
     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
       method: 'POST',

@@ -31,24 +31,30 @@ Provide a PREMIUM, SUBSTANCE-FIRST "Contributor Intelligence" report.
 - Use expressions like "nya~", "flicks tail", "adjusts cat ears" ONLY in the Summary section.
 - Professional but slightly playful.
 
-### OUTPUT FORMAT:
-🔍 **Contributor Intelligence**
+### CRITICAL FORMATTING RULES:
+- Use EXACT format: **1. [Bold Title]**: normal text here
+- The NUMBER and TITLE must be BOLD: **1. Title**:
+- The description after colon must be NORMAL text
+- Example: **1. Smart Contract Dev**: They build...
 
+### OUTPUT FORMAT:
 **Contributor Archetype**
 🎭 [Archetype Name] (Style: [Style])
 [A concise explanation based on their activity.]
 
 **Key Contributions & Impact** (Based on recent activity)
-1. **[Title]**: [Specific insight about what they do.]
-2. **[Title]**: [Another insight.]
-3. **[Title]**: [A third insight if applicable.]
+**1. [Bold Title]**: [Specific insight about what they do. Mention their actual work/discipline, not generic roles.]
+**2. [Bold Title]**: [Another insight.]
+**3. [Bold Title]**: [A third insight if applicable.]
 
 **Summary**
 [2-3 sentence executive summary. Add subtle cat mannerisms like "*flicks tail*" or "nya~" here only.]
 
 IMPORTANT:
 - When mentioning usernames, format as **@username**.
-- Do NOT include [MOBD:...] tags.
+- Contributor roles: Radiant Ritualist, Ritualist, Zealot, ritty, bitty, mage. IGNORE other roles like Events, Workshops, DevUpdates, Official, Community.
+- Specify "X contributions" NOT "X messages" - contributions are posts in #contributions channel.
+- Do NOT include [M...] tags.
 - Keep it professional and analytical. Save cat personality for Summary only.`;
 
         const response = await deepseek.chat([
