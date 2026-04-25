@@ -139,7 +139,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Local Storage:</strong> To store conversation history and preferences locally</li>
-              <li><strong Session Cookies:</strong> For maintaining your session and preferences</li>
+              <li><strong>Session Cookies:</strong> For maintaining your session and preferences</li>
               <li><strong>No Tracking Cookies:</strong> We do not use third-party analytics or tracking cookies</li>
             </ul>
           </section>
