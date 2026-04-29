@@ -1636,6 +1636,9 @@ client.on('interactionCreate', async (interaction) => {
   } else if (customId.startsWith('invoice_del_')) {
     try { await handleInvoiceButton(interaction, 'delete'); }
     catch (e) { console.error('[Invoice Button Delete] Error:', e); }
+  } else if (customId.startsWith('mark_paid_page_')) {
+    try { await handleMarkPaidPage(interaction); }
+    catch (e) { console.error('[Mark Paid Pagination] Error:', e); }
   } else if (customId.startsWith('analytics_prev_')) {
     try { await handleAnalyticsPagination(interaction, 'prev'); }
     catch (e) { console.error('[Analytics Pagination Prev] Error:', e); }
@@ -1718,86 +1721,73 @@ client.on('interactionCreate', async (interaction) => {
 /**
  * Handle mark paid select menu
  */
+/**
+ * Handle mark paid select menu with pagination support
+ */
 async function handleMarkPaidSelect(interaction) {
   try {
-    const customId = interaction.customId;
-    const invoiceId = customId.replace('mark_paid_select_', '');
+    const parts = interaction.customId.split('_');
+    const page = parseInt(parts.pop()) || 0;
+    const invoiceId = parts.slice(3).join('_'); // Get everything after 'mark_paid_select_'
     const selectedValues = interaction.values;
 
     const invoice = getInvoice(invoiceId);
-    if (!invoice) {
-      return interaction.update({
-        content: '❌ Invoice tidak ditemukan.',
-        components: []
-      });
-    }
-
-    // Check if the user is the creator
-    if (invoice.creator.id !== interaction.user.id) {
-      return interaction.update({
-        content: '❌ Hanya pembuat invoice yang bisa aksi ini.',
-        components: []
-      });
-    }
+    if (!invoice) return interaction.update({ content: '❌ Invoice tidak ditemukan.', components: [] });
 
     // Mark selected users as paid
     const result = markMultiplePaid(invoiceId, selectedValues);
+    if (!result.success) return interaction.update({ content: `❌ Error: ${result.error}`, components: [] });
 
-    if (!result.success) {
-      return interaction.update({
-        content: `❌ Error: ${result.error}`,
-        components: []
-      });
-    }
-
-    // Get updated invoice
     const updatedInvoice = getInvoice(invoiceId);
-    const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
+    const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification } = require('./commands/invoice-simple.cjs');
 
-    const embed = renderInvoiceEmbed(updatedInvoice);
-    const components = buildInvoiceButtons(updatedInvoice.id);
-
-    // Send DM notifications to newly paid users
+    // Send notifications
     for (const userId of selectedValues) {
-      const participant = updatedInvoice.participants.find(p => p.userId === userId);
-      if (participant) {
-        await sendPaidNotification(updatedInvoice, participant, interaction.guild);
-      }
+      const p = updatedInvoice.participants.find(p => p.userId === userId);
+      if (p) await sendPaidNotification(updatedInvoice, p, interaction.guild).catch(() => {});
     }
 
-    // Get channel and delete old invoice message if exists
-    const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-
-    // Delete the original invoice message (the one with buttons)
-    if (updatedInvoice.messageId) {
+    // Update the MAIN invoice message
+    if (updatedInvoice.messageId && updatedInvoice.channelId) {
       try {
-        const oldMessage = await channel.messages.fetch(updatedInvoice.messageId);
-        await oldMessage.delete();
-      } catch (err) {
-        console.log(`[Invoice] Could not delete old message: ${err.message}`);
-      }
+        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+        const msg = await channel.messages.fetch(updatedInvoice.messageId);
+        await msg.edit({
+          embeds: [renderInvoiceEmbed(updatedInvoice)],
+          components: [buildInvoiceButtons(updatedInvoice.id)]
+        });
+      } catch (err) { console.log('[Invoice] Update main failed:', err.message); }
     }
-
-    // Send new updated invoice message
-    const newMessage = await channel.send({
-      content: `✅ ${selectedValues.length} orang ditandai lunas!`,
-      embeds: [embed],
-      components: [components]
-    });
-
-    // Update messageId in database
-    const { updateInvoiceMessage } = require('./utils/invoice-db.cjs');
-    updateInvoiceMessage(updatedInvoice.id, newMessage.id);
 
     await interaction.update({
-      content: `✅ Invoice diperbarui! Message lama dihapus.`,
+      content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai LUNAS!`,
       components: []
     });
+  } catch (err) { console.error('[Mark Paid Select] Error:', err); }
+}
 
-  } catch (error) {
-    console.error('[Mark Paid Select] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
+/**
+ * Handle pagination for mark paid select menu
+ */
+async function handleMarkPaidPage(interaction) {
+  try {
+    const parts = interaction.customId.split('_');
+    const page = parseInt(parts.pop()) || 0;
+    const invoiceId = parts.slice(3).join('_');
+
+    const invoice = getInvoice(invoiceId);
+    if (!invoice) return interaction.update({ content: '❌ Invoice tidak ditemukan.', components: [] });
+
+    const unpaid = invoice.participants.filter(p => !p.paid);
+    const { buildMarkPaidComponent, safeInvoiceTitle } = require('./commands/invoice-simple.cjs');
+    const components = buildMarkPaidComponent(invoiceId, unpaid, page);
+
+    await interaction.update({
+      content: `🔍 **Tandai Lunas - ${safeInvoiceTitle(invoice.title)}**\nSilakan pilih peserta (Hal ${page + 1}):`,
+      components: components
+    });
+  } catch (err) { console.error('[Mark Paid Page] Error:', err); }
+}
         content: `❌ Error: ${error.message}`,
         ephemeral: true
       });

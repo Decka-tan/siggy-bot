@@ -479,33 +479,56 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
 }
 
 /**
- * Build modal for marking participants as paid
- * Uses a select menu for choosing who paid
+ * Build component for marking participants as paid
+ * Uses a select menu for choosing who paid with pagination support
  */
-function buildMarkPaidModal(invoiceId, unpaidParticipants) {
-  const selectOptions = unpaidParticipants.map((p, index) =>
-    new StringSelectMenuOptionBuilder()
-      .setLabel(truncateSelectText(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`))
-      .setValue((p.userId || `index_${index}`).slice(0, 100))
-      .setDescription(truncateSelectText(`Rp ${p.amount.toLocaleString('id-ID')}`))
-  );
+function buildMarkPaidComponent(invoiceId, unpaidParticipants, page = 0) {
+  const pageSize = 20;
+  const totalPages = Math.ceil(unpaidParticipants.length / pageSize);
+  const start = page * pageSize;
+  const pageItems = unpaidParticipants.slice(start, start + pageSize);
 
-  // Split into chunks of 25 if needed (Discord limit)
+  const selectOptions = pageItems.map((p, index) => {
+    const amountStr = `Rp ${(Number(p.amount) || 0).toLocaleString('id-ID')}`;
+    const label = truncateSelectText(`${p.username} - ${amountStr}`, 100);
+    const description = truncateSelectText(`ID: ${p.userId || 'Unknown'} | ${amountStr}`, 100);
+    
+    return new StringSelectMenuOptionBuilder()
+      .setLabel(label)
+      .setValue(String(p.userId || `idx_${start + index}`))
+      .setDescription(description);
+  });
+
   const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId(`mark_paid_select_${invoiceId}`)
-    .setPlaceholder(truncateSelectText('Pilih orang yang sudah lunas...', 150))
+    .setCustomId(`mark_paid_select_${invoiceId}_${page}`)
+    .setPlaceholder(truncateSelectText(`Pilih orang (Hal ${page + 1}/${totalPages || 1})`, 150))
     .setMinValues(1)
-    .setMaxValues(unpaidParticipants.length)
-    .addOptions(selectOptions.slice(0, 25));
+    .setMaxValues(pageItems.length)
+    .addOptions(selectOptions);
 
-  const row = new ActionRowBuilder().addComponents(selectMenu);
+  const rows = [new ActionRowBuilder().addComponents(selectMenu)];
 
-  return {
-    type: 'select_menu',
-    customId: `mark_paid_modal_${invoiceId}`,
-    components: [row],
-    unpaidParticipants
-  };
+  // Add pagination buttons if more than 1 page
+  if (totalPages > 1) {
+    const navRow = new ActionRowBuilder();
+    
+    navRow.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`mark_paid_page_${invoiceId}_${page - 1}`)
+        .setLabel('◀ Prev')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page === 0),
+      new ButtonBuilder()
+        .setCustomId(`mark_paid_page_${invoiceId}_${page + 1}`)
+        .setLabel('Next ▶')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(page >= totalPages - 1)
+    );
+    
+    rows.push(navRow);
+  }
+
+  return rows;
 }
 
 /**
@@ -588,7 +611,6 @@ async function handleInvoiceButton(interaction, action) {
     }
 
     if (action === 'pay') {
-      // Show MODAL for marking people as paid (better than dropdown - doesn't get lost when scrolling)
       const unpaid = invoice.participants.filter(p => !p.paid);
       if (unpaid.length === 0) {
         return interaction.reply({
@@ -597,36 +619,13 @@ async function handleInvoiceButton(interaction, action) {
         });
       }
 
-      // Build modal with text inputs for each unpaid person
-      // Discord limits: modal title max 45 chars, text input label max 45 chars
-      const modalTitleBase = `Tandai Lunas - ${invoice.title || 'Invoice'}`;
-      const modal = new ModalBuilder()
-        .setCustomId(`mark_paid_modal_${invoiceId}`)
-        .setTitle(safeModalTitle(modalTitleBase, 'Tandai Lunas'));
+      const components = buildMarkPaidComponent(invoiceId, unpaid, 0);
 
-      const maxInputs = 5; // Discord modal limit is 5 action rows
-      const visibleUnpaid = unpaid.slice(0, maxInputs);
-      const rows = [];
-
-      for (let i = 0; i < visibleUnpaid.length; i++) {
-        const p = visibleUnpaid[i];
-        const label = `${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`;
-        const placeholder = unpaid.length > maxInputs && i === visibleUnpaid.length - 1
-          ? `Ketik "yes". Sisa ${unpaid.length - maxInputs} orang, submit lagi setelah ini.`
-          : 'Ketik "yes" atau "y" untuk tandai lunas';
-
-        const input = new TextInputBuilder()
-          .setCustomId(`paid_${i}`)
-          .setLabel(safeInputLabel(label, 'Peserta'))
-          .setPlaceholder(safeInputPlaceholder(placeholder))
-          .setStyle(TextInputStyle.Short)
-          .setRequired(false);
-        rows.push(new ActionRowBuilder().addComponents(input));
-      }
-
-      modal.addComponents(...rows);
-
-      return interaction.showModal(modal);
+      return interaction.reply({
+        content: `🔍 **Tandai Lunas - ${safeInvoiceTitle(invoice.title)}**\nSilakan pilih peserta yang sudah lunas dari daftar di bawah:`,
+        components: components,
+        ephemeral: true
+      });
 
     } else if (action === 'bayar') {
       // Delegate to payment.cjs handleBayar
