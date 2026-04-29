@@ -66,26 +66,26 @@ async function handleInvoiceCreateSimple(interaction) {
   // Show modal instead of processing directly
   const modal = new ModalBuilder()
     .setCustomId('invoice_create_modal')
-    .setTitle('🧾 Buat Invoice Baru');
+    .setTitle(safeModalTitle('🧾 Buat Invoice Baru', 'Buat Invoice Baru'));
 
   const titleInput = new TextInputBuilder()
     .setCustomId('title')
-    .setLabel('Judul Invoice (opsional)')
-    .setPlaceholder('Contoh: Makan Siang, Kopi, dll')
+    .setLabel(safeInputLabel('Judul Invoice (opsional)', 'Judul Invoice'))
+    .setPlaceholder(safeInputPlaceholder('Contoh: Makan Siang, Kopi, dll'))
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
   const dateInput = new TextInputBuilder()
     .setCustomId('date')
-    .setLabel('Tanggal')
+    .setLabel(safeInputLabel('Tanggal', 'Tanggal'))
     .setPlaceholder(new Date().toISOString().split('T')[0])
     .setStyle(TextInputStyle.Short)
     .setRequired(false);
 
   const peopleInput = new TextInputBuilder()
     .setCustomId('people')
-    .setLabel('Orang & Jumlah (satu per baris)')
-    .setPlaceholder('@user1 15000\n@user2 20000\natau: username1 15k')
+    .setLabel(safeInputLabel('Orang & Jumlah (satu per baris)', 'Orang & Jumlah'))
+    .setPlaceholder(safeInputPlaceholder('@user1 15000\n@user2 20000\natau: username1 15k'))
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true);
 
@@ -305,6 +305,40 @@ async function sendPaidNotification(invoice, participant, guild) {
   }
 }
 
+function truncateText(value, max, fallback = 'Unknown') {
+  if (!value) return fallback;
+  const stringValue = String(value);
+  return stringValue.length > max ? `${stringValue.slice(0, max - 3)}...` : stringValue;
+}
+
+function truncateSelectText(value, max = 100) {
+  return truncateText(value, max, 'Unknown');
+}
+
+function safeInvoiceTitle(title, fallback = 'Untitled') {
+  return truncateText(title || fallback, 256, fallback);
+}
+
+function safeEmbedDescription(value, fallback = '-') {
+  return truncateText(value, 4096, fallback);
+}
+
+function safeFieldValue(value, fallback = '-') {
+  return truncateText(value, 1024, fallback);
+}
+
+function safeModalTitle(value, fallback = 'Invoice') {
+  return truncateText(value, 45, fallback);
+}
+
+function safeInputLabel(value, fallback = 'Input') {
+  return truncateText(value, 45, fallback);
+}
+
+function safeInputPlaceholder(value, fallback = 'Isi di sini') {
+  return truncateText(value, 100, fallback);
+}
+
 /**
  * Render invoice embed
  */
@@ -335,12 +369,12 @@ function renderInvoiceEmbed(invoice) {
 
   const embed = new EmbedBuilder()
     .setColor(unpaidTotal > 0 ? 0xf39c12 : 0x27ae60)
-    .setTitle('🧾 INVOICE')
-    .setDescription(description)
+    .setTitle(safeInvoiceTitle('🧾 INVOICE'))
+    .setDescription(safeEmbedDescription(description))
     .addFields(
-      { name: '💰 Total', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
-      { name: '📊 Status', value: `${paidCount}/${totalCount} paid`, inline: true },
-      { name: '⏳ Outstanding', value: `Rp ${unpaidTotal.toLocaleString('id-ID')}`, inline: true }
+      { name: '💰 Total', value: safeFieldValue(`Rp ${totalAmount.toLocaleString('id-ID')}`), inline: true },
+      { name: '📊 Status', value: safeFieldValue(`${paidCount}/${totalCount} paid`), inline: true },
+      { name: '⏳ Outstanding', value: safeFieldValue(`Rp ${unpaidTotal.toLocaleString('id-ID')}`), inline: true }
     )
     .setFooter({ text: `Invoice ID: ${invoice.id}` })
     .setTimestamp(invoice.createdAt);
@@ -431,11 +465,11 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
 
   const embed = new EmbedBuilder()
     .setColor(0x3498db)
-    .setTitle('💰 Invoice Recap')
-    .setDescription(description)
+    .setTitle(safeInvoiceTitle('💰 Invoice Recap'))
+    .setDescription(safeEmbedDescription(description))
     .addFields({
       name: '💵 Total Tertunda',
-      value: `Rp ${totalOwed.toLocaleString('id-ID')}`,
+      value: safeFieldValue(`Rp ${totalOwed.toLocaleString('id-ID')}`),
       inline: false
     })
     .setFooter({ text: `Showing ${invoices.length} invoice(s)` })
@@ -451,15 +485,15 @@ function renderInvoiceRecapEmbed(invoices, creatorId) {
 function buildMarkPaidModal(invoiceId, unpaidParticipants) {
   const selectOptions = unpaidParticipants.map((p, index) =>
     new StringSelectMenuOptionBuilder()
-      .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
-      .setValue(p.userId || `index_${index}`)
-      .setDescription(`Rp ${p.amount.toLocaleString('id-ID')}`)
+      .setLabel(truncateSelectText(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`))
+      .setValue((p.userId || `index_${index}`).slice(0, 100))
+      .setDescription(truncateSelectText(`Rp ${p.amount.toLocaleString('id-ID')}`))
   );
 
   // Split into chunks of 25 if needed (Discord limit)
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`mark_paid_select_${invoiceId}`)
-    .setPlaceholder('Pilih orang yang sudah lunas...')
+    .setPlaceholder(truncateSelectText('Pilih orang yang sudah lunas...', 150))
     .setMinValues(1)
     .setMaxValues(unpaidParticipants.length)
     .addOptions(selectOptions.slice(0, 25));
@@ -481,26 +515,26 @@ function buildMarkPaidModal(invoiceId, unpaidParticipants) {
 function buildAddPeopleModal(invoiceId) {
   const modal = new ModalBuilder()
     .setCustomId(`add_people_modal_${invoiceId}`)
-    .setTitle('Tambah Orang ke Invoice');
+    .setTitle(safeModalTitle('Tambah Orang ke Invoice', 'Tambah Orang'));
 
   const userMentionInput = new TextInputBuilder()
     .setCustomId('user_mentions')
-    .setLabel('User (@mention atau username, koma)')
-    .setPlaceholder('@user1, @user2 atau username1, username2')
+    .setLabel(safeInputLabel('User (@mention atau username, koma)', 'User'))
+    .setPlaceholder(safeInputPlaceholder('@user1, @user2 atau username1, username2'))
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
 
   const amountInput = new TextInputBuilder()
     .setCustomId('amount')
-    .setLabel('Jumlah per orang')
-    .setPlaceholder('15000 atau 15k')
+    .setLabel(safeInputLabel('Jumlah per orang', 'Jumlah'))
+    .setPlaceholder(safeInputPlaceholder('15000 atau 15k'))
     .setStyle(TextInputStyle.Short)
     .setRequired(true);
 
   const notesInput = new TextInputBuilder()
     .setCustomId('notes')
-    .setLabel('Catatan (opsional)')
-    .setPlaceholder('Catatan tambahan...')
+    .setLabel(safeInputLabel('Catatan (opsional)', 'Catatan'))
+    .setPlaceholder(safeInputPlaceholder('Catatan tambahan...'))
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(false);
 
@@ -564,33 +598,30 @@ async function handleInvoiceButton(interaction, action) {
       }
 
       // Build modal with text inputs for each unpaid person
+      // Discord limits: modal title max 45 chars, text input label max 45 chars
+      const modalTitleBase = `Tandai Lunas - ${invoice.title || 'Invoice'}`;
       const modal = new ModalBuilder()
         .setCustomId(`mark_paid_modal_${invoiceId}`)
-        .setTitle(`Tandai Lunas - ${invoice.title || 'Invoice'}`);
+        .setTitle(safeModalTitle(modalTitleBase, 'Tandai Lunas'));
 
-      const maxInputs = 5; // Discord limit is 5
+      const maxInputs = 5; // Discord modal limit is 5 action rows
+      const visibleUnpaid = unpaid.slice(0, maxInputs);
       const rows = [];
 
-      for (let i = 0; i < Math.min(unpaid.length, maxInputs); i++) {
-        const p = unpaid[i];
+      for (let i = 0; i < visibleUnpaid.length; i++) {
+        const p = visibleUnpaid[i];
+        const label = `${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`;
+        const placeholder = unpaid.length > maxInputs && i === visibleUnpaid.length - 1
+          ? `Ketik "yes". Sisa ${unpaid.length - maxInputs} orang, submit lagi setelah ini.`
+          : 'Ketik "yes" atau "y" untuk tandai lunas';
+
         const input = new TextInputBuilder()
           .setCustomId(`paid_${i}`)
-          .setLabel(`${p.username} - Rp ${p.amount.toLocaleString('id-ID')}`)
-          .setPlaceholder('Ketik "yes" atau "✓" untuk tandai lunas')
+          .setLabel(safeInputLabel(label, 'Peserta'))
+          .setPlaceholder(safeInputPlaceholder(placeholder))
           .setStyle(TextInputStyle.Short)
           .setRequired(false);
         rows.push(new ActionRowBuilder().addComponents(input));
-      }
-
-      if (unpaid.length > maxInputs) {
-        // Add note about remaining participants
-        const noteInput = new TextInputBuilder()
-          .setCustomId('paid_note')
-          .setLabel(`...dan ${unpaid.length - maxInputs} lainnya`)
-          .setValue(`Total ${unpaid.length} orang belum lunas. Centang di atas, submit berkali-kali.`)
-          .setStyle(TextInputStyle.Short)
-          .setRequired(false);
-        rows.push(new ActionRowBuilder().addComponents(noteInput));
       }
 
       modal.addComponents(...rows);
@@ -702,20 +733,20 @@ async function handleInvoiceOwe(interaction) {
 
   const options = topNames.map(nameInfo => {
     const hasUnpaid = nameInfo.unpaidCount > 0;
-    const label = nameInfo.name;
+    const label = truncateSelectText(nameInfo.name);
     const description = hasUnpaid
-      ? `Rp ${nameInfo.totalDebt.toLocaleString('id-ID')} | ${nameInfo.unpaidCount} belum lunas`
-      : `Rp ${nameInfo.totalDebt.toLocaleString('id-ID')} | Lunas`;
+      ? truncateSelectText(`Rp ${nameInfo.totalDebt.toLocaleString('id-ID')} | ${nameInfo.unpaidCount} belum lunas`)
+      : truncateSelectText(`Rp ${nameInfo.totalDebt.toLocaleString('id-ID')} | Lunas`);
 
     return new StringSelectMenuOptionBuilder()
-      .setLabel(label)
-      .setValue(nameInfo.name)
-      .setDescription(description);
+      .setLabel(truncateSelectText(label))
+      .setValue(truncateSelectText(nameInfo.name, 100))
+      .setDescription(truncateSelectText(description));
   });
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('find_debt_select')
-    .setPlaceholder('Pilih nama kamu...')
+    .setPlaceholder(truncateSelectText('Pilih nama kamu...', 150))
     .setMinValues(1)
     .setMaxValues(1)
     .addOptions(options);
@@ -742,11 +773,11 @@ async function handleInvoiceMerge(interaction) {
 
   const embed = new EmbedBuilder()
     .setColor(result.success ? 0x27ae60 : 0xf39c12)
-    .setTitle('🔗 **Merge Nama**')
-    .setDescription(`✅ "${aliasName}" sekarang digabung dengan "${canonicalName}"`)
+    .setTitle(safeInvoiceTitle('🔗 Merge Nama', 'Merge Nama'))
+    .setDescription(safeEmbedDescription(`✅ "${aliasName}" sekarang digabung dengan "${canonicalName}"`))
     .addFields({
       name: 'Info',
-      value: `Sekarang kalau ada invoice atas nama "${aliasName}", akan dihitung sebagai milik "${canonicalName}".`,
+      value: safeFieldValue(`Sekarang kalau ada invoice atas nama "${aliasName}", akan dihitung sebagai milik "${canonicalName}".`),
       inline: false
     })
     .setFooter({ text: 'Cek dengan /invoice-owe' })
@@ -810,7 +841,9 @@ async function processMarkPaidModal(interaction, invoiceId) {
   }
 
   // Send notifications to newly paid users
-  await sendPaidNotification(invoice, nowPaid);
+  for (const participant of updated.participants.filter(p => nowPaid.includes(p.username))) {
+    await sendPaidNotification(updated, participant, interaction.guild);
+  }
 
   const remaining = updated.participants.filter(p => !p.paid).length;
 
@@ -853,11 +886,11 @@ async function handleFindDebtSelect(interaction) {
 
   const embed = new EmbedBuilder()
     .setColor(0xf39c12)
-    .setTitle(`💳 Hutang Belum Dibayar: ${selectedName}`)
-    .setDescription(description)
+    .setTitle(safeInvoiceTitle(`💳 Hutang Belum Dibayar: ${selectedName}`, 'Hutang Belum Dibayar'))
+    .setDescription(safeEmbedDescription(description))
     .addFields({
       name: '💵 Total Hutang',
-      value: `Rp ${totalOwed.toLocaleString('id-ID')}`,
+      value: safeFieldValue(`Rp ${totalOwed.toLocaleString('id-ID')}`),
       inline: false
     })
     .setFooter({ text: `${debts.length} invoice belum lunas` })
@@ -894,14 +927,14 @@ async function handleInvoiceDelete(interaction) {
     const value = inv.id;
 
     return new StringSelectMenuOptionBuilder()
-      .setLabel(label)
+      .setLabel(truncateSelectText(label))
       .setValue(value)
-      .setDescription(description);
+      .setDescription(truncateSelectText(description));
   });
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId('delete_invoice_select')
-    .setPlaceholder('Pilih invoice yang ingin dihapus...')
+    .setPlaceholder(truncateSelectText('Pilih invoice yang ingin dihapus...', 150))
     .setMinValues(1)
     .setMaxValues(Math.min(recentInvoices.length, 10))
     .addOptions(options);
@@ -930,12 +963,12 @@ async function handleInvoiceClear(interaction) {
 
   const modal = new ModalBuilder()
     .setCustomId('clear_invoice_modal')
-    .setTitle('🗑️ Hapus Semua Invoice');
+    .setTitle(safeModalTitle('🗑️ Hapus Semua Invoice', 'Hapus Semua Invoice'));
 
   const confirmInput = new TextInputBuilder()
     .setCustomId('confirm')
-    .setLabel(`Ketik "DELETE" untuk menghapus ${invoices.length} invoice`)
-    .setPlaceholder('DELETE')
+    .setLabel(safeInputLabel(`Ketik "DELETE" untuk menghapus ${invoices.length} invoice`, 'Ketik DELETE untuk konfirmasi'))
+    .setPlaceholder(safeInputPlaceholder('DELETE'))
     .setStyle(TextInputStyle.Short)
     .setRequired(true)
     .setMaxLength(10);
@@ -1010,14 +1043,14 @@ async function handleInvoiceSearch(interaction) {
 
   const embed = new EmbedBuilder()
     .setColor(0x3498db)
-    .setTitle(`🔍 Invoice Search${period !== 'all' ? ` (${period})` : ''}`)
+    .setTitle(safeInvoiceTitle(`🔍 Invoice Search${period !== 'all' ? ` (${period})` : ''}`, 'Invoice Search'))
     .addFields(
-      { name: '📊 Total Invoice', value: `${totalInvoices}`, inline: true },
-      { name: '👥 Total Orang', value: `${totalPeople}`, inline: true },
-      { name: '✅ Lunas', value: `${paidPeople}`, inline: true },
-      { name: '⏳ Belum Lunas', value: `${unpaidPeople}`, inline: true },
-      { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
-      { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
+      { name: '📊 Total Invoice', value: safeFieldValue(`${totalInvoices}`), inline: true },
+      { name: '👥 Total Orang', value: safeFieldValue(`${totalPeople}`), inline: true },
+      { name: '✅ Lunas', value: safeFieldValue(`${paidPeople}`), inline: true },
+      { name: '⏳ Belum Lunas', value: safeFieldValue(`${unpaidPeople}`), inline: true },
+      { name: '💰 Total Amount', value: safeFieldValue(`Rp ${totalAmount.toLocaleString('id-ID')}`), inline: true },
+      { name: '💵 Belum Dibayar', value: safeFieldValue(`Rp ${unpaidAmount.toLocaleString('id-ID')}`), inline: true }
     )
     .setFooter({ text: query ? `Query: ${query}` : '' })
     .setTimestamp();
@@ -1185,12 +1218,12 @@ async function sendAnalyticsPage(interaction, people, periodLabel, page) {
 
   const embed = new EmbedBuilder()
     .setColor(unpaidAmount > 0 ? 0xf39c12 : 0x27ae60)
-    .setTitle(`📊 Invoice Analytics - ${periodLabel}`)
-    .setDescription(description || 'Tidak ada data')
+    .setTitle(safeInvoiceTitle(`📊 Invoice Analytics - ${periodLabel}`, 'Invoice Analytics'))
+    .setDescription(safeEmbedDescription(description || 'Tidak ada data'))
     .addFields(
-      { name: `👥 Total: ${people.length} orang`, value: `Halaman ${page + 1}/${totalPages}`, inline: true },
-      { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
-      { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
+      { name: truncateText(`👥 Total: ${people.length} orang`, 256, 'Total'), value: safeFieldValue(`Halaman ${page + 1}/${totalPages}`), inline: true },
+      { name: '💰 Total Amount', value: safeFieldValue(`Rp ${totalAmount.toLocaleString('id-ID')}`), inline: true },
+      { name: '💵 Belum Dibayar', value: safeFieldValue(`Rp ${unpaidAmount.toLocaleString('id-ID')}`), inline: true }
     )
     .setTimestamp();
 
@@ -1269,10 +1302,10 @@ async function sendAnalyticsPageUpdate(interaction, people, periodLabel, page) {
 
   const embed = new EmbedBuilder()
     .setColor(unpaidAmount > 0 ? 0xf39c12 : 0x27ae60)
-    .setTitle(`📊 Invoice Analytics - ${periodLabel}`)
-    .setDescription(description || 'Tidak ada data')
+    .setTitle(safeInvoiceTitle(`📊 Invoice Analytics - ${periodLabel}`, 'Invoice Analytics'))
+    .setDescription(safeEmbedDescription(description || 'Tidak ada data'))
     .addFields(
-      { name: `👥 Total: ${people.length} orang`, value: `Halaman ${page + 1}/${totalPages}`, inline: true },
+      { name: truncateText(`👥 Total: ${people.length} orang`, 256, 'Total'), value: safeFieldValue(`Halaman ${page + 1}/${totalPages}`), inline: true },
       { name: '💰 Total Amount', value: `Rp ${totalAmount.toLocaleString('id-ID')}`, inline: true },
       { name: '💵 Belum Dibayar', value: `Rp ${unpaidAmount.toLocaleString('id-ID')}`, inline: true }
     )
@@ -1451,3 +1484,5 @@ module.exports = {
   // Export tempInvoiceStorage for compatibility
   tempInvoiceStorage: new Map(),
 };
+
+
