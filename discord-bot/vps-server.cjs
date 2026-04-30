@@ -1706,7 +1706,7 @@ client.on('messageCreate', async (message) => {
     // Count all @mentions in the message and increment their event participation
     const mentionedUsers = message.mentions.users.filter(u => !u.bot);
     for (const [userId, user] of mentionedUsers) {
-      const state = getUserState(userId, interaction.guildId);
+      const state = getUserState(userId, message.guildId);
       state.eventParticipationCount = (state.eventParticipationCount || 0) + 1;
       saveUserState(state);
     }
