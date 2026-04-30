@@ -1778,7 +1778,10 @@ async function handleMarkPaidSelect(interaction) {
       content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai LUNAS!`,
       components: []
     });
-  } catch (err) { console.error('[Mark Paid Select] Error:', err); }
+  } catch (err) { 
+    console.error('[Mark Paid Select] Error:', err); 
+    if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
+  }
 }
 
 /**
@@ -1801,7 +1804,10 @@ async function handleMarkPaidPage(interaction) {
       content: `🔍 **Tandai Lunas - ${safeInvoiceTitle(invoice.title)}**\nSilakan pilih peserta (Hal ${page + 1}):`,
       components: components
     });
-  } catch (err) { console.error('[Mark Paid Page] Error:', err); }
+  } catch (err) { 
+    console.error('[Mark Paid Page] Error:', err); 
+    if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
+  }
 }
         content: `❌ Error: ${error.message}`,
         ephemeral: true

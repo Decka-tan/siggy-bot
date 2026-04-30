@@ -1477,8 +1477,11 @@ module.exports = {
   handleInvoiceButton,
   buildMarkPaidModal,
   buildAddPeopleModal,
+  buildMarkPaidComponent,
   sendInvoiceNotifications,
   sendPaidNotification,
+  safeInvoiceTitle,
+  truncateSelectText,
   // Also export empty handlers for backward compatibility
   handleInvoiceCreate: () => {},
   handleInvoiceModal: () => {},
