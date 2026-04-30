@@ -143,6 +143,7 @@ async function savePaymentAction(formData: FormData) {
   const bank = formData.get('bank') as string;
   const account = formData.get('account') as string;
   const holder = formData.get('holder') as string;
+  const discordUser = formData.get('discordUser') as string;
   const tab = formData.get('tab') as string;
 
   if (!name) return;
@@ -161,6 +162,7 @@ async function savePaymentAction(formData: FormData) {
     bank,
     account,
     name: holder,
+    discordUser,
     updatedAt: Date.now()
   };
 
@@ -472,7 +474,7 @@ function DiscordEmbed({ invoice, participantAction, isEditing, editUrl, cancelUr
   );
 }
 
-export default async function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string; error?: string; q?: string; status?: string; creator?: string; edit?: string } }) {
+export default async function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string; error?: string; q?: string; status?: string; creator?: string; edit?: string; add?: string } }) {
   const isAuth = await checkAuth();
   if (!isAuth) {
     return (
@@ -652,40 +654,64 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                      <div className="h-12 w-12 rounded-2xl bg-accent/10 flex items-center justify-center text-accent"><CreditCard className="h-7 w-7" /></div>
                      <h2 className="text-2xl font-bold">Payment Information</h2>
                    </div>
-                   <p className="text-sm text-text-secondary">Manage bank details for invoice creators</p>
+                   {!searchParams.add && (
+                     <Link href={buildUrl({add: 'true'})} className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-xs font-bold text-black hover:bg-yellow-400 transition-all">
+                       <Plus className="h-4 w-4" /> Add New Account
+                     </Link>
+                   )}
                  </div>
                  
                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                   {/* Editor Form */}
-                   <div className="rounded-3xl border border-white/5 bg-surface/30 p-8 h-fit">
-                     <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Edit2 className="h-5 w-5 text-accent" /> Update Account</h3>
-                     <form action={savePaymentAction} className="space-y-6">
-                        <input type="hidden" name="tab" value="payments" />
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Creator Username (Small Case)</label>
-                          <input name="name" type="text" placeholder="e.g. sopmod, eric, cindy" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Bank Name</label>
-                            <input name="bank" type="text" placeholder="Bank BCA" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
+                   {/* Editor Form - Only visible when add=true */}
+                   {searchParams.add ? (
+                     <div className="rounded-3xl border border-white/5 bg-surface/30 p-8 h-fit animate-in fade-in slide-in-from-top-4 duration-300">
+                       <div className="flex items-center justify-between mb-8">
+                         <h3 className="text-lg font-bold flex items-center gap-2"><Edit2 className="h-5 w-5 text-accent" /> New Payment Method</h3>
+                         <Link href={buildUrl({add: null})} className="text-text-secondary hover:text-white p-2">
+                           <XCircle className="h-5 w-5" />
+                         </Link>
+                       </div>
+                       <form action={savePaymentAction} className="space-y-6">
+                          <input type="hidden" name="tab" value="payments" />
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Creator Name (Display)</label>
+                              <input name="name" type="text" placeholder="e.g. Sopmod" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Discord Username (@)</label>
+                              <input name="discordUser" type="text" placeholder="e.g. decka_tan" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Bank Name</label>
+                              <input name="bank" type="text" placeholder="Bank BCA" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Account Number</label>
+                              <input name="account" type="text" placeholder="123456789" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
+                            </div>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Account Number</label>
-                            <input name="account" type="text" placeholder="123456789" className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Account Holder Name (A.N)</label>
+                            <input name="holder" type="text" placeholder="Daffa Adhyatama..." className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
                           </div>
-                        </div>
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary ml-1">Account Holder Name (A.N)</label>
-                          <input name="holder" type="text" placeholder="Daffa Adhyatama..." className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-accent/50" required />
-                        </div>
-                        <button type="submit" className="w-full rounded-xl bg-accent py-4 font-mono text-xs font-bold uppercase tracking-widest text-black hover:bg-yellow-400 transition-all shadow-lg shadow-accent/10">Save Payment Info</button>
-                     </form>
-                   </div>
+                          <button type="submit" className="w-full rounded-xl bg-accent py-4 font-mono text-xs font-bold uppercase tracking-widest text-black hover:bg-yellow-400 transition-all shadow-lg shadow-accent/10">Register Payment Method</button>
+                       </form>
+                     </div>
+                   ) : (
+                     <div className="rounded-3xl border border-white/5 bg-surface/20 p-12 flex flex-col items-center justify-center text-center h-fit">
+                       <Wallet className="h-12 w-12 text-white/10 mb-4" />
+                       <h3 className="text-lg font-bold mb-2">Ready to expand?</h3>
+                       <p className="text-sm text-text-secondary mb-6 max-w-xs">Register new creators and their payment details to enable automated reminders across the team.</p>
+                       <Link href={buildUrl({add: 'true'})} className="rounded-xl bg-white/5 border border-white/10 px-6 py-2.5 text-xs font-bold hover:bg-white/10 transition-all">Start Registration</Link>
+                     </div>
+                   )}
 
                    {/* List of Accounts */}
                    <div className="space-y-4">
-                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-emerald-400"><CheckCircle2 className="h-5 w-5" /> Active Accounts</h3>
+                      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-emerald-400"><CheckCircle2 className="h-5 w-5" /> Active Billing Methods</h3>
                       <div className="grid gap-4">
                         {Object.entries(data.allPayments).length === 0 ? (
                           <div className="py-12 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary text-sm">No payment accounts set yet.</p></div>
@@ -694,11 +720,14 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                             <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface/30 p-5 transition-all hover:border-accent/30 hover:bg-surface/40">
                               <div className="flex justify-between items-start">
                                 <div>
-                                  <h4 className="text-sm font-bold text-accent uppercase tracking-wide mb-1">{key}</h4>
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="text-sm font-bold text-accent uppercase tracking-wide">{key}</h4>
+                                    <span className="text-[10px] text-text-secondary font-mono">(@{info.discordUser})</span>
+                                  </div>
                                   <p className="text-xs font-medium text-text-primary mb-3">A.N {info.name}</p>
                                   <div className="flex items-center gap-3">
                                     <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{info.bank}</span>
-                                    <span className="font-mono text-xs text-text-primary">{info.account}</span>
+                                    <span className="font-mono text-xs text-text-primary tracking-wider">{info.account}</span>
                                   </div>
                                 </div>
                                 <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-text-secondary group-hover:text-accent transition-colors">
