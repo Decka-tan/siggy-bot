@@ -15,6 +15,8 @@ import {
   Filter,
   ArrowUpRight,
   Clock,
+  History,
+  TrendingUp,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +65,7 @@ type DashboardData = {
   outstandingAmount: number;
   paidAmount: number;
   topCreators: { name: string; totalCreated: number; invoiceCount: number }[];
-  topDebtors: { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number }[];
+  topDebtors: { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number; invoices: any[] }[];
   monthlyStats: { label: string; count: number; amount: number }[];
   guilds: GuildInfo[];
   stats: {
@@ -120,17 +122,12 @@ function getInvoiceDb(): { db: InvoiceDb; dbPath: string } {
 }
 
 function getCanonicalName(name: string, aliases: Record<string, string[]>) {
-  // AUTO-MERGE: Normalize to lowercase for matching, but keep it robust
   const inputLower = (name || 'Unknown').toLowerCase().trim();
-
-  // 1. Check explicit aliases first
   for (const [canonical, aliasList] of Object.entries(aliases || {})) {
     if (canonical.toLowerCase().trim() === inputLower || aliasList.some(a => a.toLowerCase().trim() === inputLower)) {
       return canonical;
     }
   }
-
-  // 2. Fallback to just the name (the caller will handle lowercase grouping)
   return name || 'Unknown';
 }
 
@@ -138,7 +135,6 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
   const { db, dbPath } = getInvoiceDb();
   const allInvoices = Object.values(db.invoices || {}).sort((a, b) => b.createdAt - a.createdAt);
   
-  // Guild mapping
   const guildMap = new Map<string, number>();
   allInvoices.forEach(inv => {
     if (inv.guildId) guildMap.set(inv.guildId, (guildMap.get(inv.guildId) || 0) + 1);
@@ -150,7 +146,6 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
     invoiceCount: count
   }));
 
-  // Filtering
   const filteredInvoices = selectedGuildId 
     ? allInvoices.filter(inv => inv.guildId === selectedGuildId)
     : allInvoices;
@@ -163,7 +158,7 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
   const paidAmount = totalAmount - outstandingAmount;
 
   const creatorMap = new Map<string, { name: string; totalCreated: number; invoiceCount: number }>();
-  const debtorMap = new Map<string, { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number }>();
+  const debtorMap = new Map<string, { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number; invoices: any[] }>();
   const monthlyMap = new Map<string, { label: string; count: number; amount: number }>();
 
   for (const invoice of filteredInvoices) {
@@ -188,20 +183,20 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
 
     for (const participant of invoice.participants || []) {
       if (participant.paid) continue;
-      
-      // AUTO-MERGE: Normalize name for grouping
       const canonical = getCanonicalName(participant.username || 'Unknown', db.nameAliases || {});
       const debtorKey = canonical.toLowerCase().trim();
       
       const debtorStats = debtorMap.get(debtorKey) || {
-        name: canonical, // Keep the display name
+        name: canonical,
         totalDebt: 0,
         unpaidCount: 0,
         invoiceCount: 0,
+        invoices: [],
       };
       debtorStats.totalDebt += Number(participant.amount || 0);
       debtorStats.unpaidCount += 1;
       debtorStats.invoiceCount += 1;
+      debtorStats.invoices.push({ title: invoice.title, amount: participant.amount, date: invoice.date });
       debtorMap.set(debtorKey, debtorStats);
     }
   }
@@ -214,7 +209,7 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
     paidAmount,
     guilds,
     topCreators: Array.from(creatorMap.values()).sort((a, b) => b.totalCreated - a.totalCreated).slice(0, 5),
-    topDebtors: Array.from(debtorMap.values()).sort((a, b) => b.totalDebt - a.totalDebt).slice(0, 10),
+    topDebtors: Array.from(debtorMap.values()).sort((a, b) => b.totalDebt - a.totalDebt).slice(0, 20),
     monthlyStats: Array.from(monthlyMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-6).map(([, v]) => v),
     dbPath,
     stats: {
@@ -228,11 +223,11 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
 
 // --- Components ---
 
-function SidebarItem({ icon: Icon, label, active = false, href = '#' }: { icon: any; label: string; active?: boolean; href?: string }) {
+function SidebarItem({ icon: Icon, label, active = false, href }: { icon: any; label: string; active?: boolean; href: string }) {
   return (
     <Link 
       href={href} 
-      className={`relative z-50 flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${active ? 'bg-accent/15 text-accent font-medium' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}
+      className={`relative z-[200] flex items-center gap-3 rounded-xl px-4 py-3 transition-all cursor-pointer ${active ? 'bg-accent/15 text-accent font-medium' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}
     >
       <Icon className="h-5 w-5" />
       <span className="text-sm tracking-wide">{label}</span>
@@ -253,15 +248,25 @@ function StatCardMini({ title, value, icon: Icon, colorClass = "text-accent" }: 
   );
 }
 
-export default function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string } }) {
+export default function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string } }) {
   const selectedGuild = searchParams.guild;
+  const activeTab = searchParams.tab || 'overview';
   const data = buildDashboardData(selectedGuild);
-  const recentInvoices = data.filteredInvoices.slice(0, 10);
+  const recentInvoices = data.filteredInvoices.slice(0, 15);
   const paidRatio = data.stats.totalParticipants ? Math.round((data.stats.paidParticipants / data.stats.totalParticipants) * 100) : 0;
+
+  const buildUrl = (newTab?: string, newGuild?: string | null) => {
+    const params = new URLSearchParams();
+    const guild = newGuild !== undefined ? newGuild : selectedGuild;
+    const tab = newTab !== undefined ? newTab : activeTab;
+    if (guild) params.set('guild', guild);
+    if (tab && tab !== 'overview') params.set('tab', tab);
+    const qs = params.toString();
+    return `/invoice/dashboard${qs ? '?' + qs : ''}`;
+  };
 
   return (
     <>
-      {/* MAGIC CSS: Hide global Header & Footer for this page only */}
       <style dangerouslySetInnerHTML={{ __html: `
         nav.fixed.top-0, footer.border-t.border-white\\/5 { display: none !important; }
         body { background-color: #0a0a0a !important; }
@@ -269,37 +274,37 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
 
       <div className="relative z-[100] flex min-h-screen bg-[#0a0a0a] text-text-primary">
         {/* Sidebar */}
-        <aside className="fixed left-0 top-0 hidden h-full w-72 flex-col border-r border-white/5 bg-[#0d0d0d] p-6 lg:flex z-[110]">
+        <aside className="fixed left-0 top-0 hidden h-full w-72 flex-col border-r border-white/5 bg-[#0d0d0d] p-6 lg:flex z-[1000]">
           <div className="mb-10 flex items-center gap-3 px-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-yellow-500 shadow-lg shadow-accent/20">
               <Receipt className="h-6 w-6 text-black" />
             </div>
             <div>
               <h2 className="text-lg font-bold tracking-tight">Siggy Control</h2>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-accent/70">Terminal v2</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-accent/70">Admin Terminal</p>
             </div>
           </div>
 
-          <nav className="flex-1 space-y-2">
-            <p className="px-4 pb-2 text-[10px] font-mono uppercase tracking-[0.25em] text-text-secondary/50">Navigation</p>
-            <SidebarItem icon={LayoutDashboard} label="Overview" active href="/invoice/dashboard" />
-            <SidebarItem icon={Users} label="Debtors (Auto-Merged)" href="#" />
-            <SidebarItem icon={BarChart3} label="Guild Analytics" href="#" />
-            <SidebarItem icon={Receipt} label="Invoice Logs" href="#" />
+          <nav className="flex-1 space-y-2 relative z-[1001]">
+            <p className="px-4 pb-2 text-[10px] font-mono uppercase tracking-[0.25em] text-text-secondary/50">Menu</p>
+            <SidebarItem icon={LayoutDashboard} label="Overview" active={activeTab === 'overview'} href={buildUrl('overview')} />
+            <SidebarItem icon={Users} label="Top Debtors" active={activeTab === 'debtors'} href={buildUrl('debtors')} />
+            <SidebarItem icon={BarChart3} label="Analytics" active={activeTab === 'analytics'} href={buildUrl('analytics')} />
+            <SidebarItem icon={History} label="Invoice Logs" active={activeTab === 'logs'} href={buildUrl('logs')} />
           </nav>
 
-          <div className="mt-auto space-y-4 pt-6 border-t border-white/5">
+          <div className="mt-auto space-y-4 pt-6 border-t border-white/5 relative z-[1001]">
             <div className="rounded-2xl bg-gradient-to-br from-surface to-black/40 p-4 border border-white/5">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-text-secondary mb-2">Live Database</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-text-secondary mb-2">Live Data</p>
               <div className="flex items-center gap-2 mb-2">
-                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                <p className="text-xs font-medium text-emerald-400">Connection Active</p>
+                <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
+                <p className="text-xs font-medium text-emerald-400">Sync Online</p>
               </div>
-              <p className="text-[9px] font-mono text-text-secondary leading-relaxed break-all opacity-40">
+              <p className="text-[9px] font-mono text-text-secondary leading-relaxed break-all opacity-30">
                 {data.dbPath}
               </p>
             </div>
-            <Link href="/" className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm font-medium hover:bg-white/10 transition-colors">
+            <Link href="/" className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer relative z-[1002]">
               Exit Terminal
             </Link>
           </div>
@@ -310,7 +315,7 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
           {/* Top Bar */}
           <header className="sticky top-0 z-[120] flex h-20 items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-8 backdrop-blur-xl">
             <div className="flex items-center gap-4">
-               <h1 className="text-xl font-bold tracking-tight">Financial Overview</h1>
+               <h1 className="text-xl font-bold tracking-tight capitalize">{activeTab}</h1>
                {selectedGuild && (
                  <div className="flex items-center gap-2 rounded-full bg-accent/10 px-3 py-1 border border-accent/20">
                    <Server className="h-3 w-3 text-accent" />
@@ -319,10 +324,6 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
                )}
             </div>
             <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/5">
-                <Search className="h-4 w-4 text-text-secondary" />
-                <input type="text" placeholder="Search entries..." className="bg-transparent text-xs outline-none w-40" />
-              </div>
               <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent/20 to-yellow-500/20 border border-accent/30 flex items-center justify-center">
                 <Users className="h-5 w-5 text-accent" />
               </div>
@@ -330,153 +331,176 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
           </header>
 
           <div className="p-8 pb-20">
-            {/* Guild Switcher */}
+            {/* Guild Switcher (Visible on all tabs) */}
             <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Server className="h-4 w-4 text-accent" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-text-secondary">Select Active Guild</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-text-secondary">Guild Filter</h3>
                 </div>
               </div>
-              
               <div className="flex flex-wrap gap-3">
                 <Link 
-                  href="/invoice/dashboard"
-                  className={`group flex items-center gap-3 rounded-2xl border px-5 py-3.5 transition-all ${!selectedGuild ? 'border-accent bg-accent/10 shadow-[0_0_20px_rgba(255,215,0,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+                  href={buildUrl(activeTab, null)}
+                  className={`group flex items-center gap-3 rounded-2xl border px-5 py-3 transition-all ${!selectedGuild ? 'border-accent bg-accent/10' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
                 >
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${!selectedGuild ? 'bg-accent text-black' : 'bg-white/5 text-text-secondary'}`}>
-                    <LayoutDashboard className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <p className={`text-sm font-bold ${!selectedGuild ? 'text-accent' : 'text-text-primary'}`}>All Guilds</p>
-                    <p className="text-[10px] text-text-secondary">{data.allInvoices.length} Total</p>
-                  </div>
+                  <p className={`text-sm font-bold ${!selectedGuild ? 'text-accent' : 'text-text-primary'}`}>All Guilds</p>
                 </Link>
-
                 {data.guilds.map((guild) => (
                   <Link 
                     key={guild.id}
-                    href={`/invoice/dashboard?guild=${guild.id}`}
-                    className={`group flex items-center gap-3 rounded-2xl border px-5 py-3.5 transition-all ${selectedGuild === guild.id ? 'border-accent bg-accent/10 shadow-[0_0_20px_rgba(255,215,0,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+                    href={buildUrl(activeTab, guild.id)}
+                    className={`group flex items-center gap-3 rounded-2xl border px-5 py-3 transition-all ${selectedGuild === guild.id ? 'border-accent bg-accent/10' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
                   >
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${selectedGuild === guild.id ? 'bg-accent text-black' : 'bg-white/5 text-text-secondary'}`}>
-                      <Server className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <p className={`text-sm font-bold ${selectedGuild === guild.id ? 'text-accent' : 'text-text-primary'}`}>ID: {guild.id.substring(0, 8)}</p>
-                      <p className="text-[10px] text-text-secondary">{guild.invoiceCount} Invoices</p>
-                    </div>
+                    <p className={`text-sm font-bold ${selectedGuild === guild.id ? 'text-accent' : 'text-text-primary'}`}>{guild.id.substring(0, 8)}</p>
                   </Link>
                 ))}
               </div>
             </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
-              <StatCardMini title="Gross Billing" value={formatCurrency(data.totalAmount)} icon={CircleDollarSign} />
-              <StatCardMini title="Net Outstanding" value={formatCurrency(data.outstandingAmount)} icon={CreditCard} colorClass="text-amber-400" />
-              <StatCardMini title="Collection Rate" value={`${paidRatio}%`} icon={BarChart3} colorClass="text-emerald-400" />
-              <StatCardMini title="Records" value={String(data.stats.totalInvoices)} icon={Receipt} colorClass="text-blue-400" />
-            </div>
-
-            <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]">
-              {/* Recent Activity */}
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-accent" />
-                    <h2 className="text-xl font-bold tracking-tight">Recent Invoices</h2>
-                  </div>
+            {/* TAB: OVERVIEW */}
+            {activeTab === 'overview' && (
+              <>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
+                  <StatCardMini title="Billing" value={formatCurrency(data.totalAmount)} icon={CircleDollarSign} />
+                  <StatCardMini title="Debt" value={formatCurrency(data.outstandingAmount)} icon={CreditCard} colorClass="text-amber-400" />
+                  <StatCardMini title="Paid Rate" value={`${paidRatio}%`} icon={TrendingUp} colorClass="text-emerald-400" />
+                  <StatCardMini title="Total Logs" value={String(data.stats.totalInvoices)} icon={Receipt} colorClass="text-blue-400" />
                 </div>
-
-                <div className="space-y-4">
-                  {recentInvoices.map((invoice) => {
-                    const unpaid = invoice.participants.filter(p => !p.paid);
-                    const isFullyPaid = unpaid.length === 0;
-
-                    return (
-                      <div key={invoice.id} className="rounded-2xl border border-white/5 bg-surface/30 p-6 transition-all hover:border-white/10">
-                        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-3">
-                              <h3 className="text-lg font-bold text-text-primary">{invoice.title || 'Untitled'}</h3>
-                              <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${isFullyPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                                {isFullyPaid ? 'Settled' : 'Pending'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-xs text-text-secondary">
-                              <span className="text-text-primary">{invoice.creator?.username}</span>
-                              <span>•</span>
-                              <span>{formatDate(invoice.date)}</span>
-                            </div>
+                <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]">
+                  <div className="space-y-6">
+                    <h2 className="text-xl font-bold tracking-tight flex items-center gap-2"><Clock className="h-5 w-5 text-accent" /> Recent Activity</h2>
+                    <div className="space-y-4">
+                      {recentInvoices.slice(0, 5).map(inv => (
+                        <div key={inv.id} className="rounded-2xl border border-white/5 bg-surface/30 p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <h3 className="font-bold text-text-primary text-lg">{inv.title || 'Untitled'}</h3>
+                            <p className="text-lg font-bold text-accent">{formatCurrency(inv.totalAmount)}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-mono text-text-secondary uppercase tracking-widest mb-1">Total</p>
-                            <p className="text-lg font-bold text-text-primary">{formatCurrency(invoice.totalAmount)}</p>
+                          <div className="flex gap-4 text-xs text-text-secondary font-mono">
+                            <span>{formatDate(inv.date)}</span>
+                            <span>•</span>
+                            <span>{inv.creator.username}</span>
                           </div>
                         </div>
-
-                        {/* List entries */}
-                        <div className="mt-6 divide-y divide-white/5 rounded-xl border border-white/5 bg-black/20 overflow-hidden">
-                          {invoice.participants.map((p, idx) => (
-                            <div key={idx} className="flex items-center justify-between px-4 py-2.5 text-xs">
-                              <span className="text-text-primary">{p.username}</span>
-                              <div className="flex items-center gap-4">
-                                <span className="text-text-secondary">{formatCurrency(p.amount)}</span>
-                                <span className={p.paid ? 'text-emerald-400' : 'text-amber-400'}>{p.paid ? '✓' : '×'}</span>
-                              </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-8">
+                     <div className="rounded-3xl border border-white/5 bg-surface/20 p-6">
+                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-amber-400"><Users className="h-5 w-5" /> Top Debtors</h3>
+                        <div className="space-y-3">
+                          {data.topDebtors.slice(0, 5).map((d, i) => (
+                            <div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                              <span className="text-sm font-bold">{d.name}</span>
+                              <span className="text-sm font-bold text-amber-400">{formatCurrency(d.totalDebt)}</span>
                             </div>
                           ))}
                         </div>
+                     </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* TAB: DEBTORS */}
+            {activeTab === 'debtors' && (
+              <div className="space-y-8">
+                <div className="flex items-center gap-2 mb-6">
+                  <Users className="h-6 w-6 text-amber-400" />
+                  <h2 className="text-2xl font-bold">Auto-Merged Debtors</h2>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {data.topDebtors.map((debtor, idx) => (
+                    <div key={idx} className="rounded-3xl border border-white/5 bg-surface/30 p-6 hover:border-amber-400/30 transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <h3 className="text-xl font-bold text-text-primary">{debtor.name}</h3>
+                        <p className="text-lg font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p>
                       </div>
-                    );
-                  })}
-                  {recentInvoices.length === 0 && <p className="text-center py-20 text-text-secondary border border-dashed border-white/10 rounded-3xl">No data available.</p>}
+                      <p className="text-xs text-text-secondary mb-4 uppercase tracking-widest">{debtor.unpaidCount} Unpaid Items</p>
+                      <div className="space-y-2 pt-4 border-t border-white/5">
+                        {debtor.invoices.slice(0, 3).map((inv, i) => (
+                          <div key={i} className="flex justify-between text-xs">
+                            <span className="text-text-secondary truncate max-w-[120px]">{inv.title}</span>
+                            <span className="text-text-primary font-mono">{formatCurrency(inv.amount)}</span>
+                          </div>
+                        ))}
+                        {debtor.invoices.length > 3 && <p className="text-[10px] text-center text-text-secondary pt-2">+ {debtor.invoices.length - 3} more</p>}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Debtors & Analytics */}
-              <div className="space-y-8">
-                {/* AUTO-MERGED DEBTORS */}
-                <div className="rounded-3xl border border-white/5 bg-surface/20 p-6 shadow-2xl">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Users className="h-5 w-5 text-amber-400" />
-                      <h2 className="text-lg font-bold tracking-tight">Top Debtors</h2>
+            {/* TAB: ANALYTICS */}
+            {activeTab === 'analytics' && (
+              <div className="space-y-12">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="rounded-3xl border border-white/5 bg-surface/30 p-8">
+                    <h3 className="text-xl font-bold mb-8">Revenue Trend (6 Months)</h3>
+                    <div className="space-y-6">
+                      {data.monthlyStats.map((m, i) => (
+                        <div key={i} className="space-y-2">
+                          <div className="flex justify-between text-xs font-mono">
+                            <span>{m.label}</span>
+                            <span>{formatCurrency(m.amount)}</span>
+                          </div>
+                          <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-full bg-accent shadow-[0_0_10px_rgba(255,215,0,0.4)]" style={{ width: `${(m.amount / Math.max(...data.monthlyStats.map(x => x.amount), 1)) * 100}%` }}></div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <p className="text-[10px] text-text-secondary uppercase tracking-widest">Auto-merged Case-Insensitive</p>
                   </div>
-                  
-                  <div className="space-y-3">
-                    {data.topDebtors.map((debtor, idx) => (
-                      <div key={idx} className="flex items-center justify-between rounded-xl bg-white/5 p-4 border border-transparent">
+                  <div className="rounded-3xl border border-white/5 bg-surface/30 p-8">
+                    <h3 className="text-xl font-bold mb-8">Top Creators (Volume)</h3>
+                    <div className="space-y-4">
+                      {data.topCreators.map((c, i) => (
+                        <div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl">
+                          <span className="font-bold">{c.name}</span>
+                          <span className="font-bold text-accent">{formatCurrency(c.totalCreated)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB: LOGS */}
+            {activeTab === 'logs' && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-bold mb-8">Comprehensive Invoice Logs</h2>
+                <div className="space-y-4">
+                  {data.filteredInvoices.map((inv) => (
+                    <div key={inv.id} className="rounded-2xl border border-white/5 bg-surface/20 p-6 hover:bg-surface/30 transition-all">
+                      <div className="flex flex-col md:flex-row justify-between gap-4">
                         <div>
-                          <p className="text-sm font-bold text-text-primary">{debtor.name}</p>
-                          <p className="text-[10px] text-text-secondary mt-0.5">{debtor.unpaidCount} unpaid items</p>
+                          <h3 className="text-lg font-bold text-text-primary mb-1">{inv.title || 'Untitled'}</h3>
+                          <div className="flex gap-3 text-[10px] font-mono text-text-secondary uppercase">
+                            <span>{inv.id}</span>
+                            <span>•</span>
+                            <span>{formatDate(inv.date)}</span>
+                          </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p>
+                          <p className="text-xl font-bold text-text-primary">{formatCurrency(inv.totalAmount)}</p>
+                          <p className="text-[10px] text-text-secondary uppercase mt-1">Creator: {inv.creator.username}</p>
                         </div>
                       </div>
-                    ))}
-                    {data.topDebtors.length === 0 && <p className="text-xs text-text-secondary text-center py-10">Zero debt detected. Clean slate!</p>}
-                  </div>
-                </div>
-
-                {/* CREATORS */}
-                <div className="rounded-3xl border border-white/5 bg-surface/20 p-6 shadow-2xl">
-                  <h2 className="text-lg font-bold tracking-tight mb-6">Activity Leaders</h2>
-                  <div className="space-y-3">
-                    {data.topCreators.map((creator, idx) => (
-                      <div key={idx} className="flex items-center justify-between rounded-xl bg-white/5 p-4">
-                         <p className="text-sm font-bold text-text-primary">{creator.name}</p>
-                         <p className="text-sm font-bold text-text-primary">{formatCurrency(creator.totalCreated)}</p>
+                      <div className="mt-6 flex flex-wrap gap-2">
+                        {inv.participants.map((p, i) => (
+                          <span key={i} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${p.paid ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                            {p.username}: {formatCurrency(p.amount)}
+                          </span>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </main>
       </div>
