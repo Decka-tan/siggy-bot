@@ -102,6 +102,40 @@ async function filterAction(formData: FormData) {
   return redirect(`/invoice/dashboard?${params.toString()}`);
 }
 
+async function linkDiscordAction(formData: FormData) {
+  'use server';
+  if (!(await checkAuth())) return;
+  const name = formData.get('name') as string;
+  const discordId = formData.get('discordId') as string;
+  const tab = formData.get('tab') as string;
+
+  if (!name) return;
+
+  const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
+  let db = { payments: {}, nameLinks: {} } as any;
+  
+  if (fs.existsSync(paymentDbPath)) {
+    try {
+      db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+    } catch (e) {}
+  }
+
+  const nameLower = name.toLowerCase().trim();
+  if (discordId) {
+    db.nameLinks[nameLower] = {
+      ...(db.nameLinks[nameLower] || {}),
+      discordId: discordId,
+      createdAt: db.nameLinks[nameLower]?.createdAt || Date.now(),
+      updatedAt: Date.now()
+    };
+  } else {
+    delete db.nameLinks[nameLower];
+  }
+
+  fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
+  return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
+}
+
 // --- Types ---
 type InvoiceParticipant = {
   userId?: string;
@@ -152,6 +186,7 @@ type DashboardData = {
     invoiceCount: number; 
     invoices: { id: string; title: string; amount: number; date: string; creatorName: string }[];
     recap: Record<string, number>;
+    discordId: string | null;
   }[];
   monthlyStats: { label: string; count: number; amount: number }[];
   guilds: GuildInfo[];
@@ -196,6 +231,16 @@ function getInvoiceDb(): { db: InvoiceDb; dbPath: string } {
   }
 }
 
+function getPaymentDb(): any {
+  const dbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
+  if (!fs.existsSync(dbPath)) return { payments: {}, nameLinks: {} };
+  try {
+    return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  } catch {
+    return { payments: {}, nameLinks: {} };
+  }
+}
+
 function getCanonicalName(name: string, aliases: Record<string, string[]>) {
   const inputLower = (name || 'Unknown').toLowerCase().trim();
   for (const [canonical, aliasList] of Object.entries(aliases || {})) {
@@ -208,6 +253,7 @@ function getCanonicalName(name: string, aliases: Record<string, string[]>) {
 
 function buildDashboardData(selectedGuildId?: string, filters?: { q?: string; status?: string; creator?: string }): DashboardData {
   const { db, dbPath } = getInvoiceDb();
+  const paymentDb = getPaymentDb();
   let invoices = Object.values(db.invoices || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   
   const guildMap = new Map<string, number>();
@@ -271,13 +317,16 @@ function buildDashboardData(selectedGuildId?: string, filters?: { q?: string; st
       if (participant.paid) continue;
       const canonical = getCanonicalName(participant.username || 'Unknown', db.nameAliases || {});
       const debtorKey = canonical.toLowerCase().trim();
+      const linkedInfo = paymentDb.nameLinks?.[debtorKey];
+      
       const debtorStats = debtorMap.get(debtorKey) || { 
         name: canonical, 
         totalDebt: 0, 
         unpaidCount: 0, 
         invoiceCount: 0, 
         invoices: [],
-        recap: {} 
+        recap: {},
+        discordId: linkedInfo?.discordId || null
       };
       
       const amt = Number(participant.amount || 0);
@@ -463,6 +512,34 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                                 </div>
                               ))}
                            </div>
+                        </div>
+
+                        {/* Discord ID Linker */}
+                        <div className="mt-4 pt-4 border-t border-white/5">
+                          <form action={linkDiscordAction}>
+                            <input type="hidden" name="name" value={debtor.name} />
+                            <input type="hidden" name="tab" value="debtors" />
+                            <div className="flex items-center gap-2">
+                              <div className="relative flex-1">
+                                <input 
+                                  name="discordId" 
+                                  type="text" 
+                                  placeholder="Discord User ID (e.g. 148089...)" 
+                                  defaultValue={debtor.discordId || ''}
+                                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-[11px] outline-none focus:border-accent/50 transition-all font-mono"
+                                />
+                                {debtor.discordId && <div className="absolute right-3 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
+                              </div>
+                              <button type="submit" title="Save Link" className="bg-white/5 hover:bg-accent hover:text-black p-2 rounded-xl transition-all border border-white/5 group">
+                                <Save className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                              </button>
+                            </div>
+                            <p className="mt-2 text-[9px] text-text-secondary italic">
+                              {debtor.discordId 
+                                ? `✅ Terhubung ke ID: ${debtor.discordId}`
+                                : "💡 Masukkan ID Discord untuk mengaktifkan pengingat otomatis."}
+                            </p>
+                          </form>
                         </div>
                       </div>
                     </div>
