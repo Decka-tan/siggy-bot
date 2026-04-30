@@ -33,15 +33,16 @@ import {
 
 export const dynamic = 'force-dynamic';
 
-// --- AUTH LOGIC ---
+// --- AUTH CONFIG ---
 const AUTH_USER = "Sopmod";
 const AUTH_PASS = "4r1p1n";
-const COOKIE_NAME = "siggy_admin_session";
+const COOKIE_NAME = "siggy_session_v3"; // Changed name to reset old cookies
+const SESSION_VALUE = "authenticated_siggy_admin_access";
 
 async function checkAuth() {
   const cookieStore = cookies();
   const session = cookieStore.get(COOKIE_NAME);
-  return session?.value === Buffer.from(`${AUTH_USER}:${AUTH_PASS}`).toString('base64');
+  return session?.value === SESSION_VALUE;
 }
 
 // --- SERVER ACTIONS ---
@@ -51,16 +52,16 @@ async function loginAction(formData: FormData) {
   const pass = formData.get('pass');
 
   if (user === AUTH_USER && pass === AUTH_PASS) {
-    const session = Buffer.from(`${AUTH_USER}:${AUTH_PASS}`).toString('base64');
-    cookies().set(COOKIE_NAME, session, { 
+    cookies().set(COOKIE_NAME, SESSION_VALUE, { 
       httpOnly: true, 
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7,
+      secure: false, // FORCE FALSE biar bisa jalan di HTTP/IP VPS
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/' 
     });
     return redirect('/invoice/dashboard');
   }
-  return redirect('/invoice/dashboard?error=invalid');
+  return redirect('/invoice/dashboard?error=1');
 }
 
 async function markPaidAction(invoiceId: string, participantIndex: number, isPaid: boolean) {
@@ -74,7 +75,7 @@ async function markPaidAction(invoiceId: string, participantIndex: number, isPai
     db.invoices[invoiceId].participants[participantIndex].paid = isPaid;
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
   }
-  return redirect(`/invoice/dashboard?tab=logs&msg=status_changed`);
+  return redirect(`/invoice/dashboard?tab=logs`);
 }
 
 // --- Types ---
@@ -313,7 +314,7 @@ function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, 
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <h4 className="text-sm font-bold uppercase tracking-wide text-white">{invoice.title || "Untitled Invoice"}</h4>
-          <p className="text-[10px] font-mono text-[#b5bac1]">{invoice.id}</p>
+          <p className="text-[10px] font-mono text-[#b5bac1]">{invoice.id.substring(0, 8)}</p>
         </div>
         <div className="mt-1 flex items-center gap-2 text-[11px] text-[#b5bac1]">
           <span>Created by {invoice.creator.username}</span>
@@ -338,9 +339,7 @@ function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, 
       <div className="space-y-2 rounded-md bg-[#1e1f22] p-3">
         {invoice.participants.map((p, idx) => (
           <div key={idx} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
-            <div className="flex flex-col">
-              <span className="text-xs font-medium text-white">{p.username}</span>
-            </div>
+            <span className="text-xs font-medium text-white">{p.username}</span>
             <div className="flex items-center gap-3">
               <span className={`text-xs font-mono ${p.paid ? "text-emerald-400" : "text-amber-400"}`}>
                 {formatCurrency(p.amount)}
@@ -407,7 +406,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
               />
             </div>
             {searchParams.error && (
-              <p className="text-center text-xs font-bold text-red-400">Invalid username or password.</p>
+              <p className="text-center text-xs font-bold text-red-400">Invalid credentials.</p>
             )}
             <button 
               type="submit"
@@ -445,7 +444,6 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
       `}} />
 
       <div className="relative z-[100] flex min-h-screen bg-[#0a0a0a] text-text-primary">
-        {/* Sidebar */}
         <aside className="fixed left-0 top-0 hidden h-full w-72 flex-col border-r border-white/5 bg-[#0d0d0d] p-6 lg:flex z-[1000]">
           <div className="mb-10 flex items-center gap-3 px-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-yellow-500 shadow-lg shadow-accent/20">
@@ -458,7 +456,6 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
           </div>
 
           <nav className="flex-1 space-y-2 relative z-[1001]">
-            <p className="px-4 pb-2 text-[10px] font-mono uppercase tracking-[0.25em] text-text-secondary/50">Menu</p>
             <SidebarItem icon={LayoutDashboard} label="Overview" active={activeTab === 'overview'} href={buildUrl('overview')} />
             <SidebarItem icon={Users} label="Top Debtors" active={activeTab === 'debtors'} href={buildUrl('debtors')} />
             <SidebarItem icon={BarChart3} label="Analytics" active={activeTab === 'analytics'} href={buildUrl('analytics')} />
@@ -467,14 +464,10 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
 
           <div className="mt-auto space-y-4 pt-6 border-t border-white/5 relative z-[1001]">
             <div className="rounded-2xl bg-gradient-to-br from-surface to-black/40 p-4 border border-white/5">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-text-secondary mb-2">Live Data</p>
               <div className="flex items-center gap-2 mb-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
                 <p className="text-xs font-medium text-emerald-400">Sync Online</p>
               </div>
-              <p className="text-[9px] font-mono text-text-secondary leading-relaxed break-all opacity-30">
-                {data.dbPath}
-              </p>
             </div>
             <Link href="/" className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm font-medium hover:bg-white/10 transition-colors cursor-pointer relative z-[1002]">
               Exit Terminal
@@ -482,9 +475,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 lg:ml-72 min-h-screen relative z-[105]">
-          {/* Top Bar */}
           <header className="sticky top-0 z-[120] flex h-20 items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-8 backdrop-blur-xl">
             <div className="flex items-center gap-4">
                <h1 className="text-xl font-bold tracking-tight capitalize">{activeTab}</h1>
@@ -506,16 +497,10 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
           <div className="p-8 pb-20">
             {/* Guild Switcher */}
             <div className="mb-10">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Server className="h-4 w-4 text-accent" />
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-text-secondary">Guild Filter</h3>
-                </div>
-              </div>
               <div className="flex flex-wrap gap-3">
                 <Link 
                   href={buildUrl(activeTab, null)}
-                  className={`group flex items-center gap-3 rounded-2xl border px-5 py-3 transition-all ${!selectedGuild ? 'border-accent bg-accent/10' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+                  className={`group flex items-center gap-3 rounded-2xl border px-5 py-2 transition-all ${!selectedGuild ? 'border-accent bg-accent/10' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
                 >
                   <p className={`text-sm font-bold ${!selectedGuild ? 'text-accent' : 'text-text-primary'}`}>All Guilds</p>
                 </Link>
@@ -523,7 +508,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                   <Link 
                     key={guild.id}
                     href={buildUrl(activeTab, guild.id)}
-                    className={`group flex items-center gap-3 rounded-2xl border px-5 py-3 transition-all ${selectedGuild === guild.id ? 'border-accent bg-accent/10' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+                    className={`group flex items-center gap-3 rounded-2xl border px-5 py-2 transition-all ${selectedGuild === guild.id ? 'border-accent bg-accent/10' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
                   >
                     <p className={`text-sm font-bold ${selectedGuild === guild.id ? 'text-accent' : 'text-text-primary'}`}>{guild.id.substring(0, 8)}</p>
                   </Link>
@@ -531,7 +516,6 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
               </div>
             </div>
 
-            {/* TAB: OVERVIEW */}
             {activeTab === 'overview' && (
               <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
@@ -566,26 +550,15 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
               </>
             )}
 
-            {/* TAB: DEBTORS */}
             {activeTab === 'debtors' && (
               <div className="space-y-8">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
-                    <Users className="h-7 w-7" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold">Unpaid Debt Ledger</h2>
-                    <p className="text-xs text-text-secondary uppercase tracking-widest">Showing all pending invoices per user</p>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {data.topDebtors.map((debtor, idx) => (
                     <div key={idx} className="flex flex-col rounded-3xl border border-white/5 bg-surface/30 p-6 shadow-xl transition-all hover:border-amber-400/20">
                       <div className="mb-6 flex items-start justify-between">
                         <div>
                           <h3 className="text-xl font-bold text-text-primary">{debtor.name}</h3>
-                          <div className="mt-1 flex items-center gap-2 rounded-full bg-amber-500/10 px-2 py-0.5 border border-amber-500/20">
+                          <div className="mt-1 flex items-center gap-2 rounded-full bg-amber-500/10 px-2 py-0.5 border border-amber-500/20 w-fit">
                             <AlertCircle className="h-3 w-3 text-amber-400" />
                             <span className="text-[10px] font-bold text-amber-400 uppercase">{debtor.unpaidCount} Pending</span>
                           </div>
@@ -597,13 +570,13 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                       </div>
 
                       <div className="flex-1 space-y-3">
-                        <p className="text-[10px] font-bold uppercase text-text-secondary border-b border-white/5 pb-2">Pending Invoice List</p>
-                        <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                        <p className="text-[10px] font-bold uppercase text-text-secondary border-b border-white/5 pb-2">Pending Invoices</p>
+                        <div className="space-y-2.5">
                           {debtor.invoices.map((inv, i) => (
                             <Link 
                               key={i} 
                               href={buildUrl('logs')} 
-                              className="group flex items-center justify-between rounded-xl bg-black/20 p-3 transition-all hover:bg-black/40 hover:border-white/10 border border-transparent"
+                              className="group flex items-center justify-between rounded-xl bg-black/20 p-3 transition-all hover:bg-black/40 border border-transparent hover:border-white/10"
                             >
                               <div className="flex flex-col gap-0.5">
                                 <span className="text-[11px] font-bold text-text-primary group-hover:text-accent transition-colors">{inv.title || "Untitled"}</span>
@@ -619,21 +592,15 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                       </div>
                     </div>
                   ))}
-                  {data.topDebtors.length === 0 && (
-                    <div className="col-span-full py-32 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10">
-                      <p className="text-text-secondary">No outstanding debt found. Everyone is settled!</p>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
 
-            {/* TAB: ANALYTICS */}
             {activeTab === 'analytics' && (
               <div className="space-y-12">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <div className="rounded-3xl border border-white/5 bg-surface/30 p-8">
-                    <h3 className="text-xl font-bold mb-8">Revenue Trend (6 Months)</h3>
+                    <h3 className="text-xl font-bold mb-8">Revenue Trend</h3>
                     <div className="space-y-6">
                       {data.monthlyStats.map((m, i) => (
                         <div key={i} className="space-y-2">
@@ -649,7 +616,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                     </div>
                   </div>
                   <div className="rounded-3xl border border-white/5 bg-surface/30 p-8">
-                    <h3 className="text-xl font-bold mb-8">Top Creators (Volume)</h3>
+                    <h3 className="text-xl font-bold mb-8">Top Creators</h3>
                     <div className="space-y-4">
                       {data.topCreators.map((c, i) => (
                         <div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl">
@@ -663,7 +630,6 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
               </div>
             )}
 
-            {/* TAB: LOGS */}
             {activeTab === 'logs' && (
               <div className="space-y-8">
                 <h2 className="text-2xl font-bold mb-8">Management Logs</h2>
