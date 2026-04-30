@@ -7,7 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_FILE = path.join(__dirname, '../data/invoices.json');
+const DB_FILE = process.env.INVOICE_DB_PATH || path.join(__dirname, '../data/invoices.json');
 
 // Simple in-memory lock for write operations
 let writeLock = false;
