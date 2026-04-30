@@ -147,12 +147,52 @@ async function linkUserAction(formData: FormData) {
 
   if (!name || !userId) return;
 
-  const { linkUserToName } = require(path.join(process.cwd(), 'discord-bot', 'utils', 'invoice-db.cjs'));
-  linkUserToName(name, userId);
-  
-  // Also save to nameLinks in payment-db
-  const { linkName } = require(path.join(process.cwd(), 'discord-bot', 'utils', 'payment-db.cjs'));
-  linkName(name, userId, name);
+  // 1. Save to payment-info.json
+  const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
+  if (fs.existsSync(paymentDbPath)) {
+    try {
+      const db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+      const nameLower = name.toLowerCase().trim();
+      
+      db.nameLinks = db.nameLinks || {};
+      db.nameLinks[nameLower] = {
+        discordId: userId,
+        discordUsername: name,
+        aliases: [],
+        createdAt: db.nameLinks[nameLower]?.createdAt || Date.now(),
+        updatedAt: Date.now()
+      };
+      
+      fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
+    } catch (e) {
+      console.error('Failed to save to payment-info.json', e);
+    }
+  }
+
+  // 2. Save to invoices.json
+  const invoiceDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'invoices.json');
+  if (fs.existsSync(invoiceDbPath)) {
+    try {
+      const db = JSON.parse(fs.readFileSync(invoiceDbPath, 'utf8'));
+      const nameLower = name.toLowerCase().trim();
+      
+      let updated = false;
+      Object.values(db.invoices || {}).forEach((inv: any) => {
+        (inv.participants || []).forEach((p: any) => {
+          if (p.username.toLowerCase().trim() === nameLower) {
+            p.userId = userId;
+            updated = true;
+          }
+        });
+      });
+      
+      if (updated) {
+        fs.writeFileSync(invoiceDbPath, JSON.stringify(db, null, 2));
+      }
+    } catch (e) {
+      console.error('Failed to save to invoices.json', e);
+    }
+  }
 
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
 }
