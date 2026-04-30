@@ -354,11 +354,11 @@ function renderInvoiceEmbed(invoice) {
   description += `👤 **Created by:** ${invoice.creator.username}\n\n`;
   description += '**Participants:**\n';
 
-  invoice.participants.forEach((p, i) => {
+  invoice.participants?.forEach((p, i) => {
     const status = p.paid ? '✅' : '💰';
     const notes = p.notes ? ` *(${p.notes})*` : '';
-    const amount = isNaN(p.amount) ? 0 : p.amount;
-    description += `${i + 1}. **${p.username}** - Rp ${amount.toLocaleString('id-ID')} ${status}${notes}\n`;
+    const amount = isNaN(Number(p.amount)) ? 0 : Number(p.amount);
+    description += `${i + 1}. **${p.username || 'Unknown'}** - Rp ${amount.toLocaleString('id-ID')} ${status}${notes}\n`;
   });
 
   const unpaidTotal = invoice.participants
@@ -611,7 +611,8 @@ async function handleInvoiceButton(interaction, action) {
     }
 
     if (action === 'pay') {
-      const unpaid = invoice.participants.filter(p => !p.paid);
+      const participants = invoice.participants || [];
+      const unpaid = participants.filter(p => !p.paid);
       if (unpaid.length === 0) {
         return interaction.reply({
           content: '✅ Semua orang sudah lunas!',
@@ -634,7 +635,8 @@ async function handleInvoiceButton(interaction, action) {
 
     } else if (action === 'settle') {
       // Mark all participants as paid
-      const unpaid = invoice.participants.filter(p => !p.paid);
+      const participants = invoice.participants || [];
+      const unpaid = participants.filter(p => !p.paid);
       if (unpaid.length === 0) {
         return interaction.reply({
           content: '✅ Semua orang sudah lunas!',
