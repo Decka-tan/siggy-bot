@@ -573,7 +573,8 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
-    GatewayIntentBits.DirectMessages, // Enable DM for payment proofs
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildMembers, // WAJIB ADA INI BOS
   ],
 });
 
