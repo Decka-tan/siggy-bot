@@ -1570,6 +1570,14 @@ const invoiceCommandsSimple = [
     name: 'invoice-refresh',
     description: 'Refresh SEMUA invoice yang belum lunas (kirim ulang & hapus lama)',
   },
+  {
+    name: 'invoice-remind',
+    description: 'Kirim PM pengingat ke semua penghutang yang sudah terhubung (LINKED)',
+  },
+  {
+    name: 'invoice-debtors',
+    description: 'Lihat daftar semua penghutang dan status koneksi ID Discord mereka',
+  },
 ];
 
 /**
@@ -1636,6 +1644,46 @@ async function handleInvoiceRefreshAll(interaction) {
   }
 }
 
+/**
+ * Refresh an invoice message (Delete old, Send new) 
+ * Can be called from API or other internal logic
+ */
+async function refreshInvoiceMessage(invoiceId, guild) {
+  try {
+    const { getInvoice } = require('../utils/invoice-db.cjs');
+    const invoice = getInvoice(invoiceId);
+    if (!invoice || !invoice.messageId || !invoice.channelId) return { success: false, error: 'Invoice or message info not found' };
+
+    const channel = await guild.channels.fetch(invoice.channelId);
+    if (!channel) return { success: false, error: 'Channel not found' };
+
+    // 1. Delete old message
+    try {
+      const oldMsg = await channel.messages.fetch(invoice.messageId);
+      await oldMsg.delete().catch(() => {});
+    } catch (e) {}
+
+    // 2. Send new message
+    const updated = getInvoice(invoiceId);
+    const newEmbed = renderInvoiceEmbed(updated);
+    const newComponents = [buildInvoiceButtons(invoiceId)];
+
+    const newMsg = await channel.send({
+      embeds: [newEmbed],
+      components: newComponents
+    });
+
+    // 3. Update database
+    const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
+    updateInvoiceMessage(invoiceId, newMsg.id);
+
+    return { success: true, messageId: newMsg.id };
+  } catch (error) {
+    console.error('refreshInvoiceMessage error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 module.exports = {
   handleInvoiceCreateSimple,
   processInvoiceCreateModal,
@@ -1657,6 +1705,7 @@ module.exports = {
   handleInvoiceRefreshAll, 
   handleMarkPaidSelect,
   handleAddPeopleSubmit,
+  refreshInvoiceMessage,
   buildMarkPaidComponent,
   sendInvoiceNotifications,
   sendPaidNotification,

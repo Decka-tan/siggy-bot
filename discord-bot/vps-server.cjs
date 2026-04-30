@@ -9,6 +9,8 @@
 require('dotenv').config();
 
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const cron = require('node-cron');
+const { sendAllReminders } = require('./utils/reminder-system.cjs');
 const {
   getUserState,
   saveUserState,
@@ -1454,6 +1456,17 @@ async function registerCommands() {
 }
 
 // ============ EVENTS ============
+// ============ SCHEDULED REMINDERS (Every Sunday at 8:00 PM) ============
+cron.schedule('0 20 * * 0', async () => {
+  console.log('[Cron] Running weekly invoice reminders...');
+  try {
+    const result = await sendAllReminders(client);
+    console.log(`[Cron] Reminders sent: ${result.sentCount}, Failed: ${result.failCount}`);
+  } catch (error) {
+    console.error('[Cron] Reminder error:', error);
+  }
+});
+
 client.once('ready', () => {
   const instanceId = process.env.RENDER_SERVICE_ID || process.env.RAILWAY_SERVICE_NAME || 'LOCAL-' + Math.random().toString(36).substr(2, 5);
   console.log(`✅ ${client.user.tag} is online! [Instance: ${instanceId}]`);
@@ -1544,6 +1557,24 @@ client.on('interactionCreate', async (interaction) => {
         case 'invoice-refresh': await handleInvoiceRefreshAll(interaction); break;
         case 'payment-set': await handlePaymentSet(interaction); break;
         case 'invoice-link': await handleInvoiceLink(interaction); break;
+        case 'invoice-remind':
+          await interaction.deferReply({ ephemeral: true });
+          const remindResult = await sendAllReminders(interaction.client);
+          await interaction.editReply(`✅ Berhasil mengirim pengingat ke **${remindResult.sentCount}** orang.\n❌ Gagal: **${remindResult.failCount}**`);
+          break;
+        case 'invoice-debtors':
+          const debtors = getAllDebtors(interaction.guildId);
+          if (debtors.length === 0) return interaction.reply({ content: '🎉 Tidak ada hutang tertunda di server ini!', ephemeral: true });
+          
+          let debtorList = '📋 **Daftar Penghutang:**\n\n';
+          debtors.forEach((d, i) => {
+            const discordId = d.userId || resolveName(d.username);
+            const status = discordId ? '🔗 Linked' : '❌ Unlinked';
+            debtorList += `${i+1}. **${d.username}** — Rp ${d.totalDebt.toLocaleString('id-ID')} (${status})\n`;
+          });
+          
+          await interaction.reply({ content: debtorList, ephemeral: true });
+          break;
         case 'bayar': await handleBayar(interaction); break;
         case 'avatar': await handleAvatar(interaction); break;
         case 'choose': await handleChoose(interaction); break;
@@ -1886,6 +1917,37 @@ const server = http.createServer((req, res) => {
       discord: client.isReady() ? 'connected' : 'connecting',
       guilds: client.guilds ? client.guilds.cache.size : 0,
     }));
+  } else if (req.url === '/api/refresh-invoice' && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+        const { invoiceId, guildId } = data;
+        
+        if (!invoiceId) {
+          res.writeHead(400);
+          return res.end('Missing invoiceId');
+        }
+
+        // Use first guild if not specified (or find guild)
+        const guild = guildId ? client.guilds.cache.get(guildId) : client.guilds.cache.first();
+        
+        if (!guild) {
+          res.writeHead(500);
+          return res.end('Guild not found');
+        }
+
+        const { refreshInvoiceMessage } = require('./commands/invoice-simple.cjs');
+        const result = await refreshInvoiceMessage(invoiceId, guild);
+
+        res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(result));
+      } catch (e) {
+        res.writeHead(500);
+        res.end(e.message);
+      }
+    });
   } else if (req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Siggy Discord Bot is running! 🐱');

@@ -343,6 +343,71 @@ function addNameAlias(canonicalName, aliasName) {
 }
 
 /**
+ * Get all participants with unpaid debts (grouped by name/id)
+ */
+function getAllDebtors(guildId = null) {
+  const db = readDB();
+  const debtorMap = new Map();
+
+  Object.entries(db.invoices || {}).forEach(([id, inv]) => {
+    // Filter by guild if provided
+    if (guildId && inv.guildId !== guildId) return;
+
+    (inv.participants || []).forEach(p => {
+      if (p.paid) return;
+
+      const canonical = getCanonicalName(p.username, db);
+      const key = (p.userId || canonical).toLowerCase().trim();
+
+      if (!debtorMap.has(key)) {
+        debtorMap.set(key, {
+          username: p.username,
+          userId: p.userId,
+          canonical: canonical,
+          totalDebt: 0,
+          invoices: []
+        });
+      }
+
+      const stats = debtorMap.get(key);
+      const amt = Number(p.amount) || 0;
+      stats.totalDebt += amt;
+      stats.invoices.push({
+        id: id,
+        title: inv.title || 'Untitled',
+        amount: amt,
+        creator: inv.creator?.username || 'Unknown',
+        date: inv.date
+      });
+    });
+  });
+
+  return Array.from(debtorMap.values());
+}
+
+/**
+ * Link a participant name to a Discord User ID across all invoices
+ */
+function linkUserToName(name, userId) {
+  const db = readDB();
+  const canonical = getCanonicalName(name, db);
+  let count = 0;
+
+  Object.values(db.invoices || {}).forEach(inv => {
+    (inv.participants || []).forEach(p => {
+      const pCanonical = getCanonicalName(p.username, db);
+      if (pCanonical === canonical) {
+        p.userId = userId;
+        count++;
+      }
+    });
+  });
+
+  writeDB(db);
+  return { success: true, count: count };
+}
+
+/**
  * Get debts by participant name (resolves aliases)
  * @param {string} participantName - Name to search for
  * @param {string|null} guildId - Filter by guild ID, or null for all guilds
@@ -477,6 +542,8 @@ module.exports = {
   getAllParticipantNames,
   getDebtsByName,
   getCanonicalName,
+  getAllDebtors,
+  linkUserToName,
   addNameAlias,
   markParticipantPaid,
   markMultiplePaid,

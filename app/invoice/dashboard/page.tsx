@@ -69,6 +69,17 @@ async function markPaidAction(invoiceId: string, participantIndex: number, isPai
   if (db.invoices && db.invoices[invoiceId] && db.invoices[invoiceId].participants?.[participantIndex]) {
     db.invoices[invoiceId].participants[participantIndex].paid = isPaid;
     fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+
+    // Trigger Bot refresh (Delete old message, send new one in Discord)
+    try {
+      await fetch('http://localhost:8080/api/refresh-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoiceId: invoiceId })
+      });
+    } catch (e) {
+      console.error('Failed to trigger bot refresh from dashboard:', e);
+    }
   }
   return redirect(`/invoice/dashboard?tab=logs`);
 }
