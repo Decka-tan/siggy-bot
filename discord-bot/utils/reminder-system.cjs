@@ -23,6 +23,14 @@ async function sendAllReminders(client, guildId = null) {
       discordId = resolveName(debtor.username);
     }
 
+    // NEW: If we have a username but no ID, try to find the ID in the guild
+    if (!discordId && debtor.username) {
+      try {
+        const members = await client.guilds.cache.get(debtor.guildId)?.members.fetch({ query: debtor.username, limit: 1 });
+        discordId = members?.first()?.id;
+      } catch (e) {}
+    }
+
     if (!discordId) {
       results.push({ name: debtor.username, status: 'skipped', reason: 'No Discord link' });
       continue;
@@ -94,8 +102,20 @@ function buildReminderEmbed(debtor) {
 
 // Helper to get payment info by username
 function getPaymentInfoByName(username) {
-  const { getPaymentInfo } = require('./payment-db.cjs');
-  const info = getPaymentInfo(username);
+  const { getPaymentInfo, readDB } = require('./payment-db.cjs');
+  
+  // 1. Try direct name match (e.g. "Sopmod")
+  let info = getPaymentInfo(username);
+  
+  // 2. If not found, try searching by discordUser field in all payments
+  if (!info) {
+    const db = readDB();
+    info = Object.values(db.payments).find(p => 
+      p.discordUser?.toLowerCase() === username.toLowerCase() ||
+      p.name?.toLowerCase().includes(username.toLowerCase())
+    );
+  }
+
   if (!info) return null;
   
   return {
