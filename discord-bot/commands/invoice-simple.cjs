@@ -602,8 +602,15 @@ async function handleInvoiceButton(interaction, action) {
     const invoice = getInvoice(invoiceId);
 
     if (!invoice) {
+      // Try with 'invoice_' prefix if not present
+      if (!invoiceId.startsWith('invoice_')) {
+        const altId = `invoice_${invoiceId}`;
+        const altInvoice = getInvoice(altId);
+        if (altInvoice) return handleInvoiceButton(interaction, action, altId);
+      }
+      
       return interaction.reply({
-        content: '❌ Invoice tidak ditemukan.',
+        content: '❌ Invoice tidak ditemukan. (ID: ' + invoiceId + ')',
         ephemeral: true
       });
     }
@@ -803,64 +810,78 @@ async function handleInvoiceMerge(interaction) {
  * Process mark paid modal submit - marks selected users as paid
  */
 async function processMarkPaidModal(interaction, invoiceId) {
-  const invoice = getInvoice(invoiceId);
-  if (!invoice) {
+  // Use the select-menu based handler instead for consistency
+  return handleMarkPaidSelect(interaction, invoiceId);
+}
+
+/**
+ * Handle mark paid select menu selection
+ */
+async function handleMarkPaidSelect(interaction, providedInvoiceId) {
+  try {
+    const customId = interaction.customId;
+    let invoiceId = providedInvoiceId;
+    
+    if (!invoiceId && customId.startsWith('mark_paid_select_')) {
+      const parts = customId.split('_');
+      // mark_paid_select_ID_PAGE
+      // Since ID can contain underscores, we need to be careful
+      // The format is mark(0)_paid(1)_select(2)_...ID..._PAGE(last)
+      invoiceId = parts.slice(3, -1).join('_');
+    }
+
+    let invoice = getInvoice(invoiceId);
+    if (!invoice && invoiceId && !invoiceId.startsWith('invoice_')) {
+      invoiceId = `invoice_${invoiceId}`;
+      invoice = getInvoice(invoiceId);
+    }
+
+    if (!invoice) {
+      return interaction.reply({ content: '❌ Invoice tidak ditemukan.', ephemeral: true });
+    }
+
+    // Permission check
+    if (invoice.creator.id !== interaction.user.id) {
+      return interaction.reply({ content: '❌ Hanya pembuat invoice yang bisa aksi ini.', ephemeral: true });
+    }
+
+    const selectedUserIds = interaction.values;
+    if (!selectedUserIds || selectedUserIds.length === 0) {
+      return interaction.reply({ content: '❌ Tidak ada peserta yang dipilih.', ephemeral: true });
+    }
+
+    const { markMultiplePaid } = require('../utils/invoice-db.cjs');
+    markMultiplePaid(invoiceId, selectedUserIds);
+
+    // Update original message
+    const updated = getInvoice(invoiceId);
+    const newEmbed = renderInvoiceEmbed(updated);
+    
+    if (invoice.messageId && invoice.channelId) {
+      try {
+        const channel = await interaction.guild.channels.fetch(invoice.channelId);
+        const msg = await channel.messages.fetch(invoice.messageId);
+        await msg.edit({
+          embeds: [newEmbed],
+          components: [buildInvoiceButtons(invoiceId)]
+        });
+      } catch (e) { console.error('Update err:', e); }
+    }
+
+    // Send notifications
+    for (const pId of selectedUserIds) {
+      const p = updated.participants.find(part => part.userId === pId);
+      if (p) await sendPaidNotification(updated, p, interaction.guild).catch(() => {});
+    }
+
     return interaction.reply({
-      content: '❌ Invoice tidak ditemukan.',
+      content: `✅ Berhasil menandai ${selectedUserIds.length} orang sebagai LUNAS!`,
       ephemeral: true
     });
+  } catch (error) {
+    console.error('Mark paid select error:', error);
+    await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
   }
-
-  // Permission check - only creator can mark paid
-  if (invoice.creator.id !== interaction.user.id) {
-    return interaction.reply({
-      content: '❌ Hanya pembuat invoice yang bisa mark paid.',
-      ephemeral: true
-    });
-  }
-
-  const unpaid = invoice.participants.filter(p => !p.paid);
-  const nowPaid = [];
-
-  // Check each input field (max 5 + 1 note field)
-  for (let i = 0; i < Math.min(unpaid.length, 5); i++) {
-    const value = interaction.fields.getTextInputValue(`paid_${i}`);
-    if (value && (value.toLowerCase().trim() === 'yes' || value.trim() === '✓' || value.toLowerCase().trim() === 'y')) {
-      const p = unpaid[i];
-      markMultiplePaid(invoiceId, [p.userId]);
-      nowPaid.push(p.username);
-    }
-  }
-
-  // Update invoice message
-  const updated = getInvoice(invoiceId);
-  const newEmbed = renderInvoiceEmbed(updated);
-
-  // Update the original message if we have the info
-  if (invoice.messageId && invoice.channelId) {
-    try {
-      const channel = await interaction.guild.channels.fetch(invoice.channelId);
-      const msg = await channel.messages.fetch(invoice.messageId);
-      await msg.edit({
-        embeds: [newEmbed],
-        components: [buildInvoiceButtons(invoiceId)]
-      });
-    } catch (err) {
-      console.error('Error updating invoice message:', err);
-    }
-  }
-
-  // Send notifications to newly paid users
-  for (const participant of updated.participants.filter(p => nowPaid.includes(p.username))) {
-    await sendPaidNotification(updated, participant, interaction.guild);
-  }
-
-  const remaining = updated.participants.filter(p => !p.paid).length;
-
-  return interaction.reply({
-    content: `✅ Berhasil menandai ${nowPaid.length} orang sebagai LUNAS!\n${remaining > 0 ? `Sisa ${remaining} orang belum lunas.` : '🎉 Semua lunas!'}`,
-    ephemeral: true
-  });
 }
 
 /**
@@ -1553,6 +1574,7 @@ module.exports = {
   invoiceCommandsSimple,
   handleInvoiceButton,
   handleInvoiceRefreshAll, 
+  handleMarkPaidSelect,
   buildMarkPaidComponent,
   sendInvoiceNotifications,
   sendPaidNotification,

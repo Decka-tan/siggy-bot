@@ -55,6 +55,7 @@ const {
   buildMarkPaidModal,
   buildAddPeopleModal,
   processMarkPaidModal,
+  handleMarkPaidSelect,
   invoiceCommandsSimple,
   sendPaidNotification,
   handleInvoiceRefreshAll,
