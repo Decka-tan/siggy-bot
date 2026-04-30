@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Lock,
   Unlock,
+  Plus,
   Edit2,
   CheckCircle2,
   XCircle,
