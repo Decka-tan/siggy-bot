@@ -48,7 +48,6 @@ const {
   handleInvoiceSearch,
   handleInvoiceAnalytics,
   handleInvoiceDelete,
-  handleInvoiceClear,
   handleInvoiceOwe,
   handleInvoiceMerge,
   handleAnalyticsPagination,
@@ -1551,7 +1550,6 @@ client.on('interactionCreate', async (interaction) => {
         case 'invoice-search': await handleInvoiceSearch(interaction); break;
         case 'invoice-analytics': await handleInvoiceAnalytics(interaction); break;
         case 'invoice-delete': await handleInvoiceDelete(interaction); break;
-        case 'invoice-clear': await handleInvoiceClear(interaction); break;
         case 'invoice-owe': await handleInvoiceOwe(interaction); break;
         case 'invoice-merge': await handleInvoiceMerge(interaction); break;
         case 'invoice-refresh': await handleInvoiceRefreshAll(interaction); break;
@@ -1561,19 +1559,6 @@ client.on('interactionCreate', async (interaction) => {
           await interaction.deferReply({ ephemeral: true });
           const remindResult = await sendAllReminders(interaction.client);
           await interaction.editReply(`✅ Berhasil mengirim pengingat ke **${remindResult.sentCount}** orang.\n❌ Gagal: **${remindResult.failCount}**`);
-          break;
-        case 'invoice-debtors':
-          const debtors = getAllDebtors(interaction.guildId);
-          if (debtors.length === 0) return interaction.reply({ content: '🎉 Tidak ada hutang tertunda di server ini!', ephemeral: true });
-          
-          let debtorList = '📋 **Daftar Penghutang:**\n\n';
-          debtors.forEach((d, i) => {
-            const discordId = d.userId || resolveName(d.username);
-            const status = discordId ? '🔗 Linked' : '❌ Unlinked';
-            debtorList += `${i+1}. **${d.username}** — Rp ${d.totalDebt.toLocaleString('id-ID')} (${status})\n`;
-          });
-          
-          await interaction.reply({ content: debtorList, ephemeral: true });
           break;
         case 'bayar': await handleBayar(interaction); break;
         case 'avatar': await handleAvatar(interaction); break;

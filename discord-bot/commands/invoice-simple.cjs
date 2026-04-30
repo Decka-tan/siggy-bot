@@ -1568,13 +1568,12 @@ const invoiceCommandsSimple = [
   },
   {
     name: 'invoice-refresh',
-    description: 'Refresh SEMUA invoice yang belum lunas (kirim ulang & hapus lama)',
+    description: 'Refresh SEMUA invoice di server ini yang belum lunas (kirim ulang & hapus lama)',
   },
   {
     name: 'invoice-remind',
     description: 'Kirim PM pengingat ke semua penghutang yang sudah terhubung (LINKED)',
   },
-  {
     name: 'invoice-debtors',
     description: 'Lihat daftar semua penghutang dan status koneksi ID Discord mereka',
   },
@@ -1587,8 +1586,9 @@ async function handleInvoiceRefreshAll(interaction) {
   try {
     await interaction.deferReply({ ephemeral: true });
     
-    const userId = interaction.user.id;
-    const invoices = getUserInvoices(userId);
+    // Get ALL invoices for this guild, not just the user's
+    const { getGuildInvoices } = require('../utils/invoice-db.cjs');
+    const invoices = getGuildInvoices(interaction.guildId);
     
     // Filter for unpaid or partially paid invoices
     const unpaid = invoices.filter(inv => inv.participants.some(p => !p.paid));
@@ -1693,7 +1693,6 @@ module.exports = {
   handleInvoiceAnalytics,
   handleAnalyticsPagination,
   handleInvoiceDelete,
-  handleInvoiceClear,
   handleInvoiceOwe,
   handleInvoiceMerge,
   handleFindDebtSelect,
