@@ -1459,744 +1459,225 @@ client.once('ready', () => {
   client.user.setActivity('/help | @Siggy to chat!', { type: 0 });
 });
 
-// Button interaction handler
+// ============ CONSOLIDATED INTERACTION HANDLER ============
 client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isButton()) return;
-
-  const { customId } = interaction;
-
-  if (customId.startsWith('copy_')) {
-    // Get the original message from the embed
-    const embed = interaction.message.embeds[0];
-    const content = embed ? embed.description : 'No content';
-    const title = embed ? embed.title : '';
-    await interaction.reply({
-      content: `📋 **Message copied!**\n\`\`\`\n${title ? title + '\n\n' : ''}${content.slice(0, 1900)}\n\`\`\``,
-      ephemeral: true,
-    });
-  } else if (customId.startsWith('like_') || customId.startsWith('dislike_')) {
-    await interaction.reply({
-      content: customId.startsWith('like_') ? '👍 You liked this message!' : '👎 You disliked this message.',
-      ephemeral: true,
-    });
-  } else if (customId.startsWith('reload_')) {
-    // Reload last command
-    const userId = interaction.user.id;
-    const lastCmd = getLastCommand(userId);
-
-    if (!lastCmd) {
-      return interaction.reply({ content: '❌ No previous command to reload.', ephemeral: true });
-    }
-
-    // Re-execute the command
-    const { name, options } = lastCmd;
-
-    // Handle reload for different commands
-    if (name === 'roll') {
-      const { handleRoll } = require('./commands/utility.cjs');
-
-      // Defer the original interaction first
-      await interaction.deferReply();
-
-      const mockInteraction = {
-        ...interaction,
-        user: interaction.user,
-        options: {
-          getInteger: (key) => options.count || 1,
-          getString: () => null,
-          getUser: () => interaction.user,
-        },
-        deferReply: async () => {},
-        editReply: async (msg) => {
-          await interaction.editReply(msg);
-        },
-      };
-      await handleRoll(mockInteraction, { saveCommand: false });
-    } else if (name === 'hug' || name === 'slap' || name === 'pat' || name === 'highfive') {
-      const { handleHug, handleSlap, handlePat, handleHighfive } = require('./commands/fun.cjs');
-      const handlers = { hug: handleHug, slap: handleSlap, pat: handlePat, highfive: handleHighfive };
-
-      const mockInteraction = {
-        ...interaction,
-        options: {
-          getUser: (key) => options.user || interaction.user,
-        },
-        reply: async (msg) => {
-          await interaction.reply(msg);
-        },
-      };
-      await handlers[name](mockInteraction);
-    } else if (name === 'fact') {
-      const { handleFact } = require('./commands/fun.cjs');
-      await handleFact(interaction);
-    } else if (name === 'flip') {
-      const { handleFlip } = require('./commands/utility.cjs');
-      await handleFlip(interaction);
-    } else if (name === 'chat') {
-      // Reload chat message - regenerate response
-      await interaction.deferReply();
-
-      const { message } = options;
+  try {
+    // 1. HANDLE SLASH COMMANDS
+    if (interaction.isChatInputCommand()) {
+      const { commandName } = interaction;
       const userId = interaction.user.id;
-      const state = getUserState(userId, interaction.guildId);
+      const channelId = interaction.channelId;
+      const guildId = interaction.guildId;
 
-      if (!state || !message) {
-        return interaction.editReply({ content: '❌ Could not reload chat message.', components: [] });
-      }
-
-      try {
-        // Get conversation history
-        const history = getConversationHistory(userId);
-        const cleanMessage = message.replace(/<[^>]*>/g, '').trim();
-
-        // Build request
-        const requestBody = {
-          message: cleanMessage,
-          conversationHistory: history,
-          userId,
-          isFirstMessage: history.length === 0,
-          userName: interaction.user.username,
-          currentForm: state.form,
-          relationshipScore: state.relationshipScore,
-        };
-
-        const response = await fetch(`${CONFIG.apiBaseUrl}/api/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
+      // Check if command is allowed in this channel
+      if (!isChannelAllowed(guildId, channelId)) {
+        return interaction.reply({
+          content: '❌ Bot commands are only allowed in specific channels.',
+          ephemeral: true
         });
-
-        if (!response.ok) {
-          throw new Error(`API ${response.status}: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        let botResponse = data.response || data.message || 'Nya? Something went wrong...';
-
-        // Extract mood
-        const moodMatch = botResponse.match(/\[MOOD:(\w+)\]\s*/i);
-        let mood = state.mood;
-        if (moodMatch) mood = moodMatch[1].toUpperCase();
-        else if (data.currentMood) mood = data.currentMood.toUpperCase();
-
-        const cleanResponse = botResponse.replace(/\[MOUD:[^\]]+\]\s*/gi, '').trim();
-        const spriteUrl = SPRITES[state.form][mood] || SPRITES[state.form].DEFAULT;
-        const embedColor = MOOD_COLORS[mood] || MOOD_COLORS.DEFAULT;
-        const moodEmoji = getMoodEmoji(mood);
-
-        const embed = new EmbedBuilder()
-          .setColor(embedColor)
-          .setAuthor({ name: `Siggy (${state.form}) 🔄`, iconURL: SPRITES.CAT.DEFAULT })
-          .setDescription(cleanResponse)
-          .setThumbnail(spriteUrl)
-          .setFooter({
-            text: `Reloaded • Mood: ${mood} ${moodEmoji}`
-          })
-          .setTimestamp();
-
-        const row = new ActionRowBuilder()
-          .addComponents(
-            new ButtonBuilder()
-              .setCustomId(`like_${interaction.id}`)
-              .setLabel('Like')
-              .setEmoji('✅')
-              .setStyle(ButtonStyle.Success),
-            new ButtonBuilder()
-              .setCustomId(`dislike_${interaction.id}`)
-              .setLabel('Dislike')
-              .setEmoji('❌')
-              .setStyle(ButtonStyle.Danger),
-            new ButtonBuilder()
-              .setCustomId(`reload_${interaction.id}`)
-              .setLabel('Reload')
-              .setEmoji('🔄')
-              .setStyle(ButtonStyle.Primary),
-          );
-
-        await interaction.editReply({ content: '', embeds: [embed], components: [row] });
-      } catch (error) {
-        console.error('Chat reload error:', error);
-        await interaction.editReply({ content: `❌ Reload failed: ${error.message}`, components: [] });
       }
-    } else {
-      await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
-    }
-  } else if (customId.startsWith('invoice_pay_')) {
-    try { await handleInvoiceButton(interaction, 'pay'); }
-    catch (e) { 
-      console.error('[Invoice Button Pay] Error:', e);
-      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
-      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
-    }
-  } else if (customId.startsWith('invoice_bayar_')) {
-    try { await handleInvoiceButton(interaction, 'bayar'); }
-    catch (e) { 
-      console.error('[Invoice Button Bayar] Error:', e);
-      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
-      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
-    }
-  } else if (customId.startsWith('invoice_settle_')) {
-    try { await handleInvoiceButton(interaction, 'settle'); }
-    catch (e) { 
-      console.error('[Invoice Button Settle] Error:', e);
-      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
-      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
-    }
-  } else if (customId.startsWith('invoice_add_')) {
-    try { await handleInvoiceButton(interaction, 'add'); }
-    catch (e) { 
-      console.error('[Invoice Button Add] Error:', e);
-      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
-      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
-    }
-  } else if (customId.startsWith('invoice_del_')) {
-    try { await handleInvoiceButton(interaction, 'delete'); }
-    catch (e) { 
-      console.error('[Invoice Button Delete] Error:', e);
-      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
-      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
-    }
-  } else if (customId.startsWith('mark_paid_page_')) {
-    try { await handleMarkPaidPage(interaction); }
-    catch (e) { console.error('[Mark Paid Pagination] Error:', e); }
-  } else if (customId.startsWith('analytics_prev_')) {
-    try { await handleAnalyticsPagination(interaction, 'prev'); }
-    catch (e) { console.error('[Analytics Pagination Prev] Error:', e); }
-  } else if (customId.startsWith('analytics_next_')) {
-    try { await handleAnalyticsPagination(interaction, 'next'); }
-    catch (e) { console.error('[Analytics Pagination Next] Error:', e); }
-  } else if (customId.startsWith('payment_confirm|')) {
-    try { await handlePaymentConfirm(interaction, 'confirm'); }
-    catch (e) { console.error('[Payment Confirm] Error:', e); }
-  } else if (customId.startsWith('payment_reject|')) {
-    try { await handlePaymentConfirm(interaction, 'reject'); }
-    catch (e) { console.error('[Payment Reject] Error:', e); }
-  }
-});
 
-// Modal submit handler
-client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isModalSubmit()) return;
-
-  const { customId } = interaction;
-
-  try {
-    if (customId === 'invoice_create_modal') {
-      await processInvoiceCreateModal(interaction);
-    } else if (customId === 'invoice_create' || customId === 'invoice_details') {
-      await handleInvoiceModal(interaction, 'invoice_create');
-    } else if (customId === 'invoice_add_participants') {
-      await handleInvoiceModal(interaction, 'invoice_add_participants');
-    } else if (customId.startsWith('mark_paid_modal_')) {
-      // New: Use modal instead of dropdown for mark paid
-      const invoiceId = customId.replace('mark_paid_modal_', '');
-      await processMarkPaidModal(interaction, invoiceId);
-    } else if (customId.startsWith('mark_paid_select_')) {
-      // Old: Handle dropdown selection (backward compatibility)
-      await handleInvoiceModal(interaction, customId);
-    } else if (customId.startsWith('mark_paid_')) {
-      await handleInvoiceModal(interaction, customId);
-    } else if (customId.startsWith('add_people_modal_')) {
-      await handleAddPeopleSubmit(interaction);
-    } else if (customId === 'clear_invoice_modal') {
-      await handleClearInvoiceModal(interaction);
-    } else if (customId === 'payment_set_modal') {
-      await processPaymentSetModal(interaction);
-    }
-  } catch (error) {
-    console.error('[Modal Handler] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
-    }
-  }
-});
-
-// String select menu handler
-client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  const { customId } = interaction;
-
-  try {
-    if (customId.startsWith('mark_paid_select_')) {
-      await handleMarkPaidSelect(interaction);
-    } else if (customId === 'delete_invoice_select') {
-      await handleDeleteInvoiceSelect(interaction);
-    } else if (customId === 'find_debt_select') {
-      const { handleFindDebtSelect } = require('./commands/invoice-simple.cjs');
-      await handleFindDebtSelect(interaction);
-    } else if (customId === 'bayar_select_invoice') {
-      await handleBayarSelectInvoice(interaction);
-    } else if (customId.startsWith('bayar_select_person_')) {
-      await handleBayarSelectPerson(interaction);
-    }
-  } catch (error) {
-    console.error('[Select Menu Handler] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
-    }
-  }
-});
-
-/**
- * Handle mark paid select menu
- */
-/**
- * Handle mark paid select menu with pagination support
- */
-async function handleMarkPaidSelect(interaction) {
-  try {
-    // Acknowledge the interaction immediately to prevent timeout
-    await interaction.deferUpdate();
-    
-    const parts = interaction.customId.split('_');
-    const page = parseInt(parts.pop()) || 0;
-    const invoiceId = parts.slice(3).join('_'); // Get everything after 'mark_paid_select_'
-    const selectedValues = interaction.values;
-
-    const invoice = getInvoice(invoiceId);
-    if (!invoice) return interaction.editReply({ content: '❌ Invoice tidak ditemukan.', components: [] });
-
-    // Mark selected users as paid
-    const result = markMultiplePaid(invoiceId, selectedValues);
-    if (!result.success) return interaction.editReply({ content: `❌ Error: ${result.error}`, components: [] });
-
-    const updatedInvoice = getInvoice(invoiceId);
-    const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
-
-    // Update the MAIN invoice message
-    if (updatedInvoice.messageId && updatedInvoice.channelId) {
-      try {
-        const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-        const msg = await channel.messages.fetch(updatedInvoice.messageId);
-        await msg.edit({
-          embeds: [renderInvoiceEmbed(updatedInvoice)],
-          components: [buildInvoiceButtons(updatedInvoice.id)]
+      // Check cooldown
+      const remainingCooldown = checkCooldown(userId, commandName);
+      if (remainingCooldown > 0) {
+        const seconds = Math.ceil(remainingCooldown / 1000);
+        return interaction.reply({
+          content: `⏳ Please wait ${seconds} second${seconds > 1 ? 's' : ''} before using another command.`,
+          ephemeral: true
         });
-      } catch (err) { console.log('[Invoice] Update main failed:', err.message); }
-    }
+      }
+      updateCooldown(userId, commandName);
 
-    // Final confirmation to the user
-    await interaction.editReply({
-      content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai LUNAS!`,
-      components: []
-    });
-  } catch (err) { 
-    console.error('[Mark Paid Select] Error:', err); 
-    if (interaction.deferred || interaction.replied) {
-      await interaction.editReply({ content: `❌ Error: ${err.message}`, components: [] }).catch(() => {});
-    } else {
-      await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
-    }
-  }
-}
-
-/**
- * Handle pagination for mark paid select menu
- */
-async function handleMarkPaidPage(interaction) {
-  try {
-    await interaction.deferUpdate();
-    const parts = interaction.customId.split('_');
-    const page = parseInt(parts.pop()) || 0;
-    const invoiceId = parts.slice(3).join('_');
-
-    const invoice = getInvoice(invoiceId);
-    if (!invoice) return interaction.editReply({ content: '❌ Invoice tidak ditemukan.', components: [] });
-
-    const unpaid = invoice.participants.filter(p => !p.paid);
-    const { buildMarkPaidComponent, safeInvoiceTitle } = require('./commands/invoice-simple.cjs');
-    const components = buildMarkPaidComponent(invoiceId, unpaid, page);
-
-    await interaction.editReply({
-      content: `🔍 **Tandai Lunas - ${safeInvoiceTitle(invoice.title)}**\nSilakan pilih peserta (Hal ${page + 1}):`,
-      components: components
-    });
-  } catch (err) { 
-    console.error('[Mark Paid Page] Error:', err); 
-    if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
-  }
-}
-
-
-/**
- * Handle add people modal submit
- */
-async function handleAddPeopleSubmit(interaction) {
-  try {
-    const customId = interaction.customId;
-    const invoiceId = customId.replace('add_people_modal_', '');
-
-    const invoice = getInvoice(invoiceId);
-    if (!invoice) {
-      return interaction.reply({
-        content: '❌ Invoice tidak ditemukan.',
-        ephemeral: true
-      });
-    }
-
-    // Check if the user is the creator
-    if (invoice.creator.id !== interaction.user.id) {
-      return interaction.reply({
-        content: '❌ Hanya pembuat invoice yang bisa aksi ini.',
-        ephemeral: true
-      });
-    }
-
-    const userMentions = interaction.fields.getTextInputValue('user_mentions');
-    const amountStr = interaction.fields.getTextInputValue('amount');
-    const notes = interaction.fields.getTextInputValue('notes') || '';
-
-    // Parse amount
-    let amount = parseInt(amountStr.toLowerCase().replace('k', '000').replace(/\D/g, ''));
-    if (amountStr.toLowerCase().includes('k')) {
-      amount = parseInt(amountStr.replace('k', '000')) || amount;
-    }
-
-    if (!amount || amount <= 0) {
-      return interaction.reply({
-        content: '❌ Jumlah harus lebih dari 0.',
-        ephemeral: true
-      });
-    }
-
-    // Parse participants
-    const participants = [];
-    const inputs = userMentions.split(',').map(s => s.trim()).filter(s => s);
-
-    for (const input of inputs) {
-      // Check if it's a mention
-      const mentionMatch = input.match(/<@!?(\d+)>/);
-      let userId = null;
-      let username = input;
-
-      if (mentionMatch) {
-        userId = mentionMatch[1];
+      // Collect options for reload support
+      const options = {};
+      if (interaction.options) {
         try {
-          const member = await interaction.guild.members.fetch(userId);
-          username = member.user.username;
-        } catch {
-          username = input;
+          const count = interaction.options.getInteger('count');
+          const user = interaction.options.getUser('user');
+          const target = interaction.options.getString('target');
+          const items = interaction.options.getString('items');
+          const choice = interaction.options.getString('choice');
+          const amount = interaction.options.getInteger('amount');
+          const title = interaction.options.getString('title');
+          const message = interaction.options.getString('message');
+
+          if (count !== null) options.count = count;
+          if (user) options.user = user;
+          if (target) options.target = target;
+          if (items) options.items = items;
+          if (choice) options.choice = choice;
+          if (amount !== null) options.amount = amount;
+          if (title) options.title = title;
+          if (message) options.message = message;
+        } catch (e) {}
+      }
+
+      // Execute commands
+      switch (commandName) {
+        case 'check': await handleCheck(interaction); break;
+        case 'research': await handleResearch(interaction); break;
+        case 'transform': await handleTransform(interaction); break;
+        case 'mood': await handleMood(interaction); break;
+        case 'reset': await handleReset(interaction); break;
+        case 'stats': await handleStats(interaction); break;
+        case 'top': await handleTop(interaction); break;
+        case 'help': await handleHelp(interaction); break;
+        case 'price': await handlePrice(interaction); break;
+        case 'trending': await handleTrending(interaction); break;
+        case 'chart': await handleChart(interaction); break;
+        case 'leaderboard':
+          const subcommand = interaction.options.getSubcommand();
+          if (subcommand === 'start') await handleLeaderboardStart(interaction);
+          else if (subcommand === 'add') await handleLeaderboardAdd(interaction);
+          else if (subcommand === 'end') await handleLeaderboardEnd(interaction);
+          break;
+        case 'invoice-create': await handleInvoiceCreateSimple(interaction); break;
+        case 'invoice-recap': await handleInvoiceRecap(interaction); break;
+        case 'invoice-search': await handleInvoiceSearch(interaction); break;
+        case 'invoice-analytics': await handleInvoiceAnalytics(interaction); break;
+        case 'invoice-delete': await handleInvoiceDelete(interaction); break;
+        case 'invoice-clear': await handleInvoiceClear(interaction); break;
+        case 'invoice-owe': await handleInvoiceOwe(interaction); break;
+        case 'invoice-merge': await handleInvoiceMerge(interaction); break;
+        case 'payment-set': await handlePaymentSet(interaction); break;
+        case 'invoice-link': await handleInvoiceLink(interaction); break;
+        case 'bayar': await handleBayar(interaction); break;
+        case 'avatar': await handleAvatar(interaction); break;
+        case 'choose': await handleChoose(interaction); break;
+        case 'flip':
+          setLastCommand(userId, 'flip', options);
+          await handleFlip(interaction);
+          break;
+        case 'roll':
+          setLastCommand(userId, 'roll', options);
+          await handleRoll(interaction);
+          break;
+        case 'hug':
+          setLastCommand(userId, 'hug', options);
+          const { handleHug } = require('./commands/fun.cjs');
+          await handleHug(interaction);
+          break;
+        case 'slap':
+          setLastCommand(userId, 'slap', options);
+          const { handleSlap } = require('./commands/fun.cjs');
+          await handleSlap(interaction);
+          break;
+        case 'pat':
+          setLastCommand(userId, 'pat', options);
+          const { handlePat } = require('./commands/fun.cjs');
+          await handlePat(interaction);
+          break;
+        case 'highfive':
+          setLastCommand(userId, 'highfive', options);
+          const { handleHighfive } = require('./commands/fun.cjs');
+          await handleHighfive(interaction);
+          break;
+        case 'fact':
+          setLastCommand(userId, 'fact', options);
+          const { handleFact } = require('./commands/fun.cjs');
+          await handleFact(interaction);
+          break;
+        case 'quote': await handleQuote(interaction); break;
+        case 'shuffle': await handleShuffle(interaction); break;
+        case 'rate': await handleRate(interaction); break;
+        case 'howgay': await handleHowGay(interaction); break;
+        case 'simp': await handleSimp(interaction); break;
+      }
+      return;
+    }
+
+    // 2. HANDLE BUTTONS
+    if (interaction.isButton()) {
+      const { customId } = interaction;
+
+      // Basic buttons
+      if (customId.startsWith('copy_')) {
+        const embed = interaction.message.embeds[0];
+        const content = embed ? embed.description : 'No content';
+        const title = embed ? embed.title : '';
+        return interaction.reply({
+          content: `📋 **Message copied!**\n\`\`\`\n${title ? title + '\n\n' : ''}${content.slice(0, 1900)}\n\`\`\``,
+          ephemeral: true,
+        });
+      }
+      
+      if (customId.startsWith('like_') || customId.startsWith('dislike_')) {
+        return interaction.reply({
+          content: customId.startsWith('like_') ? '👍 You liked this message!' : '👎 You disliked this message.',
+          ephemeral: true,
+        });
+      }
+
+      // Reload logic
+      if (customId.startsWith('reload_')) {
+        const lastCmd = getLastCommand(interaction.user.id);
+        if (!lastCmd) return interaction.reply({ content: '❌ No previous command to reload.', ephemeral: true });
+        
+        const { name } = lastCmd;
+        if (name === 'roll' || name === 'flip') {
+          await interaction.deferReply();
+          const { handleRoll, handleFlip } = require('./commands/utility.cjs');
+          if (name === 'roll') await handleRoll(interaction, { saveCommand: false });
+          else await handleFlip(interaction);
+        } else if (['hug', 'slap', 'pat', 'highfive', 'fact'].includes(name)) {
+          const { handleHug, handleSlap, handlePat, handleHighfive, handleFact } = require('./commands/fun.cjs');
+          const handlers = { hug: handleHug, slap: handleSlap, pat: handlePat, highfive: handleHighfive, fact: handleFact };
+          await handlers[name](interaction);
+        } else {
+          await interaction.reply({ content: `❌ Reload not supported for /${name}`, ephemeral: true });
         }
-      } else {
-        // Try to find by username
-        try {
-          const member = interaction.guild.members.cache.find(
-            m => m.user.username.toLowerCase() === input.toLowerCase()
-          );
-          if (member) {
-            userId = member.id;
-            username = member.user.username;
-          }
-        } catch {}
+        return;
       }
 
-      participants.push({
-        userId,
-        username: notes ? `${username} (${notes})` : username,
-        amount
-      });
+      // Invoice & Payment Buttons
+      if (customId.startsWith('invoice_pay_')) return handleInvoiceButton(interaction, 'pay');
+      if (customId.startsWith('invoice_bayar_')) return handleInvoiceButton(interaction, 'bayar');
+      if (customId.startsWith('invoice_settle_')) return handleInvoiceButton(interaction, 'settle');
+      if (customId.startsWith('invoice_add_')) return handleInvoiceButton(interaction, 'add');
+      if (customId.startsWith('invoice_del_')) return handleInvoiceButton(interaction, 'delete');
+      if (customId.startsWith('mark_paid_page_')) return handleMarkPaidPage(interaction);
+      if (customId.startsWith('analytics_prev_')) return handleAnalyticsPagination(interaction, 'prev');
+      if (customId.startsWith('analytics_next_')) return handleAnalyticsPagination(interaction, 'next');
+      if (customId.startsWith('payment_confirm|')) return handlePaymentConfirm(interaction, 'confirm');
+      if (customId.startsWith('payment_reject|')) return handlePaymentConfirm(interaction, 'reject');
+      
+      return;
     }
 
-    if (participants.length === 0) {
-      return interaction.reply({
-        content: '❌ Tidak ada user valid ditemukan.',
-        ephemeral: true
-      });
-    }
-
-    // Add participants
-    const result = addParticipants(invoiceId, participants);
-
-    if (!result.success) {
-      return interaction.reply({
-        content: `❌ Error: ${result.error}`,
-        ephemeral: true
-      });
-    }
-
-    // Get updated invoice
-    const updatedInvoice = getInvoice(invoiceId);
-    const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
-
-    const embed = renderInvoiceEmbed(updatedInvoice);
-    const components = buildInvoiceButtons(updatedInvoice.id);
-
-    // Get channel and delete old invoice message if exists
-    const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
-
-    // Delete the original invoice message (the one with buttons)
-    if (updatedInvoice.messageId) {
-      try {
-        const oldMessage = await channel.messages.fetch(updatedInvoice.messageId);
-        await oldMessage.delete();
-      } catch (err) {
-        console.log(`[Invoice] Could not delete old message: ${err.message}`);
+    // 3. HANDLE SELECT MENUS
+    if (interaction.isStringSelectMenu()) {
+      const { customId } = interaction;
+      if (customId.startsWith('mark_paid_select_')) return handleMarkPaidSelect(interaction);
+      if (customId === 'delete_invoice_select') return handleDeleteInvoiceSelect(interaction);
+      if (customId === 'find_debt_select') {
+        const { handleFindDebtSelect } = require('./commands/invoice-simple.cjs');
+        return handleFindDebtSelect(interaction);
       }
+      if (customId === 'bayar_select_invoice') return handleBayarSelectInvoice(interaction);
+      if (customId.startsWith('bayar_select_person_')) return handleBayarSelectPerson(interaction);
+      return;
     }
 
-    // Send new updated invoice message
-    const newMessage = await channel.send({
-      content: `✅ ${participants.length} orang ditambahkan!`,
-      embeds: [embed],
-      components: [components]
-    });
-
-    // Update messageId in database
-    const { updateInvoiceMessage } = require('./utils/invoice-db.cjs');
-    updateInvoiceMessage(updatedInvoice.id, newMessage.id);
-
-    await interaction.reply({
-      content: `✅ Berhasil menambahkan ${participants.length} orang! Message lama dihapus.`,
-      ephemeral: true
-    });
+    // 4. HANDLE MODAL SUBMITS
+    if (interaction.isModalSubmit()) {
+      const { customId } = interaction;
+      if (customId === 'invoice_create_modal') return processInvoiceCreateModal(interaction);
+      if (customId.startsWith('mark_paid_modal_')) return processMarkPaidModal(interaction, customId.replace('mark_paid_modal_', ''));
+      if (customId.startsWith('add_people_modal_')) return handleAddPeopleSubmit(interaction);
+      if (customId === 'payment_set_modal') return processPaymentSetModal(interaction);
+      if (customId === 'clear_invoice_modal') return handleClearInvoiceModal(interaction);
+      return;
+    }
 
   } catch (error) {
-    console.error('[Add People Modal] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: `❌ Error: ${error.message}`,
-        ephemeral: true
-      });
-    }
-  }
-}
-
-/**
- * Handle delete invoice select menu
- */
-async function handleDeleteInvoiceSelect(interaction) {
-  try {
-    const selectedIds = interaction.values;
-    let deletedCount = 0;
-
-    for (const invoiceId of selectedIds) {
-      const result = deleteInvoice(invoiceId);
-      if (result.success) {
-        deletedCount++;
-      }
-    }
-
-    await interaction.update({
-      content: `🗑️ Berhasil menghapus ${deletedCount} invoice!`,
-      components: []
-    });
-  } catch (error) {
-    console.error('[Delete Invoice Select] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: `❌ Error: ${error.message}`,
-        ephemeral: true
-      });
-    }
-  }
-}
-
-/**
- * Handle clear all invoices modal
- */
-async function handleClearInvoiceModal(interaction) {
-  try {
-    const confirm = interaction.fields.getTextInputValue('confirm');
-
-    if (confirm !== 'DELETE') {
-      return interaction.reply({
-        content: '❌ Dibatalkan. Ketik "DELETE" untuk konfirmasi.',
-        ephemeral: true
-      });
-    }
-
-    const { getUserInvoices } = require('./utils/invoice-db.cjs');
-    const invoices = getUserInvoices(interaction.user.id);
-
-    let deletedCount = 0;
-    for (const invoice of invoices) {
-      const result = deleteInvoice(invoice.id);
-      if (result.success) {
-        deletedCount++;
-      }
-    }
-
-    await interaction.reply({
-      content: `🗑️ Berhasil menghapus ${deletedCount} invoice!`,
-      ephemeral: true
-    });
-  } catch (error) {
-    console.error('[Clear Invoice Modal] Error:', error);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply({
-        content: `❌ Error: ${error.message}`,
-        ephemeral: true
-      });
-    }
-  }
-}
-
-client.on('interactionCreate', async (interaction) => {
-  if (!interaction.isChatInputCommand()) return;
-
-  const { commandName } = interaction;
-  const userId = interaction.user.id;
-  const channelId = interaction.channelId;
-  const guildId = interaction.guildId;
-
-  // Check if command is allowed in this channel (per-server)
-  if (!isChannelAllowed(guildId, channelId)) {
-    return interaction.reply({
-      content: '❌ Bot commands are only allowed in specific channels. Please use the designated channels.',
-      ephemeral: true
-    });
-  }
-
-  // Check cooldown
-  const remainingCooldown = checkCooldown(userId, commandName);
-  if (remainingCooldown > 0) {
-    const seconds = Math.ceil(remainingCooldown / 1000);
-    return interaction.reply({
-      content: `⏳ Please wait ${seconds} second${seconds > 1 ? 's' : ''} before using another command.`,
-      ephemeral: true
-    });
-  }
-
-  // Update cooldown after successful check
-  updateCooldown(userId, commandName);
-
-  // Collect options for reload
-  const options = {};
-  if (interaction.options) {
+    console.error('[Consolidated Interaction Handler] Global Error:', error);
     try {
-      const count = interaction.options.getInteger('count');
-      const user = interaction.options.getUser('user');
-      const target = interaction.options.getString('target');
-      const items = interaction.options.getString('items');
-      const choice = interaction.options.getString('choice');
-      const amount = interaction.options.getInteger('amount');
-
-      if (count !== null) options.count = count;
-      if (user) options.user = user;
-      if (target) options.target = target;
-      if (items) options.items = items;
-      if (choice) options.choice = choice;
-      if (amount !== null) options.amount = amount;
-    } catch (e) {
-      // Skip options extraction if failed
-    }
-  }
-
-  try {
-    switch (commandName) {
-      case 'check': await handleCheck(interaction); break;
-      case 'research': await handleResearch(interaction); break;
-      case 'transform': await handleTransform(interaction); break;
-      case 'mood': await handleMood(interaction); break;
-      case 'reset': await handleReset(interaction); break;
-      case 'stats': await handleStats(interaction); break;
-      case 'top': await handleTop(interaction); break;
-      case 'help': await handleHelp(interaction); break;
-      // Crypto commands
-      case 'price': await handlePrice(interaction); break;
-      case 'trending': await handleTrending(interaction); break;
-      case 'chart': await handleChart(interaction); break;
-      // Leaderboard commands
-      case 'leaderboard':
-        const subcommand = interaction.options.getSubcommand();
-        switch (subcommand) {
-          case 'start': await handleLeaderboardStart(interaction); break;
-          case 'add': await handleLeaderboardAdd(interaction); break;
-          case 'end': await handleLeaderboardEnd(interaction); break;
-        }
-        break;
-      // Invoice commands
-      case 'invoice':
-        const invoiceSubcommand = interaction.options.getSubcommand();
-        if (invoiceSubcommand === 'recap') {
-          await handleInvoiceRecap(interaction);
-        }
-        break;
-      case 'invoice-create':
-        await handleInvoiceCreateSimple(interaction);
-        break;
-      case 'invoice-recap':
-        await handleInvoiceRecap(interaction);
-        break;
-      case 'invoice-search':
-        await handleInvoiceSearch(interaction);
-        break;
-      case 'invoice-analytics':
-        await handleInvoiceAnalytics(interaction);
-        break;
-      case 'invoice-delete':
-        await handleInvoiceDelete(interaction);
-        break;
-      case 'invoice-clear':
-        await handleInvoiceClear(interaction);
-        break;
-      case 'invoice-owe':
-        await handleInvoiceOwe(interaction);
-        break;
-      case 'invoice-merge':
-        await handleInvoiceMerge(interaction);
-        break;
-      // Payment commands
-      case 'payment-set':
-        await handlePaymentSet(interaction);
-        break;
-      case 'invoice-link':
-        await handleInvoiceLink(interaction);
-        break;
-      case 'bayar':
-        await handleBayar(interaction);
-        break;
-      // Utility commands - save for reload
-      case 'flip':
-        setLastCommand(interaction.user.id, 'flip', options);
-        await handleFlip(interaction);
-        break;
-      case 'roll':
-        setLastCommand(interaction.user.id, 'roll', options);
-        await handleRoll(interaction);
-        break;
-      case 'avatar': await handleAvatar(interaction); break;
-      case 'choose': await handleChoose(interaction); break;
-      // Fun commands - save for reload
-      case 'hug':
-        setLastCommand(interaction.user.id, 'hug', options);
-        await handleHug(interaction);
-        break;
-      case 'slap':
-        setLastCommand(interaction.user.id, 'slap', options);
-        await handleSlap(interaction);
-        break;
-      case 'pat':
-        setLastCommand(interaction.user.id, 'pat', options);
-        await handlePat(interaction);
-        break;
-      case 'highfive':
-        setLastCommand(interaction.user.id, 'highfive', options);
-        await handleHighfive(interaction);
-        break;
-      case 'fact':
-        setLastCommand(interaction.user.id, 'fact', options);
-        await handleFact(interaction);
-        break;
-      case 'quote': await handleQuote(interaction); break;
-      case 'shuffle': await handleShuffle(interaction); break;
-      case 'rate': await handleRate(interaction); break;
-      case 'howgay': await handleHowGay(interaction); break;
-      case 'simp': await handleSimp(interaction); break;
-    }
-  } catch (error) {
-    console.error('Command error:', error);
-    // Reply to user with error message
-    try {
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({ content: `❌ Error: ${error.message || 'Unknown error occurred'}`, components: [] });
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: `❌ Interaction Error: ${error.message}`, ephemeral: true });
       } else {
-        await interaction.reply({ content: `❌ Error: ${error.message || 'Unknown error occurred'}`, ephemeral: true });
+        await interaction.editReply({ content: `❌ Interaction Error: ${error.message}`, components: [] });
       }
-    } catch (e) {
-      console.error('Failed to send error message:', e);
-    }
+    } catch (e) { console.error('Failed to report interaction error:', e); }
   }
 });
 
