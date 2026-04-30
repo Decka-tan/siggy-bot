@@ -92,14 +92,17 @@ function buildReminderEmbed(debtor) {
     .setFooter({ text: 'Siggy - Multiversal Cat Girl' });
 }
 
-// Helper to get payment info by username (since we might not have creator's ID here)
+// Helper to get payment info by username
 function getPaymentInfoByName(username) {
-  const { readDB: readPaymentDB, resolveName: resolve } = require('./payment-db.cjs');
-  const discordId = resolve(username);
-  if (!discordId) return null;
+  const { getPaymentInfo } = require('./payment-db.cjs');
+  const info = getPaymentInfo(username);
+  if (!info) return null;
   
-  const db = readPaymentDB();
-  return db.payments[discordId] || null;
+  return {
+    bank: info.bank,
+    number: info.account || info.number,
+    name: info.name
+  };
 }
 
 module.exports = {

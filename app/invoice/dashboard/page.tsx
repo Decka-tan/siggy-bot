@@ -740,27 +740,32 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                           <div className="py-12 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary text-sm">No payment accounts set yet.</p></div>
                         ) : (
                           Object.entries(data.allPayments).map(([key, info]: [string, any], i) => {
-                            if (!info) return null;
+                            if (!info || typeof info !== 'object') return null;
+                            const dUser = info.discordUser || "N/A";
+                            const hName = info.name || "N/A";
+                            const bName = info.bank || "BCA";
+                            const aNum = info.account || "N/A";
+                            
                             return (
-                              <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface/30 p-5 transition-all hover:border-accent/30 hover:bg-surface/40">
+                              <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface/30 p-5 transition-all">
                                 <div className="flex justify-between items-start">
                                   <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                      <h4 className="text-sm font-bold text-accent uppercase tracking-wide">{key}</h4>
-                                      <span className="text-[10px] text-text-secondary font-mono">(@{info.discordUser || "N/A"})</span>
+                                      <h4 className="text-sm font-bold text-accent uppercase tracking-wide">{String(key)}</h4>
+                                      <span className="text-[10px] text-text-secondary font-mono">(@{String(dUser)})</span>
                                     </div>
-                                    <p className="text-xs font-medium text-text-primary mb-3">A.N {info.name || "N/A"}</p>
+                                    <p className="text-xs font-medium text-text-primary mb-3">A.N {String(hName)}</p>
                                     <div className="flex items-center gap-3">
-                                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{info.bank || "BCA"}</span>
-                                      <span className="font-mono text-xs text-text-primary tracking-wider">{info.account || "N/A"}</span>
+                                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{String(bName)}</span>
+                                      <span className="font-mono text-xs text-text-primary tracking-wider">{String(aNum)}</span>
                                     </div>
                                   </div>
                                   <div className="flex flex-col gap-2">
-                                    <form action={deletePaymentAction} onSubmit={(e) => { if(!confirm(`Hapus data ${key}?`)) e.preventDefault(); }}>
-                                      <input type="hidden" name="name" value={key} />
+                                    <form action={deletePaymentAction}>
+                                      <input type="hidden" name="name" value={String(key)} />
                                       <input type="hidden" name="tab" value="payments" />
-                                      <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/10 hover:bg-red-500 flex items-center justify-center text-red-400 hover:text-white transition-all">
-                                        <Trash2 className="h-4 w-4" />
+                                      <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all">
+                                        <CreditCard className="h-4 w-4" />
                                       </button>
                                     </form>
                                     <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-text-secondary">

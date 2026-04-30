@@ -17,7 +17,7 @@ function initDB() {
 
   if (!fs.existsSync(DB_FILE)) {
     fs.writeFileSync(DB_FILE, JSON.stringify({
-      payments: {},    // discordId -> { bank, number, name }
+      payments: {},    // creatorName -> { bank, account, name, discordUser, updatedAt }
       nameLinks: {}    // nameLower -> { discordId, discordUsername, aliases[] }
     }, null, 2));
   }
@@ -60,26 +60,29 @@ function writeDB(data) {
 /**
  * Set payment info for a Discord user
  */
-function setPaymentInfo(discordId, paymentData) {
+function setPaymentInfo(creatorName, paymentData) {
   const db = readDB();
+  const key = creatorName.toLowerCase().trim();
 
-  db.payments[discordId] = {
+  db.payments[key] = {
     bank: paymentData.bank || '',
-    number: paymentData.number || '',
+    account: paymentData.account || paymentData.number || '',
     name: paymentData.name || '',
+    discordUser: paymentData.discordUser || '',
     updatedAt: Date.now()
   };
 
   writeDB(db);
-  return { success: true, data: db.payments[discordId] };
+  return { success: true, data: db.payments[key] };
 }
 
 /**
  * Get payment info by Discord ID
  */
-function getPaymentInfo(discordId) {
+function getPaymentInfo(key) {
   const db = readDB();
-  return db.payments[discordId] || null;
+  const k = key.toLowerCase().trim();
+  return db.payments[k] || null;
 }
 
 /**
