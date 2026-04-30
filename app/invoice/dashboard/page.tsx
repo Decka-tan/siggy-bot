@@ -757,7 +757,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                                         dangerouslySetInnerHTML={{ __html: `
                                           <button 
                                             onclick="navigator.clipboard.writeText('${info.account}'); alert('Nomor rekening ${key.toUpperCase()} disalin!');"
-                                            class="text-text-secondary hover:text-accent opacity-0 group-hover/copy:opacity-100 transition-all cursor-pointer p-1"
+                                            class="text-accent hover:text-white transition-all cursor-pointer p-1.5 bg-white/5 rounded-md border border-white/5 hover:border-accent/50"
                                             title="Copy Account Number"
                                           >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
@@ -768,16 +768,16 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                                   </div>
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                  <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-text-secondary group-hover:text-accent transition-colors">
-                                    <CreditCard className="h-5 w-5" />
-                                  </div>
                                   <form action={deletePaymentAction} onSubmit={(e) => { if(!confirm(`Hapus data pembayaran untuk ${key}?`)) e.preventDefault(); }}>
                                     <input type="hidden" name="name" value={key} />
                                     <input type="hidden" name="tab" value="payments" />
-                                    <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 flex items-center justify-center text-red-400/40 hover:text-red-400 transition-all">
+                                    <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 flex items-center justify-center text-red-400 hover:text-white transition-all group/del">
                                       <Trash2 className="h-4 w-4" />
                                     </button>
                                   </form>
+                                  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-text-secondary">
+                                    <CreditCard className="h-5 w-5" />
+                                  </div>
                                 </div>
                               </div>
                             </div>
