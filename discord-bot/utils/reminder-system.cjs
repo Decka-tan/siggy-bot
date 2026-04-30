@@ -47,8 +47,11 @@ async function sendAllReminders(client, guildId = null) {
       } catch (e) {}
     }
 
-    if (!discordId) {
-      results.push({ name: debtor.username, status: 'skipped', reason: 'No Discord link' });
+    // VALIDASI: Hanya proses kalo ID-nya beneran angka (Snowflake)
+    const isSnowflake = discordId && /^\d{17,20}$/.test(discordId);
+
+    if (!isSnowflake) {
+      results.push({ name: debtor.username, status: 'skipped', reason: 'No valid Discord ID/Link' });
       continue;
     }
 
@@ -64,7 +67,11 @@ async function sendAllReminders(client, guildId = null) {
     } catch (error) {
       console.error(`Failed to remind ${debtor.username}:`, error.message);
       failCount++;
-      results.push({ name: debtor.username, status: 'failed', error: error.message });
+      
+      let reason = error.message;
+      if (error.code === 50007) reason = 'DMs Closed/Blocked';
+      
+      results.push({ name: debtor.username, status: 'failed', error: reason });
     }
   }
 
