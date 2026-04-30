@@ -27,6 +27,8 @@ import {
   Save,
   Trash2,
   ExternalLink,
+  ChevronRight,
+  AlertCircle,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -53,28 +55,12 @@ async function loginAction(formData: FormData) {
     cookies().set(COOKIE_NAME, session, { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
       path: '/' 
     });
     return redirect('/invoice/dashboard');
   }
   return redirect('/invoice/dashboard?error=invalid');
-}
-
-async function updateInvoiceAction(formData: FormData) {
-  'use server';
-  if (!(await checkAuth())) return;
-
-  const invoiceId = formData.get('id') as string;
-  const newTitle = formData.get('title') as string;
-  const dbPath = getInvoiceDbPath();
-  
-  const { db } = getInvoiceDb();
-  if (db.invoices && db.invoices[invoiceId]) {
-    db.invoices[invoiceId].title = newTitle;
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
-  }
-  return redirect(`/invoice/dashboard?tab=logs&msg=updated`);
 }
 
 async function markPaidAction(invoiceId: string, participantIndex: number, isPaid: boolean) {
@@ -266,7 +252,7 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
       debtorStats.totalDebt += Number(participant.amount || 0);
       debtorStats.unpaidCount += 1;
       debtorStats.invoiceCount += 1;
-      debtorStats.invoices.push({ title: invoice.title, amount: participant.amount, date: invoice.date });
+      debtorStats.invoices.push({ id: invoice.id, title: invoice.title, amount: participant.amount, date: invoice.date });
       debtorMap.set(debtorKey, debtorStats);
     }
   }
@@ -279,7 +265,7 @@ function buildDashboardData(selectedGuildId?: string): DashboardData {
     paidAmount,
     guilds,
     topCreators: Array.from(creatorMap.values()).sort((a, b) => b.totalCreated - a.totalCreated).slice(0, 5),
-    topDebtors: Array.from(debtorMap.values()).sort((a, b) => b.totalDebt - a.totalDebt).slice(0, 20),
+    topDebtors: Array.from(debtorMap.values()).sort((a, b) => b.totalDebt - a.totalDebt).slice(0, 40),
     monthlyStats: Array.from(monthlyMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-6).map(([, v]) => v),
     dbPath,
     stats: {
@@ -350,15 +336,10 @@ function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, 
       </div>
 
       <div className="space-y-2 rounded-md bg-[#1e1f22] p-3">
-        <div className="flex items-center justify-between border-b border-white/5 pb-1 text-[9px] font-bold uppercase text-[#b5bac1]">
-          <span>Participant</span>
-          <span>Amount & Action</span>
-        </div>
         {invoice.participants.map((p, idx) => (
-          <div key={idx} className="flex items-center justify-between py-1">
+          <div key={idx} className="flex items-center justify-between py-1 border-b border-white/5 last:border-0">
             <div className="flex flex-col">
               <span className="text-xs font-medium text-white">{p.username}</span>
-              {p.notes && <span className="text-[9px] italic text-[#b5bac1]">{p.notes}</span>}
             </div>
             <div className="flex items-center gap-3">
               <span className={`text-xs font-mono ${p.paid ? "text-emerald-400" : "text-amber-400"}`}>
@@ -380,9 +361,6 @@ function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, 
       <div className="mt-4 flex items-center justify-end gap-2">
         <button className="flex items-center gap-1.5 rounded bg-[#4e5058] px-3 py-1.5 text-[10px] font-medium text-white transition-all hover:bg-[#676a74]">
           <Edit2 className="h-3 w-3" /> Edit
-        </button>
-        <button className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-[10px] font-bold text-black transition-all hover:bg-yellow-400">
-          <ExternalLink className="h-3 w-3" /> Pay Now
         </button>
       </div>
     </div>
@@ -575,7 +553,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                      <div className="rounded-3xl border border-white/5 bg-surface/20 p-6">
                         <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-amber-400"><Users className="h-5 w-5" /> Top Debtors</h3>
                         <div className="space-y-3">
-                          {data.topDebtors.slice(0, 5).map((d, i) => (
+                          {data.topDebtors.slice(0, 8).map((d, i) => (
                             <div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
                               <span className="text-sm font-bold">{d.name}</span>
                               <span className="text-sm font-bold text-amber-400">{formatCurrency(d.totalDebt)}</span>
@@ -591,28 +569,61 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
             {/* TAB: DEBTORS */}
             {activeTab === 'debtors' && (
               <div className="space-y-8">
-                <div className="flex items-center gap-2 mb-6">
-                  <Users className="h-6 w-6 text-amber-400" />
-                  <h2 className="text-2xl font-bold">Auto-Merged Debtors</h2>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-400">
+                    <Users className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Unpaid Debt Ledger</h2>
+                    <p className="text-xs text-text-secondary uppercase tracking-widest">Showing all pending invoices per user</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
                   {data.topDebtors.map((debtor, idx) => (
-                    <div key={idx} className="rounded-3xl border border-white/5 bg-surface/30 p-6 hover:border-amber-400/30 transition-all">
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-xl font-bold text-text-primary">{debtor.name}</h3>
-                        <p className="text-lg font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p>
-                      </div>
-                      <p className="text-xs text-text-secondary mb-4 uppercase tracking-widest">{debtor.unpaidCount} Unpaid Items</p>
-                      <div className="space-y-2 pt-4 border-t border-white/5">
-                        {debtor.invoices.slice(0, 5).map((inv, i) => (
-                          <div key={i} className="flex justify-between text-xs">
-                            <span className="text-text-secondary truncate max-w-[120px]">{inv.title}</span>
-                            <span className="text-text-primary font-mono">{formatCurrency(inv.amount)}</span>
+                    <div key={idx} className="flex flex-col rounded-3xl border border-white/5 bg-surface/30 p-6 shadow-xl transition-all hover:border-amber-400/20">
+                      <div className="mb-6 flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-text-primary">{debtor.name}</h3>
+                          <div className="mt-1 flex items-center gap-2 rounded-full bg-amber-500/10 px-2 py-0.5 border border-amber-500/20">
+                            <AlertCircle className="h-3 w-3 text-amber-400" />
+                            <span className="text-[10px] font-bold text-amber-400 uppercase">{debtor.unpaidCount} Pending</span>
                           </div>
-                        ))}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] font-mono text-text-secondary uppercase tracking-widest">Total Owed</p>
+                          <p className="text-lg font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 space-y-3">
+                        <p className="text-[10px] font-bold uppercase text-text-secondary border-b border-white/5 pb-2">Pending Invoice List</p>
+                        <div className="space-y-2.5 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                          {debtor.invoices.map((inv, i) => (
+                            <Link 
+                              key={i} 
+                              href={buildUrl('logs')} 
+                              className="group flex items-center justify-between rounded-xl bg-black/20 p-3 transition-all hover:bg-black/40 hover:border-white/10 border border-transparent"
+                            >
+                              <div className="flex flex-col gap-0.5">
+                                <span className="text-[11px] font-bold text-text-primary group-hover:text-accent transition-colors">{inv.title || "Untitled"}</span>
+                                <span className="text-[10px] text-text-secondary">{formatDate(inv.date)}</span>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="text-[11px] font-mono font-bold text-text-primary">{formatCurrency(inv.amount)}</span>
+                                <ChevronRight className="h-3 w-3 text-text-secondary group-hover:text-accent transition-all" />
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ))}
+                  {data.topDebtors.length === 0 && (
+                    <div className="col-span-full py-32 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10">
+                      <p className="text-text-secondary">No outstanding debt found. Everyone is settled!</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
