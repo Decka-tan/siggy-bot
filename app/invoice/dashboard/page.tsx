@@ -23,6 +23,8 @@ import {
   Unlock,
   Plus,
   Edit2,
+  Copy,
+  Trash2,
   CheckCircle2,
   XCircle,
   Save,
@@ -135,6 +137,28 @@ async function linkDiscordAction(formData: FormData) {
 
   fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
+}
+
+async function deletePaymentAction(formData: FormData) {
+  'use server';
+  if (!(await checkAuth())) return;
+  const name = formData.get('name') as string;
+  const tab = formData.get('tab') as string;
+
+  if (!name) return;
+
+  const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
+  if (fs.existsSync(paymentDbPath)) {
+    try {
+      const db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+      const key = name.toLowerCase().trim();
+      if (db.payments[key]) {
+        delete db.payments[key];
+        fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
+      }
+    } catch (e) {}
+  }
+  return redirect(`/invoice/dashboard?tab=${tab || 'payments'}`);
 }
 
 async function savePaymentAction(formData: FormData) {
@@ -728,11 +752,33 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                                   <p className="text-xs font-medium text-text-primary mb-3">A.N {info.name}</p>
                                   <div className="flex items-center gap-3">
                                     <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{info.bank}</span>
-                                    <span className="font-mono text-xs text-text-primary tracking-wider">{info.account}</span>
+                                    <div className="flex items-center gap-1.5 group/copy relative">
+                                      <span className="font-mono text-xs text-text-primary tracking-wider">{info.account}</span>
+                                      <div 
+                                        dangerouslySetInnerHTML={{ __html: `
+                                          <button 
+                                            onclick="navigator.clipboard.writeText('${info.account}'); alert('Nomor rekening ${key.toUpperCase()} disalin!');"
+                                            class="text-text-secondary hover:text-accent opacity-0 group-hover/copy:opacity-100 transition-all cursor-pointer p-1"
+                                            title="Copy Account Number"
+                                          >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                          </button>
+                                        ` }}
+                                      />
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-text-secondary group-hover:text-accent transition-colors">
-                                  <CreditCard className="h-5 w-5" />
+                                <div className="flex flex-col gap-2">
+                                  <div className="h-10 w-10 rounded-xl bg-white/5 flex items-center justify-center text-text-secondary group-hover:text-accent transition-colors">
+                                    <CreditCard className="h-5 w-5" />
+                                  </div>
+                                  <form action={deletePaymentAction} onSubmit={(e) => { if(!confirm(`Hapus data pembayaran untuk ${key}?`)) e.preventDefault(); }}>
+                                    <input type="hidden" name="name" value={key} />
+                                    <input type="hidden" name="tab" value="payments" />
+                                    <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/5 hover:bg-red-500/20 flex items-center justify-center text-red-400/40 hover:text-red-400 transition-all">
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </form>
                                 </div>
                               </div>
                             </div>
