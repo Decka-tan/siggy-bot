@@ -30,6 +30,7 @@ import {
   ChevronRight,
   AlertCircle,
   Wallet,
+  HandCoins,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
@@ -133,7 +134,14 @@ type DashboardData = {
   outstandingAmount: number;
   paidAmount: number;
   topCreators: { name: string; totalCreated: number; invoiceCount: number }[];
-  topDebtors: { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number; invoices: any[] }[];
+  topDebtors: { 
+    name: string; 
+    totalDebt: number; 
+    unpaidCount: number; 
+    invoiceCount: number; 
+    invoices: { id: string; title: string; amount: number; date: string; creatorName: string }[];
+    recap: Record<string, number>;
+  }[];
   monthlyStats: { label: string; count: number; amount: number }[];
   guilds: GuildInfo[];
   stats: {
@@ -229,7 +237,7 @@ function buildDashboardData(selectedGuildId?: string, filters?: { q?: string; st
   const paidAmount = totalAmount - outstandingAmount;
 
   const creatorMap = new Map<string, { name: string; totalCreated: number; invoiceCount: number }>();
-  const debtorMap = new Map<string, { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number; invoices: any[] }>();
+  const debtorMap = new Map<string, any>();
   const monthlyMap = new Map<string, { label: string; count: number; amount: number }>();
 
   for (const invoice of invoices) {
@@ -252,11 +260,31 @@ function buildDashboardData(selectedGuildId?: string, filters?: { q?: string; st
       if (participant.paid) continue;
       const canonical = getCanonicalName(participant.username || 'Unknown', db.nameAliases || {});
       const debtorKey = canonical.toLowerCase().trim();
-      const debtorStats = debtorMap.get(debtorKey) || { name: canonical, totalDebt: 0, unpaidCount: 0, invoiceCount: 0, invoices: [] };
-      debtorStats.totalDebt += Number(participant.amount || 0);
+      const debtorStats = debtorMap.get(debtorKey) || { 
+        name: canonical, 
+        totalDebt: 0, 
+        unpaidCount: 0, 
+        invoiceCount: 0, 
+        invoices: [],
+        recap: {} 
+      };
+      
+      const amt = Number(participant.amount || 0);
+      debtorStats.totalDebt += amt;
       debtorStats.unpaidCount += 1;
       debtorStats.invoiceCount += 1;
-      debtorStats.invoices.push({ id: invoice.id, title: invoice.title, amount: participant.amount, date: invoice.date });
+      debtorStats.invoices.push({ 
+        id: invoice.id, 
+        title: invoice.title, 
+        amount: amt, 
+        date: invoice.date,
+        creatorName: invoice.creator?.username || "Unknown"
+      });
+      
+      // Recap per creator
+      const cName = invoice.creator?.username || "Unknown";
+      debtorStats.recap[cName] = (debtorStats.recap[cName] || 0) + amt;
+      
       debtorMap.set(debtorKey, debtorStats);
     }
   }
@@ -371,34 +399,9 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
           <header className="sticky top-0 z-[120] flex h-20 items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-8 backdrop-blur-xl"><h1 className="text-xl font-bold tracking-tight capitalize">{activeTab}</h1><div className="flex items-center gap-4"><div className="flex h-10 items-center gap-3 rounded-full bg-white/5 px-4 border border-white/5"><div className="h-2 w-2 rounded-full bg-accent animate-pulse"></div><span className="text-xs font-bold">Admin Session</span></div></div></header>
           <div className="p-8">
             <div className="mb-10 space-y-6">
-              <div className="flex flex-wrap gap-3">
-                <Link href={buildUrl({guild: null})} className={`px-5 py-2 rounded-2xl border text-sm font-bold transition-all ${!selectedGuild ? 'border-accent bg-accent/10 text-accent' : 'border-white/5 bg-surface/40 hover:border-white/10'}`}>All Guilds</Link>
-                {data.guilds.map(g => (<Link key={g.id} href={buildUrl({guild: g.id})} className={`px-5 py-2 rounded-2xl border text-sm font-bold transition-all ${selectedGuild === g.id ? 'border-accent bg-accent/10 text-accent' : 'border-white/5 bg-surface/40 hover:border-white/10'}`}>{String(g.id || "").substring(0, 8)}</Link>))}
-              </div>
-
+              <div className="flex flex-wrap gap-3"><Link href={buildUrl({guild: null})} className={`px-5 py-2 rounded-2xl border text-sm font-bold transition-all ${!selectedGuild ? 'border-accent bg-accent/10 text-accent' : 'border-white/5 bg-surface/40 hover:border-white/10'}`}>All Guilds</Link>{data.guilds.map(g => (<Link key={g.id} href={buildUrl({guild: g.id})} className={`px-5 py-2 rounded-2xl border text-sm font-bold transition-all ${selectedGuild === g.id ? 'border-accent bg-accent/10 text-accent' : 'border-white/5 bg-surface/40 hover:border-white/10'}`}>{String(g.id || "").substring(0, 8)}</Link>))}</div>
               {activeTab === 'logs' && (
-                <form action={filterAction} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 bg-surface/20 p-4 rounded-3xl border border-white/5 backdrop-blur-md">
-                   {/* Hidden fields for persistent context */}
-                   <input type="hidden" name="tab" value={activeTab} />
-                   <input type="hidden" name="guild" value={selectedGuild || ""} />
-                   
-                   <div className="flex items-center gap-3 px-4 py-2 bg-black/20 rounded-xl border border-white/5 col-span-1 md:col-span-2">
-                     <Search className="h-4 w-4 text-text-secondary" />
-                     <input name="q" type="text" placeholder="Search Cindy, title..." className="bg-transparent text-sm outline-none w-full" defaultValue={filters.q} />
-                   </div>
-                   <select name="creator" className="bg-black/20 text-sm outline-none px-4 py-2 rounded-xl border border-white/5" defaultValue={filters.creator || 'all'}>
-                     <option value="all">All Creators</option>
-                     {creators.map(c => <option key={c} value={c.toLowerCase()}>{c}</option>)}
-                   </select>
-                   <select name="status" className="bg-black/20 text-sm outline-none px-4 py-2 rounded-xl border border-white/5" defaultValue={filters.status || 'all'}>
-                     <option value="all">All Status</option>
-                     <option value="paid">Fully Paid</option>
-                     <option value="unpaid">Has Pending</option>
-                   </select>
-                   <button type="submit" className="flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-black hover:bg-yellow-400 transition-all">
-                     <Filter className="h-3 w-3" /> Filter
-                   </button>
-                </form>
+                <form action={filterAction} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 bg-surface/20 p-4 rounded-3xl border border-white/5 backdrop-blur-md"><input type="hidden" name="tab" value={activeTab} /><input type="hidden" name="guild" value={selectedGuild || ""} /><div className="flex items-center gap-3 px-4 py-2 bg-black/20 rounded-xl border border-white/5 col-span-1 md:col-span-2"><Search className="h-4 w-4 text-text-secondary" /><input name="q" type="text" placeholder="Search Cindy, title..." className="bg-transparent text-sm outline-none w-full" defaultValue={filters.q} /></div><select name="creator" className="bg-black/20 text-sm outline-none px-4 py-2 rounded-xl border border-white/5" defaultValue={filters.creator || 'all'}><option value="all">All Creators</option>{creators.map(c => <option key={c} value={c.toLowerCase()}>{c}</option>)}</select><select name="status" className="bg-black/20 text-sm outline-none px-4 py-2 rounded-xl border border-white/5" defaultValue={filters.status || 'all'}><option value="all">All Status</option><option value="paid">Fully Paid</option><option value="unpaid">Has Pending</option></select><button type="submit" className="flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2 text-xs font-bold text-black hover:bg-yellow-400 transition-all"><Filter className="h-3 w-3" /> Filter</button></form>
               )}
             </div>
 
@@ -408,17 +411,57 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
 
             {activeTab === 'debtors' && (
               <div className="space-y-8">
-                <div className="flex items-center justify-between mb-6"><div className="flex items-center gap-3"><div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400"><Users className="h-7 w-7" /></div><h2 className="text-2xl font-bold">Debtor Ledger</h2></div><div className="bg-surface/30 p-4 rounded-2xl border border-white/5 flex items-center gap-4"><Wallet className="h-5 w-5 text-accent" /><div><p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Payment Guide</p><p className="text-sm font-bold">BCA 123456789 a/n Siggy Admin</p></div></div></div>
+                <div className="flex items-center justify-between mb-6"><div className="flex items-center gap-3"><div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-400"><Users className="h-7 w-7" /></div><h2 className="text-2xl font-bold">Debtor Ledger</h2></div><div className="bg-surface/30 p-4 rounded-2xl border border-white/5 flex items-center gap-4"><Wallet className="h-5 w-5 text-accent" /><div><p className="text-[10px] font-bold uppercase tracking-widest text-text-secondary">Global Payment Guide</p><p className="text-sm font-bold">BCA 123456789 a/n Siggy Admin</p></div></div></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {data.topDebtors.map((debtor, idx) => (
-                    <div key={idx} className="flex flex-col rounded-3xl border border-white/5 bg-surface/30 p-6 shadow-xl transition-all hover:border-amber-400/20"><div className="mb-6 flex items-start justify-between"><div><h3 className="text-xl font-bold text-text-primary">{debtor.name}</h3><div className="mt-1 flex items-center gap-2 rounded-full bg-amber-500/10 px-2 py-0.5 border border-amber-500/20 w-fit"><AlertCircle className="h-3 w-3 text-amber-400" /><span className="text-[10px] font-bold text-amber-400 uppercase">{debtor.unpaidCount} Pending</span></div></div><div className="text-right"><p className="text-[10px] font-mono text-text-secondary uppercase">Sisa Utang</p><p className="text-lg font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p></div></div><div className="flex-1 space-y-3"><p className="text-[10px] font-bold uppercase text-text-secondary border-b border-white/5 pb-2">Pending Invoices</p><div className="space-y-2.5">{debtor.invoices.map((inv, i) => (<div key={i} className="group flex items-center justify-between rounded-xl bg-black/20 p-3 transition-all hover:bg-black/40 border border-transparent hover:border-white/10"><div className="flex flex-col gap-0.5"><span className="text-[11px] font-bold text-text-primary transition-colors">{inv.title || "Untitled"}</span><span className="text-[10px] text-text-secondary">{formatDate(inv.date)}</span></div><span className="text-[11px] font-mono font-bold text-text-primary">{formatCurrency(inv.amount)}</span></div>))}</div></div></div>
+                    <div key={idx} className="flex flex-col rounded-3xl border border-white/5 bg-surface/30 p-6 shadow-xl transition-all hover:border-amber-400/30">
+                      <div className="mb-6 flex items-start justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-text-primary">{debtor.name}</h3>
+                          <div className="mt-1 flex items-center gap-2 rounded-full bg-amber-500/10 px-2 py-0.5 border border-amber-500/20 w-fit"><AlertCircle className="h-3 w-3 text-amber-400" /><span className="text-[10px] font-bold text-amber-400 uppercase">{debtor.unpaidCount} Pending</span></div>
+                        </div>
+                        <div className="text-right"><p className="text-[10px] font-mono text-text-secondary uppercase">Sisa Utang</p><p className="text-lg font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p></div>
+                      </div>
+                      
+                      <div className="flex-1 space-y-4">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase text-text-secondary border-b border-white/5 pb-2 mb-3">Pending Invoices</p>
+                          <div className="space-y-2.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                            {debtor.invoices.map((inv, i) => (
+                              <div key={i} className="flex items-center justify-between rounded-xl bg-black/20 p-3 border border-transparent hover:border-white/5">
+                                <div className="flex flex-col gap-0.5">
+                                  <span className="text-[11px] font-bold text-text-primary">{inv.title || "Untitled"}</span>
+                                  <span className="text-[9px] text-text-secondary">{formatDate(inv.date)} • <span className="text-accent/70">by {inv.creatorName}</span></span>
+                                </div>
+                                <span className="text-[11px] font-mono font-bold text-text-primary">{formatCurrency(inv.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl bg-accent/5 border border-accent/10 p-4">
+                           <div className="flex items-center gap-2 mb-3">
+                              <HandCoins className="h-4 w-4 text-accent" />
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Payment Recap</p>
+                           </div>
+                           <div className="space-y-2">
+                              {Object.entries(debtor.recap).map(([creator, amount], i) => (
+                                <div key={i} className="flex justify-between items-center text-xs">
+                                   <span className="text-text-secondary">Bayar ke <span className="text-text-primary font-bold">{creator}</span>:</span>
+                                   <span className="font-mono font-bold text-accent">{formatCurrency(amount as number)}</span>
+                                </div>
+                              ))}
+                           </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
 
             {activeTab === 'analytics' && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><div className="rounded-3xl border border-white/5 bg-surface/30 p-8"><h3 className="text-xl font-bold mb-8">Revenue Trend</h3><div className="space-y-6">{data.monthlyStats.map((m, i) => (<div key={i} className="space-y-2"><div className="flex justify-between text-xs font-mono"><span>{m.label}</span><span>{formatCurrency(m.amount)}</span></div><div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-accent shadow-[0_0_10px_rgba(255,215,0,0.4)]" style={{ width: `${(m.amount / Math.max(...data.monthlyStats.map(x => x.amount), 1)) * 100}%` }}></div></div></div>))}</div></div><div className="rounded-3xl border border-white/5 bg-surface/30 p-8"><h3 className="text-xl font-bold mb-8">Top Creators</h3><div className="space-y-4">{data.topCreators.map((c, i) => (<div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-transparent hover:border-white/10 transition-all"><span className="font-bold">{c.name}</span><span className="font-bold text-accent">{formatCurrency(c.totalCreated)}</span></div>))}</div></div></div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><div className="rounded-3xl border border-white/5 bg-surface/30 p-8"><h3 className="text-xl font-bold mb-8">Revenue Trend</h3><div className="space-y-6">{data.monthlyStats.map((m, i) => (<div key={i} className="space-y-2"><div className="flex justify-between text-xs font-mono"><span>{m.label}</span><span>{formatCurrency(m.amount)}</span></div><div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-accent shadow-[0_0_10px_rgba(255,215,0,0.4)]" style={{ width: `${(m.amount / Math.max(...data.monthlyStats.map(x => x.amount), 1)) * 100}%` }}></div></div></div>))}</div></div><div className="rounded-3xl border border-white/5 bg-surface/30 p-8"><h3 className="text-xl font-bold mb-8">Activity Leaders</h3><div className="space-y-4">{data.topCreators.map((c, i) => (<div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-transparent hover:border-white/10 transition-all"><span className="font-bold">{c.name}</span><span className="font-bold text-accent">{formatCurrency(c.totalCreated)}</span></div>))}</div></div></div>
             )}
 
             {activeTab === 'logs' && (
