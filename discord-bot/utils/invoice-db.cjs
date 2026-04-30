@@ -363,6 +363,7 @@ function getAllDebtors(guildId = null) {
         debtorMap.set(key, {
           username: p.username,
           userId: p.userId,
+          guildId: inv.guildId, // TAMBAHIN INI BOS
           canonical: canonical,
           totalDebt: 0,
           invoices: []
