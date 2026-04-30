@@ -209,6 +209,11 @@ function resolveName(name) {
     }
   }
 
+  // NEW: Fallback to payments table (Biar sinkron sama Dashboard)
+  if (db.payments[nameLower]) {
+    return db.payments[nameLower].discordUser || null;
+  }
+
   return null;
 }
 
