@@ -1565,15 +1565,17 @@ client.on('interactionCreate', async (interaction) => {
           await interaction.deferReply({ ephemeral: true });
           const remindResult = await sendAllReminders(interaction.client);
           
-          let reportMsg = `✅ Berhasil mengirim pengingat ke **${remindResult.sentCount}** orang.\n❌ Gagal: **${remindResult.failCount}**`;
+          const skippedCount = remindResult.results.filter(r => r.status === 'skipped').length;
           
-          if (remindResult.failCount > 0) {
-            const failures = remindResult.results
+          let reportMsg = `✅ Berhasil: **${remindResult.sentCount}**\n❌ Gagal: **${remindResult.failCount}**\n⚠️ Tanpa Link: **${skippedCount}**`;
+          
+          if (remindResult.failCount > 0 || skippedCount > 0) {
+            const issues = remindResult.results
               .filter(r => r.status !== 'sent')
-              .map(r => `• ${r.name} (${r.reason || r.error || 'Unknown error'})`)
+              .map(r => `• ${r.name} (${r.status === 'skipped' ? 'Belum ada Link ID' : (r.reason || r.error || 'Unknown error')})`)
               .join('\n');
             
-            reportMsg += `\n\n**Daftar Gagal:**\n${failures.length > 1800 ? failures.substring(0, 1800) + '... (dan lainnya)' : failures}`;
+            reportMsg += `\n\n**Daftar Masalah:**\n${issues.length > 1800 ? issues.substring(0, 1800) + '... (dan lainnya)' : issues}`;
           }
           
           await interaction.editReply(reportMsg);

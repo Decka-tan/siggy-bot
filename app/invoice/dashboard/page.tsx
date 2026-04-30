@@ -138,6 +138,44 @@ async function linkDiscordAction(formData: FormData) {
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
 }
 
+async function linkUserAction(formData: FormData) {
+  'use server';
+  if (!(await checkAuth())) return;
+  const name = formData.get('name') as string;
+  const userId = formData.get('userId') as string;
+  const tab = formData.get('tab') as string;
+
+  if (!name || !userId) return;
+
+  const { linkUserToName } = require('./discord-bot/utils/invoice-db.cjs');
+  linkUserToName(name, userId);
+  
+  // Also save to nameLinks in payment-db
+  const { linkName } = require('./discord-bot/utils/payment-db.cjs');
+  linkName(name, userId, name);
+
+  return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
+}
+
+async function linkUserAction(formData: FormData) {
+  'use server';
+  if (!(await checkAuth())) return;
+  const name = formData.get('name') as string;
+  const userId = formData.get('userId') as string;
+  const tab = formData.get('tab') as string;
+
+  if (!name || !userId) return;
+
+  const { linkUserToName } = require('./discord-bot/utils/invoice-db.cjs');
+  linkUserToName(name, userId);
+  
+  // Also save to nameLinks in payment-db
+  const { linkName } = require('./discord-bot/utils/payment-db.cjs');
+  linkName(name, userId, name);
+
+  return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
+}
+
 async function deletePaymentAction(formData: FormData) {
   'use server';
   if (!(await checkAuth())) return;
@@ -617,26 +655,13 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                         </div>
 
                         {/* Discord ID Linker */}
-                        <div className="mt-4 pt-4">
-                          <form action={linkDiscordAction}>
+                        <div className="mt-6 pt-6 border-t border-white/5 space-y-3">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-text-secondary flex items-center gap-2">
+                            <Users className="h-3 w-3" /> Discord User ID (e.g. 148089...)
+                          </label>
+                          <form action={linkUserAction} className="flex gap-2">
                             <input type="hidden" name="name" value={debtor.name} />
                             <input type="hidden" name="tab" value="debtors" />
-                            <div className="flex items-center gap-2">
-                              <div className="relative flex-1">
-                                <input 
-                                  name="discordId" 
-                                  type="text" 
-                                  placeholder="Discord User ID (e.g. 148089...)" 
-                                  defaultValue={debtor.discordId || ''}
-                                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-[11px] outline-none focus:border-accent/50 transition-all font-mono"
-                                />
-                                {debtor.discordId && <div className="absolute right-3 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>}
-                              </div>
-                              <button type="submit" title="Save Link" className="bg-white/5 hover:bg-accent hover:text-black p-2 rounded-xl transition-all border border-white/5 group">
-                                <Save className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                              </button>
-                            </div>
-                            <p className="mt-2 text-[9px] text-text-secondary italic">
                               {debtor.discordId 
                                 ? `✅ Terhubung ke ID: ${debtor.discordId}`
                                 : "💡 Masukkan ID Discord untuk mengaktifkan pengingat otomatis."}
