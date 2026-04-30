@@ -147,11 +147,11 @@ async function linkUserAction(formData: FormData) {
 
   if (!name || !userId) return;
 
-  const { linkUserToName } = require('./discord-bot/utils/invoice-db.cjs');
+  const { linkUserToName } = require(path.join(process.cwd(), 'discord-bot', 'utils', 'invoice-db.cjs'));
   linkUserToName(name, userId);
   
   // Also save to nameLinks in payment-db
-  const { linkName } = require('./discord-bot/utils/payment-db.cjs');
+  const { linkName } = require(path.join(process.cwd(), 'discord-bot', 'utils', 'payment-db.cjs'));
   linkName(name, userId, name);
 
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
