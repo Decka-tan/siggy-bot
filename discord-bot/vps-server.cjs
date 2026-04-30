@@ -1563,7 +1563,19 @@ client.on('interactionCreate', async (interaction) => {
         case 'invoice-remind':
           await interaction.deferReply({ ephemeral: true });
           const remindResult = await sendAllReminders(interaction.client);
-          await interaction.editReply(`✅ Berhasil mengirim pengingat ke **${remindResult.sentCount}** orang.\n❌ Gagal: **${remindResult.failCount}**`);
+          
+          let reportMsg = `✅ Berhasil mengirim pengingat ke **${remindResult.sentCount}** orang.\n❌ Gagal: **${remindResult.failCount}**`;
+          
+          if (remindResult.failCount > 0) {
+            const failures = remindResult.results
+              .filter(r => r.status !== 'sent')
+              .map(r => `• ${r.name} (${r.reason || r.error || 'Unknown error'})`)
+              .join('\n');
+            
+            reportMsg += `\n\n**Daftar Gagal:**\n${failures.length > 1800 ? failures.substring(0, 1800) + '... (dan lainnya)' : failures}`;
+          }
+          
+          await interaction.editReply(reportMsg);
           break;
         case 'bayar': await handleBayar(interaction); break;
         case 'avatar': await handleAvatar(interaction); break;
