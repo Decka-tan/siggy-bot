@@ -1625,31 +1625,36 @@ client.on('interactionCreate', async (interaction) => {
     try { await handleInvoiceButton(interaction, 'pay'); }
     catch (e) { 
       console.error('[Invoice Button Pay] Error:', e);
-      if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
+      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
+      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
     }
   } else if (customId.startsWith('invoice_bayar_')) {
     try { await handleInvoiceButton(interaction, 'bayar'); }
     catch (e) { 
       console.error('[Invoice Button Bayar] Error:', e);
-      if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
+      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
+      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
     }
   } else if (customId.startsWith('invoice_settle_')) {
     try { await handleInvoiceButton(interaction, 'settle'); }
     catch (e) { 
       console.error('[Invoice Button Settle] Error:', e);
-      if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
+      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
+      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
     }
   } else if (customId.startsWith('invoice_add_')) {
     try { await handleInvoiceButton(interaction, 'add'); }
     catch (e) { 
       console.error('[Invoice Button Add] Error:', e);
-      if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
+      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
+      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
     }
   } else if (customId.startsWith('invoice_del_')) {
     try { await handleInvoiceButton(interaction, 'delete'); }
     catch (e) { 
       console.error('[Invoice Button Delete] Error:', e);
-      if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
+      if (interaction.deferred || interaction.replied) await interaction.editReply({ content: `❌ Error: ${e.message}`, components: [] }).catch(() => {});
+      else await interaction.reply({ content: `❌ Error: ${e.message}`, ephemeral: true }).catch(() => {});
     }
   } else if (customId.startsWith('mark_paid_page_')) {
     try { await handleMarkPaidPage(interaction); }
