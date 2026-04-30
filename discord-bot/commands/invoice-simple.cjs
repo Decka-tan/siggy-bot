@@ -1574,9 +1574,6 @@ const invoiceCommandsSimple = [
     name: 'invoice-remind',
     description: 'Kirim PM pengingat ke semua penghutang yang sudah terhubung (LINKED)',
   },
-    name: 'invoice-debtors',
-    description: 'Lihat daftar semua penghutang dan status koneksi ID Discord mereka',
-  },
 ];
 
 /**
