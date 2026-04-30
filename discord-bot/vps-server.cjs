@@ -1891,7 +1891,7 @@ client.on('messageCreate', async (message) => {
 // ============ HEALTHCHECK SERVER (for Railway) ============
 const http = require('http');
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 8888;
 
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {

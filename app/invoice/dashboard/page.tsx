@@ -72,7 +72,7 @@ async function markPaidAction(invoiceId: string, participantIndex: number, isPai
 
     // Trigger Bot refresh (Delete old message, send new one in Discord)
     try {
-      await fetch('http://localhost:8080/api/refresh-invoice', {
+      await fetch('http://localhost:8888/api/refresh-invoice', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ invoiceId: invoiceId })
