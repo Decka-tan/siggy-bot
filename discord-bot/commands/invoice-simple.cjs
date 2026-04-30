@@ -648,9 +648,27 @@ async function handleInvoiceButton(interaction, action) {
         });
       }
 
-      const { markMultiplePaid } = require('../utils/invoice-db.cjs');
+      const { markMultiplePaid, updateInvoiceMessage } = require('../utils/invoice-db.cjs');
       const allUserIds = invoice.participants.map(p => p.userId);
       markMultiplePaid(invoiceId, allUserIds);
+
+      // DELETE OLD, SEND NEW
+      const updated = getInvoice(invoiceId);
+      const newEmbed = renderInvoiceEmbed(updated);
+      const newComponents = [buildInvoiceButtons(invoiceId)];
+      
+      if (invoice.messageId && invoice.channelId) {
+        try {
+          const channel = await interaction.guild.channels.fetch(invoice.channelId);
+          try {
+            const oldMsg = await channel.messages.fetch(invoice.messageId);
+            await oldMsg.delete().catch(() => {});
+          } catch (e) {}
+          
+          const newMsg = await channel.send({ embeds: [newEmbed], components: newComponents });
+          updateInvoiceMessage(invoiceId, newMsg.id);
+        } catch (e) { console.error('Settle re-send err:', e); }
+      }
 
       return interaction.reply({
         content: `✅ Semua ${unpaid.length} orang ditandai lunas!`,
@@ -841,19 +859,35 @@ async function handleMarkPaidSelect(interaction, providedInvoiceId) {
     const { markMultiplePaid } = require('../utils/invoice-db.cjs');
     markMultiplePaid(invoiceId, selectedUserIds);
 
-    // Update original message
+    // Update original message: DELETE OLD, SEND NEW
     const updated = getInvoice(invoiceId);
     const newEmbed = renderInvoiceEmbed(updated);
+    const newComponents = [buildInvoiceButtons(invoiceId)];
     
     if (invoice.messageId && invoice.channelId) {
       try {
         const channel = await interaction.guild.channels.fetch(invoice.channelId);
-        const msg = await channel.messages.fetch(invoice.messageId);
-        await msg.edit({
+        
+        // 1. Delete old message
+        try {
+          const oldMsg = await channel.messages.fetch(invoice.messageId);
+          await oldMsg.delete().catch(() => {});
+        } catch (e) { /* ignore if already deleted */ }
+
+        // 2. Send new message
+        const newMsg = await channel.send({
           embeds: [newEmbed],
-          components: [buildInvoiceButtons(invoiceId)]
+          components: newComponents
         });
-      } catch (e) { console.error('Update err:', e); }
+
+        // 3. Update database with new messageId
+        const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
+        updateInvoiceMessage(invoiceId, newMsg.id);
+        
+      } catch (e) { 
+        console.error('Re-send err:', e);
+        // Fallback: if we can't delete/send, just reply
+      }
     }
 
     // Send notifications
@@ -868,6 +902,65 @@ async function handleMarkPaidSelect(interaction, providedInvoiceId) {
     });
   } catch (error) {
     console.error('Mark paid select error:', error);
+    await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
+  }
+}
+
+async function handleAddPeopleSubmit(interaction) {
+  try {
+    const customId = interaction.customId;
+    const invoiceId = customId.replace('add_people_modal_', '');
+    
+    const invoice = getInvoice(invoiceId);
+    if (!invoice) return interaction.reply({ content: '❌ Invoice tidak ditemukan.', ephemeral: true });
+
+    const userMentions = interaction.fields.getTextInputValue('user_mentions');
+    const amountStr = interaction.fields.getTextInputValue('amount');
+    const notes = interaction.fields.getTextInputValue('notes') || '';
+
+    // Parse amount (support 15k, etc)
+    let amount = 0;
+    const cleanAmount = amountStr.toLowerCase().replace(/rp|\.|\s/g, '');
+    if (cleanAmount.endsWith('k')) amount = parseFloat(cleanAmount) * 1000;
+    else amount = parseFloat(cleanAmount);
+
+    if (isNaN(amount) || amount <= 0) return interaction.reply({ content: '❌ Jumlah tidak valid.', ephemeral: true });
+
+    // Parse users
+    const users = userMentions.split(/,|\n/).map(u => u.trim()).filter(u => u);
+    const participants = users.map(u => ({
+      username: u.replace(/[<@!>]/g, ''),
+      userId: u.match(/\d+/) ? u.match(/\d+/)[0] : null,
+      amount: amount,
+      notes: notes
+    }));
+
+    const { addParticipants, updateInvoiceMessage } = require('../utils/invoice-db.cjs');
+    const result = addParticipants(invoiceId, participants);
+
+    if (!result.success) return interaction.reply({ content: `❌ Gagal: ${result.error}`, ephemeral: true });
+
+    // DELETE OLD, SEND NEW
+    const updated = getInvoice(invoiceId);
+    const newEmbed = renderInvoiceEmbed(updated);
+    const newComponents = [buildInvoiceButtons(invoiceId)];
+
+    if (invoice.messageId && invoice.channelId) {
+      try {
+        const channel = await interaction.guild.channels.fetch(invoice.channelId);
+        try {
+          const oldMsg = await channel.messages.fetch(invoice.messageId);
+          await oldMsg.delete().catch(() => {});
+        } catch (e) {}
+        
+        const newMsg = await channel.send({ embeds: [newEmbed], components: newComponents });
+        updateInvoiceMessage(invoiceId, newMsg.id);
+      } catch (e) { console.error('Add re-send err:', e); }
+    }
+
+    return interaction.reply({ content: `✅ Berhasil menambahkan ${participants.length} orang!`, ephemeral: true });
+  } catch (error) {
+    console.error('Add people submit error:', error);
     await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
   }
 }
@@ -1563,6 +1656,7 @@ module.exports = {
   handleInvoiceButton,
   handleInvoiceRefreshAll, 
   handleMarkPaidSelect,
+  handleAddPeopleSubmit,
   buildMarkPaidComponent,
   sendInvoiceNotifications,
   sendPaidNotification,

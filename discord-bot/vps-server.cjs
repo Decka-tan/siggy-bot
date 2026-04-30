@@ -1669,7 +1669,10 @@ client.on('interactionCreate', async (interaction) => {
       const { customId } = interaction;
       if (customId === 'invoice_create_modal') return processInvoiceCreateModal(interaction);
       if (customId.startsWith('mark_paid_modal_')) return processMarkPaidModal(interaction, customId.replace('mark_paid_modal_', ''));
-      if (customId.startsWith('add_people_modal_')) return handleAddPeopleSubmit(interaction);
+      if (customId.startsWith('add_people_modal_')) {
+        const { handleAddPeopleSubmit } = require('./commands/invoice-simple.cjs');
+        return handleAddPeopleSubmit(interaction);
+      }
       if (customId === 'payment_set_modal') return processPaymentSetModal(interaction);
       if (customId === 'clear_invoice_modal') return handleClearInvoiceModal(interaction);
       return;
