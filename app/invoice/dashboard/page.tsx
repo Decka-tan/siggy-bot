@@ -539,7 +539,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                           </div>
                         </div>
 
-                        <div className="rounded-2xl bg-accent/5 border border-accent/10 p-4">
+                        <div className="rounded-2xl bg-accent/5 p-4">
                            <div className="flex items-center gap-2 mb-3">
                               <HandCoins className="h-4 w-4 text-accent" />
                               <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Payment Recap</p>
@@ -555,7 +555,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                         </div>
 
                         {/* Discord ID Linker */}
-                        <div className="mt-4 pt-4 border-t border-white/5">
+                        <div className="mt-4 pt-4">
                           <form action={linkDiscordAction}>
                             <input type="hidden" name="name" value={debtor.name} />
                             <input type="hidden" name="tab" value="debtors" />
