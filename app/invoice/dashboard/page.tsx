@@ -157,25 +157,6 @@ async function linkUserAction(formData: FormData) {
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
 }
 
-async function linkUserAction(formData: FormData) {
-  'use server';
-  if (!(await checkAuth())) return;
-  const name = formData.get('name') as string;
-  const userId = formData.get('userId') as string;
-  const tab = formData.get('tab') as string;
-
-  if (!name || !userId) return;
-
-  const { linkUserToName } = require('./discord-bot/utils/invoice-db.cjs');
-  linkUserToName(name, userId);
-  
-  // Also save to nameLinks in payment-db
-  const { linkName } = require('./discord-bot/utils/payment-db.cjs');
-  linkName(name, userId, name);
-
-  return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
-}
-
 async function deletePaymentAction(formData: FormData) {
   'use server';
   if (!(await checkAuth())) return;
@@ -662,11 +643,20 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                           <form action={linkUserAction} className="flex gap-2">
                             <input type="hidden" name="name" value={debtor.name} />
                             <input type="hidden" name="tab" value="debtors" />
-                              {debtor.discordId 
-                                ? `✅ Terhubung ke ID: ${debtor.discordId}`
-                                : "💡 Masukkan ID Discord untuk mengaktifkan pengingat otomatis."}
-                            </p>
+                            <input 
+                              name="userId"
+                              type="text" 
+                              placeholder="Enter numerical ID..." 
+                              defaultValue={debtor.discordId || ''} 
+                              className="flex-1 bg-black/20 border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-accent/50 transition-all font-mono"
+                            />
+                            <button type="submit" className="px-4 py-2 bg-accent/10 hover:bg-accent text-accent hover:text-black rounded-xl text-xs font-bold transition-all">Save</button>
                           </form>
+                          <p className="text-[9px] text-text-secondary italic">
+                            {debtor.discordId 
+                              ? `✅ Terhubung ke ID: ${debtor.discordId}`
+                              : "💡 Masukkan ID Discord untuk mengaktifkan pengingat otomatis."}
+                          </p>
                         </div>
                       </div>
                     </div>
