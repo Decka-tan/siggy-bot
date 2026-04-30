@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import {
   ArrowRight,
   BarChart3,
@@ -17,9 +19,77 @@ import {
   Clock,
   History,
   TrendingUp,
+  Lock,
+  Unlock,
+  Edit2,
+  CheckCircle2,
+  XCircle,
+  Save,
+  Trash2,
+  ExternalLink,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+// --- AUTH LOGIC ---
+const AUTH_USER = "Sopmod";
+const AUTH_PASS = "4r1p1n";
+const COOKIE_NAME = "siggy_admin_session";
+
+async function checkAuth() {
+  const cookieStore = cookies();
+  const session = cookieStore.get(COOKIE_NAME);
+  return session?.value === Buffer.from(`${AUTH_USER}:${AUTH_PASS}`).toString('base64');
+}
+
+// --- SERVER ACTIONS ---
+async function loginAction(formData: FormData) {
+  'use server';
+  const user = formData.get('user');
+  const pass = formData.get('pass');
+
+  if (user === AUTH_USER && pass === AUTH_PASS) {
+    const session = Buffer.from(`${AUTH_USER}:${AUTH_PASS}`).toString('base64');
+    cookies().set(COOKIE_NAME, session, { 
+      httpOnly: true, 
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/' 
+    });
+    return redirect('/invoice/dashboard');
+  }
+  return redirect('/invoice/dashboard?error=invalid');
+}
+
+async function updateInvoiceAction(formData: FormData) {
+  'use server';
+  if (!(await checkAuth())) return;
+
+  const invoiceId = formData.get('id') as string;
+  const newTitle = formData.get('title') as string;
+  const dbPath = getInvoiceDbPath();
+  
+  const { db } = getInvoiceDb();
+  if (db.invoices && db.invoices[invoiceId]) {
+    db.invoices[invoiceId].title = newTitle;
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+  }
+  return redirect(`/invoice/dashboard?tab=logs&msg=updated`);
+}
+
+async function markPaidAction(invoiceId: string, participantIndex: number, isPaid: boolean) {
+  'use server';
+  if (!(await checkAuth())) return;
+
+  const dbPath = getInvoiceDbPath();
+  const { db } = getInvoiceDb();
+  
+  if (db.invoices && db.invoices[invoiceId] && db.invoices[invoiceId].participants[participantIndex]) {
+    db.invoices[invoiceId].participants[participantIndex].paid = isPaid;
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+  }
+  return redirect(`/invoice/dashboard?tab=logs&msg=status_changed`);
+}
 
 // --- Types ---
 
@@ -248,7 +318,131 @@ function StatCardMini({ title, value, icon: Icon, colorClass = "text-accent" }: 
   );
 }
 
-export default function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string } }) {
+function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, participantAction: any }) {
+  const unpaid = invoice.participants.filter(p => !p.paid);
+  const isFullyPaid = unpaid.length === 0;
+  
+  return (
+    <div className="relative overflow-hidden rounded-lg border-l-4 border-accent bg-[#2b2d31] p-4 shadow-md transition-all hover:bg-[#313338]">
+      <div className="mb-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-bold uppercase tracking-wide text-white">{invoice.title || "Untitled Invoice"}</h4>
+          <p className="text-[10px] font-mono text-[#b5bac1]">{invoice.id}</p>
+        </div>
+        <div className="mt-1 flex items-center gap-2 text-[11px] text-[#b5bac1]">
+          <span>Created by {invoice.creator.username}</span>
+          <span>•</span>
+          <span>{formatDate(invoice.date)}</span>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <p className="text-[10px] font-bold uppercase text-[#b5bac1]">Total Amount</p>
+          <p className="text-sm font-semibold text-accent">{formatCurrency(invoice.totalAmount)}</p>
+        </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase text-[#b5bac1]">Status</p>
+          <p className={`text-sm font-semibold ${isFullyPaid ? "text-emerald-400" : "text-amber-400"}`}>
+            {isFullyPaid ? "✓ All Settled" : `× ${unpaid.length} Pending`}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2 rounded-md bg-[#1e1f22] p-3">
+        <div className="flex items-center justify-between border-b border-white/5 pb-1 text-[9px] font-bold uppercase text-[#b5bac1]">
+          <span>Participant</span>
+          <span>Amount & Action</span>
+        </div>
+        {invoice.participants.map((p, idx) => (
+          <div key={idx} className="flex items-center justify-between py-1">
+            <div className="flex flex-col">
+              <span className="text-xs font-medium text-white">{p.username}</span>
+              {p.notes && <span className="text-[9px] italic text-[#b5bac1]">{p.notes}</span>}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className={`text-xs font-mono ${p.paid ? "text-emerald-400" : "text-amber-400"}`}>
+                {formatCurrency(p.amount)}
+              </span>
+              <form action={participantAction.bind(null, invoice.id, idx, !p.paid)}>
+                <button 
+                  type="submit"
+                  className={`flex h-6 w-6 items-center justify-center rounded transition-all ${p.paid ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20" : "bg-white/5 text-[#b5bac1] hover:bg-amber-500/20 hover:text-amber-400"}`}
+                >
+                  {p.paid ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                </button>
+              </form>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-end gap-2">
+        <button className="flex items-center gap-1.5 rounded bg-[#4e5058] px-3 py-1.5 text-[10px] font-medium text-white transition-all hover:bg-[#676a74]">
+          <Edit2 className="h-3 w-3" /> Edit
+        </button>
+        <button className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-[10px] font-bold text-black transition-all hover:bg-yellow-400">
+          <ExternalLink className="h-3 w-3" /> Pay Now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default async function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string; error?: string } }) {
+  const isAuth = await checkAuth();
+  
+  if (!isAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] p-6 text-text-primary">
+        <style dangerouslySetInnerHTML={{ __html: `
+          nav.fixed.top-0, footer.border-t.border-white\\/5 { display: none !important; }
+        `}} />
+        <div className="w-full max-w-md space-y-8 rounded-3xl border border-white/5 bg-[#0d0d0d] p-10 shadow-2xl backdrop-blur-xl">
+          <div className="text-center">
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-yellow-500 shadow-xl shadow-accent/20">
+              <Lock className="h-8 w-8 text-black" />
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight">Siggy Secure Access</h1>
+            <p className="mt-2 text-sm text-text-secondary">Please enter your credentials to manage invoices.</p>
+          </div>
+
+          <form action={loginAction} className="space-y-5">
+            <div>
+              <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-text-secondary">Username</label>
+              <input 
+                name="user"
+                type="text" 
+                placeholder="Enter username"
+                className="w-full rounded-xl border border-white/10 bg-surface/50 px-5 py-3.5 text-sm outline-none focus:border-accent/50 transition-all"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-[10px] font-mono uppercase tracking-widest text-text-secondary">Password</label>
+              <input 
+                name="pass"
+                type="password" 
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-white/10 bg-surface/50 px-5 py-3.5 text-sm outline-none focus:border-accent/50 transition-all"
+                required
+              />
+            </div>
+            {searchParams.error && (
+              <p className="text-center text-xs font-bold text-red-400">Invalid username or password.</p>
+            )}
+            <button 
+              type="submit"
+              className="group flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-accent to-yellow-400 px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.18em] text-black transition-all hover:scale-[1.02]"
+            >
+              Unlock Dashboard <Unlock className="h-4 w-4" />
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   const selectedGuild = searchParams.guild;
   const activeTab = searchParams.tab || 'overview';
   const data = buildDashboardData(selectedGuild);
@@ -324,14 +518,15 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
                )}
             </div>
             <div className="flex items-center gap-4">
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent/20 to-yellow-500/20 border border-accent/30 flex items-center justify-center">
-                <Users className="h-5 w-5 text-accent" />
-              </div>
+               <div className="flex h-10 items-center gap-3 rounded-full bg-white/5 px-4 border border-white/5">
+                  <div className="h-2 w-2 rounded-full bg-accent"></div>
+                  <span className="text-xs font-bold text-text-primary">Admin: {AUTH_USER}</span>
+               </div>
             </div>
           </header>
 
           <div className="p-8 pb-20">
-            {/* Guild Switcher (Visible on all tabs) */}
+            {/* Guild Switcher */}
             <div className="mb-10">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
@@ -370,19 +565,9 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
                 <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]">
                   <div className="space-y-6">
                     <h2 className="text-xl font-bold tracking-tight flex items-center gap-2"><Clock className="h-5 w-5 text-accent" /> Recent Activity</h2>
-                    <div className="space-y-4">
-                      {recentInvoices.slice(0, 5).map(inv => (
-                        <div key={inv.id} className="rounded-2xl border border-white/5 bg-surface/30 p-6">
-                          <div className="flex justify-between items-start mb-4">
-                            <h3 className="font-bold text-text-primary text-lg">{inv.title || 'Untitled'}</h3>
-                            <p className="text-lg font-bold text-accent">{formatCurrency(inv.totalAmount)}</p>
-                          </div>
-                          <div className="flex gap-4 text-xs text-text-secondary font-mono">
-                            <span>{formatDate(inv.date)}</span>
-                            <span>•</span>
-                            <span>{inv.creator.username}</span>
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {recentInvoices.slice(0, 4).map(inv => (
+                        <DiscordEmbed key={inv.id} invoice={inv} participantAction={markPaidAction} />
                       ))}
                     </div>
                   </div>
@@ -419,13 +604,12 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
                       </div>
                       <p className="text-xs text-text-secondary mb-4 uppercase tracking-widest">{debtor.unpaidCount} Unpaid Items</p>
                       <div className="space-y-2 pt-4 border-t border-white/5">
-                        {debtor.invoices.slice(0, 3).map((inv, i) => (
+                        {debtor.invoices.slice(0, 5).map((inv, i) => (
                           <div key={i} className="flex justify-between text-xs">
                             <span className="text-text-secondary truncate max-w-[120px]">{inv.title}</span>
                             <span className="text-text-primary font-mono">{formatCurrency(inv.amount)}</span>
                           </div>
                         ))}
-                        {debtor.invoices.length > 3 && <p className="text-[10px] text-center text-text-secondary pt-2">+ {debtor.invoices.length - 3} more</p>}
                       </div>
                     </div>
                   ))}
@@ -470,33 +654,11 @@ export default function InvoiceDashboardPage({ searchParams }: { searchParams: {
 
             {/* TAB: LOGS */}
             {activeTab === 'logs' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold mb-8">Comprehensive Invoice Logs</h2>
-                <div className="space-y-4">
+              <div className="space-y-8">
+                <h2 className="text-2xl font-bold mb-8">Management Logs</h2>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                   {data.filteredInvoices.map((inv) => (
-                    <div key={inv.id} className="rounded-2xl border border-white/5 bg-surface/20 p-6 hover:bg-surface/30 transition-all">
-                      <div className="flex flex-col md:flex-row justify-between gap-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-text-primary mb-1">{inv.title || 'Untitled'}</h3>
-                          <div className="flex gap-3 text-[10px] font-mono text-text-secondary uppercase">
-                            <span>{inv.id}</span>
-                            <span>•</span>
-                            <span>{formatDate(inv.date)}</span>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-xl font-bold text-text-primary">{formatCurrency(inv.totalAmount)}</p>
-                          <p className="text-[10px] text-text-secondary uppercase mt-1">Creator: {inv.creator.username}</p>
-                        </div>
-                      </div>
-                      <div className="mt-6 flex flex-wrap gap-2">
-                        {inv.participants.map((p, i) => (
-                          <span key={i} className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border ${p.paid ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
-                            {p.username}: {formatCurrency(p.amount)}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                    <DiscordEmbed key={inv.id} invoice={inv} participantAction={markPaidAction} />
                   ))}
                 </div>
               </div>
