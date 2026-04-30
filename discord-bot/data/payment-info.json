@@ -1,0 +1,40 @@
+{
+  "payments": {
+    "sopmod": {
+      "bank": "Bank BCA",
+      "account": "1650997090",
+      "name": "Daffa Adhyatama Aripin",
+      "discordUser": "decka_tan",
+      "updatedAt": 1714472000000
+    },
+    "eric": {
+      "bank": "Bank BCA",
+      "account": "5210976649",
+      "name": "Erico Chiavas",
+      "discordUser": "takodachi.s",
+      "updatedAt": 1714472000000
+    },
+    "cindy": {
+      "bank": "Bank BCA",
+      "account": "3091409541",
+      "name": "Cindy Wilianto",
+      "discordUser": ".kzuc",
+      "updatedAt": 1714472000000
+    },
+    "abimanyu": {
+      "bank": "Bank BCA",
+      "account": "5212491918",
+      "name": "Abimanyu Nugroho",
+      "discordUser": "mas_abi",
+      "updatedAt": 1714472000000
+    },
+    "accel": {
+      "bank": "Bank BCA",
+      "account": "3940438712",
+      "name": "Silverster Axeldio Laksma",
+      "discordUser": "accel32_",
+      "updatedAt": 1714472000000
+    }
+  },
+  "nameLinks": {}
+}
