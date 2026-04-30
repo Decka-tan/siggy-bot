@@ -578,26 +578,14 @@ async function handleInvoiceButton(interaction, action) {
     const customId = interaction.customId;
     let invoiceId;
 
-    if (customId.startsWith('invoice_pay_')) {
-      invoiceId = customId.replace('invoice_pay_', '');
-    } else if (customId.startsWith('inv_pay_')) {
-      invoiceId = customId.replace('inv_pay_', '');
-      action = 'pay';
-    } else if (customId.startsWith('invoice_bayar_')) {
-      invoiceId = customId.replace('invoice_bayar_', '');
-    } else if (customId.startsWith('inv_bayar_')) {
-      invoiceId = customId.replace('inv_bayar_', '');
-      action = 'bayar';
-    } else if (customId.startsWith('invoice_settle_')) {
-      invoiceId = customId.replace('invoice_settle_', '');
-    } else if (customId.startsWith('invoice_add_')) {
-      invoiceId = customId.replace('invoice_add_', '');
-    } else if (customId.startsWith('invoice_del_')) {
-      invoiceId = customId.replace('invoice_del_', '');
-    } else if (customId.startsWith('inv_del_')) {
-      invoiceId = customId.replace('inv_del_', '');
-      action = 'delete';
-    }
+    if (customId.startsWith('invoice_pay_')) invoiceId = customId.replace('invoice_pay_', '');
+    else if (customId.startsWith('inv_pay_')) invoiceId = customId.replace('inv_pay_', '');
+    else if (customId.startsWith('invoice_bayar_')) invoiceId = customId.replace('invoice_bayar_', '');
+    else if (customId.startsWith('inv_bayar_')) invoiceId = customId.replace('inv_bayar_', '');
+    else if (customId.startsWith('invoice_settle_')) invoiceId = customId.replace('invoice_settle_', '');
+    else if (customId.startsWith('invoice_add_')) invoiceId = customId.replace('invoice_add_', '');
+    else if (customId.startsWith('invoice_del_')) invoiceId = customId.replace('invoice_del_', '');
+    else if (customId.startsWith('inv_del_')) invoiceId = customId.replace('inv_del_', '');
 
     const invoice = getInvoice(invoiceId);
 
