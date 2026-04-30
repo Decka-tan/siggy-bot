@@ -28,7 +28,6 @@ import {
   CheckCircle2,
   XCircle,
   Save,
-  Trash2,
   ExternalLink,
   ChevronRight,
   AlertCircle,
