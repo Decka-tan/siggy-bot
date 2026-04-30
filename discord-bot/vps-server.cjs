@@ -1741,13 +1741,16 @@ client.on('interactionCreate', async (interaction) => {
  */
 async function handleMarkPaidSelect(interaction) {
   try {
+    // Acknowledge the interaction immediately to prevent timeout
+    await interaction.deferUpdate();
+    
     const parts = interaction.customId.split('_');
     const page = parseInt(parts.pop()) || 0;
     const invoiceId = parts.slice(3).join('_'); // Get everything after 'mark_paid_select_'
     const selectedValues = interaction.values;
 
     const invoice = getInvoice(invoiceId);
-    if (!invoice) return interaction.update({ content: '❌ Invoice tidak ditemukan.', components: [] });
+    if (!invoice) return interaction.editReply({ content: '❌ Invoice tidak ditemukan.', components: [] });
 
     // Mark selected users as paid
     const result = markMultiplePaid(invoiceId, selectedValues);
@@ -1774,7 +1777,8 @@ async function handleMarkPaidSelect(interaction) {
       } catch (err) { console.log('[Invoice] Update main failed:', err.message); }
     }
 
-    await interaction.update({
+    // Final confirmation to the user
+    await interaction.editReply({
       content: `✅ Berhasil menandai ${selectedValues.length} orang sebagai LUNAS!`,
       components: []
     });
@@ -1789,18 +1793,19 @@ async function handleMarkPaidSelect(interaction) {
  */
 async function handleMarkPaidPage(interaction) {
   try {
+    await interaction.deferUpdate();
     const parts = interaction.customId.split('_');
     const page = parseInt(parts.pop()) || 0;
     const invoiceId = parts.slice(3).join('_');
 
     const invoice = getInvoice(invoiceId);
-    if (!invoice) return interaction.update({ content: '❌ Invoice tidak ditemukan.', components: [] });
+    if (!invoice) return interaction.editReply({ content: '❌ Invoice tidak ditemukan.', components: [] });
 
     const unpaid = invoice.participants.filter(p => !p.paid);
     const { buildMarkPaidComponent, safeInvoiceTitle } = require('./commands/invoice-simple.cjs');
     const components = buildMarkPaidComponent(invoiceId, unpaid, page);
 
-    await interaction.update({
+    await interaction.editReply({
       content: `🔍 **Tandai Lunas - ${safeInvoiceTitle(invoice.title)}**\nSilakan pilih peserta (Hal ${page + 1}):`,
       components: components
     });
@@ -1809,12 +1814,7 @@ async function handleMarkPaidPage(interaction) {
     if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
   }
 }
-        content: `❌ Error: ${error.message}`,
-        ephemeral: true
-      });
-    }
-  }
-}
+
 
 /**
  * Handle add people modal submit
