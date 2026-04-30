@@ -23,11 +23,27 @@ async function sendAllReminders(client, guildId = null) {
       discordId = resolveName(debtor.username);
     }
 
-    // NEW: If we have a username but no ID, try to find the ID in the guild
+    // NEW: If we have a username but no ID, try to find the ID globally across all guilds
     if (!discordId && debtor.username) {
       try {
-        const members = await client.guilds.cache.get(debtor.guildId)?.members.fetch({ query: debtor.username, limit: 1 });
-        discordId = members?.first()?.id;
+        // 1. Try the specific guild first
+        if (debtor.guildId) {
+          const members = await client.guilds.cache.get(debtor.guildId)?.members.fetch({ query: debtor.username, limit: 1 });
+          discordId = members?.first()?.id;
+        }
+        
+        // 2. Fallback: Search ALL guilds the bot is in
+        if (!discordId) {
+          for (const [_, guild] of client.guilds.cache) {
+            try {
+              const members = await guild.members.fetch({ query: debtor.username, limit: 1 });
+              if (members.first()) {
+                discordId = members.first().id;
+                break;
+              }
+            } catch (e) {}
+          }
+        }
       } catch (e) {}
     }
 
