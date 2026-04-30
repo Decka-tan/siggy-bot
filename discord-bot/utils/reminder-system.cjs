@@ -100,21 +100,16 @@ function buildReminderEmbed(debtor) {
     .setFooter({ text: 'Siggy - Multiversal Cat Girl' });
 }
 
-// Helper to get payment info by username
+// Helper to get payment info by Discord Username
 function getPaymentInfoByName(username) {
-  const { getPaymentInfo, readDB } = require('./payment-db.cjs');
-  
-  // 1. Try direct name match (e.g. "Sopmod")
-  let info = getPaymentInfo(username);
-  
-  // 2. If not found, try searching by discordUser field in all payments
-  if (!info) {
-    const db = readDB();
-    info = Object.values(db.payments).find(p => 
-      p.discordUser?.toLowerCase() === username.toLowerCase() ||
-      p.name?.toLowerCase().includes(username.toLowerCase())
-    );
-  }
+  const { readDB } = require('./payment-db.cjs');
+  const db = readDB();
+  const searchName = username.toLowerCase().replace(/^@/, ''); // Bersih-bersih @ kalo ada
+
+  // Cari di database payments yang discordUser-nya cocok sama creator invoice
+  const info = Object.values(db.payments || {}).find(p => 
+    (p.discordUser || "").toLowerCase().replace(/^@/, '') === searchName
+  );
 
   if (!info) return null;
   
