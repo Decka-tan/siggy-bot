@@ -418,7 +418,7 @@ function StatCardMini({ title, value, icon: Icon, colorClass = "text-accent" }: 
   );
 }
 
-function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, participantAction: any }) {
+function DiscordEmbed({ invoice, participantAction, deleteAction }: { invoice: InvoiceRecord, participantAction: any, deleteAction?: any }) {
   if (!invoice) return null;
   const participants = invoice.participants || [];
   const unpaid = participants.filter(p => !p.paid);
@@ -426,7 +426,15 @@ function DiscordEmbed({ invoice, participantAction }: { invoice: InvoiceRecord, 
   return (
     <div className="relative overflow-hidden rounded-lg border-l-4 border-accent bg-[#2b2d31] p-4 shadow-md transition-all hover:bg-[#313338]">
       <div className="mb-4">
-        <div className="flex items-center justify-between"><h4 className="text-sm font-bold uppercase tracking-wide text-white">{invoice.title || "Untitled Invoice"}</h4><p className="text-[10px] font-mono text-[#b5bac1]">{String(invoice.id || "").substring(0, 8)}</p></div>
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-bold uppercase tracking-wide text-white">{invoice.title || "Untitled Invoice"}</h4>
+          <div className="flex items-center gap-3">
+            <p className="text-[10px] font-mono text-[#b5bac1]">{String(invoice.id || "").substring(0, 8)}</p>
+            <button className="text-[#b5bac1] hover:text-accent transition-colors">
+              <Edit2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
         <div className="mt-1 flex items-center gap-2 text-[11px] text-[#b5bac1]"><span>Created by {invoice.creator?.username || "Unknown"}</span><span>•</span><span>{formatDate(invoice.date)}</span></div>
       </div>
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -592,8 +600,8 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"><div className="rounded-3xl border border-white/5 bg-surface/30 p-8"><h3 className="text-xl font-bold mb-8">Revenue Trend</h3><div className="space-y-6">{data.monthlyStats.map((m, i) => (<div key={i} className="space-y-2"><div className="flex justify-between text-xs font-mono"><span>{m.label}</span><span>{formatCurrency(m.amount)}</span></div><div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full bg-accent shadow-[0_0_10px_rgba(255,215,0,0.4)]" style={{ width: `${(m.amount / Math.max(...data.monthlyStats.map(x => x.amount), 1)) * 100}%` }}></div></div></div>))}</div></div><div className="rounded-3xl border border-white/5 bg-surface/30 p-8"><h3 className="text-xl font-bold mb-8">Activity Leaders</h3><div className="space-y-4">{data.topCreators.map((c, i) => (<div key={i} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-transparent hover:border-white/10 transition-all"><span className="font-bold">{c.name}</span><span className="font-bold text-accent">{formatCurrency(c.totalCreated)}</span></div>))}</div></div></div>
             )}
 
-             {activeTab === 'logs' && (
-               <div className="space-y-8"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Management Logs</h2><p className="text-xs text-text-secondary">{data.filteredInvoices.length} results found</p></div>{data.filteredInvoices.length === 0 ? (<div className="py-32 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary">No invoices match your filters.</p></div>) : (<div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{data.filteredInvoices.map((inv) => <DiscordEmbed key={inv.id} invoice={inv} participantAction={markPaidAction} />)}</div>)}</div>
+            {activeTab === 'logs' && (
+               <div className="space-y-8"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Management Logs</h2><p className="text-xs text-text-secondary">{data.filteredInvoices.length} results found</p></div>{data.filteredInvoices.length === 0 ? (<div className="py-32 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary">No invoices match your filters.</p></div>) : (<div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{data.filteredInvoices.map((inv) => <DiscordEmbed key={inv.id} invoice={inv} participantAction={markPaidAction} deleteAction={deleteInvoiceAction} />)}</div>)}</div>
              )}
 
              {activeTab === 'payments' && (
