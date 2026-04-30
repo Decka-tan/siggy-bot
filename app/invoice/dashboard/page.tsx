@@ -7,12 +7,20 @@ import {
   CalendarRange,
   CircleDollarSign,
   CreditCard,
+  LayoutDashboard,
   Receipt,
+  Server,
   Users,
+  Search,
+  Filter,
+  ArrowUpRight,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
+// --- Types ---
 
 type InvoiceParticipant = {
   userId?: string;
@@ -43,23 +51,32 @@ type InvoiceDb = {
   nameAliases?: Record<string, string[]>;
 };
 
+type GuildInfo = {
+  id: string;
+  name: string;
+  invoiceCount: number;
+};
+
 type DashboardData = {
-  invoices: InvoiceRecord[];
+  allInvoices: InvoiceRecord[];
+  filteredInvoices: InvoiceRecord[];
   totalAmount: number;
   outstandingAmount: number;
   paidAmount: number;
   topCreators: { name: string; totalCreated: number; invoiceCount: number }[];
   topDebtors: { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number }[];
   monthlyStats: { label: string; count: number; amount: number }[];
+  guilds: GuildInfo[];
   stats: {
     totalInvoices: number;
     totalParticipants: number;
     paidParticipants: number;
     unpaidParticipants: number;
-    uniqueGuilds: number;
   };
   dbPath: string;
 };
+
+// --- Helpers ---
 
 function formatCurrency(value: number) {
   return `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
@@ -83,29 +100,19 @@ function getInvoiceDbPath() {
   ].filter(Boolean) as string[];
 
   for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
+    if (fs.existsSync(candidate)) return candidate;
   }
-
   return candidates[0] || path.join(process.cwd(), 'discord-bot', 'data', 'invoices.json');
 }
 
 function getInvoiceDb(): { db: InvoiceDb; dbPath: string } {
   const dbPath = getInvoiceDbPath();
-
-  if (!fs.existsSync(dbPath)) {
-    return { db: { invoices: {}, nameAliases: {} }, dbPath };
-  }
-
+  if (!fs.existsSync(dbPath)) return { db: { invoices: {}, nameAliases: {} }, dbPath };
   try {
     const raw = fs.readFileSync(dbPath, 'utf8');
     const parsed = JSON.parse(raw);
     return {
-      db: {
-        invoices: parsed?.invoices || {},
-        nameAliases: parsed?.nameAliases || {},
-      },
+      db: { invoices: parsed?.invoices || {}, nameAliases: parsed?.nameAliases || {} },
       dbPath,
     };
   } catch {
@@ -115,34 +122,45 @@ function getInvoiceDb(): { db: InvoiceDb; dbPath: string } {
 
 function getCanonicalName(name: string, aliases: Record<string, string[]>) {
   const lower = name.toLowerCase();
-
   for (const [canonical, aliasList] of Object.entries(aliases || {})) {
-    if (canonical.toLowerCase() === lower || aliasList.includes(lower)) {
-      return canonical;
-    }
+    if (canonical.toLowerCase() === lower || aliasList.includes(lower)) return canonical;
   }
-
   return name;
 }
 
-function buildDashboardData(): DashboardData {
+function buildDashboardData(selectedGuildId?: string): DashboardData {
   const { db, dbPath } = getInvoiceDb();
-  const invoices = Object.values(db.invoices || {}).sort((a, b) => b.createdAt - a.createdAt);
-  const participants = invoices.flatMap((invoice) => invoice.participants || []);
+  const allInvoices = Object.values(db.invoices || {}).sort((a, b) => b.createdAt - a.createdAt);
+  
+  // Guild mapping
+  const guildMap = new Map<string, number>();
+  allInvoices.forEach(inv => {
+    if (inv.guildId) guildMap.set(inv.guildId, (guildMap.get(inv.guildId) || 0) + 1);
+  });
+  
+  const guilds: GuildInfo[] = Array.from(guildMap.entries()).map(([id, count]) => ({
+    id,
+    name: `Server ${id.substring(0, 4)}...`, // We don't have real names without Discord API, so use ID prefix
+    invoiceCount: count
+  }));
+
+  // Filtering
+  const filteredInvoices = selectedGuildId 
+    ? allInvoices.filter(inv => inv.guildId === selectedGuildId)
+    : allInvoices;
+
+  const participants = filteredInvoices.flatMap((invoice) => invoice.participants || []);
   const unpaidParticipants = participants.filter((participant) => !participant.paid);
 
-  const totalAmount = invoices.reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0);
+  const totalAmount = filteredInvoices.reduce((sum, invoice) => sum + Number(invoice.totalAmount || 0), 0);
   const outstandingAmount = unpaidParticipants.reduce((sum, participant) => sum + Number(participant.amount || 0), 0);
   const paidAmount = totalAmount - outstandingAmount;
 
   const creatorMap = new Map<string, { name: string; totalCreated: number; invoiceCount: number }>();
   const debtorMap = new Map<string, { name: string; totalDebt: number; unpaidCount: number; invoiceCount: number }>();
   const monthlyMap = new Map<string, { label: string; count: number; amount: number }>();
-  const guildSet = new Set<string>();
 
-  for (const invoice of invoices) {
-    if (invoice.guildId) guildSet.add(invoice.guildId);
-
+  for (const invoice of filteredInvoices) {
     const creatorKey = invoice.creator?.id || invoice.creator?.username || 'unknown';
     const creatorName = invoice.creator?.username || 'Unknown';
     const creatorStats = creatorMap.get(creatorKey) || { name: creatorName, totalCreated: 0, invoiceCount: 0 };
@@ -179,274 +197,240 @@ function buildDashboardData(): DashboardData {
     }
   }
 
-  const topCreators = Array.from(creatorMap.values()).sort((a, b) => b.totalCreated - a.totalCreated).slice(0, 5);
-  const topDebtors = Array.from(debtorMap.values()).sort((a, b) => b.totalDebt - a.totalDebt).slice(0, 8);
-  const monthlyStats = Array.from(monthlyMap.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .slice(-6)
-    .map(([, value]) => value);
-
   return {
-    invoices,
+    allInvoices,
+    filteredInvoices,
     totalAmount,
     outstandingAmount,
     paidAmount,
-    topCreators,
-    topDebtors,
-    monthlyStats,
+    guilds,
+    topCreators: Array.from(creatorMap.values()).sort((a, b) => b.totalCreated - a.totalCreated).slice(0, 5),
+    topDebtors: Array.from(debtorMap.values()).sort((a, b) => b.totalDebt - a.totalDebt).slice(0, 8),
+    monthlyStats: Array.from(monthlyMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).slice(-6).map(([, v]) => v),
     dbPath,
     stats: {
-      totalInvoices: invoices.length,
+      totalInvoices: filteredInvoices.length,
       totalParticipants: participants.length,
-      paidParticipants: participants.filter((participant) => participant.paid).length,
+      paidParticipants: participants.filter((p) => p.paid).length,
       unpaidParticipants: unpaidParticipants.length,
-      uniqueGuilds: guildSet.size,
     },
   };
 }
 
-function StatCard({ title, value, subtitle, icon }: { title: string; value: string; subtitle: string; icon: React.ReactNode }) {
+// --- Components ---
+
+function SidebarItem({ icon: Icon, label, active = false, href = '#' }: { icon: any; label: string; active?: boolean; href?: string }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-bg/55 p-6 backdrop-blur-sm shadow-[0_0_30px_rgba(0,0,0,0.18)] transition-all hover:border-accent/30 hover:shadow-[0_0_30px_rgba(255,215,0,0.08)]">
-      <div className="mb-5 flex items-center justify-between">
-        <p className="text-[11px] font-mono uppercase tracking-[0.24em] text-text-secondary">{title}</p>
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-accent/20 to-yellow-400/20 text-accent">
-          {icon}
-        </div>
+    <Link href={href} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${active ? 'bg-accent/15 text-accent font-medium' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}>
+      <Icon className="h-5 w-5" />
+      <span className="text-sm tracking-wide">{label}</span>
+      {active && <div className="ml-auto h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(255,215,0,0.6)]"></div>}
+    </Link>
+  );
+}
+
+function StatCardMini({ title, value, icon: Icon, colorClass = "text-accent" }: { title: string; value: string; icon: any; colorClass?: string }) {
+  return (
+    <div className="rounded-2xl border border-white/5 bg-surface/30 p-5 backdrop-blur-md">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-text-secondary">{title}</p>
+        <Icon className={`h-4 w-4 ${colorClass}`} />
       </div>
-      <div className="space-y-1.5">
-        <h3 className="text-2xl font-semibold text-text-primary sm:text-3xl">{value}</h3>
-        <p className="text-sm leading-6 text-text-secondary">{subtitle}</p>
-      </div>
+      <p className="text-xl font-bold tracking-tight text-text-primary">{value}</p>
     </div>
   );
 }
 
-export default function InvoiceDashboardPage() {
-  const { invoices, topCreators, topDebtors, monthlyStats, totalAmount, outstandingAmount, paidAmount, stats, dbPath } = buildDashboardData();
-  const recentInvoices = invoices.slice(0, 10);
-  const paidRatio = stats.totalParticipants ? Math.round((stats.paidParticipants / stats.totalParticipants) * 100) : 0;
+export default function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string } }) {
+  const selectedGuild = searchParams.guild;
+  const data = buildDashboardData(selectedGuild);
+  const recentInvoices = data.filteredInvoices.slice(0, 8);
+  const paidRatio = data.stats.totalParticipants ? Math.round((data.stats.paidParticipants / data.stats.totalParticipants) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary">
-      <section className="relative overflow-hidden border-b border-white/5 pt-28 sm:pt-32">
-        <div className="absolute inset-0 z-0 hidden md:block">
-          <div className="absolute inset-0 bg-bg z-10" style={{ clipPath: 'polygon(0 0, 68% 0, 52% 100%, 0 100%)' }}></div>
-          <div className="absolute inset-0 bg-accent z-0 opacity-90" style={{ clipPath: 'polygon(67% 0, 70% 0, 54% 100%, 51% 100%)' }}></div>
-          <div className="absolute inset-0 bg-accent z-0 opacity-70" style={{ clipPath: 'polygon(71% 0, 72% 0, 56% 100%, 55% 100%)' }}></div>
-          <div className="absolute inset-0 bg-[#333333] z-[-1]" style={{ clipPath: 'polygon(68% 0, 100% 0, 100% 100%, 52% 100%)' }}>
-            <div
-              className="absolute inset-0 opacity-90"
-              style={{
-                backgroundColor: '#333333',
-                backgroundImage: `linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555),
-                                  linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)`,
-                backgroundSize: '90px 90px',
-                backgroundPosition: '0 0, 45px 45px',
-              }}
-            ></div>
+    <div className="flex min-h-screen bg-[#0a0a0a] text-text-primary">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 hidden h-full w-72 flex-col border-r border-white/5 bg-[#0d0d0d] p-6 lg:flex z-50">
+        <div className="mb-10 flex items-center gap-3 px-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-yellow-500 shadow-lg shadow-accent/20">
+            <Receipt className="h-6 w-6 text-black" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold tracking-tight">Siggy Admin</h2>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-accent/70">Intelligence</p>
           </div>
         </div>
 
-        <div className="absolute inset-0 z-0 block md:hidden">
-          <div className="absolute inset-0 bg-bg z-10" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 58%, 0 72%)' }}></div>
-          <div className="absolute inset-0 bg-accent z-0 opacity-90" style={{ clipPath: 'polygon(0 69%, 100% 56%, 100% 58%, 0 71%)' }}></div>
-          <div className="absolute inset-0 bg-accent z-0 opacity-70" style={{ clipPath: 'polygon(0 72%, 100% 59%, 100% 61%, 0 74%)' }}></div>
-          <div className="absolute inset-0 bg-[#333333] z-[-1]" style={{ clipPath: 'polygon(0 58%, 100% 45%, 100% 100%, 0 100%)' }}>
-            <div
-              className="absolute inset-0 opacity-90"
-              style={{
-                backgroundColor: '#333333',
-                backgroundImage: `linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555),
-                                  linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)`,
-                backgroundSize: '60px 60px',
-                backgroundPosition: '0 0, 30px 30px',
-              }}
-            ></div>
-          </div>
-        </div>
+        <nav className="flex-1 space-y-2">
+          <p className="px-4 pb-2 text-[10px] font-mono uppercase tracking-[0.25em] text-text-secondary/50">Navigation</p>
+          <SidebarItem icon={LayoutDashboard} label="Dashboard" active />
+          <SidebarItem icon={Users} label="Debtors" />
+          <SidebarItem icon={BarChart3} label="Analytics" />
+          <SidebarItem icon={Receipt} label="History" />
+        </nav>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-6 pb-20 sm:px-8 lg:px-8 lg:pb-24">
-          <div className="grid gap-10 lg:grid-cols-[1.35fr_0.85fr] lg:items-end">
-            <div>
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/10 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.24em] text-accent">
-                <BarChart3 className="h-3.5 w-3.5" /> Invoice dashboard
+        <div className="mt-auto space-y-4 pt-6 border-t border-white/5">
+          <div className="rounded-2xl bg-gradient-to-br from-surface to-black/40 p-4 border border-white/5">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-text-secondary mb-2">Storage Status</p>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
+              <p className="text-xs font-medium text-emerald-400">Live Sync Active</p>
+            </div>
+            <p className="text-[9px] font-mono text-text-secondary leading-relaxed break-all opacity-60">
+              {data.dbPath}
+            </p>
+          </div>
+          <Link href="/" className="flex items-center justify-center gap-2 rounded-xl bg-white/5 px-4 py-3 text-sm font-medium hover:bg-white/10 transition-colors">
+            Exit to Home
+          </Link>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-72 min-h-screen">
+        {/* Top Header */}
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-white/5 bg-[#0a0a0a]/80 px-8 backdrop-blur-xl">
+          <div className="flex items-center gap-4">
+             <h1 className="text-xl font-bold tracking-tight">Invoice Dashboard</h1>
+             <div className="h-4 w-px bg-white/10 mx-2"></div>
+             <p className="text-xs text-text-secondary hidden sm:block">
+               Manage billing across {data.guilds.length} servers
+             </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 border border-white/5">
+              <Search className="h-4 w-4 text-text-secondary" />
+              <input type="text" placeholder="Search invoices..." className="bg-transparent text-xs outline-none w-40" />
+            </div>
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-accent/20 to-yellow-500/20 border border-accent/30 flex items-center justify-center">
+              <Users className="h-5 w-5 text-accent" />
+            </div>
+          </div>
+        </header>
+
+        <div className="p-8 pb-20">
+          {/* Guild Switcher */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Server className="h-4 w-4 text-accent" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-text-secondary">Select Server</h3>
               </div>
-              <h1 className="text-4xl font-display tracking-tight text-accent sm:text-6xl lg:text-7xl">
-                SIGGY INVOICE<br />CONTROL PANEL
-              </h1>
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-text-secondary sm:text-base">
-                Dashboard invoice yang baca langsung dari storage bot di VPS. Karena folder deployment-mu sama, page ini akan read file invoice yang sama dengan Discord bot dan nunjukin summary invoice tanpa perlu manage lewat Discord lagi.
-              </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link href="/#about" className="w-full sm:w-auto">
-                  <button className="w-full rounded-xl border border-border bg-surface px-6 py-4 font-mono text-xs uppercase tracking-[0.2em] text-text-primary transition-all hover:border-accent hover:text-accent">
-                    Back to site
-                  </button>
+              <span className="text-xs text-accent/60 font-mono">Total {data.allInvoices.length} entries</span>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              <Link 
+                href="/invoice/dashboard"
+                className={`group flex items-center gap-3 rounded-2xl border px-6 py-4 transition-all ${!selectedGuild ? 'border-accent bg-accent/10 shadow-[0_0_20px_rgba(255,215,0,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+              >
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${!selectedGuild ? 'bg-accent text-black' : 'bg-white/5 text-text-secondary group-hover:text-text-primary'}`}>
+                  <LayoutDashboard className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className={`text-sm font-bold ${!selectedGuild ? 'text-accent' : 'text-text-primary'}`}>All Servers</p>
+                  <p className="text-[10px] text-text-secondary">Summary of all guilds</p>
+                </div>
+              </Link>
+
+              {data.guilds.map((guild) => (
+                <Link 
+                  key={guild.id}
+                  href={`/invoice/dashboard?guild=${guild.id}`}
+                  className={`group flex items-center gap-3 rounded-2xl border px-6 py-4 transition-all ${selectedGuild === guild.id ? 'border-accent bg-accent/10 shadow-[0_0_20px_rgba(255,215,0,0.05)]' : 'border-white/5 bg-surface/40 hover:border-white/20'}`}
+                >
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${selectedGuild === guild.id ? 'bg-accent text-black' : 'bg-white/5 text-text-secondary group-hover:text-text-primary'}`}>
+                    <Server className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-bold ${selectedGuild === guild.id ? 'text-accent' : 'text-text-primary'}`}>ID: {guild.id.substring(0, 8)}</p>
+                    <p className="text-[10px] text-text-secondary">{guild.invoiceCount} Invoices</p>
+                  </div>
                 </Link>
-                <div className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-black/30 px-4 py-4 text-left font-mono text-[11px] uppercase tracking-[0.16em] text-text-secondary">
-                  <CalendarRange className="h-4 w-4 text-accent" /> Live file: <span className="max-w-[260px] truncate text-text-primary">{dbPath}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[28px] border border-white/10 bg-black/35 p-6 backdrop-blur-sm shadow-2xl">
-              <div className="mb-6 flex items-center justify-between border-b border-white/10 pb-4">
-                <div>
-                  <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-text-secondary">Snapshot</p>
-                  <p className="mt-2 text-lg font-semibold text-text-primary">Invoice system health</p>
-                </div>
-                <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-mono uppercase tracking-[0.18em] text-emerald-300">
-                  Live
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="rounded-2xl border border-white/10 bg-bg/60 p-4">
-                  <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-secondary">Invoices</p>
-                  <p className="mt-2 text-2xl font-semibold">{stats.totalInvoices}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-bg/60 p-4">
-                  <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-secondary">Guilds</p>
-                  <p className="mt-2 text-2xl font-semibold">{stats.uniqueGuilds}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-bg/60 p-4">
-                  <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-secondary">Participants</p>
-                  <p className="mt-2 text-2xl font-semibold">{stats.totalParticipants}</p>
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-bg/60 p-4">
-                  <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-text-secondary">Paid ratio</p>
-                  <p className="mt-2 text-2xl font-semibold text-accent">{paidRatio}%</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="border-t border-border bg-surface px-6 py-8 sm:px-8 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard
-            title="Total invoices"
-            value={String(stats.totalInvoices)}
-            subtitle={`${stats.totalParticipants} participant entries tracked`}
-            icon={<Receipt className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Total amount"
-            value={formatCurrency(totalAmount)}
-            subtitle={`${formatCurrency(paidAmount)} already settled`}
-            icon={<CircleDollarSign className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Outstanding"
-            value={formatCurrency(outstandingAmount)}
-            subtitle={`${stats.unpaidParticipants} unpaid participant entries`}
-            icon={<CreditCard className="h-5 w-5" />}
-          />
-          <StatCard
-            title="Coverage"
-            value={`${stats.uniqueGuilds} guild${stats.uniqueGuilds === 1 ? '' : 's'}`}
-            subtitle="Detected from existing invoice records"
-            icon={<Users className="h-5 w-5" />}
-          />
-        </div>
-      </section>
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-10">
+            <StatCardMini title="Total Amount" value={formatCurrency(data.totalAmount)} icon={CircleDollarSign} />
+            <StatCardMini title="Outstanding" value={formatCurrency(data.outstandingAmount)} icon={CreditCard} colorClass="text-amber-400" />
+            <StatCardMini title="Paid Ratio" value={`${paidRatio}%`} icon={BarChart3} colorClass="text-emerald-400" />
+            <StatCardMini title="Invoices" value={String(data.stats.totalInvoices)} icon={Receipt} colorClass="text-blue-400" />
+          </div>
 
-      <section className="border-t border-border bg-bg px-6 py-12 sm:px-8 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[1.6fr_1fr]">
-          <div className="space-y-8">
-            <div className="rounded-3xl border border-white/10 bg-surface/50 p-6 backdrop-blur-sm shadow-xl">
-              <div className="mb-6 flex items-end justify-between gap-4 border-b border-white/10 pb-4">
-                <div>
-                  <h2 className="text-2xl font-display tracking-tight text-text-primary">Recent invoices</h2>
-                  <p className="mt-2 text-sm leading-6 text-text-secondary">
-                    Latest activity from the same JSON source used by the Discord bot.
-                  </p>
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_1fr]">
+            {/* Left Column: Recent Invoices */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-accent" />
+                  <h2 className="text-xl font-bold tracking-tight">Recent Invoices</h2>
                 </div>
-                <div className="hidden rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-[11px] font-mono uppercase tracking-[0.18em] text-accent sm:block">
-                  Last {Math.min(recentInvoices.length, 10)} shown
-                </div>
+                <button className="text-xs text-accent hover:underline flex items-center gap-1">
+                  View All <ArrowUpRight className="h-3 w-3" />
+                </button>
               </div>
 
               {recentInvoices.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-white/10 bg-black/20 p-10 text-center text-text-secondary">
-                  Belum ada invoice di database. Begitu bot bikin invoice pertama di VPS, dashboard ini langsung ngikut.
+                <div className="rounded-3xl border border-dashed border-white/10 bg-white/5 p-20 text-center text-text-secondary">
+                  No invoices found for this server.
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4">
                   {recentInvoices.map((invoice) => {
-                    const unpaid = invoice.participants.filter((participant) => !participant.paid);
-                    const paid = invoice.participants.length - unpaid.length;
-                    const outstanding = unpaid.reduce((sum, participant) => sum + Number(participant.amount || 0), 0);
+                    const unpaid = invoice.participants.filter(p => !p.paid);
+                    const outstanding = unpaid.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                    const isFullyPaid = unpaid.length === 0;
 
                     return (
-                      <div key={invoice.id} className="rounded-3xl border border-white/10 bg-black/25 p-5 transition-all hover:border-accent/20">
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div key={invoice.id} className="group rounded-2xl border border-white/5 bg-surface/30 p-6 transition-all hover:border-white/10 hover:bg-surface/50">
+                        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
                           <div className="space-y-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h3 className="text-xl font-semibold text-text-primary">{invoice.title || 'Untitled Invoice'}</h3>
-                              <span className="rounded-full border border-white/10 bg-bg/60 px-3 py-1 text-[11px] font-mono uppercase tracking-[0.16em] text-text-secondary">
-                                {formatDate(invoice.date)}
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-bold text-text-primary group-hover:text-accent transition-colors">{invoice.title || 'Untitled'}</h3>
+                              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${isFullyPaid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                                {isFullyPaid ? 'Settled' : 'Pending'}
                               </span>
                             </div>
-                            <p className="text-sm text-text-secondary">
-                              Created by <span className="text-text-primary">{invoice.creator?.username || 'Unknown'}</span>
-                              <span className="mx-2 text-white/20">•</span>
-                              Guild <span className="text-text-primary">{invoice.guildId}</span>
-                            </p>
-                            <p className="break-all font-mono text-[11px] uppercase tracking-[0.12em] text-text-secondary">{invoice.id}</p>
+                            <div className="flex items-center gap-2 text-xs text-text-secondary">
+                              <span className="font-medium text-text-primary">{invoice.creator?.username}</span>
+                              <span>•</span>
+                              <span>{formatDate(invoice.date)}</span>
+                              <span>•</span>
+                              <span className="font-mono opacity-50">{invoice.id.substring(0, 12)}</span>
+                            </div>
                           </div>
-
-                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:min-w-[440px]">
-                            <div className="rounded-2xl border border-white/10 bg-bg/50 p-3.5">
-                              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-secondary">Total</p>
-                              <p className="mt-1.5 text-sm font-semibold">{formatCurrency(invoice.totalAmount)}</p>
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-bg/50 p-3.5">
-                              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-secondary">Participants</p>
-                              <p className="mt-1.5 text-sm font-semibold">{invoice.participants.length}</p>
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-bg/50 p-3.5">
-                              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-secondary">Paid</p>
-                              <p className="mt-1.5 text-sm font-semibold text-emerald-300">{paid}</p>
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-bg/50 p-3.5">
-                              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-secondary">Outstanding</p>
-                              <p className="mt-1.5 text-sm font-semibold text-amber-300">{formatCurrency(outstanding)}</p>
-                            </div>
+                          <div className="text-right">
+                            <p className="text-sm font-mono text-text-secondary uppercase tracking-widest mb-1">Amount</p>
+                            <p className="text-xl font-bold text-text-primary">{formatCurrency(invoice.totalAmount)}</p>
                           </div>
                         </div>
 
-                        <div className="mt-5 overflow-x-auto rounded-2xl border border-white/10 bg-bg/40">
-                          <table className="min-w-full text-left text-sm">
-                            <thead>
-                              <tr className="border-b border-white/10 text-[11px] uppercase tracking-[0.18em] text-text-secondary">
-                                <th className="px-4 py-3 font-medium">Participant</th>
-                                <th className="px-4 py-3 font-medium">Amount</th>
-                                <th className="px-4 py-3 font-medium">Status</th>
-                                <th className="px-4 py-3 font-medium">Notes</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {invoice.participants.map((participant, index) => (
-                                <tr
-                                  key={`${invoice.id}-${participant.userId || participant.username}-${index}`}
-                                  className="border-b border-white/10 last:border-0"
-                                >
-                                  <td className="px-4 py-3 text-text-primary">{participant.username}</td>
-                                  <td className="px-4 py-3">{formatCurrency(participant.amount)}</td>
-                                  <td className="px-4 py-3">
-                                    <span
-                                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-mono uppercase tracking-[0.14em] ${participant.paid ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'}`}
-                                    >
-                                      {participant.paid ? 'Paid' : 'Unpaid'}
-                                    </span>
-                                  </td>
-                                  <td className="px-4 py-3 text-text-secondary">{participant.notes || '-'}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+                        {/* Quick Participant View */}
+                        <div className="mt-6 space-y-2">
+                          <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-text-secondary/60 px-2">
+                            <span>Participant Status</span>
+                            <span>{invoice.participants.length} total</span>
+                          </div>
+                          <div className="divide-y divide-white/5 rounded-xl border border-white/5 bg-black/20 overflow-hidden">
+                            {invoice.participants.slice(0, 3).map((p, idx) => (
+                              <div key={idx} className="flex items-center justify-between px-4 py-2.5 text-xs">
+                                <span className="text-text-primary font-medium">{p.username}</span>
+                                <div className="flex items-center gap-4">
+                                  <span className="text-text-secondary">{formatCurrency(p.amount)}</span>
+                                  <span className={p.paid ? 'text-emerald-400' : 'text-amber-400'}>
+                                    {p.paid ? '✓' : '×'}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                            {invoice.participants.length > 3 && (
+                              <div className="px-4 py-2 text-[10px] text-center bg-white/5 text-text-secondary">
+                                + {invoice.participants.length - 3} others
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -454,106 +438,89 @@ export default function InvoiceDashboardPage() {
                 </div>
               )}
             </div>
-          </div>
 
-          <div className="space-y-8">
-            <div className="rounded-3xl border border-white/10 bg-surface/50 p-6 shadow-xl backdrop-blur-sm">
-              <div className="mb-5 border-b border-white/10 pb-4">
-                <h2 className="text-2xl font-display tracking-tight">Top debtors</h2>
-                <p className="mt-2 text-sm leading-6 text-text-secondary">Grouped with the same alias logic used by the invoice bot.</p>
-              </div>
-
-              {topDebtors.length === 0 ? (
-                <p className="text-sm text-text-secondary">No unpaid debt found.</p>
-              ) : (
-                <div className="space-y-3">
-                  {topDebtors.map((debtor, index) => (
-                    <div key={`${debtor.name}-${index}`} className="rounded-2xl border border-white/10 bg-bg/50 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-text-primary">{debtor.name}</p>
-                          <p className="mt-1 text-xs text-text-secondary">{debtor.unpaidCount} unpaid entries across {debtor.invoiceCount} item(s)</p>
-                        </div>
-                        <p className="text-sm font-semibold text-amber-300">{formatCurrency(debtor.totalDebt)}</p>
-                      </div>
-                    </div>
-                  ))}
+            {/* Right Column: Mini Stats & Rankings */}
+            <div className="space-y-8">
+              {/* Debtors Ranking */}
+              <div className="rounded-3xl border border-white/5 bg-surface/20 p-6 shadow-2xl">
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-amber-400" />
+                    <h2 className="text-lg font-bold tracking-tight">Top Debtors</h2>
+                  </div>
+                  <Filter className="h-4 w-4 text-text-secondary cursor-pointer hover:text-text-primary" />
                 </div>
-              )}
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-surface/50 p-6 shadow-xl backdrop-blur-sm">
-              <div className="mb-5 border-b border-white/10 pb-4">
-                <h2 className="text-2xl font-display tracking-tight">Top creators</h2>
-                <p className="mt-2 text-sm leading-6 text-text-secondary">Who has created the most invoice value.</p>
-              </div>
-
-              {topCreators.length === 0 ? (
-                <p className="text-sm text-text-secondary">No creator stats yet.</p>
-              ) : (
+                
                 <div className="space-y-3">
-                  {topCreators.map((creator, index) => (
-                    <div key={`${creator.name}-${index}`} className="flex items-center justify-between rounded-2xl border border-white/10 bg-bg/50 p-4">
+                  {data.topDebtors.map((debtor, idx) => (
+                    <div key={idx} className="flex items-center justify-between rounded-xl bg-white/5 p-4 border border-transparent hover:border-white/10 transition-all">
                       <div>
-                        <p className="text-sm font-semibold text-text-primary">{creator.name}</p>
-                        <p className="mt-1 text-xs text-text-secondary">{creator.invoiceCount} invoice(s)</p>
+                        <p className="text-sm font-bold text-text-primary">{debtor.name}</p>
+                        <p className="text-[10px] text-text-secondary mt-0.5">{debtor.unpaidCount} unpaid • {debtor.invoiceCount} invoices</p>
                       </div>
-                      <p className="text-sm font-semibold text-accent">{formatCurrency(creator.totalCreated)}</p>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-amber-400">{formatCurrency(debtor.totalDebt)}</p>
+                        <div className="h-1 w-20 bg-white/5 rounded-full mt-1.5 overflow-hidden">
+                           <div className="h-full bg-amber-400/60" style={{ width: `${Math.min(100, (debtor.totalDebt / data.outstandingAmount) * 100)}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {data.topDebtors.length === 0 && <p className="text-sm text-text-secondary text-center py-10">All clear! No debtors.</p>}
+                </div>
+              </div>
+
+              {/* Creators Ranking */}
+              <div className="rounded-3xl border border-white/5 bg-surface/20 p-6 shadow-2xl">
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="h-5 w-5 text-accent" />
+                    <h2 className="text-lg font-bold tracking-tight">Top Creators</h2>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  {data.topCreators.map((creator, idx) => (
+                    <div key={idx} className="flex items-center justify-between rounded-xl bg-white/5 p-4">
+                      <div className="flex items-center gap-3">
+                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 text-accent font-bold text-xs">
+                           {idx + 1}
+                         </div>
+                         <div>
+                            <p className="text-sm font-bold text-text-primary">{creator.name}</p>
+                            <p className="text-[10px] text-text-secondary">{creator.invoiceCount} Invoices Created</p>
+                         </div>
+                      </div>
+                      <p className="text-sm font-bold text-text-primary">{formatCurrency(creator.totalCreated)}</p>
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-surface/50 p-6 shadow-xl backdrop-blur-sm">
-              <div className="mb-5 border-b border-white/10 pb-4">
-                <h2 className="text-2xl font-display tracking-tight">Monthly trend</h2>
-                <p className="mt-2 text-sm leading-6 text-text-secondary">Last 6 months based on invoice date.</p>
               </div>
 
-              {monthlyStats.length === 0 ? (
-                <p className="text-sm text-text-secondary">No monthly data yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {monthlyStats.map((month) => (
-                    <div key={month.label} className="rounded-2xl border border-white/10 bg-bg/50 p-4">
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-text-primary">{month.label}</p>
-                        <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-text-secondary">{month.count} invoice(s)</p>
+              {/* Trend Chart (Simple) */}
+              <div className="rounded-3xl border border-white/5 bg-surface/20 p-6 shadow-2xl">
+                <h2 className="text-lg font-bold tracking-tight mb-6">Revenue Trend</h2>
+                <div className="space-y-4">
+                  {data.monthlyStats.map((month) => (
+                    <div key={month.label} className="space-y-1.5">
+                      <div className="flex justify-between text-[10px] font-mono uppercase tracking-widest text-text-secondary">
+                        <span>{month.label}</span>
+                        <span>{formatCurrency(month.amount)}</span>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-accent to-yellow-400"
-                          style={{ width: `${Math.max(12, Math.min(100, (month.count / Math.max(...monthlyStats.map((item) => item.count), 1)) * 100))}%` }}
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-accent/40 to-accent shadow-[0_0_8px_rgba(255,215,0,0.3)]" 
+                          style={{ width: `${Math.max(5, (month.amount / Math.max(...data.monthlyStats.map(m => m.amount), 1)) * 100)}%` }}
                         ></div>
                       </div>
-                      <p className="mt-3 text-sm text-accent">{formatCurrency(month.amount)}</p>
                     </div>
                   ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="border-t border-border bg-surface px-6 py-12 sm:px-8 lg:px-8">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-bg/40 p-6 shadow-xl backdrop-blur-sm sm:p-8">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-2xl font-display tracking-tight text-text-primary">Production-ready for VPS sync</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-text-secondary">
-                Selama Next app dan Discord bot jalan di folder yang sama di VPS, dashboard ini otomatis baca invoice live dari storage yang sama. Kalau nanti path-mu berubah, cukup set <code className="rounded bg-black/30 px-2 py-1 font-mono text-[11px] text-accent">INVOICE_DB_PATH</code> tanpa ubah code lagi.
-              </p>
-            </div>
-            <Link href="/chat?new=true" className="w-full lg:w-auto">
-              <button className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-accent to-yellow-400 px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.18em] text-black transition-all hover:from-yellow-400 hover:to-accent lg:w-auto">
-                Open Siggy <ArrowRight className="h-4 w-4" />
-              </button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      </main>
     </div>
   );
 }
