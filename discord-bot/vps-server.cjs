@@ -1409,8 +1409,13 @@ async function registerCommands() {
   try {
     // Guild commands for instant update
     if (CONFIG.guildId) {
-      console.log(`📡 Registering ${commands.length} commands to guild ${CONFIG.guildId}...`);
-      await rest.put(Routes.applicationGuildCommands(CONFIG.clientId, CONFIG.guildId), { body: commands });
+      console.log(`📡 [DEBUG] Sending PUT request to Discord for Guild: ${CONFIG.guildId}...`);
+      const registrationPromise = rest.put(Routes.applicationGuildCommands(CONFIG.clientId, CONFIG.guildId), { body: commands });
+      
+      // Timeout 15 seconds for registration
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Discord API Timeout')), 15000));
+      
+      await Promise.race([registrationPromise, timeoutPromise]);
       console.log('✅ Commands registered to guild (instant update!)');
       console.log(`   Commands: ${commands.map(c => c.name).join(', ')}`);
     } else {
