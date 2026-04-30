@@ -757,16 +757,35 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                                     <p className="text-xs font-medium text-text-primary mb-3">A.N {String(hName)}</p>
                                     <div className="flex items-center gap-3">
                                       <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{String(bName)}</span>
-                                      <span className="font-mono text-xs text-text-primary tracking-wider">{String(aNum)}</span>
+                                      <div className="flex items-center gap-1.5 group/copy relative">
+                                        <span className="font-mono text-xs text-text-primary tracking-wider">{String(aNum)}</span>
+                                        <div 
+                                          dangerouslySetInnerHTML={{ __html: `
+                                            <button 
+                                              onclick="navigator.clipboard.writeText('${aNum}'); alert('Nomor rekening ${key.toUpperCase()} disalin!');"
+                                              class="text-accent hover:text-white transition-all cursor-pointer p-1.5 bg-white/5 rounded-md border border-white/5 hover:border-accent/50"
+                                              title="Copy Account Number"
+                                            >
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                            </button>
+                                          ` }}
+                                        />
+                                      </div>
                                     </div>
                                   </div>
                                   <div className="flex flex-col gap-2">
                                     <form action={deletePaymentAction}>
                                       <input type="hidden" name="name" value={String(key)} />
                                       <input type="hidden" name="tab" value="payments" />
-                                      <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all">
-                                        <CreditCard className="h-4 w-4" />
-                                      </button>
+                                      <div dangerouslySetInnerHTML={{ __html: `
+                                        <button 
+                                          type="submit" 
+                                          onclick="return confirm('Hapus data pembayaran untuk ${key.toUpperCase()}?')"
+                                          class="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 hover:bg-red-500 hover:text-white transition-all cursor-pointer border border-red-500/20"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                                        </button>
+                                      ` }} />
                                     </form>
                                     <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-text-secondary">
                                       <CreditCard className="h-5 w-5" />
