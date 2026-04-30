@@ -740,48 +740,56 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
                         {Object.entries(data.allPayments).length === 0 ? (
                           <div className="py-12 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary text-sm">No payment accounts set yet.</p></div>
                         ) : (
-                          Object.entries(data.allPayments).map(([key, info]: [string, any], i) => (
-                            <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface/30 p-5 transition-all hover:border-accent/30 hover:bg-surface/40">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="text-sm font-bold text-accent uppercase tracking-wide">{key}</h4>
-                                    <span className="text-[10px] text-text-secondary font-mono">(@{info.discordUser})</span>
+                          Object.entries(data.allPayments).map(([key, info]: [string, any], i) => {
+                            if (!info) return null;
+                            const bankName = info.bank || "Unknown Bank";
+                            const accountNo = info.account || "000000000";
+                            const holderName = info.name || "Unknown Holder";
+                            const discordId = info.discordUser || "???";
+
+                            return (
+                              <div key={i} className="group relative overflow-hidden rounded-2xl border border-white/5 bg-surface/30 p-5 transition-all hover:border-accent/30 hover:bg-surface/40">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="text-sm font-bold text-accent uppercase tracking-wide">{key}</h4>
+                                      <span className="text-[10px] text-text-secondary font-mono">(@{discordId})</span>
+                                    </div>
+                                    <p className="text-xs font-medium text-text-primary mb-3">A.N {holderName}</p>
+                                    <div className="flex items-center gap-3">
+                                      <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{bankName}</span>
+                                      <div className="flex items-center gap-1.5 group/copy relative">
+                                        <span className="font-mono text-xs text-text-primary tracking-wider">{accountNo}</span>
+                                        <div 
+                                          dangerouslySetInnerHTML={{ __html: `
+                                            <button 
+                                              onclick="navigator.clipboard.writeText('${accountNo}'); alert('Nomor rekening ${key.toUpperCase()} disalin!');"
+                                              class="text-accent hover:text-white transition-all cursor-pointer p-1.5 bg-white/5 rounded-md border border-white/5 hover:border-accent/50"
+                                              title="Copy Account Number"
+                                            >
+                                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                            </button>
+                                          ` }}
+                                        />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <p className="text-xs font-medium text-text-primary mb-3">A.N {info.name}</p>
-                                  <div className="flex items-center gap-3">
-                                    <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-[10px] font-bold text-text-secondary">{info.bank}</span>
-                                    <div className="flex items-center gap-1.5 group/copy relative">
-                                      <span className="font-mono text-xs text-text-primary tracking-wider">{info.account}</span>
-                                      <div 
-                                        dangerouslySetInnerHTML={{ __html: `
-                                          <button 
-                                            onclick="navigator.clipboard.writeText('${info.account}'); alert('Nomor rekening ${key.toUpperCase()} disalin!');"
-                                            class="text-accent hover:text-white transition-all cursor-pointer p-1.5 bg-white/5 rounded-md border border-white/5 hover:border-accent/50"
-                                            title="Copy Account Number"
-                                          >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                          </button>
-                                        ` }}
-                                      />
+                                  <div className="flex flex-col gap-2">
+                                    <form action={deletePaymentAction} onSubmit={(e) => { if(!confirm(`Hapus data pembayaran untuk ${key}?`)) e.preventDefault(); }}>
+                                      <input type="hidden" name="name" value={key} />
+                                      <input type="hidden" name="tab" value="payments" />
+                                      <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 flex items-center justify-center text-red-400 hover:text-white transition-all group/del">
+                                        <Trash2 className="h-4 w-4" />
+                                      </button>
+                                    </form>
+                                    <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-text-secondary">
+                                      <CreditCard className="h-5 w-5" />
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex flex-col gap-2">
-                                  <form action={deletePaymentAction} onSubmit={(e) => { if(!confirm(`Hapus data pembayaran untuk ${key}?`)) e.preventDefault(); }}>
-                                    <input type="hidden" name="name" value={key} />
-                                    <input type="hidden" name="tab" value="payments" />
-                                    <button type="submit" className="h-10 w-10 rounded-xl bg-red-500/10 hover:bg-red-500 border border-red-500/20 hover:border-red-500 flex items-center justify-center text-red-400 hover:text-white transition-all group/del">
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </form>
-                                  <div className="h-10 w-10 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center text-text-secondary">
-                                    <CreditCard className="h-5 w-5" />
-                                  </div>
-                                </div>
                               </div>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                    </div>
