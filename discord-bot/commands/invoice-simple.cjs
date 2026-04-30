@@ -580,14 +580,23 @@ async function handleInvoiceButton(interaction, action) {
 
     if (customId.startsWith('invoice_pay_')) {
       invoiceId = customId.replace('invoice_pay_', '');
+    } else if (customId.startsWith('inv_pay_')) {
+      invoiceId = customId.replace('inv_pay_', '');
+      action = 'pay';
     } else if (customId.startsWith('invoice_bayar_')) {
       invoiceId = customId.replace('invoice_bayar_', '');
+    } else if (customId.startsWith('inv_bayar_')) {
+      invoiceId = customId.replace('inv_bayar_', '');
+      action = 'bayar';
     } else if (customId.startsWith('invoice_settle_')) {
       invoiceId = customId.replace('invoice_settle_', '');
     } else if (customId.startsWith('invoice_add_')) {
       invoiceId = customId.replace('invoice_add_', '');
     } else if (customId.startsWith('invoice_del_')) {
       invoiceId = customId.replace('invoice_del_', '');
+    } else if (customId.startsWith('inv_del_')) {
+      invoiceId = customId.replace('inv_del_', '');
+      action = 'delete';
     }
 
     const invoice = getInvoice(invoiceId);
@@ -1455,7 +1464,75 @@ const invoiceCommandsSimple = [
       },
     ],
   },
+  {
+    name: 'invoice-refresh',
+    description: 'Refresh SEMUA invoice yang belum lunas (kirim ulang & hapus lama)',
+  },
 ];
+
+/**
+ * /invoice-refresh — Refresh all unpaid invoices (re-send and delete old)
+ */
+async function handleInvoiceRefreshAll(interaction) {
+  try {
+    await interaction.deferReply({ ephemeral: true });
+    
+    const userId = interaction.user.id;
+    const invoices = getUserInvoices(userId);
+    
+    // Filter for unpaid or partially paid invoices
+    const unpaid = invoices.filter(inv => inv.participants.some(p => !p.paid));
+    
+    if (unpaid.length === 0) {
+      return interaction.editReply({
+        content: '📋 Tidak ada invoice yang belum lunas ditemukan.'
+      });
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const inv of unpaid) {
+      try {
+        const channel = await interaction.client.channels.fetch(inv.channelId);
+        
+        // 1. Try to delete old message if exists
+        if (inv.messageId) {
+          try {
+            const oldMsg = await channel.messages.fetch(inv.messageId);
+            await oldMsg.delete();
+          } catch (err) {
+            console.log(`[Invoice Refresh] Could not delete old message ${inv.messageId}: ${err.message}`);
+          }
+        }
+        
+        // 2. Send new message
+        const newMsg = await channel.send({
+          embeds: [renderInvoiceEmbed(inv)],
+          components: [buildInvoiceButtons(inv.id)]
+        });
+        
+        // 3. Update messageId in DB
+        updateInvoiceMessage(inv.id, newMsg.id);
+        successCount++;
+        
+      } catch (err) {
+        console.error(`[Invoice Refresh] Failed to refresh invoice ${inv.id}:`, err.message);
+        failCount++;
+      }
+    }
+    
+    await interaction.editReply({
+      content: `✅ **Refresh Selesai!**\n\n🔄 Berhasil: **${successCount}**\n❌ Gagal: **${failCount}**\n\nSemua invoice lama sudah dihapus dan dikirim ulang dengan tombol versi terbaru.`
+    });
+    
+  } catch (error) {
+    console.error('[Invoice Refresh] Global Error:', error);
+    if (interaction.deferred) {
+      await interaction.editReply({ content: `❌ Error: ${error.message}` }).catch(() => {});
+    }
+  }
+}
 
 module.exports = {
   handleInvoiceCreateSimple,
@@ -1475,8 +1552,7 @@ module.exports = {
   renderInvoiceRecapEmbed,
   invoiceCommandsSimple,
   handleInvoiceButton,
-  buildMarkPaidModal,
-  buildAddPeopleModal,
+  handleInvoiceRefreshAll, 
   buildMarkPaidComponent,
   sendInvoiceNotifications,
   sendPaidNotification,
@@ -1485,6 +1561,8 @@ module.exports = {
   // Also export empty handlers for backward compatibility
   handleInvoiceCreate: () => {},
   handleInvoiceModal: () => {},
+  buildMarkPaidModal: () => {},
+  buildAddPeopleModal: () => {},
   // Export tempInvoiceStorage for compatibility
   tempInvoiceStorage: new Map(),
 };

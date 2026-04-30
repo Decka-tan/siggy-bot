@@ -57,6 +57,7 @@ const {
   processMarkPaidModal,
   invoiceCommandsSimple,
   sendPaidNotification,
+  handleInvoiceRefreshAll,
 } = require('./commands/invoice-simple.cjs');
 
 const {
@@ -1539,6 +1540,7 @@ client.on('interactionCreate', async (interaction) => {
         case 'invoice-clear': await handleInvoiceClear(interaction); break;
         case 'invoice-owe': await handleInvoiceOwe(interaction); break;
         case 'invoice-merge': await handleInvoiceMerge(interaction); break;
+        case 'invoice-refresh': await handleInvoiceRefreshAll(interaction); break;
         case 'payment-set': await handlePaymentSet(interaction); break;
         case 'invoice-link': await handleInvoiceLink(interaction); break;
         case 'bayar': await handleBayar(interaction); break;
@@ -1630,11 +1632,11 @@ client.on('interactionCreate', async (interaction) => {
       }
 
       // Invoice & Payment Buttons
-      if (customId.startsWith('invoice_pay_')) return handleInvoiceButton(interaction, 'pay');
-      if (customId.startsWith('invoice_bayar_')) return handleInvoiceButton(interaction, 'bayar');
+      if (customId.startsWith('invoice_pay_') || customId.startsWith('inv_pay_')) return handleInvoiceButton(interaction, 'pay');
+      if (customId.startsWith('invoice_bayar_') || customId.startsWith('inv_bayar_')) return handleInvoiceButton(interaction, 'bayar');
       if (customId.startsWith('invoice_settle_')) return handleInvoiceButton(interaction, 'settle');
       if (customId.startsWith('invoice_add_')) return handleInvoiceButton(interaction, 'add');
-      if (customId.startsWith('invoice_del_')) return handleInvoiceButton(interaction, 'delete');
+      if (customId.startsWith('invoice_del_') || customId.startsWith('inv_del_')) return handleInvoiceButton(interaction, 'delete');
       if (customId.startsWith('mark_paid_page_')) return handleMarkPaidPage(interaction);
       if (customId.startsWith('analytics_prev_')) return handleAnalyticsPagination(interaction, 'prev');
       if (customId.startsWith('analytics_next_')) return handleAnalyticsPagination(interaction, 'next');
