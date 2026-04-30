@@ -1754,16 +1754,10 @@ async function handleMarkPaidSelect(interaction) {
 
     // Mark selected users as paid
     const result = markMultiplePaid(invoiceId, selectedValues);
-    if (!result.success) return interaction.update({ content: `❌ Error: ${result.error}`, components: [] });
+    if (!result.success) return interaction.editReply({ content: `❌ Error: ${result.error}`, components: [] });
 
     const updatedInvoice = getInvoice(invoiceId);
-    const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification } = require('./commands/invoice-simple.cjs');
-
-    // Send notifications
-    for (const userId of selectedValues) {
-      const p = updatedInvoice.participants.find(p => p.userId === userId);
-      if (p) await sendPaidNotification(updatedInvoice, p, interaction.guild).catch(() => {});
-    }
+    const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
 
     // Update the MAIN invoice message
     if (updatedInvoice.messageId && updatedInvoice.channelId) {
@@ -1784,7 +1778,11 @@ async function handleMarkPaidSelect(interaction) {
     });
   } catch (err) { 
     console.error('[Mark Paid Select] Error:', err); 
-    if (!interaction.replied && !interaction.deferred) await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({ content: `❌ Error: ${err.message}`, components: [] }).catch(() => {});
+    } else {
+      await interaction.reply({ content: `❌ Error: ${err.message}`, ephemeral: true }).catch(() => {});
+    }
   }
 }
 
