@@ -1650,7 +1650,10 @@ client.on('interactionCreate', async (interaction) => {
     // 3. HANDLE SELECT MENUS
     if (interaction.isStringSelectMenu()) {
       const { customId } = interaction;
-      if (customId.startsWith('mark_paid_select_')) return handleMarkPaidSelect(interaction);
+      if (customId.startsWith('mark_paid_select_')) {
+        const { handleMarkPaidSelect } = require('./commands/invoice-simple.cjs');
+        return handleMarkPaidSelect(interaction);
+      }
       if (customId === 'delete_invoice_select') return handleDeleteInvoiceSelect(interaction);
       if (customId === 'find_debt_select') {
         const { handleFindDebtSelect } = require('./commands/invoice-simple.cjs');
