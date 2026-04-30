@@ -418,7 +418,7 @@ function StatCardMini({ title, value, icon: Icon, colorClass = "text-accent" }: 
   );
 }
 
-function DiscordEmbed({ invoice, participantAction, deleteAction }: { invoice: InvoiceRecord, participantAction: any, deleteAction?: any }) {
+function DiscordEmbed({ invoice, participantAction, isEditing, editUrl, cancelUrl }: { invoice: InvoiceRecord, participantAction: any, isEditing: boolean, editUrl: string, cancelUrl: string }) {
   if (!invoice) return null;
   const participants = invoice.participants || [];
   const unpaid = participants.filter(p => !p.paid);
@@ -430,9 +430,15 @@ function DiscordEmbed({ invoice, participantAction, deleteAction }: { invoice: I
           <h4 className="text-sm font-bold uppercase tracking-wide text-white">{invoice.title || "Untitled Invoice"}</h4>
           <div className="flex items-center gap-3">
             <p className="text-[10px] font-mono text-[#b5bac1]">{String(invoice.id || "").substring(0, 8)}</p>
-            <button className="text-[#b5bac1] hover:text-accent transition-colors">
-              <Edit2 className="h-3.5 w-3.5" />
-            </button>
+            {isEditing ? (
+              <Link href={cancelUrl} title="Cancel Edit" className="text-accent hover:text-white transition-colors">
+                <XCircle className="h-4 w-4" />
+              </Link>
+            ) : (
+              <Link href={editUrl} title="Enable Management Mode" className="text-[#b5bac1] hover:text-accent transition-colors">
+                <Edit2 className="h-3.5 w-3.5" />
+              </Link>
+            )}
           </div>
         </div>
         <div className="mt-1 flex items-center gap-2 text-[11px] text-[#b5bac1]"><span>Created by {invoice.creator?.username || "Unknown"}</span><span>•</span><span>{formatDate(invoice.date)}</span></div>
@@ -447,7 +453,17 @@ function DiscordEmbed({ invoice, participantAction, deleteAction }: { invoice: I
             <span className="text-xs font-medium text-white">{p.username || "Unknown"}</span>
             <div className="flex items-center gap-3">
               <span className={`text-xs font-mono ${p.paid ? "text-emerald-400" : "text-amber-400"}`}>{formatCurrency(p.amount)}</span>
-              <form action={participantAction.bind(null, invoice.id, idx, !p.paid)}><button type="submit" className={`flex h-6 w-6 items-center justify-center rounded transition-all ${p.paid ? "bg-emerald-500/10 text-emerald-400" : "bg-white/5 text-[#b5bac1] hover:text-amber-400"}`}>{p.paid ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}</button></form>
+              {isEditing ? (
+                <form action={participantAction.bind(null, invoice.id, idx, !p.paid)}>
+                  <button type="submit" title={p.paid ? "Mark Unpaid" : "Mark Paid"} className={`flex h-6 w-6 items-center justify-center rounded transition-all ${p.paid ? "bg-emerald-500/10 text-emerald-400" : "bg-accent/20 text-accent hover:bg-accent hover:text-black"}`}>
+                    {p.paid ? <CheckCircle2 className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                  </button>
+                </form>
+              ) : (
+                <div className={`flex h-6 w-6 items-center justify-center rounded ${p.paid ? "text-emerald-500/40" : "text-white/10"}`}>
+                  {p.paid ? <CheckCircle2 className="h-3.5 w-3.5" /> : <div className="h-1 w-1 rounded-full bg-white/20"></div>}
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -456,7 +472,7 @@ function DiscordEmbed({ invoice, participantAction, deleteAction }: { invoice: I
   );
 }
 
-export default async function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string; error?: string; q?: string; status?: string; creator?: string } }) {
+export default async function InvoiceDashboardPage({ searchParams }: { searchParams: { guild?: string; tab?: string; error?: string; q?: string; status?: string; creator?: string; edit?: string } }) {
   const isAuth = await checkAuth();
   if (!isAuth) {
     return (
@@ -469,6 +485,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
 
   const selectedGuild = searchParams.guild;
   const activeTab = searchParams.tab || 'overview';
+  const editId = searchParams.edit;
   const filters = { q: searchParams.q, status: searchParams.status, creator: searchParams.creator };
   const data = buildDashboardData(selectedGuild, filters);
   const recentInvoices = data.filteredInvoices.slice(0, 15);
@@ -514,7 +531,18 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
             </div>
 
             {activeTab === 'overview' && (
-              <><div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12"><StatCardMini title="Billing" value={formatCurrency(data.totalAmount)} icon={CircleDollarSign} /><StatCardMini title="Debt" value={formatCurrency(data.outstandingAmount)} icon={CreditCard} colorClass="text-amber-400" /><StatCardMini title="Paid Rate" value={`${paidRatio}%`} icon={TrendingUp} colorClass="text-emerald-400" /><StatCardMini title="Records" value={String(data.stats.totalInvoices)} icon={Receipt} colorClass="text-blue-400" /></div><div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]"><div className="space-y-6"><h2 className="text-xl font-bold tracking-tight flex items-center gap-2"><Clock className="h-5 w-5 text-accent" /> Latest Activity</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-4">{recentInvoices.slice(0, 4).map(inv => <DiscordEmbed key={inv.id} invoice={inv} participantAction={markPaidAction} />)}</div></div><div className="rounded-3xl border border-white/5 bg-surface/20 p-6 h-fit"><h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-amber-400"><Users className="h-5 w-5" /> Top Debtors</h3><div className="space-y-3">{data.topDebtors.slice(0, 10).map((d, i) => (<div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-transparent hover:border-white/10 transition-all"><span className="text-sm font-bold text-text-primary">{d.name}</span><span className="text-sm font-bold text-amber-400">{formatCurrency(d.totalDebt)}</span></div>))}</div></div></div></>
+              <><div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12"><StatCardMini title="Billing" value={formatCurrency(data.totalAmount)} icon={CircleDollarSign} /><StatCardMini title="Debt" value={formatCurrency(data.outstandingAmount)} icon={CreditCard} colorClass="text-amber-400" /><StatCardMini title="Paid Rate" value={`${paidRatio}%`} icon={TrendingUp} colorClass="text-emerald-400" /><StatCardMini title="Records" value={String(data.stats.totalInvoices)} icon={Receipt} colorClass="text-blue-400" /></div><div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.6fr_1fr]"><div className="space-y-6"><h2 className="text-xl font-bold tracking-tight flex items-center gap-2"><Clock className="h-5 w-5 text-accent" /> Latest Activity</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {recentInvoices.slice(0, 4).map(inv => (
+                  <DiscordEmbed 
+                    key={inv.id} 
+                    invoice={inv} 
+                    participantAction={markPaidAction} 
+                    isEditing={editId === inv.id}
+                    editUrl={buildUrl({edit: inv.id})}
+                    cancelUrl={buildUrl({edit: null})}
+                  />
+                ))}
+              </div></div><div className="rounded-3xl border border-white/5 bg-surface/20 p-6 h-fit"><h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-amber-400"><Users className="h-5 w-5" /> Top Debtors</h3><div className="space-y-3">{data.topDebtors.slice(0, 10).map((d, i) => (<div key={i} className="flex justify-between items-center bg-white/5 p-3 rounded-xl border border-transparent hover:border-white/10 transition-all"><span className="text-sm font-bold text-text-primary">{d.name}</span><span className="text-sm font-bold text-amber-400">{formatCurrency(d.totalDebt)}</span></div>))}</div></div></div></>
             )}
 
             {activeTab === 'debtors' && (
@@ -601,7 +629,20 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
             )}
 
             {activeTab === 'logs' && (
-               <div className="space-y-8"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Management Logs</h2><p className="text-xs text-text-secondary">{data.filteredInvoices.length} results found</p></div>{data.filteredInvoices.length === 0 ? (<div className="py-32 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary">No invoices match your filters.</p></div>) : (<div className="grid grid-cols-1 xl:grid-cols-2 gap-6">{data.filteredInvoices.map((inv) => <DiscordEmbed key={inv.id} invoice={inv} participantAction={markPaidAction} deleteAction={deleteInvoiceAction} />)}</div>)}</div>
+               <div className="space-y-8"><div className="flex justify-between items-center"><h2 className="text-2xl font-bold">Management Logs</h2><p className="text-xs text-text-secondary">{data.filteredInvoices.length} results found</p></div>{data.filteredInvoices.length === 0 ? (<div className="py-32 text-center border border-dashed border-white/10 rounded-3xl bg-surface/10"><p className="text-text-secondary">No invoices match your filters.</p></div>) : (
+                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                   {data.filteredInvoices.map((inv) => (
+                    <DiscordEmbed 
+                      key={inv.id} 
+                      invoice={inv} 
+                      participantAction={markPaidAction} 
+                      isEditing={editId === inv.id}
+                      editUrl={buildUrl({edit: inv.id})}
+                      cancelUrl={buildUrl({edit: null})}
+                    />
+                  ))}
+                 </div>
+               )}</div>
              )}
 
              {activeTab === 'payments' && (
