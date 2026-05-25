@@ -183,9 +183,12 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     ? joined.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : 'Unknown';
 
-  const rep = joined
+  const days = joined
     ? Math.floor((Date.now() - joined.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
+  const rarityMultiplier: Record<string, number> = { UR: 5, SSR: 4, SR: 3, R: 2, common: 1 };
+  const rarity = deriveRarity(roleNames);
+  const rep = Math.floor(days * (rarityMultiplier[rarity] ?? 1));
 
   const total = memberCount || 3890;
   const setNum = ((parseInt(uid.slice(-4), 10) % total) + 1).toString().padStart(3, '0');
