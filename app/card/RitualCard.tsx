@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo, useEffect } from 'react';
+import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 
 export const TYPES: Record<string, { label: string; color: string; soft: string; deep: string }> = {
   builder:          { label: 'Builder',        color: '#f59e0b', soft: '#fbbf24', deep: '#78350f' },
@@ -202,6 +202,57 @@ export function RitualCard({
     img.src = pfpUrl;
   }, [pfpUrl, r]);
 
+  // Spring state — same stiffness/damping as poke-holo
+  const springRef = useRef({
+    rotate:  { x: 0,  y: 0,  vx: 0, vy: 0  },
+    glare:   { x: 50, y: 50, o: 0,  vx: 0,  vy: 0, vo: 0 },
+    bg:      { x: 50, y: 50, vx: 0, vy: 0  },
+  });
+  const targetRef = useRef({
+    rotate:  { x: 0,  y: 0  },
+    glare:   { x: 50, y: 50, o: 0 },
+    bg:      { x: 50, y: 50 },
+  });
+  const rafRef = useRef<number | null>(null);
+
+  const runSpring = useCallback(() => {
+    const S = 0.066, D = 0.25; // stiffness, damping — poke-holo values
+    const s = springRef.current;
+    const t = targetRef.current;
+    const el = innerRef.current;
+    if (!el) return;
+
+    let dirty = false;
+
+    const tick = (sp: { x: number; y: number; vx: number; vy: number }, tg: { x: number; y: number }) => {
+      sp.vx += (tg.x - sp.x) * S; sp.vx *= (1 - D); sp.x += sp.vx;
+      sp.vy += (tg.y - sp.y) * S; sp.vy *= (1 - D); sp.y += sp.vy;
+      if (Math.abs(sp.vx) + Math.abs(sp.vy) > 0.001) dirty = true;
+    };
+    tick(s.rotate, t.rotate);
+    tick(s.glare,  t.glare);
+    tick(s.bg,     t.bg);
+
+    // opacity spring
+    s.glare.vo += (t.glare.o - s.glare.o) * S; s.glare.vo *= (1 - D); s.glare.o += s.glare.vo;
+    if (Math.abs(s.glare.vo) > 0.001) dirty = true;
+
+    // apply to DOM
+    const gx = s.glare.x, gy = s.glare.y, o = s.glare.o;
+    const fc = Math.min(1, Math.sqrt((gx/100 - 0.5) ** 2 + (gy/100 - 0.5) ** 2) / 0.5);
+    el.style.setProperty('--pointer-x',          `${gx}%`);
+    el.style.setProperty('--pointer-y',          `${gy}%`);
+    el.style.setProperty('--pointer-from-left',  String(gx / 100));
+    el.style.setProperty('--pointer-from-top',   String(gy / 100));
+    el.style.setProperty('--pointer-from-center',String(fc));
+    el.style.setProperty('--background-x',       `${s.bg.x}%`);
+    el.style.setProperty('--background-y',       `${s.bg.y}%`);
+    el.style.setProperty('--card-opacity',       String(o));
+    el.style.transform = `rotateY(${s.rotate.x}deg) rotateX(${s.rotate.y}deg)`;
+
+    rafRef.current = dirty ? requestAnimationFrame(runSpring) : null;
+  }, []);
+
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (flipped) return;
     const el = innerRef.current;
@@ -209,26 +260,27 @@ export function RitualCard({
     const rect = el.getBoundingClientRect();
     const mx = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
     const my = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
-    const fromCenter = Math.min(1, Math.sqrt((mx - 0.5) ** 2 + (my - 0.5) ** 2) / 0.5);
-    el.style.setProperty('--pointer-x', `${mx * 100}%`);
-    el.style.setProperty('--pointer-y', `${my * 100}%`);
-    el.style.setProperty('--pointer-from-left', String(mx));
-    el.style.setProperty('--pointer-from-top', String(my));
-    el.style.setProperty('--pointer-from-center', String(fromCenter));
-    el.style.setProperty('--background-x', `${37 + mx * 26}%`);
-    el.style.setProperty('--background-y', `${37 + my * 26}%`);
-    el.style.setProperty('--card-opacity', '1');
-    const rotX = -(my - 0.5) * 100 / 3.5;
-    const rotY = (mx - 0.5) * 100 / 3.5;
-    el.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+    const t = targetRef.current;
+    t.rotate.x = (mx - 0.5) * 100 / 3.5;
+    t.rotate.y = -(my - 0.5) * 100 / 3.5;
+    t.glare.x  = mx * 100;
+    t.glare.y  = my * 100;
+    t.glare.o  = 1;
+    t.bg.x     = 37 + mx * 26;
+    t.bg.y     = 37 + my * 26;
+    if (rafRef.current === null) rafRef.current = requestAnimationFrame(runSpring);
   };
 
   const onMouseLeave = () => {
-    const el = innerRef.current;
-    if (!el) return;
-    el.style.setProperty('--card-opacity', '0');
-    el.style.transform = '';
+    const t = targetRef.current;
+    t.rotate.x = 0; t.rotate.y = 0;
+    t.glare.x  = 50; t.glare.y = 50; t.glare.o = 0;
+    t.bg.x     = 50; t.bg.y = 50;
+    if (rafRef.current === null) rafRef.current = requestAnimationFrame(runSpring);
   };
+
+  // cleanup rAF on unmount
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, [runSpring]);
 
   const displayContribs = contributions.length > 0
     ? contributions.slice(0, 2)
