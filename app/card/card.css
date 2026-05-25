@@ -235,11 +235,11 @@
   background: #050a08;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.7);
 }
-/* SSR / UR: bigger card, closer to square than standard 5/7 */
+/* SSR / UR: 1.3× original (360×504 → 468×655) */
 .rc-r-ssr .rc-root,
 .rc-r-ur  .rc-root {
-  width: 420px;
-  aspect-ratio: 4 / 5;
+  width: 468px;
+  aspect-ratio: 5 / 7;
 }
 /* Art stays in grid flow — negative margin-top pulls it behind the header */
 .rc-r-ssr .rc-art-wrap,
