@@ -238,7 +238,7 @@
 /* SSR / UR: taller card to accommodate full-art layout */
 .rc-r-ssr .rc-root,
 .rc-r-ur  .rc-root {
-  aspect-ratio: 5 / 8;
+  aspect-ratio: 6 / 8;
 }
 /* Art stays in grid flow — negative margin-top pulls it behind the header */
 .rc-r-ssr .rc-art-wrap,
