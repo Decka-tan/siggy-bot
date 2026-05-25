@@ -74,6 +74,26 @@
   --rar-hi-soft: rgba(255,95,184,0.45);
 }
 
+/* ── Flip wrapper ── */
+.rc-flip-wrap {
+  display: inline-block;
+  perspective: 1400px;
+  cursor: pointer;
+}
+.rc-flip-inner {
+  display: inline-block;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 700ms cubic-bezier(.4,.2,.2,1);
+  will-change: transform;
+}
+.rc-flip-inner.is-flipped { transform: rotateY(180deg) !important; }
+.rc-flip-front,
+.rc-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
 /* ── Root shell ── */
 .rc-root {
   position: relative;
@@ -86,11 +106,8 @@
     0 0 80px var(--rar-glow),
     0 32px 64px -20px rgba(0,0,0,0.8),
     0 6px 18px -8px rgba(0,0,0,0.9);
-  transition: transform 350ms cubic-bezier(.2,.7,.2,1);
-  will-change: transform;
   font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
 }
-.rc-root:hover { transform: translateY(-5px) rotateX(2deg) rotateY(-2deg); }
 
 /* ── Foil border (full bleed, frame sits on top) ── */
 .rc-foil-edge {
@@ -349,21 +366,113 @@
 
 /* ── Grain overlay ── */
 .rc-grain { position: absolute; inset: 0; pointer-events: none; z-index: 6; mix-blend-mode: overlay; opacity: 0.12; border-radius: 24px; }
+
+/* ── Holographic foil overlay (SR / SSR / UR) ── */
+.rc-holo {
+  position: absolute; inset: 0; border-radius: 24px;
+  pointer-events: none; z-index: 8; overflow: hidden;
+  opacity: 0; transition: opacity 0.35s;
+}
+.rc-r-sr  .rc-holo,
+.rc-r-ssr .rc-holo,
+.rc-r-ur  .rc-holo {
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      hsl(2,  100%, 73%) calc(5% * 1),
+      hsl(53, 100%, 69%) calc(5% * 2),
+      hsl(93, 100%, 69%) calc(5% * 3),
+      hsl(176,100%, 76%) calc(5% * 4),
+      hsl(228,100%, 74%) calc(5% * 5),
+      hsl(283,100%, 73%) calc(5% * 6),
+      hsl(2,  100%, 73%) calc(5% * 7)
+    ),
+    radial-gradient(
+      farthest-corner ellipse at calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%),
+      rgba(255,255,255,0.85) 0%,
+      rgba(255,255,255,0)   65%
+    );
+  background-blend-mode: overlay;
+  background-size: 15% 700%, 200% 200%;
+  background-position:
+    calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%),
+    calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%);
+  filter: brightness(0.75) contrast(3) saturate(0.65);
+  mix-blend-mode: color-dodge;
+}
+.rc-flip-wrap:hover .rc-r-sr  .rc-holo,
+.rc-flip-wrap:hover .rc-r-ssr .rc-holo,
+.rc-flip-wrap:hover .rc-r-ur  .rc-holo { opacity: 0.9; }
+
+/* ── Glare (white radial that follows cursor) ── */
+.rc-glare {
+  position: absolute; inset: 0; border-radius: 24px;
+  pointer-events: none; z-index: 9;
+  background: radial-gradient(
+    farthest-corner ellipse at calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%),
+    rgba(255,255,255,0.22) 0%,
+    rgba(255,255,255,0)    60%
+  );
+  opacity: 0; transition: opacity 0.35s;
+  mix-blend-mode: screen;
+}
+.rc-flip-wrap:hover .rc-glare { opacity: 1; }
+
+/* ── Card back ── */
+.rc-back {
+  position: absolute; inset: 0;
+  border-radius: 24px;
+  transform: rotateY(180deg);
+  isolation: isolate;
+  overflow: hidden;
+  font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  box-shadow:
+    0 0 80px var(--rar-glow),
+    0 32px 64px -20px rgba(0,0,0,0.8);
+}
+.rc-back-frame {
+  position: absolute; inset: 13px; border-radius: 18px;
+  background:
+    radial-gradient(ellipse 70% 65% at 50% 50%, var(--rar-radial) 0%, transparent 70%),
+    linear-gradient(175deg, var(--rar-frame-a) 0%, var(--rar-frame-b) 50%, var(--rar-frame-a) 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  overflow: hidden;
+}
+.rc-back-pattern {
+  position: absolute; inset: 0; border-radius: 18px;
+  background-image:
+    repeating-linear-gradient(0deg,   rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(90deg,  rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(45deg,  rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 34px);
+}
+.rc-back-title {
+  font-size: 20px; font-weight: 900; letter-spacing: 0.22em;
+  color: var(--rar-hi); text-shadow: 0 0 28px var(--rar-glow);
+  position: relative;
+}
+.rc-back-year {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.3); position: relative;
+}
+
 /* ── Copyright strip (foil border bottom) ── */
 .rc-copyright {
   position: absolute; bottom: 1px; left: 0; right: 0;
   text-align: center; font-size: 6.5px; font-weight: 700;
   letter-spacing: 0.08em; color: rgba(0,0,0,0.65);
-  pointer-events: none; z-index: 7;
+  pointer-events: none; z-index: 10;
 }
 
 /* ── Capture mode (freeze for PNG export) ── */
 .gen-card-host.rc-capture .rc-root,
 .rc-capture .rc-root { transform: none !important; transition: none !important; }
 .rc-capture .rc-root:hover { transform: none !important; }
-/* Freeze all animations — no rainbow spin in exported PNG */
+/* Freeze all animations + tilt for exported PNG */
 .gen-card-host.rc-capture *,
 .rc-capture * { animation: none !important; transition: none !important; }
+.gen-card-host.rc-capture .rc-flip-inner { transform: none !important; }
+.gen-card-host.rc-capture .rc-holo,
+.gen-card-host.rc-capture .rc-glare { opacity: 0 !important; }
 
 /* ================================================================
    RITUAL CARD GENERATOR UI
@@ -413,7 +522,7 @@
 .gen-workspace { display: grid; grid-template-columns: 1fr 400px; gap: 32px; padding: 32px 32px 48px; align-items: start; }
 @media (max-width: 1100px) { .gen-workspace { grid-template-columns: 1fr; } }
 .gen-preview { position: sticky; top: 144px; display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 32px; }
-.gen-preview-card-wrap { perspective: 1400px; filter: drop-shadow(0 30px 60px rgba(0,0,0,0.6)); }
+.gen-preview-card-wrap { /* perspective + filter moved to rc-flip-wrap; filter here breaks preserve-3d */ }
 .gen-card-host { display: inline-block; }
 .gen-preview-meta { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 .gen-chip { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; color: #FFD700; padding: 5px 9px; border: 1px solid rgba(255,215,0,0.25); border-radius: 999px; background: rgba(255,215,0,0.05); }

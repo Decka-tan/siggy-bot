@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useMemo } from 'react';
+import { useRef, useState, useMemo } from 'react';
 
 export const TYPES: Record<string, { label: string; color: string; soft: string; deep: string }> = {
   builder:          { label: 'Builder',        color: '#f59e0b', soft: '#fbbf24', deep: '#78350f' },
@@ -72,7 +72,7 @@ const TypeIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
       return <svg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>;
     case 'event-manager':
       return <svg {...p}><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>;
-    default: // team - crown
+    default:
       return <svg {...p}><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>;
   }
 };
@@ -155,105 +155,156 @@ export function RitualCard({
   const showSparks = r === 'SSR' || r === 'UR';
   const showPrism = r === 'SSR' || r === 'UR';
 
+  const [flipped, setFlipped] = useState(false);
+  const innerRef = useRef<HTMLDivElement>(null);
+
+  const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (flipped) return;
+    const el = innerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const mx = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    const my = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+    const rotX = (0.5 - my) * 22;
+    const rotY = (mx - 0.5) * 22;
+    el.style.setProperty('--mx', String(mx));
+    el.style.setProperty('--my', String(my));
+    el.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
+  };
+
+  const onMouseLeave = () => {
+    const el = innerRef.current;
+    if (!el) return;
+    el.style.setProperty('--mx', '0.5');
+    el.style.setProperty('--my', '0.5');
+    el.style.transform = '';
+  };
+
   const displayContribs = contributions.length > 0
     ? contributions.slice(0, 2)
     : [{ icon: '◆', title: '—', flavor: '' }];
 
+  const cardStyle = { '--accent': t.color } as React.CSSProperties;
+
   return (
-    <div className={`rc-root ${rarityClass}`} style={{ '--accent': t.color } as React.CSSProperties}>
-      <div className="rc-foil-edge" aria-hidden="true"/>
-      <div className="rc-frame">
-        {showPrism && <div className="rc-prism" aria-hidden="true"/>}
+    <div
+      className="rc-flip-wrap"
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseLeave}
+    >
+      <div
+        ref={innerRef}
+        className={`rc-flip-inner${flipped ? ' is-flipped' : ''}`}
+        onClick={() => setFlipped(f => !f)}
+      >
+        {/* ── Front face ── */}
+        <div className={`rc-root rc-flip-front ${rarityClass}`} style={cardStyle}>
+          <div className="rc-foil-edge" aria-hidden="true"/>
+          <div className="rc-frame">
+            {showPrism && <div className="rc-prism" aria-hidden="true"/>}
 
-        {/* ── Header: name + type only ── */}
-        <header className="rc-header">
-          <div className="rc-header-left">
-            <h2 className="rc-name" title={name}>{name}</h2>
-            {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
-          </div>
-          <div className="rc-header-right">
-            {rep > 0 && (
-              <div className="rc-rep">
-                <span className="rc-rep-label">REP</span>
-                <span className="rc-rep-val">{rep}</span>
+            <header className="rc-header">
+              <div className="rc-header-left">
+                <h2 className="rc-name" title={name}>{name}</h2>
+                {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
               </div>
-            )}
-            <div className="rc-type-circle" style={{ color: '#0a0e0d' }}>
-              <TypeIcon type={type} size={18}/>
+              <div className="rc-header-right">
+                {rep > 0 && (
+                  <div className="rc-rep">
+                    <span className="rc-rep-label">REP</span>
+                    <span className="rc-rep-val">{rep}</span>
+                  </div>
+                )}
+                <div className="rc-type-circle" style={{ color: '#0a0e0d' }}>
+                  <TypeIcon type={type} size={18}/>
+                </div>
+              </div>
+            </header>
+
+            <div className="rc-art-wrap">
+              <div className="rc-art-inner">
+                {pfpUrl
+                  ? <img src={pfpUrl} alt={name} className="rc-art-img" crossOrigin="anonymous"/>
+                  : <PfpPlaceholder seed={name} typeColor={t.color}/>
+                }
+                {showHolo && <div className="rc-art-holo" aria-hidden="true"/>}
+                {showSparks && (
+                  <>
+                    <span className="rc-spark rc-spark-tl">✦</span>
+                    <span className="rc-spark rc-spark-tr">✦</span>
+                    <span className="rc-spark rc-spark-bl">✦</span>
+                    <span className="rc-spark rc-spark-br">✦</span>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
-        </header>
 
-        {/* ── Art window ── */}
-        <div className="rc-art-wrap">
-          <div className="rc-art-inner">
-            {pfpUrl
-              ? <img src={pfpUrl} alt={name} className="rc-art-img" crossOrigin="anonymous"/>
-              : <PfpPlaceholder seed={name} typeColor={t.color}/>
-            }
-            {showHolo && <div className="rc-art-holo" aria-hidden="true"/>}
-            {showSparks && (
-              <>
-                <span className="rc-spark rc-spark-tl">✦</span>
-                <span className="rc-spark rc-spark-tr">✦</span>
-                <span className="rc-spark rc-spark-bl">✦</span>
-                <span className="rc-spark rc-spark-br">✦</span>
-              </>
-            )}
+            <div className="rc-category">
+              <span className="rc-cat-dot"/>
+              <span className="rc-cat-text">
+                Ritual <strong>{t.label}</strong>
+              </span>
+            </div>
+
+            <div className="rc-actions">
+              {displayContribs.map((c, i) => (
+                <ContribRow key={i} item={c} accent={t.color}/>
+              ))}
+            </div>
+
+            <div className="rc-sub">
+              <div className="rc-sub-cell">
+                <span className="rc-sub-k">joined</span>
+                <span className="rc-sub-v">{joinDate}</span>
+              </div>
+              <div className="rc-sub-cell">
+                <span className="rc-sub-k">network</span>
+                <span className="rc-sub-v">{network}</span>
+              </div>
+              <div className="rc-sub-cell">
+                <span className="rc-sub-k">social</span>
+                <span className="rc-sub-v" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M18 4h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 4h6l4 6 6-6z"/></svg>
+                  {social?.replace('@', '')}
+                </span>
+              </div>
+            </div>
+
+            <footer className="rc-footer">
+              <div className="rc-foot-left">
+                <RitualMark size={10} color="var(--rar-hi, #40FFAF)"/>
+                {setNumber && <span className="rc-set-num">{setNumber}</span>}
+                <span className="rc-rarity-badge" style={RARITY_BADGE_STYLE[r]}>
+                  {RARITY_LABEL[r]}
+                </span>
+              </div>
+              <div className="rc-foot-right">
+                <span className="rc-rar-stars">{RARITY_STARS[r]}</span>
+                {artist && <span className="rc-artist">art by <strong>{artist}</strong></span>}
+              </div>
+            </footer>
           </div>
+
+          {/* Holographic foil overlay — reacts to --mx / --my */}
+          <div className="rc-holo" aria-hidden="true"/>
+          <div className="rc-glare" aria-hidden="true"/>
+          <div className="rc-grain" aria-hidden="true"/>
+          <div className="rc-copyright" aria-hidden="true">2026 Ritual TCG · Made by Decka-chan</div>
         </div>
 
-        {/* ── Category bar ── */}
-        <div className="rc-category">
-          <span className="rc-cat-dot"/>
-          <span className="rc-cat-text">
-            Ritual <strong>{t.label}</strong>
-          </span>
+        {/* ── Back face ── */}
+        <div className={`rc-back ${rarityClass}`} style={cardStyle}>
+          <div className="rc-foil-edge" aria-hidden="true"/>
+          <div className="rc-back-frame">
+            <div className="rc-back-pattern" aria-hidden="true"/>
+            <RitualMark size={88} color="var(--rar-hi, #40FFAF)"/>
+            <div className="rc-back-title">RITUAL TCG</div>
+            <div className="rc-back-year">2026 · {RARITY_LABEL[r]}</div>
+          </div>
+          <div className="rc-grain" aria-hidden="true"/>
+          <div className="rc-copyright" aria-hidden="true">2026 Ritual TCG · Made by Decka-chan</div>
         </div>
-
-        {/* ── Contributions ── */}
-        <div className="rc-actions">
-          {displayContribs.map((c, i) => (
-            <ContribRow key={i} item={c} accent={t.color}/>
-          ))}
-        </div>
-
-        {/* ── Sub-strip: live data only ── */}
-        <div className="rc-sub">
-          <div className="rc-sub-cell">
-            <span className="rc-sub-k">joined</span>
-            <span className="rc-sub-v">{joinDate}</span>
-          </div>
-          <div className="rc-sub-cell">
-            <span className="rc-sub-k">network</span>
-            <span className="rc-sub-v">{network}</span>
-          </div>
-          <div className="rc-sub-cell">
-            <span className="rc-sub-k">social</span>
-            <span className="rc-sub-v" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M18 4h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 4h6l4 6 6-6z"/></svg>
-              {social?.replace('@', '')}
-            </span>
-          </div>
-        </div>
-
-        {/* ── Footer ── */}
-        <footer className="rc-footer">
-          <div className="rc-foot-left">
-            <RitualMark size={10} color="var(--rar-hi, #40FFAF)"/>
-            {setNumber && <span className="rc-set-num">{setNumber}</span>}
-            <span className="rc-rarity-badge" style={RARITY_BADGE_STYLE[r]}>
-              {RARITY_LABEL[r]}
-            </span>
-          </div>
-          <div className="rc-foot-right">
-            <span className="rc-rar-stars">{RARITY_STARS[r]}</span>
-            {artist && <span className="rc-artist">art by <strong>{artist}</strong></span>}
-          </div>
-        </footer>
       </div>
-      <div className="rc-grain" aria-hidden="true"/>
-      <div className="rc-copyright" aria-hidden="true">2026 Ritual TCG · Made by Decka-chan</div>
     </div>
   );
 }
