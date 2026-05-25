@@ -169,6 +169,41 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: #ffffff; min-width: 0; flex: 1 1 auto;
 }
+/* Per-rarity name gradient text */
+.rc-r-r .rc-name {
+  background: linear-gradient(120deg, #93c5fd, #ffffff, #60a5fa);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.rc-r-sr .rc-name {
+  background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.rc-r-ssr .rc-name {
+  background: linear-gradient(120deg, #FFD700, #fff7c4, #FFA500, #FFD700);
+  background-size: 200% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: rc-name-gold 3s ease-in-out infinite;
+}
+@keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+.rc-r-ur .rc-name {
+  background: linear-gradient(120deg, #ff5fb8, #ffd84a, #5fffb8, #5fb8ff, #c4a5ff, #ff5fb8);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: rc-name-rainbow 3s linear infinite;
+}
+@keyframes rc-name-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+/* SSR/UR: more elaborate header — thicker glowing border + shimmer line */
+.rc-r-ssr .rc-header,
+.rc-r-ur  .rc-header {
+  border-width: 2px;
+  box-shadow: inset 0 0 18px rgba(0,0,0,0.5), 0 0 12px -4px var(--rar-hi);
+}
+.rc-r-ssr .rc-header::after,
+.rc-r-ur  .rc-header::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(to right, transparent, var(--rar-hi), transparent);
+  pointer-events: none;
+}
 .rc-rar-badge {
   font-size: 9px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 5px;
   border-radius: 4px; flex-shrink: 0; color: #0a0e0d;
@@ -199,6 +234,21 @@
   border-radius: 9px; overflow: hidden;
   background: #050a08;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.7);
+}
+/* SSR / UR: full-bleed art — extends to frame edges */
+.rc-r-ssr .rc-art-wrap,
+.rc-r-ur  .rc-art-wrap {
+  margin: 0 -10px;
+  border-left: none; border-right: none;
+  border-top-color: var(--rar-hi);
+  border-bottom-color: var(--rar-hi);
+  border-radius: 0;
+  aspect-ratio: 3 / 2;
+}
+.rc-r-ssr .rc-art-inner,
+.rc-r-ur  .rc-art-inner {
+  border-radius: 0;
+  box-shadow: none;
 }
 .rc-art-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rc-art-holo {
@@ -269,6 +319,13 @@
 /* Animate SSR/UR badge */
 .rc-r-ssr .rc-rarity-badge { background: linear-gradient(120deg,#FFD700,#FFA500,#FFD700); color: #0a0800; background-size: 200%; animation: rc-sweep 3s ease-in-out infinite; }
 .rc-r-ur  .rc-rarity-badge { background: linear-gradient(120deg,#ff5fb8,#ffd84a,#5fffb8,#5fb8ff); color: #0a0e0d; background-size: 300%; animation: rc-sweep 2.5s ease-in-out infinite; }
+/* TCG rarity stars */
+.rc-rar-stars {
+  font-size: 9px; letter-spacing: -0.5px; color: var(--rar-hi);
+  text-shadow: 0 0 6px var(--rar-hi); flex-shrink: 0;
+}
+.rc-r-ssr .rc-rar-stars,
+.rc-r-ur  .rc-rar-stars { animation: rc-border-spin 4s linear infinite; filter: brightness(1.3); }
 .rc-foot-right { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .rc-social { font-size: 8.5px; letter-spacing: 0.03em; color: rgba(255,255,255,0.45); white-space: nowrap; }
 .rc-artist { font-size: 8px; color: rgba(255,255,255,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

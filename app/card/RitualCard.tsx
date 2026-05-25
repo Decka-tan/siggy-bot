@@ -20,6 +20,10 @@ export const RARITY_LABEL: Record<Rarity, string> = {
   UR: 'ULTRA RARE', SSR: 'SS RARE', SR: 'SUPER RARE', R: 'RARE', common: 'COMMON',
 };
 
+const RARITY_STARS: Record<Rarity, string> = {
+  UR: '★★★★', SSR: '★★★', SR: '★★', R: '★', common: '●',
+};
+
 const RARITY_BADGE_STYLE: Record<Rarity, React.CSSProperties> = {
   UR:     { background: 'linear-gradient(120deg,#ff5fb8,#ffd84a,#5fffb8,#5fb8ff)', color: '#0a0e0d' },
   SSR:    { background: 'linear-gradient(120deg,#FFD700,#FFA500)', color: '#0a0800' },
@@ -243,6 +247,7 @@ export function RitualCard({
             </span>
           </div>
           <div className="rc-foot-right">
+            <span className="rc-rar-stars">{RARITY_STARS[r]}</span>
             {artist && <span className="rc-artist">art by <strong>{artist}</strong></span>}
           </div>
         </footer>
