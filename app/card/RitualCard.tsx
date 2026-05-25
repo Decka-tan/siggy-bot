@@ -161,7 +161,7 @@ export function RitualCard({
   const innerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
 
-  // Extract dominant color from PFP for SSR/UR frame background
+  // Extract dominant hue from PFP → dark tinted frame bg for SSR/UR
   useEffect(() => {
     const el = frameRef.current;
     if (!el || (r !== 'SSR' && r !== 'UR') || !pfpUrl) return;
@@ -170,22 +170,33 @@ export function RitualCard({
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = 16; canvas.height = 16;
+        canvas.width = 32; canvas.height = 32;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        ctx.drawImage(img, 0, 0, 16, 16);
-        const data = ctx.getImageData(0, 0, 16, 16).data;
+        ctx.drawImage(img, 0, 0, 32, 32);
+        const data = ctx.getImageData(0, 0, 32, 32).data;
         let rSum = 0, gSum = 0, bSum = 0, count = 0;
         for (let i = 0; i < data.length; i += 4) {
+          // skip near-white and near-black pixels — they wash out the hue
+          const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+          if (brightness < 20 || brightness > 235) continue;
           rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++;
         }
-        const avg = [rSum/count, gSum/count, bSum/count];
-        // Darken significantly for card frame
-        const darken = (v: number, f: number) => Math.round(Math.min(255, Math.max(0, v * f)));
-        const bgA = `rgb(${darken(avg[0],.12)},${darken(avg[1],.12)},${darken(avg[2],.14)})`;
-        const bgB = `rgb(${darken(avg[0],.18)},${darken(avg[1],.18)},${darken(avg[2],.20)})`;
-        el.style.setProperty('--pfp-bg-a', bgA);
-        el.style.setProperty('--pfp-bg-b', bgB);
+        if (count === 0) return;
+        const r8 = rSum/count, g8 = gSum/count, b8 = bSum/count;
+        // RGB → HSL
+        const r1 = r8/255, g1 = g8/255, b1 = b8/255;
+        const max = Math.max(r1,g1,b1), min = Math.min(r1,g1,b1), d = max - min;
+        let h = 0;
+        if (d > 0) {
+          if (max === r1) h = ((g1-b1)/d + 6) % 6;
+          else if (max === g1) h = (b1-r1)/d + 2;
+          else h = (r1-g1)/d + 4;
+          h = Math.round(h * 60);
+        }
+        // Dark saturated frame: hue from PFP, sat 50%, lightness 8% and 13%
+        el.style.setProperty('--pfp-bg-a', `hsl(${h},50%,8%)`);
+        el.style.setProperty('--pfp-bg-b', `hsl(${h},45%,13%)`);
       } catch { /* CORS blocked — fall back to rarity defaults */ }
     };
     img.src = pfpUrl;
