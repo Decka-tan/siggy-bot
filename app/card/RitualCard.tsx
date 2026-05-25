@@ -209,13 +209,15 @@ export function RitualCard({
     const rect = el.getBoundingClientRect();
     const mx = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
     const my = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+    const fromCenter = Math.min(1, Math.sqrt((mx - 0.5) ** 2 + (my - 0.5) ** 2) / 0.5);
     el.style.setProperty('--pointer-x', `${mx * 100}%`);
     el.style.setProperty('--pointer-y', `${my * 100}%`);
-    // constrain background parallax to 37-63% (poke-holo approach)
+    el.style.setProperty('--pointer-from-left', String(mx));
+    el.style.setProperty('--pointer-from-top', String(my));
+    el.style.setProperty('--pointer-from-center', String(fromCenter));
     el.style.setProperty('--background-x', `${37 + mx * 26}%`);
     el.style.setProperty('--background-y', `${37 + my * 26}%`);
     el.style.setProperty('--card-opacity', '1');
-    // gentler rotation: ÷3.5 (≈±14deg max) matching poke-holo
     const rotX = -(my - 0.5) * 100 / 3.5;
     const rotY = (mx - 0.5) * 100 / 3.5;
     el.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;

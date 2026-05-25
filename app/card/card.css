@@ -436,61 +436,166 @@
 /* ── Grain overlay ── */
 .rc-grain { position: absolute; inset: 0; pointer-events: none; z-index: 6; mix-blend-mode: overlay; opacity: 0.12; border-radius: 24px; }
 
-/* ── Holographic foil overlay (SR / SSR / UR) ── */
+/* ── Holo base (shared positioning) ── */
 .rc-holo {
   position: absolute; inset: 0; border-radius: 24px;
   pointer-events: none; z-index: 8; overflow: hidden;
-  opacity: 0; transition: opacity 0.5s;
+  opacity: 0; transition: opacity 0.4s;
 }
-.rc-r-sr  .rc-holo,
-.rc-r-ssr .rc-holo,
-.rc-r-ur  .rc-holo {
-  /* rainbow stripes + scanlines — same approach as poke-holo regular-holo */
+
+/* ── Glare base ── */
+.rc-glare {
+  position: absolute; inset: 0; border-radius: 24px;
+  pointer-events: none; z-index: 9; overflow: hidden;
+  background: radial-gradient(
+    farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    hsl(180,100%,95%) 5%, hsla(0,0%,39%,.25) 55%, hsla(0,0%,0%,.36) 110%
+  );
+  filter: brightness(0.8) contrast(1.5);
+  mix-blend-mode: overlay;
+  opacity: 0; transition: opacity 0.4s;
+}
+
+/* ━━ R — regular holo (rainbow stripes + scanlines) ━━ */
+.rc-r-r .rc-holo {
   background-image:
     repeating-linear-gradient(110deg,
-      hsl(2,  100%, 73%),
-      hsl(53, 100%, 69%),
-      hsl(93, 100%, 69%),
-      hsl(176,100%, 76%),
-      hsl(228,100%, 74%),
-      hsl(283,100%, 73%),
-      hsl(2,  100%, 73%),
-      hsl(53, 100%, 69%),
-      hsl(93, 100%, 69%),
-      hsl(176,100%, 76%),
-      hsl(228,100%, 74%),
-      hsl(283,100%, 73%)
+      hsl(2,100%,73%), hsl(53,100%,69%), hsl(93,100%,69%),
+      hsl(176,100%,76%), hsl(228,100%,74%), hsl(283,100%,73%),
+      hsl(2,100%,73%), hsl(53,100%,69%), hsl(93,100%,69%),
+      hsl(176,100%,76%), hsl(228,100%,74%), hsl(283,100%,73%)
     ),
     repeating-linear-gradient(90deg,
-      #000 0px, #000 1px,
-      #555 1px, #555 3px
+      #000 0px, #000 1px, #555 1px, #555 3px
     );
   background-blend-mode: overlay;
   background-size: 400% 400%, cover;
   background-position:
-    calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
-    calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
-    center center;
-  /* poke-holo regular-holo filter — much less blinding */
+    calc(((50% - var(--background-x,50%)) * 2.6) + 50%)
+    calc(((50% - var(--background-y,50%)) * 3.5) + 50%),
+    center;
   filter: brightness(1.1) contrast(1.1) saturate(1.2);
   mix-blend-mode: color-dodge;
   opacity: var(--card-opacity, 0);
-  transition: opacity 0.5s;
 }
-
-/* ── Glare (follows cursor) — poke-holo values ── */
-.rc-glare {
-  position: absolute; inset: 0; border-radius: 24px;
-  pointer-events: none; z-index: 9;
-  background: radial-gradient(
-    farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-    hsl(180,100%,95%)        5%,
-    hsla(0,0%,39%,.25)      55%,
-    hsla(0,0%,0%,.36)      110%
-  );
+.rc-r-r .rc-glare {
   filter: brightness(0.8) contrast(1.5);
   mix-blend-mode: overlay;
-  opacity: calc(var(--card-opacity, 0) * 0.8); transition: opacity 0.5s;
+  opacity: calc(var(--card-opacity, 0) * 0.8);
+}
+
+/* ━━ SR — radiant holo (diagonal diamond bars) ━━ */
+.rc-r-sr .rc-holo {
+  background-image:
+    radial-gradient(farthest-corner ellipse
+      at calc((var(--pointer-x,50%) * 0.5) + 25%) calc((var(--pointer-y,50%) * 0.5) + 25%),
+      hsl(0,0%,95%) 20%, var(--rar-hi) 130%
+    ),
+    repeating-linear-gradient(45deg,
+      hsl(0,0%,8%)  0%,   hsl(0,0%,8%)  1.2%,
+      hsl(0,0%,20%) 1.2%, hsl(0,0%,20%) 2.4%,
+      hsl(0,0%,42%) 2.4%, hsl(0,0%,42%) 3.6%,
+      hsl(0,0%,50%) 3.6%, hsl(0,0%,50%) 4.8%,
+      hsl(0,0%,42%) 4.8%, hsl(0,0%,42%) 6%,
+      hsl(0,0%,20%) 6%,   hsl(0,0%,20%) 7.2%,
+      hsl(0,0%,8%)  7.2%, hsl(0,0%,0%)  8.4%
+    ),
+    repeating-linear-gradient(-45deg,
+      hsl(0,0%,8%)  0%,   hsl(0,0%,8%)  1.2%,
+      hsl(0,0%,20%) 1.2%, hsl(0,0%,20%) 2.4%,
+      hsl(0,0%,42%) 2.4%, hsl(0,0%,42%) 3.6%,
+      hsl(0,0%,50%) 3.6%, hsl(0,0%,50%) 4.8%,
+      hsl(0,0%,42%) 4.8%, hsl(0,0%,42%) 6%,
+      hsl(0,0%,20%) 6%,   hsl(0,0%,20%) 7.2%,
+      hsl(0,0%,8%)  7.2%, hsl(0,0%,0%)  8.4%
+    );
+  background-size: cover, 210% 210%, 210% 210%;
+  background-position:
+    center,
+    calc(((var(--background-x,50%) - 50%) * 1.5) + 50%) calc(((var(--background-y,50%) - 50%) * 1.5) + 50%),
+    calc(((var(--background-x,50%) - 50%) * 1.5) + 50%) calc(((var(--background-y,50%) - 50%) * 1.5) + 50%);
+  background-blend-mode: exclusion, darken, color-dodge;
+  filter: brightness(.5) contrast(2) saturate(1.75);
+  mix-blend-mode: color-dodge;
+  opacity: var(--card-opacity, 0);
+}
+.rc-r-sr .rc-glare {
+  background: radial-gradient(farthest-corner circle
+    at var(--pointer-x,50%) var(--pointer-y,50%),
+    hsla(0,0%,100%,.33) 0%, hsl(0,0%,25%) 110%
+  );
+  filter: brightness(1) contrast(1.5);
+  mix-blend-mode: hard-light;
+  opacity: var(--card-opacity, 0);
+}
+
+/* ━━ SSR — cosmos holo (nebula rainbow swirls) ━━ */
+.rc-r-ssr .rc-holo {
+  background-image:
+    repeating-linear-gradient(82deg,
+      hsl(53,65%,60%)  4%,  hsl(93,56%,50%)  8%,
+      hsl(176,54%,49%) 12%, hsl(228,59%,55%) 16%,
+      hsl(283,60%,55%) 20%, hsl(326,59%,51%) 24%,
+      hsl(326,59%,51%) 28%, hsl(283,60%,55%) 32%,
+      hsl(228,59%,55%) 36%, hsl(176,54%,49%) 40%,
+      hsl(93,56%,50%)  44%, hsl(53,65%,60%)  48%
+    ),
+    radial-gradient(farthest-corner circle
+      at var(--pointer-x,50%) var(--pointer-y,50%),
+      hsla(180,100%,89%,.5) 5%, hsla(180,14%,57%,.3) 40%, hsl(0,0%,0%) 130%
+    );
+  background-blend-mode: color-burn, multiply;
+  background-size: 400% 900%, cover;
+  background-position:
+    calc(10% + (var(--pointer-from-left,.5) * 80%)) calc(10% + (var(--pointer-from-top,.5) * 80%)),
+    center;
+  filter: brightness(1) contrast(1) saturate(.8);
+  mix-blend-mode: color-dodge;
+  opacity: var(--card-opacity, 0);
+}
+.rc-r-ssr .rc-glare {
+  background: radial-gradient(farthest-corner circle
+    at var(--pointer-x,50%) var(--pointer-y,50%),
+    hsla(204,100%,95%,.8) 5%, hsla(250,15%,20%,1) 150%
+  );
+  filter: brightness(.75) contrast(2) saturate(2);
+  mix-blend-mode: overlay;
+  opacity: calc(var(--card-opacity,0) * (0.25 + var(--pointer-from-center,0)));
+}
+
+/* ━━ UR — secret rare (conic rainbow + glitter shimmer) ━━ */
+.rc-r-ur .rc-holo {
+  background-image:
+    repeating-linear-gradient(45deg,
+      hsla(0,0%,50%,.25) 0%, hsla(0,0%,85%,.25) 2%, hsla(0,0%,50%,.25) 4%
+    ),
+    repeating-linear-gradient(-45deg,
+      hsla(0,0%,50%,.25) 0%, hsla(0,0%,85%,.25) 2%, hsla(0,0%,50%,.25) 4%
+    ),
+    conic-gradient(
+      hsl(2,100%,73%), hsl(53,100%,69%), hsl(93,100%,69%),
+      hsl(176,100%,76%), hsl(228,100%,74%), hsl(283,100%,73%),
+      hsl(326,100%,73%), hsl(2,100%,73%)
+    ),
+    radial-gradient(farthest-corner circle
+      at var(--pointer-x,50%) var(--pointer-y,50%),
+      hsla(150,0%,0%,.98) 10%, hsla(0,0%,95%,.15) 90%
+    );
+  background-size: 4% 4%, 4% 4%, cover, cover;
+  background-position: 45% 45%, 55% 55%, center, center;
+  background-blend-mode: soft-light, hard-light, overlay;
+  filter: brightness(calc(.4 + (var(--pointer-from-center,0) * .2))) contrast(1) saturate(2.7);
+  mix-blend-mode: color-dodge;
+  opacity: var(--card-opacity, 0);
+}
+.rc-r-ur .rc-glare {
+  background: radial-gradient(farthest-corner circle
+    at var(--pointer-x,50%) var(--pointer-y,50%),
+    hsla(45,8%,80%,.3) 0%, hsl(22,15%,12%) 180%
+  );
+  filter: brightness(1.3) contrast(1.5);
+  mix-blend-mode: hard-light;
+  opacity: var(--card-opacity, 0);
 }
 
 /* ── Card back ── */
