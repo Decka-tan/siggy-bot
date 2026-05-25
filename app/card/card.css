@@ -329,7 +329,7 @@
 
 /* ── Art window ── */
 .rc-art-wrap {
-  position: relative; width: 100%; aspect-ratio: 5 / 3.5;
+  position: relative; width: 100%; aspect-ratio: 5 / 3;
   border-radius: 10px; border: 1.5px solid var(--rar-hi-soft); padding: 0;
   background: transparent;
 }
@@ -350,7 +350,7 @@
 .rc-r-ur  .rc-art-wrap {
   width: calc(100% + 20px);
   margin: -65px -10px 0; /* -65 clears header(~48px) + gap(5) + top-padding(10) + 2 safety */
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 4 / 3.5;
   border: none;
   border-bottom: 1.5px solid var(--rar-hi);
   border-radius: 0;
