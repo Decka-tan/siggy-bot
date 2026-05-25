@@ -51,23 +51,25 @@ export interface CardData {
 /* ── Type icons ── */
 const TypeIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
   const s = size;
-  const stroke = '#0a0e0d';
-  const sw = Math.max(1.4, s / 14);
+  const sw = Math.max(1.5, s / 12);
+  const p = { width: s, height: s, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: sw, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
   switch (type) {
     case 'builder':
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M12 2.5l1.3 1.6 2-.5.4 2 1.9.8-.5 2 1.4 1.6-1.4 1.6.5 2-1.9.8-.4 2-2-.5L12 15.5l-1.3-1.6-2 .5-.4-2-1.9-.8.5-2L5.5 8l1.4-1.6-.5-2 1.9-.8.4-2 2 .5L12 2.5z" fill="currentColor" stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/><circle cx="12" cy="9" r="2.2" fill={stroke}/></svg>;
+      return <svg {...p}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
     case 'artist':
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M15 3l6 6-9 9-5 1 1-5 7-7z" fill="currentColor" stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/><path d="M13 5l6 6M7 14l3 3" stroke={stroke} strokeWidth={sw}/></svg>;
+      return <svg {...p}><circle cx="13.5" cy="6.5" r="1" fill="currentColor" stroke="none"/><circle cx="17.5" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="7.5" r="1" fill="currentColor" stroke="none"/><circle cx="6.5" cy="12.5" r="1" fill="currentColor" stroke="none"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>;
     case 'threadoor':
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M4 7c4 0 4 4 8 4s4-4 8-4" stroke="currentColor" strokeWidth={sw*1.3} strokeLinecap="round"/><path d="M4 12c4 0 4 4 8 4s4-4 8-4" stroke="currentColor" strokeWidth={sw*1.3} strokeLinecap="round"/><path d="M4 17c4 0 4 4 8 4s4-4 8-4" stroke="currentColor" strokeWidth={sw*1.3} strokeLinecap="round"/></svg>;
+      return <svg {...p}><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>;
     case 'yapper':
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M3 5h18v11H10l-4 4v-4H3V5z" fill="currentColor" stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/><circle cx="9" cy="10.5" r="1" fill={stroke}/><circle cx="12" cy="10.5" r="1" fill={stroke}/><circle cx="15" cy="10.5" r="1" fill={stroke}/></svg>;
+      return <svg {...p}><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>;
+    case 'event-enjoyoor':
+      return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
     case 'moderator':
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M12 2l8 3v7c0 5-4 8-8 10-4-2-8-5-8-10V5l8-3z" fill="currentColor" stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/><path d="M9 12l2 2 4-4" stroke={stroke} strokeWidth={sw*1.2} strokeLinecap="round" strokeLinejoin="round"/></svg>;
+      return <svg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>;
     case 'event-manager':
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="1.5" fill="currentColor" stroke={stroke} strokeWidth={sw}/><path d="M3 10h18" stroke={stroke} strokeWidth={sw}/><path d="M8 3v4M16 3v4" stroke={stroke} strokeWidth={sw} strokeLinecap="round"/><path d="M11 14h4l-1 1.5L15 17h-4v-3z" fill={stroke}/></svg>;
-    default: // team / crown
-      return <svg width={s} height={s} viewBox="0 0 24 24" fill="none"><path d="M3 8l4 4 5-7 5 7 4-4-2 11H5L3 8z" fill="currentColor" stroke={stroke} strokeWidth={sw} strokeLinejoin="round"/><circle cx="3" cy="8" r="1.4" fill={stroke}/><circle cx="21" cy="8" r="1.4" fill={stroke}/><circle cx="12" cy="5" r="1.4" fill={stroke}/></svg>;
+      return <svg {...p}><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>;
+    default: // team - crown
+      return <svg {...p}><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>;
   }
 };
 
