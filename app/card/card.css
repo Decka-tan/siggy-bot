@@ -197,8 +197,6 @@
 .rc-r-ur  .rc-header {
   border-width: 2px;
   box-shadow: inset 0 0 18px rgba(0,0,0,0.5), 0 0 12px -4px var(--rar-hi);
-  align-self: start;
-  margin: 0;
 }
 .rc-r-ssr .rc-header::after,
 .rc-r-ur  .rc-header::after {
@@ -237,13 +235,18 @@
   background: #050a08;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.7);
 }
-/* SSR / UR: full-bleed art — top corners to bottom of art row */
+/* SSR / UR: art is position:absolute so it truly starts at top: 0 of frame */
+.rc-r-ssr .rc-frame,
+.rc-r-ur  .rc-frame {
+  padding-top: 200px; /* push grid rows below the absolute art */
+}
 .rc-r-ssr .rc-art-wrap,
 .rc-r-ur  .rc-art-wrap {
-  grid-row: 1 / 3;           /* span header row + art row */
-  width: calc(100% + 20px);
-  margin: -10px -10px 0;     /* cancel top + side frame padding */
-  height: 185px;             /* explicit height drives the span */
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 200px;
+  width: auto;
+  margin: 0;
   border: none;
   border-bottom: 1.5px solid var(--rar-hi);
   border-radius: 0;
@@ -255,10 +258,11 @@
   border-radius: 0;
   box-shadow: none;
 }
-/* Header floats on top of the art with semi-transparent bg */
+/* Header: also absolute, floats over the art at the top */
 .rc-r-ssr .rc-header,
 .rc-r-ur  .rc-header {
-  position: relative;
+  position: absolute;
+  top: 10px; left: 10px; right: 10px;
   z-index: 3;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(6px);
