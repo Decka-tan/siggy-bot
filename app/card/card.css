@@ -63,15 +63,15 @@
   --rar-hi:      #FFD700;
   --rar-hi-soft: rgba(255,215,0,0.45);
 }
-/* UR = rainbow */
+/* UR = rainbow border, pink base */
 .rc-r-ur {
   --rar-border:  conic-gradient(from 0deg, #ff5fb8 0deg, #ffd84a 60deg, #5fffb8 120deg, #5fb8ff 180deg, #c4a5ff 240deg, #ff5fb8 300deg, #ff5fb8 360deg);
-  --rar-glow:    rgba(255,255,255,0.50);
-  --rar-radial:  rgba(255,255,255,0.12);
-  --rar-frame-a: #120010;
-  --rar-frame-b: #0a0520;
-  --rar-hi:      #ffd84a;
-  --rar-hi-soft: rgba(255,216,74,0.45);
+  --rar-glow:    rgba(255,95,184,0.55);
+  --rar-radial:  rgba(255,95,184,0.18);
+  --rar-frame-a: #1a0012;
+  --rar-frame-b: #0e000c;
+  --rar-hi:      #ff5fb8;
+  --rar-hi-soft: rgba(255,95,184,0.45);
 }
 
 /* ── Root shell ── */
