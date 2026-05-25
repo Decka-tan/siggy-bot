@@ -293,6 +293,14 @@
   display: flex; flex-direction: column; align-items: center; line-height: 1;
   pointer-events: none;
 }
+.rc-rep-float .rc-rep-label,
+.rc-rep-float .rc-rep-val {
+  color: #000000;
+  -webkit-text-fill-color: #000000;
+  -webkit-text-stroke: 1px #ffffff;
+  text-shadow: 0 1px 4px rgba(120,120,120,0.6);
+  opacity: 1;
+}
 .rc-rep-label { font-size: 7px; font-weight: 900; letter-spacing: 0.14em; color: var(--rar-hi); opacity: 0.9; text-transform: uppercase; }
 .rc-rep-val { font-size: 15px; font-weight: 900; color: var(--rar-hi); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .rc-type-circle {
