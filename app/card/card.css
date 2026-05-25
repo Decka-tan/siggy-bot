@@ -138,6 +138,50 @@
   grid-template-rows: auto auto auto 1fr auto auto;
   gap: 5px;
 }
+/* SSR/UR: frame bg adapts to PFP palette via JS-set vars */
+.rc-r-ssr .rc-frame,
+.rc-r-ur  .rc-frame {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 40%, var(--rar-radial) 0%, transparent 65%),
+    linear-gradient(175deg,
+      var(--pfp-bg-a, var(--rar-frame-a)) 0%,
+      var(--pfp-bg-b, var(--rar-frame-b)) 55%,
+      var(--pfp-bg-a, var(--rar-frame-a)) 100%);
+}
+
+/* ── Frame texture overlay ── */
+.rc-frame-texture {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background-image:
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px,
+      transparent 1px, transparent 6px
+    ),
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px,
+      transparent 1px, transparent 12px
+    );
+}
+
+/* ── Watermark ritual marks ── */
+.rc-watermark {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.rc-watermark-inner {
+  position: relative; width: 100%; height: 100%;
+}
+.rc-wm-mark {
+  position: absolute; opacity: 0.04;
+}
+.rc-wm-mark-center { top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.06; }
+.rc-wm-mark-tl     { top: 8%;  left: 6%;  transform: rotate(-15deg) scale(0.4); }
+.rc-wm-mark-tr     { top: 8%;  right: 6%; transform: rotate(15deg) scale(0.4); }
+.rc-wm-mark-bl     { bottom: 6%; left: 6%; transform: rotate(10deg) scale(0.35); }
+.rc-wm-mark-br     { bottom: 6%; right: 6%; transform: rotate(-10deg) scale(0.35); }
 
 /* ── SSR / UR prismatic sweep ── */
 .rc-prism {
@@ -182,7 +226,7 @@
 }
 .rc-header-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; position: relative; z-index: 1; }
 .rc-name {
-  margin: 0; font-size: 15px; font-weight: 800; letter-spacing: 0.01em;
+  margin: 0; font-size: 15px; font-weight: 900; letter-spacing: 0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: #ffffff; min-width: 0; flex: 1 1 auto;
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
@@ -197,17 +241,24 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name: black text, white outline — floats directly over art */
-.rc-r-ssr .rc-name,
-.rc-r-ur  .rc-name {
-  background: none;
-  -webkit-background-clip: unset; background-clip: unset;
-  -webkit-text-fill-color: #000000; color: #000000;
-  -webkit-text-stroke: 2px #ffffff;
-  animation: none;
+/* SSR name: animated gold gradient */
+.rc-r-ssr .rc-name {
+  background: linear-gradient(120deg, #FFD700, #fff7c0, #FFA500, #FFD700);
+  background-size: 300% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-text-stroke: 0px transparent;
+  animation: rc-name-gold 3s ease-in-out infinite;
+}
+/* UR name: animated rainbow gradient */
+.rc-r-ur .rc-name {
+  background: linear-gradient(120deg, #ff5fb8, #ffd84a, #5fffb8, #5fb8ff, #c4a5ff, #ff5fb8);
+  background-size: 400% 100%;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-text-stroke: 0px transparent;
+  animation: rc-name-rainbow 2.5s linear infinite;
 }
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-@keyframes rc-name-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
+@keyframes rc-name-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 .rc-rar-badge {
   font-size: 9px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 5px;
   border-radius: 4px; flex-shrink: 0; color: #0a0e0d;
@@ -276,16 +327,11 @@
 .rc-r-ur  .rc-header::before,
 .rc-r-ssr .rc-header::after,
 .rc-r-ur  .rc-header::after { display: none; }
-/* REP label + value: black + white outline to match */
+/* REP label + value: match rarity hi color, floating over art */
 .rc-r-ssr .rc-rep-label,
+.rc-r-ssr .rc-rep-val { color: #FFD700; -webkit-text-stroke: 0px transparent; opacity: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
 .rc-r-ur  .rc-rep-label,
-.rc-r-ssr .rc-rep-val,
-.rc-r-ur  .rc-rep-val {
-  color: #000000;
-  -webkit-text-stroke: 1px #ffffff;
-  text-shadow: none;
-  opacity: 1;
-}
+.rc-r-ur  .rc-rep-val { color: #ffffff; -webkit-text-stroke: 0px transparent; opacity: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
 .rc-art-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rc-art-holo {
   position: absolute; inset: 0;
@@ -374,30 +420,30 @@
 .rc-holo {
   position: absolute; inset: 0; border-radius: 24px;
   pointer-events: none; z-index: 8; overflow: hidden;
-  opacity: var(--card-opacity, 0); transition: opacity 0.5s;
+  opacity: 0; transition: opacity 0.5s;
 }
 .rc-r-sr  .rc-holo,
 .rc-r-ssr .rc-holo,
 .rc-r-ur  .rc-holo {
   background-image:
     repeating-linear-gradient(0deg,
-      hsl(2,  100%, 73%) 0%,
-      hsl(53, 100%, 69%) 5%,
-      hsl(93, 100%, 69%) 10%,
-      hsl(176,100%, 76%) 15%,
-      hsl(228,100%, 74%) 20%,
-      hsl(283,100%, 73%) 25%,
-      hsl(2,  100%, 73%) 35%
+      hsl(2,  100%, 63%) 0%,
+      hsl(53, 100%, 59%) 5%,
+      hsl(93, 100%, 59%) 10%,
+      hsl(176,100%, 66%) 15%,
+      hsl(228,100%, 64%) 20%,
+      hsl(283,100%, 63%) 25%,
+      hsl(2,  100%, 63%) 35%
     ),
     repeating-linear-gradient(133deg,
       #0e448a 0%,
-      hsl(180,100%,76%) 3.8%,
+      hsl(180,100%,66%) 3.8%,
       #0e448a 7.6%
     ),
     radial-gradient(
       farthest-corner ellipse at var(--pointer-x, 50%) var(--pointer-y, 50%),
-      rgba(255,255,255,.8) 10%,
-      rgba(0,0,0,.5)       90%
+      rgba(255,255,255,.55) 10%,
+      rgba(0,0,0,.4)        90%
     );
   background-blend-mode: overlay, overlay, normal;
   background-size: 15% 700%, 300% 300%, 200% 200%;
@@ -406,8 +452,10 @@
     calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
     0% var(--background-y, 50%),
     var(--pointer-x, 50%) var(--pointer-y, 50%);
-  filter: brightness(.85) contrast(2.75) saturate(.65);
+  filter: brightness(.95) contrast(1.6) saturate(.8);
   mix-blend-mode: color-dodge;
+  opacity: calc(var(--card-opacity, 0) * 0.7);
+  transition: opacity 0.5s;
 }
 
 /* ── Glare (follows cursor — overlay blend, darkens toward edges) ── */
@@ -416,13 +464,13 @@
   pointer-events: none; z-index: 9;
   background: radial-gradient(
     farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-    hsl(180,100%,95%)       5%,
-    hsla(0,0%,39%,.25)     55%,
-    hsla(0,0%,0%,.36)     110%
+    hsla(180,100%,95%,.6)   5%,
+    hsla(0,0%,39%,.15)     55%,
+    hsla(0,0%,0%,.2)      110%
   );
-  filter: brightness(.6) contrast(3);
+  filter: brightness(.85) contrast(1.8);
   mix-blend-mode: overlay;
-  opacity: var(--card-opacity, 0); transition: opacity 0.5s;
+  opacity: calc(var(--card-opacity, 0) * 0.6); transition: opacity 0.5s;
 }
 
 /* ── Card back ── */

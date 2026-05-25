@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 
 export const TYPES: Record<string, { label: string; color: string; soft: string; deep: string }> = {
   builder:          { label: 'Builder',        color: '#f59e0b', soft: '#fbbf24', deep: '#78350f' },
@@ -159,6 +159,37 @@ export function RitualCard({
 
   const [flipped, setFlipped] = useState(false);
   const innerRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+
+  // Extract dominant color from PFP for SSR/UR frame background
+  useEffect(() => {
+    const el = frameRef.current;
+    if (!el || (r !== 'SSR' && r !== 'UR') || !pfpUrl) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 16; canvas.height = 16;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, 16, 16);
+        const data = ctx.getImageData(0, 0, 16, 16).data;
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          rSum += data[i]; gSum += data[i+1]; bSum += data[i+2]; count++;
+        }
+        const avg = [rSum/count, gSum/count, bSum/count];
+        // Darken significantly for card frame
+        const darken = (v: number, f: number) => Math.round(Math.min(255, Math.max(0, v * f)));
+        const bgA = `rgb(${darken(avg[0],.12)},${darken(avg[1],.12)},${darken(avg[2],.14)})`;
+        const bgB = `rgb(${darken(avg[0],.18)},${darken(avg[1],.18)},${darken(avg[2],.20)})`;
+        el.style.setProperty('--pfp-bg-a', bgA);
+        el.style.setProperty('--pfp-bg-b', bgB);
+      } catch { /* CORS blocked — fall back to rarity defaults */ }
+    };
+    img.src = pfpUrl;
+  }, [pfpUrl, r]);
 
   const onMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (flipped) return;
@@ -206,7 +237,18 @@ export function RitualCard({
         {/* ── Front face ── */}
         <div className={`rc-root rc-flip-front ${rarityClass}`} style={cardStyle}>
           <div className="rc-foil-edge" aria-hidden="true"/>
-          <div className="rc-frame">
+          <div className="rc-frame" ref={frameRef}>
+            {/* texture + watermark — always present, very subtle */}
+            <div className="rc-frame-texture" aria-hidden="true"/>
+            <div className="rc-watermark" aria-hidden="true">
+              <div className="rc-watermark-inner">
+                <span className="rc-wm-mark rc-wm-mark-center"><RitualMark size={160} color="var(--rar-hi)"/></span>
+                <span className="rc-wm-mark rc-wm-mark-tl"><RitualMark size={80} color="var(--rar-hi)"/></span>
+                <span className="rc-wm-mark rc-wm-mark-tr"><RitualMark size={80} color="var(--rar-hi)"/></span>
+                <span className="rc-wm-mark rc-wm-mark-bl"><RitualMark size={70} color="var(--rar-hi)"/></span>
+                <span className="rc-wm-mark rc-wm-mark-br"><RitualMark size={70} color="var(--rar-hi)"/></span>
+              </div>
+            </div>
             {showPrism && <div className="rc-prism" aria-hidden="true"/>}
 
             <header className="rc-header">
