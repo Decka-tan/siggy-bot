@@ -322,11 +322,17 @@ export function RitualCard({
                 {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
               </div>
               <div className="rc-header-right">
-                <div className="rc-type-col">
+                {rep > 0 && (r !== 'SSR' && r !== 'UR') && (
+                  <div className="rc-rep">
+                    <span className="rc-rep-label">REP</span>
+                    <span className="rc-rep-val">{rep}</span>
+                  </div>
+                )}
+                <div className={r === 'SSR' || r === 'UR' ? 'rc-type-col' : ''}>
                   <div className="rc-type-circle" style={{ color: '#0a0e0d' }}>
                     <TypeIcon type={type} size={18}/>
                   </div>
-                  {rep > 0 && (
+                  {rep > 0 && (r === 'SSR' || r === 'UR') && (
                     <div className="rc-rep">
                       <span className="rc-rep-label">REP</span>
                       <span className="rc-rep-val">{rep}</span>
