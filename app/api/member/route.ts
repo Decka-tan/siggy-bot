@@ -88,19 +88,6 @@ function buildCardData(member: any, roleNames: string[], stats: any) {
 
   const setNum = ((parseInt(uid.slice(-4), 10) % 3890) + 1).toString().padStart(3, '0');
 
-  const contributions = [
-    {
-      icon: '◆',
-      title: `${(stats.contributionsCount || 0).toLocaleString()} Contributions`,
-      flavor: 'posts in contribution channels',
-    },
-    {
-      icon: '✦',
-      title: `${(stats.eventsCount || 0).toLocaleString()} Events`,
-      flavor: 'community events attended',
-    },
-  ];
-
   return {
     userId: uid,
     username,
@@ -112,18 +99,19 @@ function buildCardData(member: any, roleNames: string[], stats: any) {
     contributionsCount: stats.contributionsCount || 0,
     eventsCount: stats.eventsCount || 0,
     globalMessages: stats.globalMessages || 0,
-    // card fields
+    // card fields (live data only — no static stats on card)
     name: displayName,
     pfpUrl: `/api/proxy-avatar?url=${encodeURIComponent(getAvatarUrl(member))}`,
     type: deriveType(roleNames),
     rarity: deriveRarity(roleNames),
-    repScore: stats.globalMessages || 0,
     setNumber: `${setNum}/3890`,
     social: `@${username}`,
     network: 'Ritual',
-    mintDate: joinDate,
     artist: '',
-    contributions,
+    contributions: [
+      { icon: '◆', title: '', flavor: '' },
+      { icon: '✦', title: '', flavor: '' },
+    ],
     contributorRole: roleNames.find((r) => CONTRIBUTOR_ROLES.includes(r)) || null,
   };
 }

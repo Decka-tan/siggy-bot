@@ -44,10 +44,7 @@ export interface CardData {
   contributions?: Contribution[];
   artist?: string;
   social?: string;
-  // stats shown in sub-strip
-  globalMessages?: number;
-  contributionsCount?: number;
-  eventsCount?: number;
+  network?: string;
 }
 
 /* ── Type icons ── */
@@ -139,10 +136,8 @@ export function RitualCard({
   rarity = 'common',
   contributions = [],
   artist,
-  social,
-  globalMessages = 0,
-  contributionsCount = 0,
-  eventsCount = 0,
+  social = '@anon',
+  network = 'Ritual',
 }: CardData) {
   const t = TYPES[type] || TYPES.builder;
   const r = (rarity || 'common') as Rarity;
@@ -154,9 +149,7 @@ export function RitualCard({
 
   const displayContribs = contributions.length > 0
     ? contributions.slice(0, 2)
-    : [{ title: '— no contributions', flavor: 'not yet tracked' }];
-
-  const fmt = (n: number) => n > 0 ? n.toLocaleString() : '—';
+    : [{ icon: '◆', title: '—', flavor: '' }];
 
   return (
     <div className={`rc-root ${rarityClass}`} style={{ '--accent': t.color } as React.CSSProperties}>
@@ -200,7 +193,7 @@ export function RitualCard({
         <div className="rc-category">
           <span className="rc-cat-dot"/>
           <span className="rc-cat-text">
-            Ritual <strong>{t.label}</strong> · joined {joinDate}{social ? ` · ${social}` : ''}
+            Ritual <strong>{t.label}</strong> · joined {joinDate}
           </span>
         </div>
 
@@ -211,19 +204,22 @@ export function RitualCard({
           ))}
         </div>
 
-        {/* ── Stats sub-strip ── */}
+        {/* ── Sub-strip: live data only ── */}
         <div className="rc-sub">
           <div className="rc-sub-cell">
-            <span className="rc-sub-k">msgs</span>
-            <span className="rc-sub-v">{fmt(globalMessages)}</span>
+            <span className="rc-sub-k">network</span>
+            <span className="rc-sub-v">{network}</span>
           </div>
           <div className="rc-sub-cell">
-            <span className="rc-sub-k">contrib</span>
-            <span className="rc-sub-v">{fmt(contributionsCount)}</span>
+            <span className="rc-sub-k">joined</span>
+            <span className="rc-sub-v">{joinDate}</span>
           </div>
           <div className="rc-sub-cell">
-            <span className="rc-sub-k">events</span>
-            <span className="rc-sub-v">{fmt(eventsCount)}</span>
+            <span className="rc-sub-k">social</span>
+            <span className="rc-sub-v" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <svg width="8" height="8" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}><path d="M18 4h3l-7 8 8 12h-6l-5-7-6 7H2l8-9L2 4h6l4 6 6-6z"/></svg>
+              {social?.replace('@', '')}
+            </span>
           </div>
         </div>
 

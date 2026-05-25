@@ -23,9 +23,7 @@ const DEFAULT_CARD: CardData = {
   rarity: 'common',
   artist: '',
   social: '@anon',
-  globalMessages: 0,
-  contributionsCount: 0,
-  eventsCount: 0,
+  network: 'Ritual',
   contributions: [
     { icon: '◆', title: 'First Contribution', flavor: '' },
     { icon: '✦', title: 'Second Contribution', flavor: '' },
@@ -303,14 +301,18 @@ export default function CardGeneratorPage() {
             <div className="form-section">Metadata</div>
             <div className="field-row">
               <label className="gen-field">
+                <span className="gen-field-label">Network</span>
+                <input className="gen-input" value={card.network || ''} onChange={(e) => update({ network: e.target.value })}/>
+              </label>
+              <label className="gen-field">
                 <span className="gen-field-label">Social</span>
                 <input className="gen-input" value={card.social || ''} onChange={(e) => update({ social: e.target.value })}/>
               </label>
-              <label className="gen-field">
-                <span className="gen-field-label">PFP credit</span>
-                <input className="gen-input" value={card.artist || ''} placeholder="self" onChange={(e) => update({ artist: e.target.value })}/>
-              </label>
             </div>
+            <label className="gen-field">
+              <span className="gen-field-label">PFP credit</span>
+              <input className="gen-input" value={card.artist || ''} placeholder="self" onChange={(e) => update({ artist: e.target.value })}/>
+            </label>
           </div>
         </aside>
       </main>
