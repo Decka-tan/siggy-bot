@@ -6,34 +6,20 @@ import { getDeepSeekClient } from '@/lib/deepseek-client';
 // Cache generated contributions per userId+xHandle (1 hour TTL)
 const contribCache = new Map<string, { data: Array<{ icon: string; title: string; flavor: string }>; expiry: number }>();
 
-const NITTER_INSTANCES = [
-  'https://nitter.poast.org',
-  'https://nitter.moomoo.me',
-  'https://nitter.privacydev.net',
-  'https://nitter.perennialte.ch',
-];
+const CF_WORKER = 'https://ritual-twitter-proxy.artelamon.workers.dev';
 
 async function fetchTweets(xHandle: string): Promise<string> {
   const handle = xHandle.replace('@', '').trim();
-  for (const instance of NITTER_INSTANCES) {
-    try {
-      const res = await fetch(`${instance}/${handle}/rss`, {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(4000),
-      });
-      if (!res.ok) continue;
-      const xml = await res.text();
-      // Extract tweet text from <description> tags, strip HTML
-      const matches = [...xml.matchAll(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g)];
-      const tweets = matches
-        .slice(1, 6) // skip first (channel description), take up to 5 tweets
-        .map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
-        .filter(t => t.length > 20)
-        .join(' | ');
-      if (tweets) return tweets;
-    } catch {}
+  try {
+    const res = await fetch(`${CF_WORKER}/api/tweets/${handle}`, {
+      signal: AbortSignal.timeout(7000),
+    });
+    if (!res.ok) return '';
+    const data = await res.json() as { tweets: string[] };
+    return (data.tweets || []).join(' | ');
+  } catch {
+    return '';
   }
-  return '';
 }
 
 async function generateContributions(
