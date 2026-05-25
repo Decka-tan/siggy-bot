@@ -242,11 +242,11 @@ export function RitualCard({
             <div className="rc-frame-texture" aria-hidden="true"/>
             <div className="rc-watermark" aria-hidden="true">
               <div className="rc-watermark-inner">
-                <span className="rc-wm-mark rc-wm-mark-center"><RitualMark size={160} color="var(--rar-hi)"/></span>
-                <span className="rc-wm-mark rc-wm-mark-tl"><RitualMark size={80} color="var(--rar-hi)"/></span>
-                <span className="rc-wm-mark rc-wm-mark-tr"><RitualMark size={80} color="var(--rar-hi)"/></span>
-                <span className="rc-wm-mark rc-wm-mark-bl"><RitualMark size={70} color="var(--rar-hi)"/></span>
-                <span className="rc-wm-mark rc-wm-mark-br"><RitualMark size={70} color="var(--rar-hi)"/></span>
+                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-center" alt=""/>
+                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-tl" alt=""/>
+                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-tr" alt=""/>
+                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-bl" alt=""/>
+                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-br" alt=""/>
               </div>
             </div>
             {showPrism && <div className="rc-prism" aria-hidden="true"/>}
