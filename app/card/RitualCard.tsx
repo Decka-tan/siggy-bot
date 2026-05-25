@@ -195,7 +195,7 @@ export function RitualCard({
         <div className="rc-category">
           <span className="rc-cat-dot"/>
           <span className="rc-cat-text">
-            Ritual <strong>{t.label}</strong> · joined {joinDate}
+            Ritual <strong>{t.label}</strong>
           </span>
         </div>
 
@@ -209,8 +209,8 @@ export function RitualCard({
         {/* ── Sub-strip: live data only ── */}
         <div className="rc-sub">
           <div className="rc-sub-cell">
-            <span className="rc-sub-k">network</span>
-            <span className="rc-sub-v">{network}</span>
+            <span className="rc-sub-k">joined</span>
+            <span className="rc-sub-v">{joinDate}</span>
           </div>
           <div className="rc-sub-cell" style={{ textAlign: 'center' }}>
             <span className="rc-sub-k">rep</span>
@@ -229,7 +229,6 @@ export function RitualCard({
         <footer className="rc-footer">
           <div className="rc-foot-left">
             <RitualMark size={10} color="var(--rar-hi, #40FFAF)"/>
-            <span className="rc-set-num">{setNumber}</span>
             <span className="rc-rarity-badge" style={RARITY_BADGE_STYLE[r]}>
               {RARITY_LABEL[r]}
             </span>
