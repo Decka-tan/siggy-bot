@@ -86,6 +86,10 @@ function buildCardData(member: any, roleNames: string[], stats: any) {
     ? joined.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
     : 'Unknown';
 
+  const rep = joined
+    ? Math.floor((Date.now() - joined.getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+
   const setNum = ((parseInt(uid.slice(-4), 10) % 3890) + 1).toString().padStart(3, '0');
 
   return {
@@ -107,6 +111,7 @@ function buildCardData(member: any, roleNames: string[], stats: any) {
     setNumber: `${setNum}/3890`,
     social: `@${username}`,
     network: 'Ritual',
+    rep,
     artist: '',
     contributions: [
       { icon: '◆', title: '', flavor: '' },

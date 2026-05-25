@@ -24,6 +24,7 @@ const DEFAULT_CARD: CardData = {
   artist: '',
   social: '@anon',
   network: 'Ritual',
+  rep: 0,
   contributions: [
     { icon: '◆', title: 'First Contribution', flavor: '' },
     { icon: '✦', title: 'Second Contribution', flavor: '' },

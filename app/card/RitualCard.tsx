@@ -45,6 +45,7 @@ export interface CardData {
   artist?: string;
   social?: string;
   network?: string;
+  rep?: number;
 }
 
 /* ── Type icons ── */
@@ -138,6 +139,7 @@ export function RitualCard({
   artist,
   social = '@anon',
   network = 'Ritual',
+  rep = 0,
 }: CardData) {
   const t = TYPES[type] || TYPES.builder;
   const r = (rarity || 'common') as Rarity;
@@ -210,9 +212,9 @@ export function RitualCard({
             <span className="rc-sub-k">network</span>
             <span className="rc-sub-v">{network}</span>
           </div>
-          <div className="rc-sub-cell">
-            <span className="rc-sub-k">joined</span>
-            <span className="rc-sub-v">{joinDate}</span>
+          <div className="rc-sub-cell" style={{ textAlign: 'center' }}>
+            <span className="rc-sub-k">rep</span>
+            <span className="rc-sub-v" style={{ color: 'var(--rar-hi)' }}>{rep > 0 ? rep.toLocaleString() : '—'}</span>
           </div>
           <div className="rc-sub-cell">
             <span className="rc-sub-k">social</span>

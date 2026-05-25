@@ -99,8 +99,10 @@
   background: var(--rar-border);
   z-index: 1;
 }
-/* Spinning animation for SSR and UR */
-.rc-r-ssr .rc-foil-edge { animation: rc-border-spin 5s linear infinite; }
+/* SSR: gold shimmer (brightness pulse, no hue shift) */
+.rc-r-ssr .rc-foil-edge { animation: rc-gold-shimmer 3s ease-in-out infinite; }
+@keyframes rc-gold-shimmer { 0%,100% { filter: brightness(1); } 50% { filter: brightness(1.35) saturate(1.2); } }
+/* UR: full rainbow spin */
 .rc-r-ur  .rc-foil-edge { animation: rc-border-spin 3s linear infinite; }
 @keyframes rc-border-spin { to { filter: hue-rotate(360deg); } }
 
@@ -183,11 +185,12 @@
 /* ── Art window ── */
 .rc-art-wrap {
   position: relative; width: 100%; aspect-ratio: 5 / 3;
-  border-radius: 10px; background: var(--rar-border); padding: 4px;
+  border-radius: 10px; border: 1.5px solid var(--rar-hi-soft); padding: 0;
+  background: transparent;
 }
 .rc-art-inner {
   position: relative; width: 100%; height: 100%;
-  border-radius: 7px; overflow: hidden;
+  border-radius: 9px; overflow: hidden;
   background: #050a08;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6), inset 0 2px 8px rgba(0,0,0,0.7);
 }
