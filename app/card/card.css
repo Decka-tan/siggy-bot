@@ -341,11 +341,17 @@
 .rc-r-ur  .rc-header::before,
 .rc-r-ssr .rc-header::after,
 .rc-r-ur  .rc-header::after { display: none; }
-/* REP label + value: match rarity hi color, floating over art */
+/* REP label + value: black + white outline + grey shadow, same as display name bar */
 .rc-r-ssr .rc-rep-label,
-.rc-r-ssr .rc-rep-val { color: #FFD700; -webkit-text-stroke: 0px transparent; opacity: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
 .rc-r-ur  .rc-rep-label,
-.rc-r-ur  .rc-rep-val { color: #ffffff; -webkit-text-stroke: 0px transparent; opacity: 1; text-shadow: 0 1px 6px rgba(0,0,0,0.8); }
+.rc-r-ssr .rc-rep-val,
+.rc-r-ur  .rc-rep-val {
+  color: #000000;
+  -webkit-text-fill-color: #000000;
+  -webkit-text-stroke: 1px #ffffff;
+  text-shadow: 0 1px 3px rgba(100,100,100,0.5);
+  opacity: 1;
+}
 .rc-art-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rc-art-holo {
   position: absolute; inset: 0;
