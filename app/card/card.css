@@ -284,6 +284,15 @@
 .rc-header-right { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; position: relative; z-index: 1; }
 .rc-type-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .rc-rep { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+/* SSR/UR REP floats outside the header bar, absolute over art */
+.rc-rep-float {
+  position: absolute;
+  top: calc(10px + 44px + 4px); /* frame padding + header height + gap */
+  right: 20px;
+  z-index: 4;
+  display: flex; flex-direction: column; align-items: center; line-height: 1;
+  pointer-events: none;
+}
 .rc-rep-label { font-size: 7px; font-weight: 900; letter-spacing: 0.14em; color: var(--rar-hi); opacity: 0.9; text-transform: uppercase; }
 .rc-rep-val { font-size: 15px; font-weight: 900; color: var(--rar-hi); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .rc-type-circle {
