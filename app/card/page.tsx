@@ -21,11 +21,11 @@ const DEFAULT_CARD: CardData = {
   setNumber: '001/3890',
   type: 'builder',
   rarity: 'common',
-  repScore: 0,
   artist: '',
-  network: 'Ritual',
-  mintDate: 'Mar 2024',
   social: '@anon',
+  globalMessages: 0,
+  contributionsCount: 0,
+  eventsCount: 0,
   contributions: [
     { icon: '◆', title: 'First Contribution', flavor: '' },
     { icon: '✦', title: 'Second Contribution', flavor: '' },
@@ -281,16 +281,6 @@ export default function CardGeneratorPage() {
               </div>
             </label>
 
-            <label className="gen-field">
-              <span className="gen-field-label">Rep score · {(card.repScore || 0).toLocaleString()}</span>
-              <input
-                type="range" min="0" max="50000" step="10"
-                value={card.repScore || 0}
-                onChange={(e) => update({ repScore: parseInt(e.target.value, 10) })}
-                className="gen-range"
-              />
-            </label>
-
             <div className="form-section">Contributions</div>
             {(card.contributions || []).map((row, i) => (
               <div key={i} className="contrib-block">
@@ -313,18 +303,14 @@ export default function CardGeneratorPage() {
             <div className="form-section">Metadata</div>
             <div className="field-row">
               <label className="gen-field">
-                <span className="gen-field-label">Network</span>
-                <input className="gen-input" value={card.network || ''} onChange={(e) => update({ network: e.target.value })}/>
-              </label>
-              <label className="gen-field">
                 <span className="gen-field-label">Social</span>
                 <input className="gen-input" value={card.social || ''} onChange={(e) => update({ social: e.target.value })}/>
               </label>
+              <label className="gen-field">
+                <span className="gen-field-label">PFP credit</span>
+                <input className="gen-input" value={card.artist || ''} placeholder="self" onChange={(e) => update({ artist: e.target.value })}/>
+              </label>
             </div>
-            <label className="gen-field">
-              <span className="gen-field-label">PFP credit</span>
-              <input className="gen-input" value={card.artist || ''} placeholder="self" onChange={(e) => update({ artist: e.target.value })}/>
-            </label>
           </div>
         </aside>
       </main>
