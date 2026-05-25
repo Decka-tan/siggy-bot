@@ -1,6 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { getDeepSeekClient } from '@/lib/deepseek-client';
+
+// Cache generated contributions per userId (1 hour TTL)
+const contribCache = new Map<string, { data: Array<{ icon: string; title: string; flavor: string }>; expiry: number }>();
+
+async function generateContributions(
+  userId: string,
+  displayName: string,
+  type: string,
+  rarity: string,
+  roleNames: string[],
+  rep: number,
+): Promise<Array<{ icon: string; title: string; flavor: string }>> {
+  const cached = contribCache.get(userId);
+  if (cached && Date.now() < cached.expiry) return cached.data;
+
+  const fallback = [
+    { icon: '◆', title: '', flavor: '' },
+    { icon: '✦', title: '', flavor: '' },
+  ];
+
+  try {
+    const deepseek = getDeepSeekClient();
+    const topRole = roleNames.find(r =>
+      ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty', 'Mods', 'Events'].includes(r)
+    ) || type;
+
+    const res = await deepseek.chat([
+      {
+        role: 'system',
+        content: 'You write exactly 2 short contribution lines for a TCG-style Web3 community member card. Output format — two lines, each: TITLE | flavor. TITLE = 3-5 words, action-oriented. flavor = 4-7 words, lowercase. No emojis, no markdown, no numbers.',
+      },
+      {
+        role: 'user',
+        content: `Member: ${displayName}\nRole: ${topRole}\nType: ${type}\nRarity: ${rarity}\nDays in Ritual: ${rep}`,
+      },
+    ], { temperature: 0.85, maxTokens: 80 });
+
+    const text = res.choices[0]?.message?.content || '';
+    const lines = text.trim().split('\n').filter((l: string) => l.includes('|')).slice(0, 2);
+
+    if (lines.length < 2) return fallback;
+
+    const data = lines.map((line: string, i: number) => {
+      const [title, flavor] = line.split('|').map((s: string) => s.trim());
+      return { icon: i === 0 ? '◆' : '✦', title: title || '', flavor: flavor || '' };
+    });
+
+    contribCache.set(userId, { data, expiry: Date.now() + 60 * 60 * 1000 });
+    return data;
+  } catch {
+    return fallback;
+  }
+}
 
 export const runtime = 'nodejs';
 
@@ -210,6 +264,16 @@ export async function GET(req: NextRequest) {
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
     const stats = activityData.get(member.user.id) || {};
     const cardData = buildCardData(member, roleNames, stats, memberCount);
+
+    // Generate contribution rows via DeepSeek (cached per userId, 1h)
+    cardData.contributions = await generateContributions(
+      cardData.userId,
+      cardData.name,
+      cardData.type,
+      cardData.rarity,
+      roleNames,
+      cardData.rep,
+    );
 
     return NextResponse.json({ success: true, member: cardData });
   } catch (e: any) {

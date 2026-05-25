@@ -218,7 +218,7 @@ export function RitualCard({
             <span className="rc-sub-k">joined</span>
             <span className="rc-sub-v">{joinDate}</span>
           </div>
-          <div className="rc-sub-cell" style={{ textAlign: 'center' }}>
+          <div className="rc-sub-cell">
             <span className="rc-sub-k">network</span>
             <span className="rc-sub-v">{network}</span>
           </div>
