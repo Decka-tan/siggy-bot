@@ -261,7 +261,7 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name + REP float: identical — black, white outline, grey shadow */
+/* SSR/UR name + REP float: black bold, white outline via shadow (no text-stroke) */
 .rc-r-ssr .rc-name,
 .rc-r-ur  .rc-name,
 .rc-rep-float .rc-rep-label,
@@ -269,8 +269,14 @@
   background: none;
   -webkit-background-clip: unset; background-clip: unset;
   -webkit-text-fill-color: #000000; color: #000000;
-  -webkit-text-stroke: 0.6px #ffffff;
-  text-shadow: 0 1px 4px rgba(120,120,120,0.6);
+  -webkit-text-stroke: 0px transparent;
+  font-weight: 900;
+  text-shadow:
+    -1px -1px 0 #fff,
+     1px -1px 0 #fff,
+    -1px  1px 0 #fff,
+     1px  1px 0 #fff,
+     0    2px 5px rgba(0,0,0,0.25);
   opacity: 1;
   animation: none;
 }
