@@ -270,14 +270,16 @@ export function RitualCard({
                 {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
               </div>
               <div className="rc-header-right">
-                {rep > 0 && (
-                  <div className="rc-rep">
-                    <span className="rc-rep-label">REP</span>
-                    <span className="rc-rep-val">{rep}</span>
+                <div className="rc-type-col">
+                  <div className="rc-type-circle" style={{ color: '#0a0e0d' }}>
+                    <TypeIcon type={type} size={18}/>
                   </div>
-                )}
-                <div className="rc-type-circle" style={{ color: '#0a0e0d' }}>
-                  <TypeIcon type={type} size={18}/>
+                  {rep > 0 && (
+                    <div className="rc-rep">
+                      <span className="rc-rep-label">REP</span>
+                      <span className="rc-rep-val">{rep}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </header>

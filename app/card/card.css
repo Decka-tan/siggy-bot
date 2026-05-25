@@ -282,9 +282,10 @@
 .rc-rar-badge-sr  { background: linear-gradient(120deg,#c084fc,#7c3aed); color: #fff; }
 .rc-rar-badge-r   { background: linear-gradient(120deg,#60a5fa,#1d4ed8); color: #fff; }
 .rc-header-right { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; position: relative; z-index: 1; }
+.rc-type-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .rc-rep { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-.rc-rep-label { font-size: 7px; font-weight: 900; letter-spacing: 0.14em; color: var(--rar-hi); opacity: 0.8; text-transform: uppercase; }
-.rc-rep-val { font-size: 13px; font-weight: 900; color: var(--rar-hi); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.rc-rep-label { font-size: 7px; font-weight: 900; letter-spacing: 0.14em; color: var(--rar-hi); opacity: 0.9; text-transform: uppercase; }
+.rc-rep-val { font-size: 15px; font-weight: 900; color: var(--rar-hi); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .rc-type-circle {
   width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
   background: var(--rar-hi);
@@ -294,7 +295,7 @@
 
 /* ── Art window ── */
 .rc-art-wrap {
-  position: relative; width: 100%; aspect-ratio: 5 / 3;
+  position: relative; width: 100%; aspect-ratio: 5 / 3.5;
   border-radius: 10px; border: 1.5px solid var(--rar-hi-soft); padding: 0;
   background: transparent;
 }
@@ -341,15 +342,15 @@
 .rc-r-ur  .rc-header::before,
 .rc-r-ssr .rc-header::after,
 .rc-r-ur  .rc-header::after { display: none; }
-/* REP label + value: black + white outline + grey shadow, same as display name bar */
+/* REP label + value on SSR/UR: black, no outline, grey shadow only */
 .rc-r-ssr .rc-rep-label,
 .rc-r-ur  .rc-rep-label,
 .rc-r-ssr .rc-rep-val,
 .rc-r-ur  .rc-rep-val {
   color: #000000;
   -webkit-text-fill-color: #000000;
-  -webkit-text-stroke: 1px #ffffff;
-  text-shadow: 0 1px 3px rgba(100,100,100,0.5);
+  -webkit-text-stroke: 0px transparent;
+  text-shadow: 0 1px 4px rgba(120,120,120,0.6);
   opacity: 1;
 }
 .rc-art-img { display: block; width: 100%; height: 100%; object-fit: cover; }
