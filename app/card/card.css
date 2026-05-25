@@ -169,11 +169,14 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: #ffffff; min-width: 0; flex: 1 1 auto;
 }
-.rc-ur-badge {
+.rc-rar-badge {
   font-size: 9px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 5px;
-  border-radius: 4px; background: linear-gradient(120deg,#ff5fb8,#ffd84a,#5fffb8,#5fb8ff);
-  color: #0a0e0d; flex-shrink: 0;
+  border-radius: 4px; flex-shrink: 0; color: #0a0e0d;
 }
+.rc-rar-badge-ur  { background: linear-gradient(120deg,#ff5fb8,#ffd84a,#5fffb8,#5fb8ff); animation: rc-border-spin 3s linear infinite; }
+.rc-rar-badge-ssr { background: linear-gradient(120deg,#FFD700,#FFA500); }
+.rc-rar-badge-sr  { background: linear-gradient(120deg,#c084fc,#7c3aed); color: #fff; }
+.rc-rar-badge-r   { background: linear-gradient(120deg,#60a5fa,#1d4ed8); color: #fff; }
 .rc-header-right { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; position: relative; z-index: 1; }
 .rc-rep { display: flex; flex-direction: column; align-items: center; line-height: 1; }
 .rc-rep-label { font-size: 7px; font-weight: 900; letter-spacing: 0.14em; color: var(--rar-hi); opacity: 0.8; text-transform: uppercase; }

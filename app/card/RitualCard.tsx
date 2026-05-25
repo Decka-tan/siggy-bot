@@ -163,7 +163,7 @@ export function RitualCard({
         <header className="rc-header">
           <div className="rc-header-left">
             <h2 className="rc-name" title={name}>{name}</h2>
-            {r === 'UR' && <span className="rc-ur-badge">UR</span>}
+            {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
           </div>
           <div className="rc-header-right">
             {rep > 0 && (
