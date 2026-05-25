@@ -17,7 +17,7 @@ export const RARITY_OPTIONS = ['UR', 'SSR', 'SR', 'R', 'common'] as const;
 export type Rarity = typeof RARITY_OPTIONS[number];
 
 export const RARITY_LABEL: Record<Rarity, string> = {
-  UR: 'ULTRA RARE', SSR: 'SUPER RARE', SR: 'RARE', R: 'UNCOMMON', common: 'COMMON',
+  UR: 'ULTRA RARE', SSR: 'SUPER SUPER RARE', SR: 'SUPER RARE', R: 'RARE', common: 'COMMON',
 };
 
 const RARITY_BADGE_STYLE: Record<Rarity, React.CSSProperties> = {
