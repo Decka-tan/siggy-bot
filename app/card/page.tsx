@@ -145,9 +145,9 @@ export default function CardGeneratorPage() {
       <div className="gen-header">
         <div className="gen-brand">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" stroke="#40FFAF" strokeWidth="1.5"/>
-            <path d="M12 5l6 11H6l6-11z" stroke="#40FFAF" strokeWidth="1.5"/>
-            <circle cx="12" cy="13" r="1.6" fill="#40FFAF"/>
+            <circle cx="12" cy="12" r="10" stroke="#FFD700" strokeWidth="1.5"/>
+            <path d="M12 5l6 11H6l6-11z" stroke="#FFD700" strokeWidth="1.5"/>
+            <circle cx="12" cy="13" r="1.6" fill="#FFD700"/>
           </svg>
           <div>
             <div className="gen-brand-name">Ritual Card Generator</div>
