@@ -253,6 +253,7 @@ export function RitualCard({
         </footer>
       </div>
       <div className="rc-grain" aria-hidden="true"/>
+      <div className="rc-copyright" aria-hidden="true">2026 Ritual TCG · Made by Decka-chan</div>
     </div>
   );
 }
