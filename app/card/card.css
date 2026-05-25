@@ -263,7 +263,7 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: #ffffff; min-width: 0; flex: 1 1 auto;
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
-  text-transform: uppercase;
+  text-transform: none;
 }
 /* Per-rarity name gradient text */
 .rc-r-r .rc-name {
@@ -349,7 +349,7 @@
 .rc-r-ur  .rc-art-wrap {
   width: calc(100% + 20px);
   margin: -65px -10px 0; /* -65 clears header(~48px) + gap(5) + top-padding(10) + 2 safety */
-  aspect-ratio: 4 / 3.5;
+  aspect-ratio: 4 / 3.25;
   border: none;
   border-bottom: 1.5px solid var(--rar-hi);
   border-radius: 0;
@@ -388,14 +388,9 @@
 }
 .rc-r-ssr .rc-art-holo,
 .rc-r-ur  .rc-art-holo {
-  opacity: 0;
-  animation: none;
-  transition: opacity 0.25s ease;
-}
-.rc-flip-wrap:hover .rc-r-ssr .rc-art-holo,
-.rc-flip-wrap:hover .rc-r-ur  .rc-art-holo {
-  opacity: 1;
+  opacity: var(--card-opacity, 0);
   animation: rc-sweep 3s ease-in-out infinite;
+  transition: opacity 0.25s ease;
 }
 .rc-r-ssr .rc-spark,
 .rc-r-ur  .rc-spark {
@@ -645,13 +640,6 @@
   filter: brightness(1.3) contrast(1.5);
   mix-blend-mode: hard-light;
   opacity: var(--card-opacity, 0);
-}
-
-.rc-r-ssr .rc-holo,
-.rc-r-ssr .rc-glare,
-.rc-r-ur  .rc-holo,
-.rc-r-ur  .rc-glare {
-  display: none;
 }
 
 /* ── Card back ── */
