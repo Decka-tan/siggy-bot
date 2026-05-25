@@ -263,33 +263,38 @@
 }
 /* SSR/UR name + REP float: black bold, thick white outline via multi-shadow */
 .rc-r-ssr .rc-name,
-.rc-r-ur  .rc-name,
-.rc-rep-float .rc-rep-label,
-.rc-rep-float .rc-rep-val {
+.rc-r-ur  .rc-name {
   background: none;
   -webkit-background-clip: unset; background-clip: unset;
   -webkit-text-fill-color: #000000; color: #000000;
   -webkit-text-stroke: 0px transparent;
+  font-family: 'Arial Black', 'Impact', ui-sans-serif, sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  text-shadow:
+    -1.5px -1.5px 0 #fff,  1.5px -1.5px 0 #fff,
+    -1.5px  1.5px 0 #fff,  1.5px  1.5px 0 #fff,
+    -1.5px  0     0 #fff,  1.5px  0     0 #fff,
+     0     -1.5px 0 #fff,  0      1.5px 0 #fff,
+     0      3px   6px rgba(0,0,0,0.35);
+  opacity: 1;
+  animation: none;
+}
+.rc-rep-float .rc-rep-label,
+.rc-rep-float .rc-rep-val {
+  -webkit-text-fill-color: #000000; color: #000000;
+  -webkit-text-stroke: 0px transparent;
+  font-family: 'Arial Black', 'Impact', ui-sans-serif, sans-serif;
   font-weight: 900;
   text-shadow:
     -1.5px -1.5px 0 #fff,  1.5px -1.5px 0 #fff,
     -1.5px  1.5px 0 #fff,  1.5px  1.5px 0 #fff,
     -1.5px  0     0 #fff,  1.5px  0     0 #fff,
      0     -1.5px 0 #fff,  0      1.5px 0 #fff,
-     0      3px   6px rgba(0,0,0,0.4);
+     0      3px   6px rgba(0,0,0,0.35);
   opacity: 1;
-  animation: none;
 }
 
-/* Dark gradient at top of art for SSR/UR — gives text something to sit against */
-.rc-r-ssr .rc-art-inner::after,
-.rc-r-ur  .rc-art-inner::after {
-  content: "";
-  position: absolute; top: 0; left: 0; right: 0;
-  height: 45%;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, transparent 100%);
-  pointer-events: none; z-index: 1;
-}
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 @keyframes rc-name-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 .rc-rar-badge {
