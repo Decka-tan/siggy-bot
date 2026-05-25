@@ -312,7 +312,8 @@
 .rc-rep-float {
   position: absolute;
   top: calc(10px + 44px + 4px); /* frame padding + header height + gap */
-  right: 20px;
+  right: 10px; /* align center with type circle (28px wide, 10px padding) */
+  width: 28px; /* match type circle width so centers align */
   z-index: 4;
   display: flex; flex-direction: column; align-items: center; line-height: 1;
   pointer-events: none;
