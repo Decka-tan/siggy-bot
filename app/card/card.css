@@ -261,15 +261,15 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name: black, floats over art */
+/* SSR/UR name: black, no outline */
 .rc-r-ssr .rc-name,
 .rc-r-ur  .rc-name {
   background: none;
   -webkit-background-clip: unset; background-clip: unset;
   -webkit-text-fill-color: #000000; color: #000000;
   -webkit-text-stroke: 0px transparent;
+  text-shadow: none;
   animation: none;
-  text-shadow: 0 1px 3px rgba(255,255,255,0.3);
 }
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
 @keyframes rc-name-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
