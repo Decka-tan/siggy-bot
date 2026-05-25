@@ -238,6 +238,7 @@
 /* SSR / UR: full-bleed art — extends to frame edges */
 .rc-r-ssr .rc-art-wrap,
 .rc-r-ur  .rc-art-wrap {
+  width: calc(100% + 20px);
   margin: 0 -10px;
   border-left: none; border-right: none;
   border-top-color: var(--rar-hi);
