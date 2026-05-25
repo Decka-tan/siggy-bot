@@ -261,14 +261,14 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name: black, no outline */
+/* SSR/UR name: black + white outline + grey shadow */
 .rc-r-ssr .rc-name,
 .rc-r-ur  .rc-name {
   background: none;
   -webkit-background-clip: unset; background-clip: unset;
   -webkit-text-fill-color: #000000; color: #000000;
-  -webkit-text-stroke: 0px transparent;
-  text-shadow: none;
+  -webkit-text-stroke: 1.5px #ffffff;
+  text-shadow: 0 1px 4px rgba(120,120,120,0.6);
   animation: none;
 }
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
@@ -342,14 +342,14 @@
 .rc-r-ur  .rc-header::before,
 .rc-r-ssr .rc-header::after,
 .rc-r-ur  .rc-header::after { display: none; }
-/* REP label + value on SSR/UR: black, no outline, grey shadow only */
+/* REP label + value on SSR/UR: same as display name — black + white outline + grey shadow */
 .rc-r-ssr .rc-rep-label,
 .rc-r-ur  .rc-rep-label,
 .rc-r-ssr .rc-rep-val,
 .rc-r-ur  .rc-rep-val {
   color: #000000;
   -webkit-text-fill-color: #000000;
-  -webkit-text-stroke: 0px transparent;
+  -webkit-text-stroke: 1px #ffffff;
   text-shadow: 0 1px 4px rgba(120,120,120,0.6);
   opacity: 1;
 }
