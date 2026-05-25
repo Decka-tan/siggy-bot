@@ -166,7 +166,13 @@ export function RitualCard({
             {r === 'UR' && <span className="rc-ur-badge">UR</span>}
           </div>
           <div className="rc-header-right">
-            <div className="rc-type-circle" style={{ color: t.deep }}>
+            {rep > 0 && (
+              <div className="rc-rep">
+                <span className="rc-rep-label">REP</span>
+                <span className="rc-rep-val">{rep}</span>
+              </div>
+            )}
+            <div className="rc-type-circle" style={{ color: '#0a0e0d' }}>
               <TypeIcon type={type} size={18}/>
             </div>
           </div>
@@ -213,8 +219,8 @@ export function RitualCard({
             <span className="rc-sub-v">{joinDate}</span>
           </div>
           <div className="rc-sub-cell" style={{ textAlign: 'center' }}>
-            <span className="rc-sub-k">rep</span>
-            <span className="rc-sub-v" style={{ color: 'var(--rar-hi)' }}>{rep > 0 ? rep.toLocaleString() : '—'}</span>
+            <span className="rc-sub-k">network</span>
+            <span className="rc-sub-v">{network}</span>
           </div>
           <div className="rc-sub-cell">
             <span className="rc-sub-k">social</span>
