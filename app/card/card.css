@@ -419,52 +419,52 @@
 .rc-r-sr  .rc-holo,
 .rc-r-ssr .rc-holo,
 .rc-r-ur  .rc-holo {
+  /* rainbow stripes + scanlines — same approach as poke-holo regular-holo */
   background-image:
-    repeating-linear-gradient(0deg,
-      hsl(2,  100%, 63%) 0%,
-      hsl(53, 100%, 59%) 5%,
-      hsl(93, 100%, 59%) 10%,
-      hsl(176,100%, 66%) 15%,
-      hsl(228,100%, 64%) 20%,
-      hsl(283,100%, 63%) 25%,
-      hsl(2,  100%, 63%) 35%
+    repeating-linear-gradient(110deg,
+      hsl(2,  100%, 73%),
+      hsl(53, 100%, 69%),
+      hsl(93, 100%, 69%),
+      hsl(176,100%, 76%),
+      hsl(228,100%, 74%),
+      hsl(283,100%, 73%),
+      hsl(2,  100%, 73%),
+      hsl(53, 100%, 69%),
+      hsl(93, 100%, 69%),
+      hsl(176,100%, 76%),
+      hsl(228,100%, 74%),
+      hsl(283,100%, 73%)
     ),
-    repeating-linear-gradient(133deg,
-      #0e448a 0%,
-      hsl(180,100%,66%) 3.8%,
-      #0e448a 7.6%
-    ),
-    radial-gradient(
-      farthest-corner ellipse at var(--pointer-x, 50%) var(--pointer-y, 50%),
-      rgba(255,255,255,.55) 10%,
-      rgba(0,0,0,.4)        90%
+    repeating-linear-gradient(90deg,
+      #000 0px, #000 1px,
+      #555 1px, #555 3px
     );
-  background-blend-mode: overlay, overlay, normal;
-  background-size: 15% 700%, 300% 300%, 200% 200%;
+  background-blend-mode: overlay;
+  background-size: 400% 400%, cover;
   background-position:
     calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
     calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
-    0% var(--background-y, 50%),
-    var(--pointer-x, 50%) var(--pointer-y, 50%);
-  filter: brightness(.95) contrast(1.6) saturate(.8);
+    center center;
+  /* poke-holo regular-holo filter — much less blinding */
+  filter: brightness(1.1) contrast(1.1) saturate(1.2);
   mix-blend-mode: color-dodge;
-  opacity: calc(var(--card-opacity, 0) * 0.7);
+  opacity: var(--card-opacity, 0);
   transition: opacity 0.5s;
 }
 
-/* ── Glare (follows cursor — overlay blend, darkens toward edges) ── */
+/* ── Glare (follows cursor) — poke-holo values ── */
 .rc-glare {
   position: absolute; inset: 0; border-radius: 24px;
   pointer-events: none; z-index: 9;
   background: radial-gradient(
     farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
-    hsla(180,100%,95%,.6)   5%,
-    hsla(0,0%,39%,.15)     55%,
-    hsla(0,0%,0%,.2)      110%
+    hsl(180,100%,95%)        5%,
+    hsla(0,0%,39%,.25)      55%,
+    hsla(0,0%,0%,.36)      110%
   );
-  filter: brightness(.85) contrast(1.8);
+  filter: brightness(0.8) contrast(1.5);
   mix-blend-mode: overlay;
-  opacity: calc(var(--card-opacity, 0) * 0.6); transition: opacity 0.5s;
+  opacity: calc(var(--card-opacity, 0) * 0.8); transition: opacity 0.5s;
 }
 
 /* ── Card back ── */
