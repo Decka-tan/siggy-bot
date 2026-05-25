@@ -171,7 +171,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: 6px;
   padding: 6px 10px;
   border-radius: 9px;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0,0,0,0.93);
   border: 1.5px solid var(--rar-hi-soft);
   overflow: hidden;
 }
@@ -279,7 +279,7 @@
 .rc-r-ur  .rc-header {
   position: relative;
   z-index: 3;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.93);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
@@ -303,7 +303,7 @@
 
 /* ── Category bar ── */
 .rc-category {
-  display: flex; align-items: center; gap: 5px;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
   padding: 3px 8px;
   background: rgba(0,0,0,0.5);
   border: 1px solid var(--rar-hi-soft);

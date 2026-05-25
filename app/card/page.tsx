@@ -88,7 +88,8 @@ export default function CardGeneratorPage() {
       const data = await res.json();
       if (data.member) {
         const social = cleanHandle ? `@${cleanHandle}` : data.member.social;
-        setCard({ ...data.member, social });
+        const socialPlatform = cleanHandle ? 'x' : 'discord';
+        setCard({ ...data.member, social, socialPlatform });
         showToast(`Loaded ${data.member.name}${cleanHandle ? ' + X data' : ''}`);
       }
     } catch {
@@ -229,7 +230,7 @@ export default function CardGeneratorPage() {
         {/* Preview */}
         <section className="gen-preview">
           <div className="gen-preview-card-wrap">
-            <div ref={cardRef} className="gen-card-host">
+            <div ref={cardRef} className="gen-card-host" style={{ opacity: selectedUserId ? 1 : 0.6, transition: 'opacity 0.3s' }}>
               <RitualCard {...card}/>
             </div>
           </div>
