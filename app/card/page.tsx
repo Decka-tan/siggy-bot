@@ -47,6 +47,7 @@ export default function CardGeneratorPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [xHandle, setXHandle] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -82,11 +83,13 @@ export default function CardGeneratorPage() {
     setQuery(m.displayName);
     setLoading(true);
     try {
-      const res = await fetch(`/api/member?userId=${m.userId}`);
+      const handle = xHandle.replace('@', '').trim();
+      const url = `/api/member?userId=${m.userId}${handle ? `&xHandle=${encodeURIComponent(handle)}` : ''}`;
+      const res = await fetch(url);
       const data = await res.json();
       if (data.member) {
         setCard({ ...data.member });
-        showToast(`Loaded ${data.member.name}`);
+        showToast(`Loaded ${data.member.name}${handle ? ' + X data' : ''}`);
       }
     } catch {
       showToast('Failed to load member data');
@@ -298,6 +301,17 @@ export default function CardGeneratorPage() {
                 />
               </div>
             ))}
+
+            <div className="form-section">X / Twitter</div>
+            <label className="gen-field">
+              <span className="gen-field-label">X handle <span style={{ opacity: 0.4, fontWeight: 400 }}>(optional — improves contributions)</span></span>
+              <input
+                className="gen-input"
+                placeholder="@username"
+                value={xHandle}
+                onChange={(e) => setXHandle(e.target.value)}
+              />
+            </label>
 
             <div className="form-section">Metadata</div>
             <div className="field-row">

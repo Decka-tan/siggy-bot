@@ -3,8 +3,38 @@ import fs from 'fs';
 import path from 'path';
 import { getDeepSeekClient } from '@/lib/deepseek-client';
 
-// Cache generated contributions per userId (1 hour TTL)
+// Cache generated contributions per userId+xHandle (1 hour TTL)
 const contribCache = new Map<string, { data: Array<{ icon: string; title: string; flavor: string }>; expiry: number }>();
+
+const NITTER_INSTANCES = [
+  'https://nitter.poast.org',
+  'https://nitter.moomoo.me',
+  'https://nitter.privacydev.net',
+  'https://nitter.perennialte.ch',
+];
+
+async function fetchTweets(xHandle: string): Promise<string> {
+  const handle = xHandle.replace('@', '').trim();
+  for (const instance of NITTER_INSTANCES) {
+    try {
+      const res = await fetch(`${instance}/${handle}/rss`, {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(4000),
+      });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      // Extract tweet text from <description> tags, strip HTML
+      const matches = [...xml.matchAll(/<description><!\[CDATA\[([\s\S]*?)\]\]><\/description>/g)];
+      const tweets = matches
+        .slice(1, 6) // skip first (channel description), take up to 5 tweets
+        .map(m => m[1].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim())
+        .filter(t => t.length > 20)
+        .join(' | ');
+      if (tweets) return tweets;
+    } catch {}
+  }
+  return '';
+}
 
 async function generateContributions(
   userId: string,
@@ -13,8 +43,10 @@ async function generateContributions(
   rarity: string,
   roleNames: string[],
   rep: number,
+  xHandle?: string,
 ): Promise<Array<{ icon: string; title: string; flavor: string }>> {
-  const cached = contribCache.get(userId);
+  const cacheKey = `${userId}:${xHandle || ''}`;
+  const cached = contribCache.get(cacheKey);
   if (cached && Date.now() < cached.expiry) return cached.data;
 
   const fallback = [
@@ -28,14 +60,21 @@ async function generateContributions(
       ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty', 'Mods', 'Events'].includes(r)
     ) || type;
 
+    // Fetch tweets if X handle provided
+    let tweetContext = '';
+    if (xHandle) {
+      const tweets = await fetchTweets(xHandle);
+      if (tweets) tweetContext = `\nRecent tweets: ${tweets}`;
+    }
+
     const res = await deepseek.chat([
       {
         role: 'system',
-        content: 'You write exactly 2 short contribution lines for a TCG-style Web3 community member card. Output format — two lines, each: TITLE | flavor. TITLE = 3-5 words, action-oriented. flavor = 4-7 words, lowercase. No emojis, no markdown, no numbers.',
+        content: 'You write exactly 2 short contribution lines for a TCG-style Web3 community member card. Output format — two lines, each: TITLE | flavor. TITLE = 3-5 words, action-oriented. flavor = 4-7 words, lowercase. No emojis, no markdown, no numbers. If tweet data is provided, use it to make the lines specific to the person.',
       },
       {
         role: 'user',
-        content: `Member: ${displayName}\nRole: ${topRole}\nType: ${type}\nRarity: ${rarity}\nDays in Ritual: ${rep}`,
+        content: `Member: ${displayName}\nRole: ${topRole}\nType: ${type}\nRarity: ${rarity}\nDays in Ritual: ${rep}${tweetContext}`,
       },
     ], { temperature: 0.85, maxTokens: 80 });
 
@@ -49,7 +88,7 @@ async function generateContributions(
       return { icon: i === 0 ? '◆' : '✦', title: title || '', flavor: flavor || '' };
     });
 
-    contribCache.set(userId, { data, expiry: Date.now() + 60 * 60 * 1000 });
+    contribCache.set(cacheKey, { data, expiry: Date.now() + 60 * 60 * 1000 });
     return data;
   } catch {
     return fallback;
@@ -199,6 +238,7 @@ export async function GET(req: NextRequest) {
   const username = searchParams.get('username') || '';
   const userId = searchParams.get('userId') || '';
   const autocomplete = searchParams.get('autocomplete') === 'true';
+  const xHandle = searchParams.get('xHandle') || '';
 
   if (!username && !userId) {
     return NextResponse.json({ error: 'username or userId required' }, { status: 400 });
@@ -265,7 +305,7 @@ export async function GET(req: NextRequest) {
     const stats = activityData.get(member.user.id) || {};
     const cardData = buildCardData(member, roleNames, stats, memberCount);
 
-    // Generate contribution rows via DeepSeek (cached per userId, 1h)
+    // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
     cardData.contributions = await generateContributions(
       cardData.userId,
       cardData.name,
@@ -273,6 +313,7 @@ export async function GET(req: NextRequest) {
       cardData.rarity,
       roleNames,
       cardData.rep,
+      xHandle || undefined,
     );
 
     return NextResponse.json({ success: true, member: cardData });
