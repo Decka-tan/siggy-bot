@@ -11,6 +11,24 @@ const DISCORD_API = 'https://discord.com/api/v10';
 let rolesCache: Map<string, string> | null = null;
 let rolesCacheExpiry = 0;
 
+let memberCountCache = 0;
+let memberCountExpiry = 0;
+
+async function getGuildMemberCount(): Promise<number> {
+  if (memberCountCache && Date.now() < memberCountExpiry) return memberCountCache;
+  try {
+    const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}?with_counts=true`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` },
+    });
+    if (res.ok) {
+      const guild = await res.json();
+      memberCountCache = guild.approximate_member_count || 0;
+      memberCountExpiry = Date.now() + 30 * 60 * 1000; // cache 30 min
+    }
+  } catch {}
+  return memberCountCache || 3890;
+}
+
 async function getGuildRoles(): Promise<Map<string, string>> {
   if (rolesCache && Date.now() < rolesCacheExpiry) return rolesCache;
   const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/roles`, {
@@ -76,7 +94,7 @@ function getAvatarUrl(member: any): string {
   return `https://cdn.discordapp.com/embed/avatars/${parseInt(uid.slice(-1)) % 5}.png`;
 }
 
-function buildCardData(member: any, roleNames: string[], stats: any) {
+function buildCardData(member: any, roleNames: string[], stats: any, memberCount: number) {
   const uid: string = member.user.id;
   const username: string = member.user.username;
   const displayName: string = member.nick || member.user.global_name || username;
@@ -90,7 +108,8 @@ function buildCardData(member: any, roleNames: string[], stats: any) {
     ? Math.floor((Date.now() - joined.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
-  const setNum = ((parseInt(uid.slice(-4), 10) % 3890) + 1).toString().padStart(3, '0');
+  const total = memberCount || 3890;
+  const setNum = ((parseInt(uid.slice(-4), 10) % total) + 1).toString().padStart(3, '0');
 
   return {
     userId: uid,
@@ -108,7 +127,7 @@ function buildCardData(member: any, roleNames: string[], stats: any) {
     pfpUrl: `/api/proxy-avatar?url=${encodeURIComponent(getAvatarUrl(member))}`,
     type: deriveType(roleNames),
     rarity: deriveRarity(roleNames),
-    setNumber: `${setNum}/3890`,
+    setNumber: `${setNum}/${total}`,
     social: `@${username}`,
     network: 'Ritual',
     rep,
@@ -132,7 +151,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rolesMap, activityData] = await Promise.all([getGuildRoles(), Promise.resolve(getActivityData())]);
+    const [rolesMap, activityData, memberCount] = await Promise.all([getGuildRoles(), Promise.resolve(getActivityData()), getGuildMemberCount()]);
 
     if (autocomplete && username) {
       // Fast autocomplete: use existing static contributor API logic
@@ -190,7 +209,7 @@ export async function GET(req: NextRequest) {
 
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
     const stats = activityData.get(member.user.id) || {};
-    const cardData = buildCardData(member, roleNames, stats);
+    const cardData = buildCardData(member, roleNames, stats, memberCount);
 
     return NextResponse.json({ success: true, member: cardData });
   } catch (e: any) {

@@ -229,6 +229,7 @@ export function RitualCard({
         <footer className="rc-footer">
           <div className="rc-foot-left">
             <RitualMark size={10} color="var(--rar-hi, #40FFAF)"/>
+            {setNumber && <span className="rc-set-num">{setNumber}</span>}
             <span className="rc-rarity-badge" style={RARITY_BADGE_STYLE[r]}>
               {RARITY_LABEL[r]}
             </span>
