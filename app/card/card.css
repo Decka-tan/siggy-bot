@@ -185,7 +185,7 @@
   margin: 0; font-size: 15px; font-weight: 800; letter-spacing: 0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: #ffffff; min-width: 0; flex: 1 1 auto;
-  font-family: var(--font-cinzel, "Cinzel", serif);
+  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
   text-transform: uppercase;
 }
 /* Per-rarity name gradient text */
@@ -197,32 +197,17 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.rc-r-ssr .rc-name {
-  background: linear-gradient(120deg, #FFD700, #fff7c4, #FFA500, #FFD700);
-  background-size: 200% 100%;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  animation: rc-name-gold 3s ease-in-out infinite;
+/* SSR/UR name: black text, white outline — floats directly over art */
+.rc-r-ssr .rc-name,
+.rc-r-ur  .rc-name {
+  background: none;
+  -webkit-background-clip: unset; background-clip: unset;
+  -webkit-text-fill-color: #000000; color: #000000;
+  -webkit-text-stroke: 2px #ffffff;
+  animation: none;
 }
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-.rc-r-ur .rc-name {
-  background: linear-gradient(120deg, #ff5fb8, #ffd84a, #5fffb8, #5fb8ff, #c4a5ff, #ff5fb8);
-  background-size: 300% 100%;
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  animation: rc-name-rainbow 3s linear infinite;
-}
 @keyframes rc-name-rainbow { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
-/* SSR/UR: more elaborate header — thicker glowing border + shimmer line */
-.rc-r-ssr .rc-header,
-.rc-r-ur  .rc-header {
-  border-width: 2px;
-  box-shadow: inset 0 0 18px rgba(0,0,0,0.5), 0 0 12px -4px var(--rar-hi);
-}
-.rc-r-ssr .rc-header::after,
-.rc-r-ur  .rc-header::after {
-  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
-  background: linear-gradient(to right, transparent, var(--rar-hi), transparent);
-  pointer-events: none;
-}
 .rc-rar-badge {
   font-size: 9px; font-weight: 900; letter-spacing: 0.06em; padding: 2px 5px;
   border-radius: 4px; flex-shrink: 0; color: #0a0e0d;
@@ -276,14 +261,30 @@
   border-radius: 0;
   box-shadow: none;
 }
-/* Header floats above art via z-index; semi-transparent so art shows through */
+/* Header floats above art — fully transparent, text pops via outline */
 .rc-r-ssr .rc-header,
 .rc-r-ur  .rc-header {
   position: relative;
   z-index: 3;
-  background: rgba(0, 0, 0, 0.93);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.rc-r-ssr .rc-header::before,
+.rc-r-ur  .rc-header::before,
+.rc-r-ssr .rc-header::after,
+.rc-r-ur  .rc-header::after { display: none; }
+/* REP label + value: black + white outline to match */
+.rc-r-ssr .rc-rep-label,
+.rc-r-ur  .rc-rep-label,
+.rc-r-ssr .rc-rep-val,
+.rc-r-ur  .rc-rep-val {
+  color: #000000;
+  -webkit-text-stroke: 1px #ffffff;
+  text-shadow: none;
+  opacity: 1;
 }
 .rc-art-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .rc-art-holo {
@@ -373,52 +374,56 @@
 .rc-holo {
   position: absolute; inset: 0; border-radius: 24px;
   pointer-events: none; z-index: 8; overflow: hidden;
-  opacity: 0; transition: opacity 0.35s;
+  opacity: var(--card-opacity, 0); transition: opacity 0.5s;
 }
 .rc-r-sr  .rc-holo,
 .rc-r-ssr .rc-holo,
 .rc-r-ur  .rc-holo {
   background-image:
-    repeating-linear-gradient(
-      0deg,
-      hsl(2,  100%, 73%) calc(5% * 1),
-      hsl(53, 100%, 69%) calc(5% * 2),
-      hsl(93, 100%, 69%) calc(5% * 3),
-      hsl(176,100%, 76%) calc(5% * 4),
-      hsl(228,100%, 74%) calc(5% * 5),
-      hsl(283,100%, 73%) calc(5% * 6),
-      hsl(2,  100%, 73%) calc(5% * 7)
+    repeating-linear-gradient(0deg,
+      hsl(2,  100%, 73%) 0%,
+      hsl(53, 100%, 69%) 5%,
+      hsl(93, 100%, 69%) 10%,
+      hsl(176,100%, 76%) 15%,
+      hsl(228,100%, 74%) 20%,
+      hsl(283,100%, 73%) 25%,
+      hsl(2,  100%, 73%) 35%
+    ),
+    repeating-linear-gradient(133deg,
+      #0e448a 0%,
+      hsl(180,100%,76%) 3.8%,
+      #0e448a 7.6%
     ),
     radial-gradient(
-      farthest-corner ellipse at calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%),
-      rgba(255,255,255,0.85) 0%,
-      rgba(255,255,255,0)   65%
+      farthest-corner ellipse at var(--pointer-x, 50%) var(--pointer-y, 50%),
+      rgba(255,255,255,.8) 10%,
+      rgba(0,0,0,.5)       90%
     );
-  background-blend-mode: overlay;
-  background-size: 15% 700%, 200% 200%;
+  background-blend-mode: overlay, overlay, normal;
+  background-size: 15% 700%, 300% 300%, 200% 200%;
   background-position:
-    calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%),
-    calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%);
-  filter: brightness(0.75) contrast(3) saturate(0.65);
+    calc(((50% - var(--background-x, 50%)) * 2.6) + 50%)
+    calc(((50% - var(--background-y, 50%)) * 3.5) + 50%),
+    0% var(--background-y, 50%),
+    var(--pointer-x, 50%) var(--pointer-y, 50%);
+  filter: brightness(.85) contrast(2.75) saturate(.65);
   mix-blend-mode: color-dodge;
 }
-.rc-flip-wrap:hover .rc-r-sr  .rc-holo,
-.rc-flip-wrap:hover .rc-r-ssr .rc-holo,
-.rc-flip-wrap:hover .rc-r-ur  .rc-holo { opacity: 0.9; }
 
-/* ── Glare (white radial that follows cursor) ── */
+/* ── Glare (follows cursor — overlay blend, darkens toward edges) ── */
 .rc-glare {
   position: absolute; inset: 0; border-radius: 24px;
   pointer-events: none; z-index: 9;
   background: radial-gradient(
-    farthest-corner ellipse at calc(var(--mx,0.5)*100%) calc(var(--my,0.5)*100%),
-    rgba(255,255,255,0.22) 0%,
-    rgba(255,255,255,0)    60%
+    farthest-corner circle at var(--pointer-x, 50%) var(--pointer-y, 50%),
+    hsl(180,100%,95%)       5%,
+    hsla(0,0%,39%,.25)     55%,
+    hsla(0,0%,0%,.36)     110%
   );
-  opacity: 0; transition: opacity 0.35s;
-  mix-blend-mode: screen;
+  filter: brightness(.6) contrast(3);
+  mix-blend-mode: overlay;
+  opacity: var(--card-opacity, 0); transition: opacity 0.5s;
 }
-.rc-flip-wrap:hover .rc-glare { opacity: 1; }
 
 /* ── Card back ── */
 .rc-back {
@@ -451,7 +456,7 @@
   font-size: 20px; font-weight: 900; letter-spacing: 0.22em;
   color: var(--rar-hi); text-shadow: 0 0 28px var(--rar-glow);
   position: relative;
-  font-family: var(--font-cinzel, "Cinzel", serif);
+  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
 }
 .rc-back-year {
   font-size: 10px; font-weight: 700; letter-spacing: 0.18em;

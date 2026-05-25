@@ -167,18 +167,22 @@ export function RitualCard({
     const rect = el.getBoundingClientRect();
     const mx = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
     const my = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
-    const rotX = (0.5 - my) * 22;
-    const rotY = (mx - 0.5) * 22;
-    el.style.setProperty('--mx', String(mx));
-    el.style.setProperty('--my', String(my));
+    el.style.setProperty('--pointer-x', `${mx * 100}%`);
+    el.style.setProperty('--pointer-y', `${my * 100}%`);
+    // constrain background parallax to 37-63% (poke-holo approach)
+    el.style.setProperty('--background-x', `${37 + mx * 26}%`);
+    el.style.setProperty('--background-y', `${37 + my * 26}%`);
+    el.style.setProperty('--card-opacity', '1');
+    // gentler rotation: ÷3.5 (≈±14deg max) matching poke-holo
+    const rotX = -(my - 0.5) * 100 / 3.5;
+    const rotY = (mx - 0.5) * 100 / 3.5;
     el.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg)`;
   };
 
   const onMouseLeave = () => {
     const el = innerRef.current;
     if (!el) return;
-    el.style.setProperty('--mx', '0.5');
-    el.style.setProperty('--my', '0.5');
+    el.style.setProperty('--card-opacity', '0');
     el.style.transform = '';
   };
 
