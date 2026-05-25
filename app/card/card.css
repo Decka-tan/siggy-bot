@@ -123,6 +123,14 @@
 .rc-r-ur  .rc-foil-edge { animation: rc-border-spin 3s linear infinite; }
 @keyframes rc-border-spin { to { filter: hue-rotate(360deg); } }
 
+.rc-r-ssr .rc-foil-edge,
+.rc-r-ur  .rc-foil-edge {
+  animation: none;
+  filter: none;
+}
+.rc-flip-wrap:hover .rc-r-ssr .rc-foil-edge { animation: rc-gold-shimmer 3s ease-in-out infinite; }
+.rc-flip-wrap:hover .rc-r-ur  .rc-foil-edge { animation: rc-border-spin 3s linear infinite; }
+
 /* ── Inner frame ── */
 .rc-frame {
   position: absolute;
@@ -229,6 +237,21 @@
 }
 @keyframes rc-sweep { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
 
+.rc-r-ssr .rc-prism,
+.rc-r-ur  .rc-prism {
+  opacity: 0;
+  animation: none;
+  transition: opacity 0.25s ease;
+}
+.rc-flip-wrap:hover .rc-r-ssr .rc-prism {
+  opacity: 1;
+  animation: rc-sweep 4s ease-in-out infinite;
+}
+.rc-flip-wrap:hover .rc-r-ur .rc-prism {
+  opacity: 1;
+  animation: rc-sweep 3s ease-in-out infinite;
+}
+
 /* ── Header ── */
 .rc-header {
   position: relative;
@@ -261,38 +284,25 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name + REP float: black bold, thick white outline via multi-shadow */
+/* SSR/UR name + REP float: black Rajdhani with a thin white outline */
 .rc-r-ssr .rc-name,
-.rc-r-ur  .rc-name {
+.rc-r-ur  .rc-name,
+.rc-rep-float .rc-rep-label,
+.rc-rep-float .rc-rep-val {
   background: none;
   -webkit-background-clip: unset; background-clip: unset;
   -webkit-text-fill-color: #000000; color: #000000;
   -webkit-text-stroke: 0px transparent;
-  font-family: 'Arial Black', 'Impact', ui-sans-serif, sans-serif;
-  font-weight: 900;
-  font-size: 14px;
+  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
+  font-weight: 700;
   text-shadow:
-    -1.5px -1.5px 0 #fff,  1.5px -1.5px 0 #fff,
-    -1.5px  1.5px 0 #fff,  1.5px  1.5px 0 #fff,
-    -1.5px  0     0 #fff,  1.5px  0     0 #fff,
-     0     -1.5px 0 #fff,  0      1.5px 0 #fff,
-     0      3px   6px rgba(0,0,0,0.35);
+    -0.75px -0.75px 0 #fff,  0.75px -0.75px 0 #fff,
+    -0.75px  0.75px 0 #fff,  0.75px  0.75px 0 #fff,
+    -0.75px  0      0 #fff,  0.75px  0      0 #fff,
+     0      -0.75px 0 #fff,  0       0.75px 0 #fff,
+     0       2px    4px rgba(0,0,0,0.25);
   opacity: 1;
   animation: none;
-}
-.rc-rep-float .rc-rep-label,
-.rc-rep-float .rc-rep-val {
-  -webkit-text-fill-color: #000000; color: #000000;
-  -webkit-text-stroke: 0px transparent;
-  font-family: 'Arial Black', 'Impact', ui-sans-serif, sans-serif;
-  font-weight: 900;
-  text-shadow:
-    -1.5px -1.5px 0 #fff,  1.5px -1.5px 0 #fff,
-    -1.5px  1.5px 0 #fff,  1.5px  1.5px 0 #fff,
-    -1.5px  0     0 #fff,  1.5px  0     0 #fff,
-     0     -1.5px 0 #fff,  0      1.5px 0 #fff,
-     0      3px   6px rgba(0,0,0,0.35);
-  opacity: 1;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
@@ -312,8 +322,7 @@
 .rc-rep-float {
   position: absolute;
   top: calc(10px + 44px + 4px); /* frame padding + header height + gap */
-  right: 10px; /* align center with type circle (28px wide, 10px padding) */
-  width: 28px; /* match type circle width so centers align */
+  right: 20px;
   z-index: 4;
   display: flex; flex-direction: column; align-items: center; line-height: 1;
   pointer-events: none;
@@ -324,7 +333,7 @@
   width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
   background: var(--rar-hi);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -2px 4px rgba(0,0,0,0.4),
-              0 0 0 1.5px rgba(0,0,0,0.5), 0 0 10px -2px var(--rar-hi);
+              0 0 0 1.5px rgba(255,255,255,0.9), 0 0 10px -2px var(--rar-hi);
 }
 
 /* ── Art window ── */
@@ -387,6 +396,26 @@
   background: linear-gradient(115deg, transparent 20%, rgba(255,95,184,0.3) 37%, rgba(255,216,74,0.3) 50%, rgba(95,255,184,0.3) 63%, rgba(95,184,255,0.3) 72%, transparent 85%);
   background-size: 320% 320%; animation-duration: 3s;
 }
+.rc-r-ssr .rc-art-holo,
+.rc-r-ur  .rc-art-holo {
+  opacity: 0;
+  animation: none;
+  transition: opacity 0.25s ease;
+}
+.rc-flip-wrap:hover .rc-r-ssr .rc-art-holo,
+.rc-flip-wrap:hover .rc-r-ur  .rc-art-holo {
+  opacity: 1;
+  animation: rc-sweep 3s ease-in-out infinite;
+}
+.rc-r-ssr .rc-spark,
+.rc-r-ur  .rc-spark {
+  opacity: 0;
+  animation: none;
+}
+.rc-flip-wrap:hover .rc-r-ssr .rc-spark,
+.rc-flip-wrap:hover .rc-r-ur  .rc-spark {
+  animation: rc-spark 2.4s ease-in-out infinite;
+}
 .rc-spark { position: absolute; color: var(--rar-hi); font-size: 11px; text-shadow: 0 0 8px var(--rar-hi); animation: rc-spark 2.4s ease-in-out infinite; pointer-events: none; z-index: 4; }
 .rc-spark-tl { top: 5px; left: 6px; }
 .rc-spark-tr { top: 5px; right: 6px; animation-delay: 0.6s; }
@@ -445,6 +474,12 @@
 /* Animate SSR/UR badge */
 .rc-r-ssr .rc-rarity-badge { background: linear-gradient(120deg,#FFD700,#FFA500,#FFD700); color: #0a0800; background-size: 200%; animation: rc-sweep 3s ease-in-out infinite; }
 .rc-r-ur  .rc-rarity-badge { background: linear-gradient(120deg,#ff5fb8,#ffd84a,#5fffb8,#5fb8ff); color: #0a0e0d; background-size: 300%; animation: rc-sweep 2.5s ease-in-out infinite; }
+.rc-r-ssr .rc-rarity-badge,
+.rc-r-ur  .rc-rarity-badge {
+  animation: none;
+}
+.rc-flip-wrap:hover .rc-r-ssr .rc-rarity-badge { animation: rc-sweep 3s ease-in-out infinite; }
+.rc-flip-wrap:hover .rc-r-ur  .rc-rarity-badge { animation: rc-sweep 2.5s ease-in-out infinite; }
 /* TCG rarity stars */
 .rc-rar-stars {
   font-size: 9px; letter-spacing: -0.5px; color: var(--rar-hi);
@@ -452,6 +487,16 @@
 }
 .rc-r-ssr .rc-rar-stars,
 .rc-r-ur  .rc-rar-stars { animation: rc-border-spin 4s linear infinite; filter: brightness(1.3); }
+.rc-r-ssr .rc-rar-stars,
+.rc-r-ur  .rc-rar-stars {
+  animation: none;
+  filter: none;
+}
+.rc-flip-wrap:hover .rc-r-ssr .rc-rar-stars,
+.rc-flip-wrap:hover .rc-r-ur  .rc-rar-stars {
+  animation: rc-border-spin 4s linear infinite;
+  filter: brightness(1.3);
+}
 .rc-foot-right { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .rc-social { font-size: 8.5px; letter-spacing: 0.03em; color: rgba(255,255,255,0.45); white-space: nowrap; }
 .rc-artist { font-size: 8px; color: rgba(255,255,255,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
