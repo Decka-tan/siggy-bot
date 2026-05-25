@@ -1,4 +1,19 @@
+import { Cinzel, Rajdhani } from 'next/font/google';
 import './card.css';
+
+const cinzel = Cinzel({
+  subsets: ['latin'],
+  weight: ['700', '800', '900'],
+  variable: '--font-cinzel',
+  display: 'swap',
+});
+
+const rajdhani = Rajdhani({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-rajdhani',
+  display: 'swap',
+});
 
 export const metadata = {
   title: 'Ritual Card Generator · Siggy',
@@ -6,5 +21,9 @@ export const metadata = {
 };
 
 export default function CardLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return (
+    <div className={`${cinzel.variable} ${rajdhani.variable}`}>
+      {children}
+    </div>
+  );
 }

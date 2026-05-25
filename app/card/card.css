@@ -106,7 +106,7 @@
     0 0 80px var(--rar-glow),
     0 32px 64px -20px rgba(0,0,0,0.8),
     0 6px 18px -8px rgba(0,0,0,0.9);
-  font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-rajdhani, "Rajdhani", "Inter Tight", ui-sans-serif, system-ui, sans-serif);
 }
 
 /* ── Foil border (full bleed, frame sits on top) ── */
@@ -182,9 +182,11 @@
 }
 .rc-header-left { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; position: relative; z-index: 1; }
 .rc-name {
-  margin: 0; font-size: 15px; font-weight: 800; letter-spacing: -0.025em;
+  margin: 0; font-size: 15px; font-weight: 800; letter-spacing: 0.01em;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   color: #ffffff; min-width: 0; flex: 1 1 auto;
+  font-family: var(--font-cinzel, "Cinzel", serif);
+  text-transform: uppercase;
 }
 /* Per-rarity name gradient text */
 .rc-r-r .rc-name {
@@ -425,7 +427,7 @@
   transform: rotateY(180deg);
   isolation: isolate;
   overflow: hidden;
-  font-family: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-rajdhani, "Rajdhani", "Inter Tight", ui-sans-serif, system-ui, sans-serif);
   box-shadow:
     0 0 80px var(--rar-glow),
     0 32px 64px -20px rgba(0,0,0,0.8);
@@ -449,6 +451,7 @@
   font-size: 20px; font-weight: 900; letter-spacing: 0.22em;
   color: var(--rar-hi); text-shadow: 0 0 28px var(--rar-glow);
   position: relative;
+  font-family: var(--font-cinzel, "Cinzel", serif);
 }
 .rc-back-year {
   font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
