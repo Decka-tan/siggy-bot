@@ -274,40 +274,24 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR name: black→gold gradient + white stroke outline + dark drop shadow */
-.rc-r-ssr .rc-name {
-  background: linear-gradient(120deg, #1a1a1a 0%, #FFD700 100%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
-  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
+/* SSR/UR name: solid black + thin white outline + drop shadow */
+.rc-r-ssr .rc-name,
+.rc-r-ur  .rc-name {
+  color: #000000;
+  -webkit-text-fill-color: #000000;
+  -webkit-text-stroke: 0.3px rgba(255,255,255,0.7);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
   opacity: 1; animation: none;
 }
-/* UR name: black→pink gradient + white stroke outline + dark drop shadow */
-.rc-r-ur .rc-name {
-  background: linear-gradient(120deg, #1a1a1a 0%, #ff5fb8 100%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
-  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
-  opacity: 1; animation: none;
-}
-/* SSR/UR REP float: same gradient + stroke + shadow as name */
+/* SSR/UR REP float: solid black + thin white outline + drop shadow */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
-.rc-r-ssr .rc-rep-float .rc-rep-val {
-  background: linear-gradient(120deg, #1a1a1a 0%, #FFD700 100%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
-  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
-}
-.rc-r-ur .rc-rep-float .rc-rep-label,
-.rc-r-ur .rc-rep-float .rc-rep-val {
-  background: linear-gradient(120deg, #1a1a1a 0%, #ff5fb8 100%);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
-  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
+.rc-r-ssr .rc-rep-float .rc-rep-val,
+.rc-r-ur  .rc-rep-float .rc-rep-label,
+.rc-r-ur  .rc-rep-float .rc-rep-val {
+  color: #000000;
+  -webkit-text-fill-color: #000000;
+  -webkit-text-stroke: 0.3px rgba(255,255,255,0.7);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.4);
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
