@@ -775,6 +775,7 @@
 .gen-card-host.rc-capture .rc-flip-inner { transform: none !important; }
 .gen-card-host.rc-capture .rc-holo,
 .gen-card-host.rc-capture .rc-glare { opacity: 0 !important; }
+.gen-card-host.rc-capture .rc-back { display: none !important; }
 
 /* ================================================================
    RITUAL CARD GENERATOR UI
