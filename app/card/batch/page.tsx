@@ -25,6 +25,33 @@ interface BatchItem extends Member {
 }
 
 /* ── Constants ────────────────────────────────────────────────────── */
+const ROLE_FILTER_OPTIONS = [
+  'Foundation Team',
+  'Mods',
+  'Event Manager',
+  'Radiant Ritualist',
+  'Zealot',
+  'Ritualist',
+  'Siggy Soulsmith',
+  'Siggy Architect',
+  'Mage',
+  'ritty',
+  'bitty',
+];
+const ROLE_FILTER_LABELS: Record<string, string> = {
+  'Foundation Team':   'Foundation',
+  'Mods':              'Mods',
+  'Event Manager':     'Ev.Manager',
+  'Radiant Ritualist': 'Radiant',
+  'Zealot':            'Zealot',
+  'Ritualist':         'Ritualist',
+  'Siggy Soulsmith':   'Soulsmith',
+  'Siggy Architect':   'Architect',
+  'Mage':              'Mage',
+  'ritty':             'ritty',
+  'bitty':             'bitty',
+};
+
 const TYPE_OPTIONS = [
   'builder', 'artist', 'threadoor', 'yapper', 'event-enjoyoor',
   'moderator', 'event-manager', 'team', 'ambassador',
@@ -169,7 +196,7 @@ export default function BatchGeneratorPage() {
     const q = filter.toLowerCase().trim();
     return allMembers.filter(m => {
       if (generatedIds.has(m.userId)) return false;
-      if (filterType && m.type !== filterType) return false;
+      if (filterType && !m.roles.includes(filterType)) return false;
       if (!q) return true;
       return (
         m.displayName.toLowerCase().includes(q) ||
@@ -409,20 +436,20 @@ export default function BatchGeneratorPage() {
           </div>
 
           <div className="batch-browser-header">
-            {/* Type filter chips */}
+            {/* Role filter chips */}
             <div className="batch-type-chips">
               <button
                 className={`batch-type-chip${!filterType ? ' active' : ''}`}
                 onClick={() => setFilterType('')}
               >All</button>
-              {TYPE_OPTIONS.map(t => (
+              {ROLE_FILTER_OPTIONS.map(r => (
                 <button
-                  key={t}
-                  className={`batch-type-chip${filterType === t ? ' active' : ''}`}
-                  onClick={() => setFilterType(prev => prev === t ? '' : t)}
-                  title={TYPE_LABELS[t]}
+                  key={r}
+                  className={`batch-type-chip${filterType === r ? ' active' : ''}`}
+                  onClick={() => setFilterType(prev => prev === r ? '' : r)}
+                  title={r}
                 >
-                  {TYPE_LABELS[t].replace('Event ', 'Ev.')}
+                  {ROLE_FILTER_LABELS[r]}
                 </button>
               ))}
             </div>
