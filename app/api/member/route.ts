@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { getDeepSeekClient } from '@/lib/deepseek-client';
+import { computeStats } from '@/lib/card-stats';
 
 // Cache generated contributions per userId+xHandle (1 hour TTL)
 const contribCache = new Map<string, { data: Array<{ icon: string; title: string; flavor: string }>; expiry: number }>();
@@ -205,16 +206,12 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
   const days = joined
     ? Math.floor((Date.now() - joined.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
-  const rarityMultiplier: Record<string, number> = { UR: 5, SSR: 4, SR: 3, R: 2, common: 1 };
   const rarity = deriveRarity(roleNames);
-  const rep = Math.floor(days * (rarityMultiplier[rarity] ?? 1));
+  const roleRank = deriveRoleRank(roleNames);
+  const { rep, atk, def, spd } = computeStats(days, roleRank, rarity);
 
   const total = memberCount || 3890;
   const setNum = ((parseInt(uid.slice(-4), 10) % total) + 1).toString().padStart(3, '0');
-
-  const months = joined ? Math.floor(days / 30) : 0;
-  const rarityMult = rarityMultiplier[rarity] ?? 1;
-  const roleRank = deriveRoleRank(roleNames);
 
   return {
     userId: uid,
@@ -235,10 +232,11 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     setNumber: `${setNum}/${total}`,
     social: `@${username}`,
     network: 'Ritual',
+    days,
     rep,
-    atk: rep,                                         // days × rarity_mult
-    def: Math.floor(roleRank * rarityMult * 80),      // role-based armor
-    spd: Math.floor(days * roleRank * rarityMult * 0.3), // hybrid: tenure × role
+    atk,
+    def,
+    spd,
     artist: '',
     contributions: [
       { icon: '◆', title: '', flavor: '' },

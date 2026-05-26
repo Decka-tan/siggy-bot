@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { RitualCard, TYPES, RARITY_OPTIONS, CardData, Rarity } from './RitualCard';
+import { computeStats } from '@/lib/card-stats';
 import { Search, Download, RefreshCw, X } from 'lucide-react';
 
 interface MemberResult {
@@ -49,6 +50,8 @@ export default function CardGeneratorPage() {
   const [downloading, setDownloading] = useState(false);
   const [xHandle, setXHandle] = useState('');
   const [selectedUserId, setSelectedUserId] = useState('');
+  // stored so we can recompute stats when user manually changes rarity
+  const memberBaseRef = useRef<{ days: number; roleRank: number } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -89,6 +92,7 @@ export default function CardGeneratorPage() {
       if (data.member) {
         const social = cleanHandle ? `@${cleanHandle}` : data.member.social;
         const socialPlatform = cleanHandle ? 'x' : 'discord';
+        memberBaseRef.current = { days: data.member.days ?? 0, roleRank: data.member.roleRank ?? 1 };
         setCard({ ...data.member, social, socialPlatform });
         showToast(`Loaded ${data.member.name}${cleanHandle ? ' + X data' : ''}`);
       }
@@ -150,6 +154,15 @@ export default function CardGeneratorPage() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, []);
+
+  // Recompute stats when rarity is changed manually in the form
+  useEffect(() => {
+    const base = memberBaseRef.current;
+    if (!base || !card.rarity) return;
+    const { rep, atk, def, spd } = computeStats(base.days, base.roleRank, card.rarity);
+    setCard(c => ({ ...c, rep, atk, def, spd }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card.rarity]);
 
   return (
     <div className="gen-root">
