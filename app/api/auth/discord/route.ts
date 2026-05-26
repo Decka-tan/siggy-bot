@@ -17,5 +17,9 @@ export async function GET(req: NextRequest) {
     state,
   });
 
-  return NextResponse.redirect(`https://discord.com/oauth2/authorize?${params}`);
+  const authorizeUrl = `https://discord.com/oauth2/authorize?${params}`;
+  console.log('[discord-auth] client_id=' + (CLIENT_ID ? CLIENT_ID.slice(0, 6) + '...' : 'EMPTY') + ' redirect_uri=' + REDIRECT_URI);
+  console.log('[discord-auth] authorize url=' + authorizeUrl);
+
+  return NextResponse.redirect(authorizeUrl);
 }
