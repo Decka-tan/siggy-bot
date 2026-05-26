@@ -167,9 +167,10 @@ function deriveRoleRank(roleNames: string[]): number {
 }
 
 function deriveType(roleNames: string[]): string {
-  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team'].includes(r))) return 'team';
+  if (roleNames.includes('Foundation Team')) return 'team';
   if (roleNames.some(r => r === 'Mods' || r === 'Moderator')) return 'moderator';
   if (roleNames.includes('Event Manager')) return 'event-manager';
+  if (roleNames.includes('Radiant Ritualist')) return 'ambassador';
   if (roleNames.includes('Zealot')) return 'ambassador';
   if (roleNames.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
   if (roleNames.includes('bitty')) return 'yapper';

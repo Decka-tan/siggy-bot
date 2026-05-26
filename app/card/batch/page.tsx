@@ -60,8 +60,8 @@ export default function BatchGeneratorPage() {
   const [zipping, setZipping]       = useState(false);
   const [genProgress, setGenProgress] = useState<{ current: number; total: number } | null>(null);
   const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'done' | 'error'>('all');
-  const [bulkType, setBulkType]     = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filterType, setFilterType] = useState('');
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -169,6 +169,7 @@ export default function BatchGeneratorPage() {
     const q = filter.toLowerCase().trim();
     return allMembers.filter(m => {
       if (generatedIds.has(m.userId)) return false;
+      if (filterType && m.type !== filterType) return false;
       if (!q) return true;
       return (
         m.displayName.toLowerCase().includes(q) ||
@@ -176,7 +177,7 @@ export default function BatchGeneratorPage() {
         (m.contributorRole || '').toLowerCase().includes(q)
       );
     });
-  }, [allMembers, filter, generatedIds]);
+  }, [allMembers, filter, filterType, generatedIds]);
 
   /* multi-select */
   const toggleSelect = (uid: string) => setSelectedIds(prev => {
@@ -200,9 +201,10 @@ export default function BatchGeneratorPage() {
   /* batch helpers */
   const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
   const deriveTypeFromRoles = (roles: string[]): string => {
-    if (roles.some(r => ['Radiant Ritualist', 'Foundation Team'].includes(r))) return 'team';
+    if (roles.includes('Foundation Team')) return 'team';
     if (roles.some(r => r === 'Mods' || r === 'Moderator')) return 'moderator';
     if (roles.includes('Event Manager')) return 'event-manager';
+    if (roles.includes('Radiant Ritualist')) return 'ambassador';
     if (roles.includes('Zealot')) return 'ambassador';
     if (roles.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
     if (roles.includes('bitty')) return 'yapper';
@@ -407,11 +409,29 @@ export default function BatchGeneratorPage() {
           </div>
 
           <div className="batch-browser-header">
+            {/* Type filter chips */}
+            <div className="batch-type-chips">
+              <button
+                className={`batch-type-chip${!filterType ? ' active' : ''}`}
+                onClick={() => setFilterType('')}
+              >All</button>
+              {TYPE_OPTIONS.map(t => (
+                <button
+                  key={t}
+                  className={`batch-type-chip${filterType === t ? ' active' : ''}`}
+                  onClick={() => setFilterType(prev => prev === t ? '' : t)}
+                  title={TYPE_LABELS[t]}
+                >
+                  {TYPE_LABELS[t].replace('Event ', 'Ev.')}
+                </button>
+              ))}
+            </div>
+            {/* Name filter */}
             <div className="gen-search-box" style={{ margin: 0 }}>
               <Search size={14} className="gen-search-icon"/>
               <input
                 className="gen-search-input"
-                placeholder="Filter by name or role…"
+                placeholder="Filter by name…"
                 value={filter}
                 onChange={e => setFilter(e.target.value)}
                 style={{ padding: '10px 8px', fontSize: 13 }}
@@ -502,17 +522,19 @@ export default function BatchGeneratorPage() {
                   </button>
                 ))}
               </div>
-              {/* Bulk type setter */}
-              <div className="batch-bulk-type">
-                <select className="batch-select" value={bulkType} onChange={e => setBulkType(e.target.value)}>
-                  <option value="">Set type for all…</option>
-                  {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
-                </select>
-                {bulkType && (
-                  <button className="gen-btn gen-btn-primary"
-                    onClick={() => { setBatch(prev => prev.map(b => b.status !== 'done' ? { ...b, typeOverride: bulkType } : b)); setBulkType(''); }}
-                    style={{ padding: '5px 8px', fontSize: 11 }}>Apply</button>
-                )}
+              {/* Bulk type chips */}
+              <div className="batch-bulk-chips">
+                <span className="batch-bulk-label">Set all pending:</span>
+                {TYPE_OPTIONS.map(t => (
+                  <button
+                    key={t}
+                    className="batch-type-chip batch-type-chip-sm"
+                    title={`Set all pending to ${TYPE_LABELS[t]}`}
+                    onClick={() => setBatch(prev => prev.map(b => b.status !== 'done' ? { ...b, typeOverride: t } : b))}
+                  >
+                    {TYPE_LABELS[t].replace('Event ', 'Ev.')}
+                  </button>
+                ))}
               </div>
               {/* Progress bar */}
               {genProgress && (
@@ -540,29 +562,29 @@ export default function BatchGeneratorPage() {
                       </span>
                     </div>
 
-                    <div className="batch-q-fields">
-                      {/* Type */}
-                      <div className="batch-field">
-                        <label className="batch-field-label">Type</label>
-                        <select
-                          className="batch-select"
-                          value={item.typeOverride}
-                          onChange={e => update(item.userId, { typeOverride: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
+                    {/* Type chips */}
+                    <div className="batch-q-type-chips">
+                      {TYPE_OPTIONS.map(t => (
+                        <button
+                          key={t}
+                          className={`batch-type-chip batch-type-chip-sm${item.typeOverride === t ? ' active' : ''}`}
+                          title={TYPE_LABELS[t]}
+                          onClick={() => update(item.userId, { typeOverride: t, status: item.status === 'done' ? 'idle' : item.status })}
                         >
-                          {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
-                        </select>
-                      </div>
-                      {/* X Handle */}
-                      <div className="batch-field">
-                        <label className="batch-field-label">X Handle</label>
-                        <input
-                          className="gen-input"
-                          placeholder="@user"
-                          value={item.xHandle}
-                          onChange={e => update(item.userId, { xHandle: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
-                          style={{ padding: '5px 8px', fontSize: 12 }}
-                        />
-                      </div>
+                          {TYPE_LABELS[t].replace('Event ', 'Ev.')}
+                        </button>
+                      ))}
+                    </div>
+                    {/* X Handle */}
+                    <div className="batch-field" style={{ marginTop: 4 }}>
+                      <label className="batch-field-label">X / Twitter handle</label>
+                      <input
+                        className="gen-input"
+                        placeholder="@user"
+                        value={item.xHandle}
+                        onChange={e => update(item.userId, { xHandle: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
+                        style={{ padding: '5px 8px', fontSize: 12 }}
+                      />
                     </div>
                   </div>
 
@@ -727,7 +749,30 @@ export default function BatchGeneratorPage() {
         }
         .batch-filter-tab:hover { background: #1a1a1a; color: #FAFAFA; }
         .batch-filter-tab.active { background: rgba(255,215,0,0.12); border-color: #FFD700; color: #FFD700; }
-        .batch-bulk-type { display: flex; gap: 6px; align-items: center; }
+        /* Type filter chips (left panel + bulk setter) */
+        .batch-type-chips {
+          display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 2px;
+        }
+        .batch-type-chip {
+          background: #0e0e0e; border: 1px solid #222; border-radius: 4px;
+          color: #666; font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+          padding: 3px 6px; cursor: pointer; transition: all 100ms; white-space: nowrap;
+        }
+        .batch-type-chip:hover { background: #1a1a1a; color: #ccc; border-color: #444; }
+        .batch-type-chip.active { background: rgba(255,215,0,0.14); border-color: #FFD700; color: #FFD700; }
+        .batch-type-chip-sm { font-size: 8px; padding: 2px 5px; }
+        /* Bulk type chips row */
+        .batch-bulk-chips {
+          display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
+        }
+        .batch-bulk-label {
+          font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
+          font-weight: 700; color: #404040; flex-shrink: 0; margin-right: 2px;
+        }
+        /* Per-row type chips */
+        .batch-q-type-chips {
+          display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 2px;
+        }
         /* Progress bar */
         .batch-progress {
           position: relative; height: 18px; background: #111; border-radius: 4px; overflow: hidden;

@@ -296,9 +296,12 @@ export function RitualCard({
 
   const ability = ABILITIES[type] || null;
 
-  const displayContribs = contributions.length > 0
+  const baseContrib = contributions.length > 0
     ? contributions.slice(0, 1)
     : [{ icon: '◆', title: '—', flavor: '' }];
+  const displayContribs = ability
+    ? [{ icon: <TypeIcon type={type} size={11}/> as unknown as string, title: ability.name, flavor: ability.effect }, ...baseContrib]
+    : baseContrib;
 
   const cardStyle = { '--accent': t.color } as React.CSSProperties;
 
@@ -376,17 +379,6 @@ export function RitualCard({
                 Ritual <strong>{t.label}</strong>
               </span>
             </div>
-
-            {ability && (
-              <div className="rc-ability">
-                <span className="rc-ability-icon" aria-hidden="true">
-                  <TypeIcon type={type} size={10}/>
-                </span>
-                <span className="rc-ability-name">{ability.name}</span>
-                <span className="rc-ability-sep">—</span>
-                <span className="rc-ability-effect">{ability.effect}</span>
-              </div>
-            )}
 
             <div className="rc-actions">
               {displayContribs.map((c, i) => (

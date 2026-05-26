@@ -141,7 +141,7 @@
     linear-gradient(175deg, var(--rar-frame-a) 0%, var(--rar-frame-b) 55%, var(--rar-frame-a) 100%);
   padding: 10px 10px 8px;
   display: grid;
-  grid-template-rows: auto auto auto auto 1fr auto auto auto;
+  grid-template-rows: auto auto auto auto 1fr auto auto;
   gap: 5px;
 }
 /* SSR/UR: frame bg adapts to PFP palette via JS-set vars */
@@ -286,11 +286,11 @@
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
   font-weight: 700;
   text-shadow:
-    -0.4px -0.4px 0 #fff,  0.4px -0.4px 0 #fff,
-    -0.4px  0.4px 0 #fff,  0.4px  0.4px 0 #fff,
-    -0.4px  0     0 #fff,  0.4px  0     0 #fff,
-     0     -0.4px 0 #fff,  0      0.4px 0 #fff,
-     0      2px   4px rgba(0,0,0,0.25);
+    -0.75px -0.75px 0 #fff,  0.75px -0.75px 0 #fff,
+    -0.75px  0.75px 0 #fff,  0.75px  0.75px 0 #fff,
+    -0.75px  0      0 #fff,  0.75px  0      0 #fff,
+     0      -0.75px 0 #fff,  0       0.75px 0 #fff,
+     0       2px    4px rgba(0,0,0,0.25);
   opacity: 1;
   animation: none;
 }
