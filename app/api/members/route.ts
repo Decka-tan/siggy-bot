@@ -30,9 +30,9 @@ const RARITY_RANK: Record<string, number> = {
 };
 
 // ── Redis cache — survives redeploys AND cold starts AND cross-device ──
-const REDIS_KEY = 'ritual:members:v1';
-const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in-memory (same instance only)
-// No TTL on Redis — data persists until force-refreshed via ?force=true
+const REDIS_KEY  = 'ritual:members:v1';
+const MEM_TTL    = 6  * 60 * 60 * 1000; // 6 hours in-memory
+const AUTO_STALE = 24 * 60 * 60 * 1000; // 24 hours → trigger background refresh
 
 export interface ContributorMember {
   userId:          string;
@@ -190,12 +190,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ members: memCache, source: 'memory' });
   }
 
-  // 2. Redis hit (survives cold starts, redeploys, cross-device — no TTL, persist until force refresh)
+  // 2. Redis hit (survives cold starts, redeploys, cross-device)
   if (!force) {
     const cached = await readRedisCache();
     if (cached && cached.members.length > 0) {
       memCache  = cached.members;
-      memExpiry = Date.now() + CACHE_TTL;
+      memExpiry = Date.now() + MEM_TTL;
+
+      // Stale-while-revalidate: if older than 24h, refresh in background
+      // User still gets instant response — next request will have fresh data
+      if (!loading && Date.now() - cached.savedAt > AUTO_STALE) {
+        loading = true;
+        fetchContributors()
+          .then(fresh => { memCache = fresh; memExpiry = Date.now() + MEM_TTL; return writeRedisCache(fresh); })
+          .catch(e => console.warn('[members] background refresh failed:', e))
+          .finally(() => { loading = false; });
+      }
+
       return NextResponse.json({ members: cached.members, source: 'redis', savedAt: cached.savedAt });
     }
   }
