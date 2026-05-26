@@ -466,15 +466,19 @@
 /* ── TCG Battle Stats row ── */
 .rc-stats {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 1px; background: var(--rar-hi-soft);
+  gap: 2px; background: transparent;
   border-radius: 6px; overflow: hidden;
-  border: 1px solid var(--rar-hi-soft);
+  border: none;
 }
 .rc-stat-cell {
-  padding: 3px 6px 4px;
+  padding: 4px 6px 5px;
   background: rgba(4,8,6,0.96);
+  border-top: 2px solid var(--rar-hi);
+  border-radius: 4px;
   display: flex; align-items: center; gap: 5px;
 }
+.rc-stat-def { border-top-color: #60a5fa; }
+.rc-stat-spd { border-top-color: #a78bfa; }
 .rc-stat-k {
   font-size: 7.5px; font-weight: 900; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--rar-hi); opacity: 0.75; flex-shrink: 0;
@@ -486,15 +490,15 @@
   letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1;
 }
 
-/* ── Sub-strip (stats row) ── */
+/* ── Sub-strip (joined / network / social) ── */
 .rc-sub {
   display: grid; grid-template-columns: 1fr 1fr 1fr;
-  gap: 1px; background: var(--rar-hi-soft);
+  gap: 1px; background: rgba(255,255,255,0.07);
   border-radius: 6px; overflow: hidden;
-  border: 1px solid var(--rar-hi-soft);
+  border: 1px solid rgba(255,255,255,0.10);
 }
 .rc-sub-cell { padding: 4px 6px; background: rgba(8,10,9,0.90); }
-.rc-sub-k { display: block; font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--rar-hi); font-weight: 700; opacity: 0.8; }
+.rc-sub-k { display: block; font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.38); font-weight: 700; }
 .rc-sub-v { display: block; font-size: 11px; font-weight: 800; color: #e0e8e2; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ── Footer ── */
