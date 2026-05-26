@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
-import { ABILITIES } from '@/lib/abilities';
+import { ABILITIES, PASSIVES } from '@/lib/abilities';
 
 export const TYPES: Record<string, { label: string; color: string; soft: string; deep: string }> = {
   builder:          { label: 'Builder',        color: '#f59e0b', soft: '#fbbf24', deep: '#78350f' },
@@ -43,6 +43,7 @@ export interface Contribution {
 export interface CardData {
   pfpUrl?: string;
   name?: string;
+  userId?: string;
   joinDate?: string;
   setNumber?: string;
   type?: string;
@@ -131,22 +132,46 @@ const PfpPlaceholder = ({ seed = 'ritual', typeColor }: { seed?: string; typeCol
   );
 };
 
-const ContribRow = ({ item }: { item: Contribution }) => (
+const ContribRow = ({ item }: { item: Contribution & { tag?: string } }) => (
   <div className="rc-contrib">
     <div className="rc-contrib-icon">
       <span style={{ fontSize: '10px', fontWeight: 900 }}>{item.icon || '◆'}</span>
     </div>
     <div className="rc-contrib-body">
-      <div className="rc-contrib-title">{item.title}</div>
+      <div className="rc-contrib-title" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        {item.tag && (
+          <span style={{
+            fontSize: '6.5px', fontWeight: 900, letterSpacing: '0.1em',
+            padding: '1px 3px', borderRadius: 3,
+            background: item.tag === 'PSV' ? 'rgba(255,255,255,0.12)' : 'var(--rar-hi)',
+            color: item.tag === 'PSV' ? 'rgba(255,255,255,0.55)' : '#0a0e0d',
+            flexShrink: 0,
+          }}>{item.tag}</span>
+        )}
+        {item.title}
+      </div>
       {item.flavor && <div className="rc-contrib-flavor">{item.flavor}</div>}
     </div>
   </div>
 );
 
+/* ── Deterministic passive pick from userId ── */
+function pickPassive(userId?: string) {
+  if (!PASSIVES.length) return null;
+  let h = 2166136261 >>> 0;
+  const seed = userId || 'anon';
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return PASSIVES[h % PASSIVES.length];
+}
+
 /* ── Main card ── */
 export function RitualCard({
   pfpUrl,
   name = 'anon.ritual',
+  userId,
   joinDate = 'Mar 2024',
   setNumber = '001/3890',
   type = 'builder',
@@ -294,14 +319,22 @@ export function RitualCard({
   // cleanup rAF on unmount
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, [runSpring]);
 
-  const ability = ABILITIES[type] || null;
+  const ability  = ABILITIES[type] || null;
+  const passive  = pickPassive(userId);
 
   const baseContrib = contributions.length > 0
     ? contributions.slice(0, 1)
     : [{ icon: '◆', title: '—', flavor: '' }];
-  const displayContribs = ability
-    ? [{ icon: <TypeIcon type={type} size={11}/> as unknown as string, title: ability.name, flavor: ability.effect }, ...baseContrib]
-    : baseContrib;
+
+  // Row 1: active ability (type-based), Row 2: passive (userId-hash), Row 3: contribution
+  const displayContribs: { icon: React.ReactNode | string; title: string; flavor?: string; tag?: string }[] = [];
+  if (ability) {
+    displayContribs.push({ icon: <TypeIcon type={type} size={11}/> as unknown as string, title: ability.name, flavor: ability.effect, tag: 'ACT' });
+  }
+  if (passive) {
+    displayContribs.push({ icon: '◈', title: passive.name, flavor: passive.effect, tag: 'PSV' });
+  }
+  displayContribs.push(...baseContrib);
 
   const cardStyle = { '--accent': t.color } as React.CSSProperties;
 
