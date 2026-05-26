@@ -509,7 +509,7 @@
   border-radius: 6px; overflow: hidden;
   border: 1px solid rgba(255,255,255,0.10);
 }
-.rc-sub-cell { padding: 4px 6px; background: rgba(8,10,9,0.90); }
+.rc-sub-cell { padding: 4px 6px; background: linear-gradient(180deg, rgba(30,36,30,0.92) 0%, rgba(6,8,6,0.97) 100%); }
 .rc-sub-k { display: block; font-size: 7px; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255,255,255,0.38); font-weight: 700; }
 .rc-sub-v { display: block; font-size: 11px; font-weight: 800; color: #e0e8e2; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
