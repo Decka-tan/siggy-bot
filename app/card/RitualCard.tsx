@@ -414,22 +414,20 @@ export function RitualCard({
               ))}
             </div>
 
-            {(atk !== undefined || def !== undefined || spd !== undefined) && (
-              <div className="rc-stats">
-                <div className="rc-stat-cell">
-                  <span className="rc-stat-k">ATK</span>
-                  <span className="rc-stat-v">{atk ?? 0}</span>
-                </div>
-                <div className="rc-stat-cell rc-stat-def">
-                  <span className="rc-stat-k">DEF</span>
-                  <span className="rc-stat-v">{def ?? 0}</span>
-                </div>
-                <div className="rc-stat-cell rc-stat-spd">
-                  <span className="rc-stat-k">SPD</span>
-                  <span className="rc-stat-v">{spd ?? 0}</span>
-                </div>
+            <div className="rc-stats">
+              <div className="rc-stat-cell">
+                <span className="rc-stat-k">ATK</span>
+                <span className="rc-stat-v">{atk ?? 0}</span>
               </div>
-            )}
+              <div className="rc-stat-cell rc-stat-def">
+                <span className="rc-stat-k">DEF</span>
+                <span className="rc-stat-v">{def ?? 0}</span>
+              </div>
+              <div className="rc-stat-cell rc-stat-spd">
+                <span className="rc-stat-k">SPD</span>
+                <span className="rc-stat-v">{spd ?? 0}</span>
+              </div>
+            </div>
 
             <div className="rc-sub">
               <div className="rc-sub-cell">
