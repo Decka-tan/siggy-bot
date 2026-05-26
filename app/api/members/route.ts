@@ -24,7 +24,7 @@ const RARITY_RANK: Record<string, number> = {
   'ritty':              4,
   'Zealot':             4,
   'Mage':               3,
-  'Forerunner':         2,
+  'Forerunner':         1,
   'bitty':              1,
 };
 
@@ -100,7 +100,10 @@ async function fetchContributors(): Promise<ContributorMember[]> {
       const roleNames   = (m.roles as string[]).map(id => rolesMap.get(id) || '').filter(Boolean);
       const rarity      = deriveRarity(roleNames);
       const roleRank    = Math.max(1, ...roleNames.map(r => RARITY_RANK[r] ?? 0));
-      const topRole     = roleNames.find(r => CONTRIBUTOR_ROLE_NAMES.has(r)) || null;
+      // Pick highest-ranked contributor role (not just first match)
+      const topRole     = roleNames
+        .filter(r => CONTRIBUTOR_ROLE_NAMES.has(r))
+        .sort((a, b) => (RARITY_RANK[b] ?? 0) - (RARITY_RANK[a] ?? 0))[0] || null;
 
       contributors.push({
         userId:          m.user.id,
