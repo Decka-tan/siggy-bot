@@ -274,38 +274,33 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name: solid black, white shadow-outline outside fill so black stays full & bold */
-.rc-r-ssr .rc-name,
-.rc-r-ur  .rc-name {
-  color: #000000;
-  -webkit-text-fill-color: #000000;
-  text-shadow:
-    -1px -1px 0 rgba(255,255,255,0.95),
-     1px -1px 0 rgba(255,255,255,0.95),
-    -1px  1px 0 rgba(255,255,255,0.95),
-     1px  1px 0 rgba(255,255,255,0.95),
-     0   -1px 0 rgba(255,255,255,0.95),
-     0    1px 0 rgba(255,255,255,0.95),
-    -1px  0   0 rgba(255,255,255,0.95),
-     1px  0   0 rgba(255,255,255,0.95);
+/* SSR name: black-dominant gold gradient */
+.rc-r-ssr .rc-name {
+  background: linear-gradient(105deg, #000 25%, #FFD700 50%, #000 75%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  text-shadow: none;
   opacity: 1; animation: none;
 }
-/* SSR/UR REP float: same technique */
+/* UR name: black-dominant pink gradient */
+.rc-r-ur .rc-name {
+  background: linear-gradient(105deg, #000 25%, #ff5fb8 50%, #000 75%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  text-shadow: none;
+  opacity: 1; animation: none;
+}
+/* SSR REP: black-dominant gold gradient */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
-.rc-r-ssr .rc-rep-float .rc-rep-val,
-.rc-r-ur  .rc-rep-float .rc-rep-label,
-.rc-r-ur  .rc-rep-float .rc-rep-val {
-  color: #000000;
-  -webkit-text-fill-color: #000000;
-  text-shadow:
-    -1px -1px 0 rgba(255,255,255,0.95),
-     1px -1px 0 rgba(255,255,255,0.95),
-    -1px  1px 0 rgba(255,255,255,0.95),
-     1px  1px 0 rgba(255,255,255,0.95),
-     0   -1px 0 rgba(255,255,255,0.95),
-     0    1px 0 rgba(255,255,255,0.95),
-    -1px  0   0 rgba(255,255,255,0.95),
-     1px  0   0 rgba(255,255,255,0.95);
+.rc-r-ssr .rc-rep-float .rc-rep-val {
+  background: linear-gradient(105deg, #000 25%, #FFD700 50%, #000 75%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  text-shadow: none;
+}
+/* UR REP: black-dominant pink gradient */
+.rc-r-ur .rc-rep-float .rc-rep-label,
+.rc-r-ur .rc-rep-float .rc-rep-val {
+  background: linear-gradient(105deg, #000 25%, #ff5fb8 50%, #000 75%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  text-shadow: none;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
