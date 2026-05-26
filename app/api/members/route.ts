@@ -31,8 +31,8 @@ const RARITY_RANK: Record<string, number> = {
 
 // ── Redis cache — survives redeploys AND cold starts AND cross-device ──
 const REDIS_KEY = 'ritual:members:v1';
-const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours (ms, for in-memory)
-const REDIS_TTL = 6 * 60 * 60;        // 6 hours (seconds, for Redis EX)
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours in-memory (same instance only)
+// No TTL on Redis — data persists until force-refreshed via ?force=true
 
 export interface ContributorMember {
   userId:          string;
@@ -66,7 +66,7 @@ async function readRedisCache(): Promise<{ members: ContributorMember[]; savedAt
 async function writeRedisCache(members: ContributorMember[]) {
   try {
     const redis = await getRedis();
-    await redis.set(REDIS_KEY, JSON.stringify({ members, savedAt: Date.now() }), { EX: REDIS_TTL });
+    await redis.set(REDIS_KEY, JSON.stringify({ members, savedAt: Date.now() }));
   } catch (e) {
     console.warn('[members] redis write error:', e);
   }
@@ -190,12 +190,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ members: memCache, source: 'memory' });
   }
 
-  // 2. Redis hit (survives cold starts, redeploys, cross-device)
+  // 2. Redis hit (survives cold starts, redeploys, cross-device — no TTL, persist until force refresh)
   if (!force) {
     const cached = await readRedisCache();
-    if (cached && Date.now() - cached.savedAt < CACHE_TTL) {
+    if (cached && cached.members.length > 0) {
       memCache  = cached.members;
-      memExpiry = cached.savedAt + CACHE_TTL;
+      memExpiry = Date.now() + CACHE_TTL;
       return NextResponse.json({ members: cached.members, source: 'redis', savedAt: cached.savedAt });
     }
   }
