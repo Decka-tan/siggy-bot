@@ -377,12 +377,12 @@
   background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 45%);
   pointer-events: none; z-index: 1;
 }
-/* Header floats above art — dark scrim so gradient text stays readable */
+/* Header floats above art — transparent so PFP scrim underneath handles readability */
 .rc-r-ssr .rc-header,
 .rc-r-ur  .rc-header {
   position: relative;
   z-index: 3;
-  background: linear-gradient(to right, rgba(0,0,0,0.97) 0%, transparent 75%);
+  background: transparent;
   border: none;
   box-shadow: none;
   backdrop-filter: none;
