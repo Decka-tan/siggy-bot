@@ -101,11 +101,11 @@ async function getGuildMemberCount(): Promise<number> {
     });
     if (res.ok) {
       const guild = await res.json();
-      memberCountCache = guild.approximate_member_count || 0;
+      memberCountCache = guild.approximate_member_count || memberCountCache;
       memberCountExpiry = Date.now() + 30 * 60 * 1000; // cache 30 min
     }
   } catch {}
-  return memberCountCache || 3890;
+  return memberCountCache || 3890; // 3890 only if never successfully fetched
 }
 
 async function getGuildRoles(): Promise<Map<string, string>> {
