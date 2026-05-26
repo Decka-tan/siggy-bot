@@ -485,9 +485,9 @@ export function RitualCard({
           <div className="rc-copyright" aria-hidden="true">2026 Ritual TCG · Made by Decka-chan</div>
         </div>
 
-        {/* ── Back face ── */}
-        <div className={`rc-back ${rarityClass}`} style={cardStyle}>
-          <div className="rc-foil-edge" aria-hidden="true"/>
+        {/* ── Back face — same for all rarities (Pokémon-style) ── */}
+        <div className="rc-back">
+          <div className="rc-back-foil" aria-hidden="true"/>
           <div className="rc-back-frame">
             <div className="rc-back-pattern" aria-hidden="true"/>
             <div className="rc-back-glow" aria-hidden="true"/>
@@ -495,10 +495,7 @@ export function RitualCard({
               <img src="/Logo_RItual_White.png" alt="Ritual" className="rc-back-mark"/>
               <div className="rc-back-title">RITUAL TCG</div>
               <div className="rc-back-divider"/>
-              <div className="rc-back-rarity-row">
-                <span className="rc-back-rar-badge" style={RARITY_BADGE_STYLE[r]}>{r}</span>
-                <span className="rc-back-stars">{RARITY_STARS[r]}</span>
-              </div>
+              <div className="rc-back-year">2026</div>
             </div>
           </div>
           <div className="rc-grain" aria-hidden="true"/>
