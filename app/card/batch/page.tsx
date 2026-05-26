@@ -153,9 +153,20 @@ export default function BatchGeneratorPage() {
 
   /* batch helpers */
   const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
+  const deriveTypeFromRoles = (roles: string[]): string => {
+    if (roles.some(r => ['Radiant Ritualist', 'Foundation Team'].includes(r))) return 'team';
+    if (roles.some(r => r === 'Mods' || r === 'Moderator')) return 'moderator';
+    if (roles.includes('Event Manager')) return 'event-manager';
+    if (roles.includes('Zealot')) return 'ambassador';
+    if (roles.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
+    if (roles.includes('bitty')) return 'yapper';
+    return 'yapper';
+  };
+
   const addMember = (m: Member) => {
     if (inBatch(m.userId)) return;
-    setBatch(prev => [...prev, { ...m, typeOverride: m.type || 'builder', xHandle: '', card: null, status: 'idle' }]);
+    const typeOverride = m.type || deriveTypeFromRoles(m.roles || []);
+    setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, status: 'idle' }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
   const update = (uid: string, patch: Partial<BatchItem>) =>
