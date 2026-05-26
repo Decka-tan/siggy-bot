@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { RitualCard, CardData } from '../RitualCard';
 import { Search, X, Download, RefreshCw, Check } from 'lucide-react';
+import { computeStats } from '@/lib/card-stats';
 
 /* ── Types ────────────────────────────────────────────────────────── */
 interface Member {
@@ -18,13 +19,16 @@ interface Member {
 }
 
 interface BatchItem extends Member {
-  typeOverride: string;
-  xHandle:      string;
-  card:         CardData | null;
-  status:       'idle' | 'loading' | 'done' | 'error';
+  typeOverride:   string;
+  xHandle:        string;
+  card:           CardData | null;        // primary (actual rarity) for thumbnail
+  allRarityCards: CardData[] | null;      // from their rarity down to common
+  status:         'idle' | 'loading' | 'done' | 'error';
 }
 
 /* ── Constants ────────────────────────────────────────────────────── */
+const RARITIES_ORDERED = ['UR', 'SSR', 'SR', 'R', 'common'] as const;
+
 const ROLE_FILTER_OPTIONS = [
   'Foundation Team',
   'Mods',
@@ -145,8 +149,8 @@ export default function BatchGeneratorPage() {
   // Persist queue on every change (skip card data — too large)
   useEffect(() => {
     try {
-      const toSave = batch.map(({ card, ...rest }) => ({
-        ...rest, card: null,
+      const toSave = batch.map(({ card, allRarityCards, ...rest }) => ({
+        ...rest, card: null, allRarityCards: null,
         status: rest.status === 'loading' ? 'idle' : rest.status,
       }));
       localStorage.setItem(QUEUE_KEY, JSON.stringify(toSave));
@@ -241,13 +245,13 @@ export default function BatchGeneratorPage() {
   const addMember = (m: Member) => {
     if (inBatch(m.userId)) return;
     const typeOverride = m.type || deriveTypeFromRoles(m.roles || []);
-    setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, status: 'idle' }]);
+    setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle' }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
   const update = (uid: string, patch: Partial<BatchItem>) =>
     setBatch(prev => prev.map(b => b.userId === uid ? { ...b, ...patch } : b));
 
-  /* generate one card */
+  /* generate one card — builds all rarity variants from their tier down to common */
   const generateOne = async (item: BatchItem) => {
     update(item.userId, { status: 'loading' });
     try {
@@ -255,15 +259,23 @@ export default function BatchGeneratorPage() {
       const url    = `/api/member?userId=${item.userId}${handle ? `&xHandle=${encodeURIComponent(handle)}` : ''}`;
       const data   = await (await fetch(url)).json();
       if (data.member) {
-        update(item.userId, {
-          status: 'done',
-          card: {
-            ...data.member,
-            type:           item.typeOverride,
-            social:         handle ? `@${handle}` : data.member.social,
-            socialPlatform: handle ? 'x' : 'discord',
-          },
+        const base = data.member;
+        const days: number = base.days ?? 0;
+        const roleRank: number = item.roleRank ?? 1;
+        const baseCard: CardData = {
+          ...base,
+          type:           item.typeOverride,
+          social:         handle ? `@${handle}` : base.social,
+          socialPlatform: handle ? 'x' : 'discord',
+        };
+        // generate from their actual rarity down to common
+        const startIdx = RARITIES_ORDERED.indexOf(item.rarity as typeof RARITIES_ORDERED[number]);
+        const applicableRarities = RARITIES_ORDERED.slice(startIdx >= 0 ? startIdx : 0);
+        const allRarityCards: CardData[] = applicableRarities.map(rar => {
+          const { rep, atk, def, spd } = computeStats(days, roleRank, rar);
+          return { ...baseCard, rarity: rar, rep, atk, def, spd };
         });
+        update(item.userId, { status: 'done', card: allRarityCards[0], allRarityCards });
       } else {
         update(item.userId, { status: 'error' });
       }
@@ -282,9 +294,9 @@ export default function BatchGeneratorPage() {
     setGenProgress(null);
   };
 
-  /* render card to PNG data-url */
-  const renderCardPng = async (uid: string): Promise<string | null> => {
-    const el = cardRefs.current.get(uid);
+  /* render card to PNG data-url — key is `${userId}-${rarity}` */
+  const renderCardPng = async (key: string): Promise<string | null> => {
+    const el = cardRefs.current.get(key);
     if (!el) return null;
     try {
       el.classList.add('rc-capture');
@@ -295,36 +307,40 @@ export default function BatchGeneratorPage() {
     } finally { el.classList.remove('rc-capture'); }
   };
 
-  /* save all PNGs directly to a local folder (File System Access API) */
+  /* save all PNGs — one file per rarity variant, e.g. claire3653_UR.png */
   const saveToFolder = async () => {
-    const done = batch.filter(b => b.status === 'done' && b.card);
+    const done = batch.filter(b => b.status === 'done' && b.allRarityCards?.length);
     if (!done.length) return;
-    setZipping(true); // reuse loading state
+    setZipping(true);
     try {
       // @ts-ignore — File System Access API (Chrome/Edge)
       const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
-
       for (const item of done) {
-        const dataUrl = await renderCardPng(item.userId);
-        if (!dataUrl) continue;
-        const blob       = await (await fetch(dataUrl)).blob();
-        const fileHandle = await dir.getFileHandle(`${item.username}.png`, { create: true });
-        const writable   = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
+        for (const cardData of item.allRarityCards!) {
+          const key     = `${item.userId}-${cardData.rarity}`;
+          const dataUrl = await renderCardPng(key);
+          if (!dataUrl) continue;
+          const blob       = await (await fetch(dataUrl)).blob();
+          const fileHandle = await dir.getFileHandle(`${item.username}_${cardData.rarity}.png`, { create: true });
+          const writable   = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+        }
       }
     } catch (e: any) {
-      // user cancelled picker or browser unsupported — fall back to individual downloads
       if (e?.name !== 'AbortError') {
-        const done2 = batch.filter(b => b.status === 'done' && b.card);
+        const done2 = batch.filter(b => b.status === 'done' && b.allRarityCards?.length);
         for (const item of done2) {
-          const dataUrl = await renderCardPng(item.userId);
-          if (!dataUrl) continue;
-          const a    = document.createElement('a');
-          a.href     = dataUrl;
-          a.download = `${item.username}.png`;
-          a.click();
-          await new Promise(r => setTimeout(r, 300));
+          for (const cardData of item.allRarityCards!) {
+            const key     = `${item.userId}-${cardData.rarity}`;
+            const dataUrl = await renderCardPng(key);
+            if (!dataUrl) continue;
+            const a    = document.createElement('a');
+            a.href     = dataUrl;
+            a.download = `${item.username}_${cardData.rarity}.png`;
+            a.click();
+            await new Promise(r => setTimeout(r, 200));
+          }
         }
       }
     } finally { setZipping(false); }
@@ -367,7 +383,7 @@ export default function BatchGeneratorPage() {
           {doneCount > 0 && (
             <button className="gen-btn" onClick={saveToFolder} disabled={zipping}>
               <Download size={13}/>
-              {zipping ? 'Saving…' : `Save to Folder (${doneCount})`}
+              {zipping ? 'Saving…' : `Save to Folder (${batch.filter(b=>b.status==='done').reduce((s,b)=>s+(b.allRarityCards?.length??1),0)} files)`}
             </button>
           )}
           {batch.some(b => b.status !== 'done') && (
@@ -638,11 +654,19 @@ export default function BatchGeneratorPage() {
                       const isLarge = item.rarity === 'SSR' || item.rarity === 'UR';
                       const scale   = isLarge ? 80 / 468 : 80 / 360;
                       const h       = Math.round((isLarge ? 655 : 504) * scale);
+                      const count   = item.allRarityCards?.length ?? 1;
                       return (
-                        <div style={{ width: 80, height: h, overflow: 'hidden', borderRadius: 8, flexShrink: 0, position: 'relative', marginTop: 6 }}>
-                          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none', position: 'absolute' }}>
-                            <RitualCard {...item.card}/>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, marginTop: 6 }}>
+                          <div style={{ width: 80, height: h, overflow: 'hidden', borderRadius: 8, flexShrink: 0, position: 'relative' }}>
+                            <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none', position: 'absolute' }}>
+                              <RitualCard {...item.card}/>
+                            </div>
                           </div>
+                          {count > 1 && (
+                            <span style={{ fontSize: 8, color: '#606060', fontWeight: 700, letterSpacing: '0.08em' }}>
+                              +{count - 1} variants
+                            </span>
+                          )}
                         </div>
                       );
                     })()}
@@ -654,17 +678,22 @@ export default function BatchGeneratorPage() {
         </div>
       </div>
 
-      {/* Generated cards — hidden off-screen for PNG capture, not visible UI clutter */}
+      {/* Hidden cards — all rarity variants per member, keyed by userId-rarity */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none' }}>
-        {batch.filter(b => b.status === 'done' && b.card).map(item => (
-          <div
-            key={item.userId}
-            ref={el => { if (el) cardRefs.current.set(item.userId, el); else cardRefs.current.delete(item.userId); }}
-            className="gen-card-host"
-          >
-            <RitualCard {...item.card!}/>
-          </div>
-        ))}
+        {batch.filter(b => b.status === 'done' && b.allRarityCards).flatMap(item =>
+          item.allRarityCards!.map(cardData => {
+            const key = `${item.userId}-${cardData.rarity}`;
+            return (
+              <div
+                key={key}
+                ref={el => { if (el) cardRefs.current.set(key, el); else cardRefs.current.delete(key); }}
+                className="gen-card-host"
+              >
+                <RitualCard {...cardData}/>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <style>{`
