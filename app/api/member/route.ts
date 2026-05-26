@@ -146,14 +146,15 @@ function getActivityData(): Map<string, any> {
 const CONTRIBUTOR_ROLES = ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty'];
 
 const ROLE_RANK: Record<string, number> = {
-  'Radiant Ritualist': 5,
-  'Foundation Team':   5,
-  'Mods':              5,
-  'Mage':              4,
-  'Ritualist':         4,
-  'Siggy Soulsmith':   4,
-  'ritty':             3,
-  'bitty':             2,
+  'Radiant Ritualist': 2,
+  'Foundation Team':   2,
+  'Mods':              2,
+  'Mage':              1.7,
+  'Ritualist':         1.7,
+  'Siggy Soulsmith':   1.7,
+  'ritty':             1.5,
+  'bitty':             1.2,
+  // default → 1
 };
 
 function deriveRoleRank(roleNames: string[]): number {
@@ -235,9 +236,9 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     social: `@${username}`,
     network: 'Ritual',
     rep,
-    atk: rep,                              // days × rarity_mult
-    def: Math.floor(rep * 0.6),            // 60% of ATK — always in same range, lower
-    spd: roleRank * rarityMult,            // roleRank × rarity_mult
+    atk: rep,                                         // days × rarity_mult
+    def: Math.floor(roleRank * rarityMult * 80),      // role-based armor
+    spd: Math.floor(days * roleRank * rarityMult * 0.3), // hybrid: tenure × role
     artist: '',
     contributions: [
       { icon: '◆', title: '', flavor: '' },
