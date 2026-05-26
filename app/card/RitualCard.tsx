@@ -204,7 +204,7 @@ export function RitualCard({
   // Extract dominant hue from PFP → dark tinted frame bg for SSR/UR
   useEffect(() => {
     const el = frameRef.current;
-    if (!el || (r !== 'SSR' && r !== 'UR') || !pfpUrl) return;
+    if (!el || !pfpUrl) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {

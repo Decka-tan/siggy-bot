@@ -499,7 +499,7 @@
 }
 .rc-stat-cell {
   padding: 4px 6px 5px;
-  background: rgba(4,8,6,0.96);
+  background: var(--pfp-bg-a, var(--rar-frame-a));
   border-top: 2px solid var(--rar-hi);
   border-radius: 4px;
   display: flex; align-items: center; gap: 5px;
