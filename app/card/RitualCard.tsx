@@ -131,10 +131,10 @@ const PfpPlaceholder = ({ seed = 'ritual', typeColor }: { seed?: string; typeCol
   );
 };
 
-const ContribRow = ({ item, accent }: { item: Contribution; accent: string }) => (
+const ContribRow = ({ item }: { item: Contribution }) => (
   <div className="rc-contrib">
-    <div className="rc-contrib-icon" style={{ background: accent }}>
-      <span style={{ color: '#0a0e0d', fontSize: '10px', fontWeight: 900 }}>{item.icon || '◆'}</span>
+    <div className="rc-contrib-icon">
+      <span style={{ fontSize: '10px', fontWeight: 900 }}>{item.icon || '◆'}</span>
     </div>
     <div className="rc-contrib-body">
       <div className="rc-contrib-title">{item.title}</div>
@@ -382,7 +382,7 @@ export function RitualCard({
 
             <div className="rc-actions">
               {displayContribs.map((c, i) => (
-                <ContribRow key={i} item={c} accent={t.color}/>
+                <ContribRow key={i} item={c}/>
               ))}
             </div>
 
