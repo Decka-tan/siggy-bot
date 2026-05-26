@@ -276,7 +276,7 @@
 }
 /* SSR name: black-dominant gold gradient + white outline shadow */
 .rc-r-ssr .rc-name {
-  background: linear-gradient(105deg, #000 25%, #FFD700 50%, #000 75%);
+  background: linear-gradient(90deg, #000 38%, #FFD700 50%, #000 62%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   text-shadow:
     -1px -1px 0 rgba(255,255,255,0.95),  1px -1px 0 rgba(255,255,255,0.95),
@@ -287,7 +287,7 @@
 }
 /* UR name: black-dominant pink gradient + white outline shadow */
 .rc-r-ur .rc-name {
-  background: linear-gradient(105deg, #000 25%, #ff5fb8 50%, #000 75%);
+  background: linear-gradient(90deg, #000 38%, #ff5fb8 50%, #000 62%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   text-shadow:
     -1px -1px 0 rgba(255,255,255,0.95),  1px -1px 0 rgba(255,255,255,0.95),
@@ -299,7 +299,7 @@
 /* SSR REP: black-dominant gold gradient + white outline shadow */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
-  background: linear-gradient(105deg, #000 25%, #FFD700 50%, #000 75%);
+  background: linear-gradient(90deg, #000 38%, #FFD700 50%, #000 62%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   text-shadow:
     -1px -1px 0 rgba(255,255,255,0.95),  1px -1px 0 rgba(255,255,255,0.95),
@@ -310,7 +310,7 @@
 /* UR REP: black-dominant pink gradient + white outline shadow */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
-  background: linear-gradient(105deg, #000 25%, #ff5fb8 50%, #000 75%);
+  background: linear-gradient(90deg, #000 38%, #ff5fb8 50%, #000 62%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   text-shadow:
     -1px -1px 0 rgba(255,255,255,0.95),  1px -1px 0 rgba(255,255,255,0.95),
