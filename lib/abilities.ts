@@ -21,7 +21,7 @@ export interface Passive {
 }
 
 export const PASSIVES: Passive[] = [
-  { name: 'Undying',      effect: "Cannot be destroyed by a hit dealing less than this card's DEF value." },
+  { name: 'Rebirth',      effect: 'When this card reaches 0 DEF, restore it to 30% base DEF once per battle.' },
   { name: 'Regen',        effect: 'Gain +8% DEF at the start of each round, up to +40% total.' },
   { name: 'Thorns',       effect: 'Attacker permanently loses ATK equal to 20% of damage dealt.' },
   { name: 'Momentum',     effect: 'Gain +8% ATK each round this card survives, up to +40%.' },
