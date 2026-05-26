@@ -328,7 +328,7 @@
 
 /* ── Art window ── */
 .rc-art-wrap {
-  position: relative; width: 100%; aspect-ratio: 5 / 3;
+  position: relative; width: 100%; aspect-ratio: 5 / 3.6;
   border-radius: 10px; border: 1.5px solid var(--rar-hi-soft); padding: 0;
   background: transparent;
 }
