@@ -155,16 +155,19 @@ const ContribRow = ({ item }: { item: { icon?: React.ReactNode | string; title: 
   </div>
 );
 
-/* ── Deterministic passive pick from userId ── */
-function pickPassive(userId?: string) {
+/* ── Deterministic passive pick from userId — SR/SSR/UR only, scaled per tier ── */
+function pickPassive(userId?: string, rarity?: string): { name: string; effect: string } | null {
   if (!PASSIVES.length) return null;
+  const tier = rarity?.toLowerCase();
+  if (tier !== 'sr' && tier !== 'ssr' && tier !== 'ur') return null;
   let h = 2166136261 >>> 0;
   const seed = userId || 'anon';
   for (let i = 0; i < seed.length; i++) {
     h ^= seed.charCodeAt(i);
     h = Math.imul(h, 16777619) >>> 0;
   }
-  return PASSIVES[h % PASSIVES.length];
+  const passive = PASSIVES[h % PASSIVES.length];
+  return { name: passive.name, effect: passive[tier] };
 }
 
 /* ── Main card ── */
@@ -320,7 +323,7 @@ export function RitualCard({
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, [runSpring]);
 
   const ability  = ABILITIES[type] || null;
-  const passive  = pickPassive(userId);
+  const passive  = pickPassive(userId, r);
 
   // Row 1: active ability (type-based), Row 2: passive (userId-hash)
   const displayContribs: { icon?: React.ReactNode | string; title: string; flavor?: string; tag?: string }[] = [];
