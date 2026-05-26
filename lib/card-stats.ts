@@ -21,9 +21,10 @@ const round50 = (n: number) => Math.round(n / 50) * 50;
 export function computeStats(days: number, roleRank: number, rarity: string) {
   const mult = RARITY_MULT[rarity] ?? 1;
   const base = RARITY_BASE[rarity] ?? RARITY_BASE.common;
-  const atk  = round50(Math.floor(days * mult) + base.atk);
+  const sd   = Math.sqrt(days); // diminishing returns — 30d≈5.5, 90d≈9.5, 365d≈19, 730d≈27
+  const atk  = round50(Math.floor(sd * mult * 12) + base.atk);
   const def  = round50(Math.floor(roleRank * mult * 80) + base.def);
-  const spd  = round50(Math.floor(days * roleRank * mult * 0.3) + base.spd);
+  const spd  = round50(Math.floor(sd * roleRank * mult * 4) + base.spd);
   const rep  = atk + def + spd;
   return { rep, atk, def, spd };
 }
