@@ -153,21 +153,24 @@ const ROLE_RANK: Record<string, number> = {
   'Mage':              1.7,
   'Ritualist':         1.7,
   'Siggy Soulsmith':   1.7,
+  'Siggy Architect':   1.7,
   'ritty':             1.5,
   'bitty':             1.2,
   // default → 1
 };
 
 function deriveRoleRank(roleNames: string[]): number {
+  let max = 1;
   for (const role of roleNames) {
-    if (ROLE_RANK[role] !== undefined) return ROLE_RANK[role];
+    if (ROLE_RANK[role] !== undefined && ROLE_RANK[role] > max) max = ROLE_RANK[role];
   }
-  return 1;
+  return max;
 }
 
 function deriveType(roleNames: string[]): string {
   if (roleNames.some((r) => r === 'Mods' || r === 'Moderator')) return 'moderator';
-  if (roleNames.some((r) => r === 'Events' || r === 'event-manager')) return 'event-manager';
+  // 'Events' is a notification sub-role — only real event manager staff role triggers this
+  if (roleNames.includes('Event Manager')) return 'event-manager';
   if (roleNames.includes('Radiant Ritualist')) return 'team';
   if (roleNames.some((r) => ['Ritualist', 'Zealot', 'ritty'].includes(r))) return 'builder';
   if (roleNames.includes('bitty')) return 'yapper';
@@ -177,8 +180,8 @@ function deriveType(roleNames: string[]): string {
 function deriveRarity(roleNames: string[]): string {
   if (roleNames.includes('Radiant Ritualist')) return 'UR';
   if (roleNames.includes('Ritualist')) return 'SSR';
-  if (roleNames.includes('Zealot')) return 'SR';
-  if (roleNames.some((r) => ['ritty', 'bitty'].includes(r))) return 'R';
+  if (roleNames.some((r) => ['Zealot', 'ritty'].includes(r))) return 'SR';
+  if (roleNames.includes('bitty')) return 'R';
   return 'common';
 }
 
