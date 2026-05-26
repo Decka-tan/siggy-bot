@@ -52,13 +52,36 @@ export default function BatchGeneratorPage() {
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  /* load member list from live Discord */
+  const LS_KEY = 'ritual-members-cache';
+  const LS_TTL = 12 * 60 * 60 * 1000; // 12 hours
+
+  /* load member list — localStorage first, Discord only when stale or forced */
   const loadMembers = useCallback(async (force = false) => {
+    // Try localStorage before hitting the server
+    if (!force) {
+      try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw) {
+          const { members, savedAt } = JSON.parse(raw);
+          if (Array.isArray(members) && members.length > 0 && Date.now() - savedAt < LS_TTL) {
+            setAllMembers(members);
+            setListLoaded(true);
+            return; // fresh cache — no network request at all
+          }
+        }
+      } catch {}
+    }
+
+    // Cache stale or forced — fetch from server
     setListLoading(true);
     try {
       const res  = await fetch(force ? '/api/members?force=true' : '/api/members');
       const data = await res.json();
-      setAllMembers(data.members || []);
+      const members = data.members || [];
+      if (members.length > 0) {
+        try { localStorage.setItem(LS_KEY, JSON.stringify({ members, savedAt: Date.now() })); } catch {}
+      }
+      setAllMembers(members);
       setListLoaded(true);
     } finally {
       setListLoading(false);
