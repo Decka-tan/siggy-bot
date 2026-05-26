@@ -1,25 +1,26 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { RitualCard, TYPES, CardData } from '../RitualCard';
-import { Search, X, Plus, Download, RefreshCw } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { RitualCard, CardData } from '../RitualCard';
+import { Search, X, Download, RefreshCw, Check } from 'lucide-react';
 
 /* ── Types ────────────────────────────────────────────────────────── */
-interface SearchResult {
-  userId: string;
-  username: string;
-  displayName: string;
-  avatarUrl: string;
-  rarity: string;
+interface Member {
+  userId:          string;
+  username:        string;
+  displayName:     string;
+  avatarUrl:       string;
+  rarity:          string;
   contributorRole: string | null;
-  roleRank: number;
+  roleRank:        number;
+  roles:           string[];
 }
 
-interface BatchItem extends SearchResult {
+interface BatchItem extends Member {
   typeOverride: string;
-  xHandle: string;
-  card: CardData | null;
-  status: 'idle' | 'loading' | 'done' | 'error';
+  xHandle:      string;
+  card:         CardData | null;
+  status:       'idle' | 'loading' | 'done' | 'error';
 }
 
 /* ── Constants ────────────────────────────────────────────────────── */
@@ -38,53 +39,56 @@ const RARITY_COLOR: Record<string, string> = {
 
 /* ── Component ────────────────────────────────────────────────────── */
 export default function BatchGeneratorPage() {
-  const [query, setQuery]           = useState('');
-  const [results, setResults]       = useState<SearchResult[]>([]);
-  const [searching, setSearching]   = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [batch, setBatch]           = useState<BatchItem[]>([]);
-  const [genAll, setGenAll]         = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cardRefs    = useRef<Map<string, HTMLDivElement>>(new Map());
+  // member browser
+  const [allMembers, setAllMembers]   = useState<Member[]>([]);
+  const [listLoading, setListLoading] = useState(false);
+  const [listLoaded, setListLoaded]   = useState(false);
+  const [filter, setFilter]           = useState('');
 
-  /* search */
-  const search = useCallback(async (q: string) => {
-    if (!q.trim()) { setResults([]); return; }
-    setSearching(true);
+  // batch queue
+  const [batch, setBatch]     = useState<BatchItem[]>([]);
+  const [genAll, setGenAll]   = useState(false);
+  const [zipping, setZipping] = useState(false);
+
+  const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  /* load member list from live Discord */
+  const loadMembers = useCallback(async () => {
+    setListLoading(true);
     try {
-      const res  = await fetch(`/api/member?username=${encodeURIComponent(q)}&autocomplete=true`);
+      const res  = await fetch('/api/members');
       const data = await res.json();
-      setResults(data.members || []);
-      setSearchOpen(true);
-    } catch { setResults([]); }
-    finally  { setSearching(false); }
+      setAllMembers(data.members || []);
+      setListLoaded(true);
+    } finally {
+      setListLoading(false);
+    }
   }, []);
 
-  const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.target.value;
-    setQuery(v);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(v), 350);
+  useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  /* filtered list */
+  const filtered = useMemo(() => {
+    if (!filter.trim()) return allMembers;
+    const q = filter.toLowerCase();
+    return allMembers.filter(m =>
+      m.displayName.toLowerCase().includes(q) ||
+      m.username.toLowerCase().includes(q) ||
+      (m.contributorRole || '').toLowerCase().includes(q)
+    );
+  }, [allMembers, filter]);
+
+  /* batch helpers */
+  const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
+  const addMember = (m: Member) => {
+    if (inBatch(m.userId)) return;
+    setBatch(prev => [...prev, { ...m, typeOverride: 'builder', xHandle: '', card: null, status: 'idle' }]);
   };
-
-  const addMember = (m: SearchResult) => {
-    if (batch.some(b => b.userId === m.userId)) return;
-    setBatch(prev => [...prev, {
-      ...m,
-      typeOverride: 'builder',
-      xHandle:      '',
-      card:         null,
-      status:       'idle',
-    }]);
-    setQuery(''); setResults([]); setSearchOpen(false);
-  };
-
-  const remove = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
-
+  const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
   const update = (uid: string, patch: Partial<BatchItem>) =>
     setBatch(prev => prev.map(b => b.userId === uid ? { ...b, ...patch } : b));
 
-  /* generate single */
+  /* generate one card */
   const generateOne = async (item: BatchItem) => {
     update(item.userId, { status: 'loading' });
     try {
@@ -107,38 +111,53 @@ export default function BatchGeneratorPage() {
     } catch { update(item.userId, { status: 'error' }); }
   };
 
-  /* generate all idle/error items sequentially */
   const generateAll = async () => {
     setGenAll(true);
-    for (const item of batch.filter(b => b.status !== 'loading' && b.status !== 'done')) {
+    for (const item of batch.filter(b => b.status !== 'done' && b.status !== 'loading')) {
       await generateOne(item);
     }
     setGenAll(false);
   };
 
-  /* download PNG for one card */
-  const downloadCard = async (uid: string) => {
+  /* render card to PNG data-url */
+  const renderCardPng = async (uid: string): Promise<string | null> => {
     const el = cardRefs.current.get(uid);
-    if (!el) return;
+    if (!el) return null;
     try {
       el.classList.add('rc-capture');
       await new Promise(r => setTimeout(r, 60));
       const { toPng } = await import('html-to-image');
-      const dataUrl   = await toPng(el, { pixelRatio: 2.5, cacheBust: true, backgroundColor: 'transparent' });
-      const name      = batch.find(b => b.userId === uid)?.displayName || uid;
-      const a         = document.createElement('a');
-      a.href          = dataUrl;
-      a.download      = `ritual-${name.replace(/[^a-z0-9._-]+/gi, '_')}.png`;
-      a.click();
+      const url = await toPng(el, { pixelRatio: 2.5, cacheBust: true, backgroundColor: 'transparent' });
+      return url;
     } finally { el.classList.remove('rc-capture'); }
   };
 
-  /* close dropdown on outside click */
-  useEffect(() => {
-    const h = () => setSearchOpen(false);
-    document.addEventListener('click', h);
-    return () => document.removeEventListener('click', h);
-  }, []);
+  /* download all as ZIP */
+  const downloadZip = async () => {
+    const done = batch.filter(b => b.status === 'done' && b.card);
+    if (!done.length) return;
+    setZipping(true);
+    try {
+      const JSZip = (await import('jszip')).default;
+      const zip   = new JSZip();
+
+      for (const item of done) {
+        const dataUrl = await renderCardPng(item.userId);
+        if (!dataUrl) continue;
+        // strip data:image/png;base64,
+        const base64 = dataUrl.split(',')[1];
+        const fname  = `${item.username}.png`;
+        zip.file(fname, base64, { base64: true });
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const a    = document.createElement('a');
+      a.href     = URL.createObjectURL(blob);
+      a.download = 'ritual-cards.zip';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } finally { setZipping(false); }
+  };
 
   const doneCount = batch.filter(b => b.status === 'done').length;
 
@@ -157,238 +176,264 @@ export default function BatchGeneratorPage() {
           <div>
             <div className="gen-brand-name">Batch Generator</div>
             <div className="gen-brand-sub">
-              {batch.length === 0
-                ? 'Add members · set type · generate all'
-                : `${batch.length} member${batch.length > 1 ? 's' : ''} queued${doneCount > 0 ? ` · ${doneCount} generated` : ''}`
+              {listLoading
+                ? 'Loading contributors from Discord…'
+                : `${allMembers.length} contributors · ${batch.length} queued${doneCount > 0 ? ` · ${doneCount} ready` : ''}`
               }
             </div>
           </div>
         </div>
         <div className="gen-header-actions">
           <a href="/card" className="gen-btn gen-btn-ghost">Single Card</a>
-          {batch.length > 0 && (
+          {doneCount > 0 && (
+            <button className="gen-btn" onClick={downloadZip} disabled={zipping}>
+              <Download size={13}/>
+              {zipping ? 'Zipping…' : `Download ZIP (${doneCount})`}
+            </button>
+          )}
+          {batch.some(b => b.status !== 'done') && (
             <button
               className="gen-btn gen-btn-primary"
               onClick={generateAll}
-              disabled={genAll || batch.every(b => b.status === 'done')}
+              disabled={genAll || batch.length === 0}
             >
-              {genAll
-                ? <><span className="batch-spin">⟳</span> Generating…</>
-                : 'Generate All'
-              }
+              {genAll ? <><span className="batch-spin">⟳</span> Generating…</> : 'Generate All'}
             </button>
           )}
         </div>
       </div>
 
-      {/* Search */}
-      <div className="gen-search-wrap" onClick={e => e.stopPropagation()}>
-        <div className="gen-search-box">
-          <Search size={16} className="gen-search-icon" />
-          <input
-            className="gen-search-input"
-            placeholder="Search Ritual member to add…"
-            value={query}
-            onChange={handleInput}
-            onFocus={() => results.length > 0 && setSearchOpen(true)}
-          />
-          {searching && <div className="gen-search-spinner" />}
-          {query && (
-            <button className="gen-search-clear" onClick={() => { setQuery(''); setResults([]); setSearchOpen(false); }}>
-              <X size={14} />
-            </button>
-          )}
-        </div>
+      <div className="batch-workspace">
+        {/* Left: member browser */}
+        <div className="batch-browser">
+          <div className="batch-browser-header">
+            <div className="gen-search-box" style={{ margin: 0 }}>
+              <Search size={14} className="gen-search-icon"/>
+              <input
+                className="gen-search-input"
+                placeholder="Filter by name or role…"
+                value={filter}
+                onChange={e => setFilter(e.target.value)}
+                style={{ padding: '10px 8px', fontSize: 13 }}
+              />
+              {filter && (
+                <button className="gen-search-clear" onClick={() => setFilter('')}><X size={13}/></button>
+              )}
+            </div>
+            <div className="batch-browser-count">
+              {listLoading
+                ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
+                : `${filtered.length} members`
+              }
+            </div>
+          </div>
 
-        {searchOpen && results.length > 0 && (
-          <div className="gen-search-dropdown">
-            {results.map(m => {
-              const already = batch.some(b => b.userId === m.userId);
+          <div className="batch-member-list">
+            {filtered.map(m => {
+              const added = inBatch(m.userId);
               return (
                 <button
                   key={m.userId}
-                  className="gen-search-item"
-                  onClick={() => !already && addMember(m)}
-                  style={{ opacity: already ? 0.4 : 1, cursor: already ? 'default' : 'pointer' }}
+                  className={`batch-member-row${added ? ' is-added' : ''}`}
+                  onClick={() => !added && addMember(m)}
+                  disabled={added}
                 >
-                  <img src={m.avatarUrl} alt="" className="gen-search-avatar"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                  <div className="gen-search-info">
-                    <span className="gen-search-name">{m.displayName}</span>
-                    <span className="gen-search-meta">@{m.username}</span>
+                  <img src={m.avatarUrl} alt="" className="batch-member-avatar"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                  <div className="batch-member-info">
+                    <span className="batch-member-name">{m.displayName}</span>
+                    <span className="batch-member-sub">@{m.username}</span>
                   </div>
-                  {m.contributorRole && (
-                    <span className="gen-search-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
-                      {m.contributorRole}
-                    </span>
-                  )}
-                  <Plus size={13} style={{ color: already ? '#404040' : '#FFD700', flexShrink: 0 }} />
+                  <div className="batch-member-right">
+                    {m.contributorRole && (
+                      <span className="batch-member-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
+                        {m.contributorRole}
+                      </span>
+                    )}
+                    {added
+                      ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
+                      : <span className="batch-member-add">+</span>
+                    }
+                  </div>
                 </button>
               );
             })}
-          </div>
-        )}
-      </div>
-
-      {/* Queue */}
-      <div className="batch-queue">
-        {batch.length === 0 ? (
-          <div className="batch-empty">Search and add members above to start your batch</div>
-        ) : (
-          batch.map(item => (
-            <div key={item.userId} className="batch-row">
-              {/* Avatar + info */}
-              <img
-                src={item.avatarUrl} alt=""
-                className="batch-avatar"
-                onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-              <div className="batch-info">
-                <div className="batch-name-row">
-                  <span className="batch-display-name">{item.displayName}</span>
-                  <span className="batch-rarity-tag" style={{ color: RARITY_COLOR[item.rarity] || '#888', borderColor: `${RARITY_COLOR[item.rarity] || '#888'}44` }}>
-                    {item.rarity}
-                  </span>
-                  {item.contributorRole && (
-                    <span className="batch-contrib-role">{item.contributorRole}</span>
-                  )}
-                </div>
-                <span className="batch-username">@{item.username}</span>
+            {listLoaded && filtered.length === 0 && (
+              <div style={{ padding: '32px 16px', textAlign: 'center', color: '#404040', fontSize: 12 }}>
+                No contributors found
               </div>
-
-              {/* Type */}
-              <div className="batch-field">
-                <label className="batch-field-label">Type</label>
-                <select
-                  className="batch-select"
-                  value={item.typeOverride}
-                  onChange={e => update(item.userId, { typeOverride: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
-                >
-                  {TYPE_OPTIONS.map(t => (
-                    <option key={t} value={t}>{TYPE_LABELS[t]}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* X Handle */}
-              <div className="batch-field">
-                <label className="batch-field-label">X Handle <span style={{ opacity: 0.4, fontWeight: 400 }}>(optional)</span></label>
-                <input
-                  className="gen-input"
-                  placeholder="@username"
-                  value={item.xHandle}
-                  onChange={e => update(item.userId, { xHandle: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
-                  style={{ width: 140, padding: '6px 9px', fontSize: 12 }}
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="batch-actions">
-                {item.status === 'error' && (
-                  <span style={{ fontSize: 10, color: '#f87171' }}>Error</span>
-                )}
-                {item.status === 'done' && (
-                  <button className="gen-btn" onClick={() => downloadCard(item.userId)} style={{ padding: '7px 10px' }} title="Download PNG">
-                    <Download size={13} />
-                  </button>
-                )}
-                <button
-                  className="gen-btn gen-btn-primary"
-                  onClick={() => generateOne(item)}
-                  disabled={item.status === 'loading'}
-                  style={{ padding: '7px 12px', fontSize: 11, minWidth: 60 }}
-                  title={item.status === 'done' ? 'Regenerate' : 'Generate'}
-                >
-                  {item.status === 'loading'
-                    ? <span className="batch-spin">⟳</span>
-                    : item.status === 'done'
-                      ? <RefreshCw size={12} />
-                      : 'Gen'
-                  }
-                </button>
-                <button className="gen-btn gen-btn-ghost" onClick={() => remove(item.userId)} style={{ padding: '7px 10px' }} title="Remove">
-                  <X size={13} />
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-
-      {/* Cards grid */}
-      {doneCount > 0 && (
-        <div className="batch-cards-section">
-          <div className="form-section" style={{ border: 'none', paddingTop: 0, marginBottom: 20 }}>
-            Generated Cards ({doneCount})
-          </div>
-          <div className="batch-cards-grid">
-            {batch.filter(b => b.status === 'done' && b.card).map(item => (
-              <div key={item.userId} className="batch-card-wrap">
-                <div
-                  ref={el => { if (el) cardRefs.current.set(item.userId, el); else cardRefs.current.delete(item.userId); }}
-                  className="gen-card-host"
-                >
-                  <RitualCard {...item.card!} />
-                </div>
-                <button className="gen-btn" onClick={() => downloadCard(item.userId)} style={{ fontSize: 11, marginTop: 4 }}>
-                  <Download size={12} /> Download
-                </button>
-              </div>
-            ))}
+            )}
           </div>
         </div>
-      )}
+
+        {/* Right: queue */}
+        <div className="batch-queue-panel">
+          <div className="batch-queue-title">
+            Queue {batch.length > 0 && <span style={{ color: '#A3A3A3', fontWeight: 400 }}>({batch.length})</span>}
+          </div>
+
+          {batch.length === 0 ? (
+            <div className="batch-empty">← Pick members from the list</div>
+          ) : (
+            <div className="batch-queue-list">
+              {batch.map(item => (
+                <div key={item.userId} className="batch-queue-row">
+                  <img src={item.avatarUrl} alt="" className="batch-q-avatar"
+                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                  <div className="batch-q-info">
+                    <div className="batch-q-name">
+                      <span>{item.displayName}</span>
+                      <span className="batch-q-rarity" style={{ color: RARITY_COLOR[item.rarity] || '#888', borderColor: `${RARITY_COLOR[item.rarity]}44` }}>
+                        {item.rarity}
+                      </span>
+                    </div>
+
+                    <div className="batch-q-fields">
+                      {/* Type */}
+                      <div className="batch-field">
+                        <label className="batch-field-label">Type</label>
+                        <select
+                          className="batch-select"
+                          value={item.typeOverride}
+                          onChange={e => update(item.userId, { typeOverride: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
+                        >
+                          {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+                        </select>
+                      </div>
+                      {/* X Handle */}
+                      <div className="batch-field">
+                        <label className="batch-field-label">X Handle</label>
+                        <input
+                          className="gen-input"
+                          placeholder="@user"
+                          value={item.xHandle}
+                          onChange={e => update(item.userId, { xHandle: e.target.value, status: item.status === 'done' ? 'idle' : item.status })}
+                          style={{ padding: '5px 8px', fontSize: 12 }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="batch-q-actions">
+                    {item.status === 'error' && <span style={{ fontSize: 9, color: '#f87171' }}>ERR</span>}
+                    {item.status === 'done' && <Check size={12} style={{ color: '#40FFAF' }}/>}
+                    <button
+                      className="gen-btn gen-btn-primary"
+                      onClick={() => generateOne(item)}
+                      disabled={item.status === 'loading'}
+                      style={{ padding: '5px 8px', fontSize: 11, minWidth: 38 }}
+                    >
+                      {item.status === 'loading'
+                        ? <span className="batch-spin" style={{ fontSize: 14 }}>⟳</span>
+                        : item.status === 'done' ? <RefreshCw size={11}/> : 'Gen'
+                      }
+                    </button>
+                    <button className="gen-btn gen-btn-ghost" onClick={() => removeMember(item.userId)} style={{ padding: '5px 8px' }}>
+                      <X size={12}/>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Generated cards — hidden off-screen for PNG capture, not visible UI clutter */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none' }}>
+        {batch.filter(b => b.status === 'done' && b.card).map(item => (
+          <div
+            key={item.userId}
+            ref={el => { if (el) cardRefs.current.set(item.userId, el); else cardRefs.current.delete(item.userId); }}
+            className="gen-card-host"
+          >
+            <RitualCard {...item.card!}/>
+          </div>
+        ))}
+      </div>
 
       <style>{`
-        .batch-queue {
-          max-width: 860px; margin: 24px auto 0; padding: 0 32px;
-          display: flex; flex-direction: column; gap: 8px;
+        .batch-workspace {
+          display: grid;
+          grid-template-columns: 340px 1fr;
+          gap: 0;
+          flex: 1;
+          min-height: 0;
+          height: calc(100vh - 148px);
+          margin-top: 24px;
+        }
+        /* Member browser */
+        .batch-browser {
+          border-right: 1px solid #1a1a1a;
+          display: flex; flex-direction: column; overflow: hidden;
+        }
+        .batch-browser-header {
+          padding: 12px 16px; border-bottom: 1px solid #1a1a1a;
+          display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
+        }
+        .batch-browser-count {
+          font-size: 10px; color: #404040; letter-spacing: 0.08em; text-transform: uppercase;
+          font-weight: 700; display: flex; align-items: center; gap: 6px;
+        }
+        .batch-member-list {
+          flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #262626 transparent;
+        }
+        .batch-member-row {
+          width: 100%; background: transparent; border: none; border-bottom: 1px solid #111;
+          display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+          cursor: pointer; text-align: left; transition: background 80ms;
+        }
+        .batch-member-row:hover:not(:disabled) { background: rgba(255,215,0,0.05); }
+        .batch-member-row.is-added { opacity: 0.45; cursor: default; }
+        .batch-member-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: #1a1a1a; object-fit: cover; }
+        .batch-member-info { flex: 1; min-width: 0; }
+        .batch-member-name { display: block; font-size: 12px; font-weight: 700; color: #FAFAFA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .batch-member-sub { font-size: 10px; color: #606060; }
+        .batch-member-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .batch-member-role { font-size: 9px; font-weight: 700; }
+        .batch-member-add { font-size: 16px; color: #404040; line-height: 1; }
+        .batch-member-row:hover:not(:disabled) .batch-member-add { color: #FFD700; }
+
+        /* Queue panel */
+        .batch-queue-panel {
+          display: flex; flex-direction: column; overflow: hidden;
+        }
+        .batch-queue-title {
+          padding: 16px 20px 12px;
+          font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 800; color: #FFD700;
+          border-bottom: 1px solid #1a1a1a; flex-shrink: 0;
         }
         .batch-empty {
-          text-align: center; padding: 48px 0; color: #404040; font-size: 13px;
+          padding: 48px 20px; color: #404040; font-size: 12px;
         }
-        .batch-row {
-          background: #121212; border: 1px solid #262626; border-radius: 12px;
-          padding: 12px 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+        .batch-queue-list {
+          flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #262626 transparent;
+          padding: 10px 16px; display: flex; flex-direction: column; gap: 8px;
         }
-        .batch-avatar {
-          width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; background: #1a1a1a; object-fit: cover;
+        .batch-queue-row {
+          background: #0e0e0e; border: 1px solid #1e1e1e; border-radius: 10px;
+          padding: 10px 12px; display: flex; gap: 10px; align-items: flex-start;
         }
-        .batch-info { flex: 1; min-width: 140px; }
-        .batch-name-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; flex-wrap: wrap; }
-        .batch-display-name { font-size: 13px; font-weight: 700; color: #FAFAFA; }
-        .batch-rarity-tag {
-          font-size: 9px; font-weight: 900; padding: 1px 5px; border-radius: 3px; border: 1px solid;
-        }
-        .batch-contrib-role { font-size: 9px; color: #A3A3A3; }
-        .batch-username { font-size: 11px; color: #A3A3A3; }
-        .batch-field { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
-        .batch-field-label {
-          font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
-          font-weight: 700; color: #A3A3A3;
-        }
+        .batch-q-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; background: #1a1a1a; object-fit: cover; margin-top: 2px; }
+        .batch-q-info { flex: 1; min-width: 0; }
+        .batch-q-name { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+        .batch-q-name > span:first-child { font-size: 12px; font-weight: 700; color: #FAFAFA; }
+        .batch-q-rarity { font-size: 8px; font-weight: 900; padding: 1px 4px; border-radius: 3px; border: 1px solid; flex-shrink: 0; }
+        .batch-q-fields { display: flex; gap: 8px; flex-wrap: wrap; }
+        .batch-q-actions { display: flex; flex-direction: column; gap: 4px; align-items: center; flex-shrink: 0; }
+        .batch-field { display: flex; flex-direction: column; gap: 3px; }
+        .batch-field-label { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #505050; }
         .batch-select {
-          background: #050505; border: 1px solid #262626; color: #FAFAFA;
-          font-size: 12px; padding: 6px 8px; border-radius: 6px;
-          outline: none; cursor: pointer; min-width: 140px;
+          background: #050505; border: 1px solid #1e1e1e; color: #FAFAFA;
+          font-size: 11px; padding: 5px 7px; border-radius: 5px; outline: none; cursor: pointer;
         }
         .batch-select:focus { border-color: #FFD700; }
-        .batch-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
         .batch-spin { display: inline-block; animation: gen-spin 0.7s linear infinite; }
-        .batch-cards-section {
-          max-width: 1200px; margin: 32px auto 48px; padding: 0 32px;
-        }
-        .batch-cards-grid {
-          display: flex; flex-wrap: wrap; gap: 24px; justify-content: center;
-        }
-        .batch-card-wrap {
-          display: flex; flex-direction: column; align-items: center; gap: 8px;
-        }
-        @media (max-width: 640px) {
-          .batch-queue { padding: 0 16px; }
-          .batch-cards-section { padding: 0 16px; }
-          .batch-row { gap: 8px; }
-          .batch-field { min-width: 120px; }
+
+        @media (max-width: 900px) {
+          .batch-workspace { grid-template-columns: 1fr; height: auto; }
+          .batch-browser { border-right: none; border-bottom: 1px solid #1a1a1a; max-height: 50vh; }
         }
       `}</style>
     </div>
