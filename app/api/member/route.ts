@@ -211,6 +211,10 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
   const total = memberCount || 3890;
   const setNum = ((parseInt(uid.slice(-4), 10) % total) + 1).toString().padStart(3, '0');
 
+  const months = joined ? Math.floor(days / 30) : 0;
+  const rarityMult = rarityMultiplier[rarity] ?? 1;
+  const roleRank = deriveRoleRank(roleNames);
+
   return {
     userId: uid,
     username,
@@ -231,13 +235,16 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     social: `@${username}`,
     network: 'Ritual',
     rep,
+    atk: rep,                              // days × rarity_mult
+    def: Math.floor(months * rarityMult),  // months × rarity_mult
+    spd: roleRank * rarityMult,            // roleRank × rarity_mult
     artist: '',
     contributions: [
       { icon: '◆', title: '', flavor: '' },
       { icon: '✦', title: '', flavor: '' },
     ],
     contributorRole: roleNames.find((r) => CONTRIBUTOR_ROLES.includes(r)) || null,
-    roleRank: deriveRoleRank(roleNames),
+    roleRank,
   };
 }
 

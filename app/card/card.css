@@ -141,7 +141,7 @@
     linear-gradient(175deg, var(--rar-frame-a) 0%, var(--rar-frame-b) 55%, var(--rar-frame-a) 100%);
   padding: 10px 10px 8px;
   display: grid;
-  grid-template-rows: auto auto auto 1fr auto auto;
+  grid-template-rows: auto auto auto 1fr auto auto auto;
   gap: 5px;
 }
 /* SSR/UR: frame bg adapts to PFP palette via JS-set vars */
@@ -436,6 +436,29 @@
 .rc-contrib-body { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
 .rc-contrib-title { font-size: 12px; font-weight: 800; color: #fafff7; line-height: 1.15; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rc-contrib-flavor { font-size: 9px; line-height: 1.3; color: #7a8880; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── TCG Battle Stats row ── */
+.rc-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px; background: var(--rar-hi-soft);
+  border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--rar-hi-soft);
+}
+.rc-stat-cell {
+  padding: 3px 6px 4px;
+  background: rgba(4,8,6,0.96);
+  display: flex; align-items: center; gap: 5px;
+}
+.rc-stat-k {
+  font-size: 7.5px; font-weight: 900; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--rar-hi); opacity: 0.75; flex-shrink: 0;
+}
+.rc-stat-def .rc-stat-k { color: #60a5fa; }
+.rc-stat-spd .rc-stat-k { color: #a78bfa; }
+.rc-stat-v {
+  font-size: 13px; font-weight: 900; color: #f0f7f2;
+  letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1;
+}
 
 /* ── Sub-strip (stats row) ── */
 .rc-sub {
