@@ -274,11 +274,10 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR name: gold gradient fill + white outline */
+/* SSR name: gold fill + white outline */
 .rc-r-ssr .rc-name {
-  background: linear-gradient(120deg, #FFD700, #FFA500, #ffe88a);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: none; -webkit-background-clip: unset; background-clip: unset;
+  -webkit-text-fill-color: #FFD700; color: #FFD700;
   -webkit-text-stroke: 0px transparent;
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
   font-weight: 700;
@@ -289,11 +288,10 @@
      0      -0.75px 0 #fff,  0       0.75px 0 #fff;
   opacity: 1; animation: none;
 }
-/* UR name: pink gradient fill + white outline */
+/* UR name: pink fill + white outline */
 .rc-r-ur .rc-name {
-  background: linear-gradient(120deg, #ff5fb8, #ffaadd, #ff5fb8);
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background: none; -webkit-background-clip: unset; background-clip: unset;
+  -webkit-text-fill-color: #ff5fb8; color: #ff5fb8;
   -webkit-text-stroke: 0px transparent;
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
   font-weight: 700;
