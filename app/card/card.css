@@ -289,7 +289,7 @@
   padding-left: var(--rc-name-outline-pad);
   font: inherit; letter-spacing: inherit; text-transform: inherit;
   white-space: nowrap; overflow: visible;
-  -webkit-text-stroke: 1.4px rgba(255,255,255,0.88);
+  -webkit-text-stroke: 1.8px rgba(255,255,255,0.9);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
@@ -308,7 +308,7 @@
   padding-left: var(--rc-name-outline-pad);
   font: inherit; letter-spacing: inherit; text-transform: inherit;
   white-space: nowrap; overflow: visible;
-  -webkit-text-stroke: 1.4px rgba(255,255,255,0.88);
+  -webkit-text-stroke: 1.8px rgba(255,255,255,0.9);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
@@ -325,7 +325,7 @@
   content: attr(data-text);
   position: absolute; top: 0; left: 0; right: 0;
   font: inherit; letter-spacing: inherit;
-  -webkit-text-stroke: 1.2px rgba(255,255,255,0.86);
+  -webkit-text-stroke: 1.6px rgba(255,255,255,0.9);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
@@ -342,7 +342,7 @@
   content: attr(data-text);
   position: absolute; top: 0; left: 0; right: 0;
   font: inherit; letter-spacing: inherit;
-  -webkit-text-stroke: 1.2px rgba(255,255,255,0.86);
+  -webkit-text-stroke: 1.6px rgba(255,255,255,0.9);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
