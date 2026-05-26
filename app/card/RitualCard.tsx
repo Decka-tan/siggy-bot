@@ -427,7 +427,6 @@ export function RitualCard({
               <div className="rc-foot-right">
                 <span className="rc-rar-stars">{RARITY_STARS[r]}</span>
                 {artist && <span className="rc-artist">art by <strong>{artist}</strong></span>}
-                <RitualMark size={10} color="var(--rar-hi, #40FFAF)"/>
               </div>
             </footer>
           </div>
