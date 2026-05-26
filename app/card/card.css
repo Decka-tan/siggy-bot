@@ -274,13 +274,14 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR/UR name: solid black + white outline + glow for bold pop */
+/* SSR/UR name: solid black, bigger font, white glow for contrast */
 .rc-r-ssr .rc-name,
 .rc-r-ur  .rc-name {
   color: #000000;
   -webkit-text-fill-color: #000000;
-  -webkit-text-stroke: 1px rgba(255,255,255,0.85);
-  text-shadow: 0 0 6px rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.3);
+  -webkit-text-stroke: 0.5px rgba(255,255,255,0.85);
+  font-size: 18px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.9), 0 0 4px rgba(255,255,255,0.6);
   opacity: 1; animation: none;
 }
 /* SSR/UR REP float: solid black + white outline + glow */
@@ -290,7 +291,7 @@
 .rc-r-ur  .rc-rep-float .rc-rep-val {
   color: #000000;
   -webkit-text-fill-color: #000000;
-  -webkit-text-stroke: 1px rgba(255,255,255,0.85);
+  -webkit-text-stroke: 0.5px rgba(255,255,255,0.85);
   text-shadow: 0 0 6px rgba(255,255,255,0.55), 0 1px 3px rgba(0,0,0,0.3);
 }
 
