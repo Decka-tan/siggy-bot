@@ -274,19 +274,40 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR name: gold gradient — same approach as SR/R */
+/* SSR name: gold gradient + white stroke outline + dark drop shadow */
 .rc-r-ssr .rc-name {
   background: linear-gradient(120deg, #FFD700, #ffe8a0, #FFA500);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
   opacity: 1; animation: none;
 }
-/* UR name: rainbow gradient */
+/* UR name: rainbow gradient + white stroke outline + dark drop shadow */
 .rc-r-ur .rc-name {
   background: linear-gradient(120deg, #ff5fb8, #ffd84a, #5fffb8, #5fb8ff, #c4a5ff, #ff5fb8);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
   opacity: 1; animation: none;
+}
+/* SSR/UR REP float: same gradient + stroke + shadow as name */
+.rc-r-ssr .rc-rep-float .rc-rep-label,
+.rc-r-ssr .rc-rep-float .rc-rep-val {
+  background: linear-gradient(120deg, #FFD700, #ffe8a0, #FFA500);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
+}
+.rc-r-ur .rc-rep-float .rc-rep-label,
+.rc-r-ur .rc-rep-float .rc-rep-val {
+  background: linear-gradient(120deg, #ff5fb8, #ffd84a, #5fffb8, #5fb8ff, #c4a5ff, #ff5fb8);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: 0.75px rgba(255,255,255,0.85);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.55);
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
