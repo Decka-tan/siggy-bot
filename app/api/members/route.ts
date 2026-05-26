@@ -106,12 +106,20 @@ async function fetchContributors(): Promise<ContributorMember[]> {
   // Paginate through all guild members
   // Safety cap: 150 pages × 1000 = 150k
   for (let page = 0; page < 150; page++) {
-    const res = await fetch(
-      `${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`,
-      { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
-    );
-    if (!res.ok) {
-      console.warn(`[members] pagination stopped at page ${page}, status ${res.status}`);
+    // Retry up to 3 times on rate-limit (429)
+    let res: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      res = await fetch(
+        `${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`,
+        { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
+      );
+      if (res.status !== 429) break;
+      const retryAfter = parseFloat(res.headers.get('Retry-After') || '1');
+      console.warn(`[members] rate-limited at page ${page}, waiting ${retryAfter}s`);
+      await new Promise(r => setTimeout(r, retryAfter * 1000 + 200));
+    }
+    if (!res || !res.ok) {
+      console.warn(`[members] pagination stopped at page ${page}, status ${res?.status}`);
       break;
     }
 
