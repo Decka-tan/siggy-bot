@@ -55,14 +55,19 @@ export default function BatchGeneratorPage() {
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // batch queue
-  const [batch, setBatch]     = useState<BatchItem[]>([]);
-  const [genAll, setGenAll]   = useState(false);
-  const [zipping, setZipping] = useState(false);
+  const [batch, setBatch]           = useState<BatchItem[]>([]);
+  const [genAll, setGenAll]         = useState(false);
+  const [zipping, setZipping]       = useState(false);
+  const [genProgress, setGenProgress] = useState<{ current: number; total: number } | null>(null);
+  const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'done' | 'error'>('all');
+  const [bulkType, setBulkType]     = useState('');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const LS_KEY = 'ritual-members-cache-v2';
-  const LS_TTL = 12 * 60 * 60 * 1000; // 12 hours
+  const LS_KEY   = 'ritual-members-cache-v2';
+  const LS_TTL   = 12 * 60 * 60 * 1000;
+  const QUEUE_KEY = 'ritual-batch-queue-v1';
 
   /* load member list — localStorage first, Discord only when stale or forced */
   const loadMembers = useCallback(async (force = false) => {
@@ -98,6 +103,28 @@ export default function BatchGeneratorPage() {
   }, []);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  // Restore queue from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(QUEUE_KEY);
+      if (raw) {
+        const saved: BatchItem[] = JSON.parse(raw);
+        if (Array.isArray(saved) && saved.length > 0) setBatch(saved);
+      }
+    } catch {}
+  }, []);
+
+  // Persist queue on every change (skip card data — too large)
+  useEffect(() => {
+    try {
+      const toSave = batch.map(({ card, ...rest }) => ({
+        ...rest, card: null,
+        status: rest.status === 'loading' ? 'idle' : rest.status,
+      }));
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(toSave));
+    } catch {}
+  }, [batch]);
 
   const onSearchChange = (q: string) => {
     setSearchQuery(q);
@@ -151,6 +178,25 @@ export default function BatchGeneratorPage() {
     });
   }, [allMembers, filter, generatedIds]);
 
+  /* multi-select */
+  const toggleSelect = (uid: string) => setSelectedIds(prev => {
+    const next = new Set(prev);
+    next.has(uid) ? next.delete(uid) : next.add(uid);
+    return next;
+  });
+  const addSelected = () => {
+    filtered.filter(m => selectedIds.has(m.userId) && !inBatch(m.userId)).forEach(addMember);
+    setSelectedIds(new Set());
+  };
+
+  /* filtered queue */
+  const filteredBatch = useMemo(() => {
+    if (queueFilter === 'pending') return batch.filter(b => b.status === 'idle' || b.status === 'loading');
+    if (queueFilter === 'done')    return batch.filter(b => b.status === 'done');
+    if (queueFilter === 'error')   return batch.filter(b => b.status === 'error');
+    return batch;
+  }, [batch, queueFilter]);
+
   /* batch helpers */
   const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
   const deriveTypeFromRoles = (roles: string[]): string => {
@@ -196,11 +242,15 @@ export default function BatchGeneratorPage() {
   };
 
   const generateAll = async () => {
+    const pending = batch.filter(b => b.status !== 'done' && b.status !== 'loading');
     setGenAll(true);
-    for (const item of batch.filter(b => b.status !== 'done' && b.status !== 'loading')) {
-      await generateOne(item);
+    setGenProgress({ current: 0, total: pending.length });
+    for (let i = 0; i < pending.length; i++) {
+      await generateOne(pending[i]);
+      setGenProgress({ current: i + 1, total: pending.length });
     }
     setGenAll(false);
+    setGenProgress(null);
   };
 
   /* render card to PNG data-url */
@@ -373,39 +423,50 @@ export default function BatchGeneratorPage() {
             <div className="batch-browser-count">
               {listLoading
                 ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
-                : `${filtered.length} remaining${generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}`
+                : <>
+                    <span>{filtered.length} remaining{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
+                    {selectedIds.size > 0 && (
+                      <button className="gen-btn gen-btn-primary" onClick={addSelected}
+                        style={{ padding: '3px 8px', fontSize: 11, marginLeft: 'auto' }}>
+                        + Add {selectedIds.size} selected
+                      </button>
+                    )}
+                  </>
               }
             </div>
           </div>
 
           <div className="batch-member-list">
             {filtered.map(m => {
-              const added = inBatch(m.userId);
+              const added    = inBatch(m.userId);
+              const selected = selectedIds.has(m.userId);
               return (
-                <button
-                  key={m.userId}
-                  className={`batch-member-row${added ? ' is-added' : ''}`}
-                  onClick={() => !added && addMember(m)}
-                  disabled={added}
-                >
-                  <img src={m.avatarUrl} alt="" className="batch-member-avatar"
-                    onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
-                  <div className="batch-member-info">
-                    <span className="batch-member-name">{m.displayName}</span>
-                    <span className="batch-member-sub">@{m.username}</span>
-                  </div>
-                  <div className="batch-member-right">
-                    {m.contributorRole && (
-                      <span className="batch-member-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
-                        {m.contributorRole}
-                      </span>
-                    )}
-                    {added
-                      ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
-                      : <span className="batch-member-add">+</span>
-                    }
-                  </div>
-                </button>
+                <div key={m.userId} className={`batch-member-row${added ? ' is-added' : ''}${selected ? ' is-selected' : ''}`}>
+                  {!added && (
+                    <input type="checkbox" className="batch-cb" checked={selected}
+                      onChange={() => toggleSelect(m.userId)}
+                      onClick={e => e.stopPropagation()}/>
+                  )}
+                  <button className="batch-member-btn" onClick={() => !added && addMember(m)} disabled={added}>
+                    <img src={m.avatarUrl} alt="" className="batch-member-avatar"
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                    <div className="batch-member-info">
+                      <span className="batch-member-name">{m.displayName}</span>
+                      <span className="batch-member-sub">@{m.username}</span>
+                    </div>
+                    <div className="batch-member-right">
+                      {m.contributorRole && (
+                        <span className="batch-member-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
+                          {m.contributorRole}
+                        </span>
+                      )}
+                      {added
+                        ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
+                        : <span className="batch-member-add">+</span>
+                      }
+                    </div>
+                  </button>
+                </div>
               );
             })}
             {listLoaded && filtered.length === 0 && (
@@ -421,22 +482,53 @@ export default function BatchGeneratorPage() {
           <div className="batch-queue-title">
             <span>Queue {batch.length > 0 && <span style={{ color: '#A3A3A3', fontWeight: 400 }}>({batch.length})</span>}</span>
             {batch.length > 0 && (
-              <button
-                className="gen-btn gen-btn-ghost"
-                onClick={() => setBatch([])}
-                title="Clear all"
-                style={{ padding: '3px 8px', fontSize: 11, marginLeft: 'auto' }}
-              >
+              <button className="gen-btn gen-btn-ghost" onClick={() => { setBatch([]); localStorage.removeItem(QUEUE_KEY); }}
+                title="Clear all" style={{ padding: '3px 8px', fontSize: 11, marginLeft: 'auto' }}>
                 <X size={12}/> Clear all
               </button>
             )}
           </div>
+          {batch.length > 0 && (
+            <div className="batch-queue-controls">
+              {/* Filter tabs */}
+              <div className="batch-filter-tabs">
+                {(['all','pending','done','error'] as const).map(f => (
+                  <button key={f} className={`batch-filter-tab${queueFilter === f ? ' active' : ''}`}
+                    onClick={() => setQueueFilter(f)}>
+                    {f === 'all' ? `All (${batch.length})` :
+                     f === 'pending' ? `Pending (${batch.filter(b => b.status === 'idle' || b.status === 'loading').length})` :
+                     f === 'done' ? `Done (${batch.filter(b => b.status === 'done').length})` :
+                     `Error (${batch.filter(b => b.status === 'error').length})`}
+                  </button>
+                ))}
+              </div>
+              {/* Bulk type setter */}
+              <div className="batch-bulk-type">
+                <select className="batch-select" value={bulkType} onChange={e => setBulkType(e.target.value)}>
+                  <option value="">Set type for all…</option>
+                  {TYPE_OPTIONS.map(t => <option key={t} value={t}>{TYPE_LABELS[t]}</option>)}
+                </select>
+                {bulkType && (
+                  <button className="gen-btn gen-btn-primary"
+                    onClick={() => { setBatch(prev => prev.map(b => b.status !== 'done' ? { ...b, typeOverride: bulkType } : b)); setBulkType(''); }}
+                    style={{ padding: '5px 8px', fontSize: 11 }}>Apply</button>
+                )}
+              </div>
+              {/* Progress bar */}
+              {genProgress && (
+                <div className="batch-progress">
+                  <div className="batch-progress-bar" style={{ width: `${(genProgress.current / genProgress.total) * 100}%` }}/>
+                  <span className="batch-progress-label">{genProgress.current} / {genProgress.total}</span>
+                </div>
+              )}
+            </div>
+          )}
 
           {batch.length === 0 ? (
             <div className="batch-empty">← Pick members from the list</div>
           ) : (
             <div className="batch-queue-list">
-              {batch.map(item => (
+              {filteredBatch.map(item => (
                 <div key={item.userId} className="batch-queue-row">
                   <img src={item.avatarUrl} alt="" className="batch-q-avatar"
                     onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
@@ -474,24 +566,37 @@ export default function BatchGeneratorPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="batch-q-actions">
-                    {item.status === 'error' && <span style={{ fontSize: 9, color: '#f87171' }}>ERR</span>}
-                    {item.status === 'done' && <Check size={12} style={{ color: '#40FFAF' }}/>}
-                    <button
-                      className="gen-btn gen-btn-primary"
-                      onClick={() => generateOne(item)}
-                      disabled={item.status === 'loading'}
-                      style={{ padding: '5px 8px', fontSize: 11, minWidth: 38 }}
-                    >
-                      {item.status === 'loading'
-                        ? <span className="batch-spin" style={{ fontSize: 14 }}>⟳</span>
-                        : item.status === 'done' ? <RefreshCw size={11}/> : 'Gen'
-                      }
-                    </button>
-                    <button className="gen-btn gen-btn-ghost" onClick={() => removeMember(item.userId)} style={{ padding: '5px 8px' }}>
-                      <X size={12}/>
-                    </button>
+                  {/* Actions + thumbnail */}
+                  <div className="batch-q-right">
+                    <div className="batch-q-actions">
+                      {item.status === 'error' && <span style={{ fontSize: 9, color: '#f87171' }}>ERR</span>}
+                      <button
+                        className="gen-btn gen-btn-primary"
+                        onClick={() => generateOne(item)}
+                        disabled={item.status === 'loading'}
+                        style={{ padding: '5px 8px', fontSize: 11, minWidth: 38 }}
+                      >
+                        {item.status === 'loading'
+                          ? <span className="batch-spin" style={{ fontSize: 14 }}>⟳</span>
+                          : item.status === 'done' ? <RefreshCw size={11}/> : 'Gen'
+                        }
+                      </button>
+                      <button className="gen-btn gen-btn-ghost" onClick={() => removeMember(item.userId)} style={{ padding: '5px 8px' }}>
+                        <X size={12}/>
+                      </button>
+                    </div>
+                    {item.status === 'done' && item.card && (() => {
+                      const isLarge = item.rarity === 'SSR' || item.rarity === 'UR';
+                      const scale   = isLarge ? 80 / 468 : 80 / 360;
+                      const h       = Math.round((isLarge ? 655 : 504) * scale);
+                      return (
+                        <div style={{ width: 80, height: h, overflow: 'hidden', borderRadius: 8, flexShrink: 0, position: 'relative', marginTop: 6 }}>
+                          <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none', position: 'absolute' }}>
+                            <RitualCard {...item.card}/>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               ))}
@@ -557,12 +662,20 @@ export default function BatchGeneratorPage() {
           flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #262626 transparent;
         }
         .batch-member-row {
-          width: 100%; background: transparent; border: none; border-bottom: 1px solid #111;
-          display: flex; align-items: center; gap: 10px; padding: 9px 16px;
-          cursor: pointer; text-align: left; transition: background 80ms;
+          background: transparent; border-bottom: 1px solid #111;
+          display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 16px;
+          transition: background 80ms;
         }
-        .batch-member-row:hover:not(:disabled) { background: rgba(255,215,0,0.05); }
-        .batch-member-row.is-added { opacity: 0.45; cursor: default; }
+        .batch-member-row:hover:not(.is-added) { background: rgba(255,215,0,0.05); }
+        .batch-member-row.is-added { opacity: 0.45; }
+        .batch-member-row.is-selected { background: rgba(255,215,0,0.08); }
+        .batch-cb { width: 14px; height: 14px; flex-shrink: 0; accent-color: #FFD700; cursor: pointer; }
+        .batch-member-btn {
+          flex: 1; background: transparent; border: none;
+          display: flex; align-items: center; gap: 10px;
+          cursor: pointer; text-align: left; padding: 5px 0; min-width: 0;
+        }
+        .batch-member-btn:disabled { cursor: default; }
         .batch-member-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; background: #1a1a1a; object-fit: cover; }
         .batch-member-info { flex: 1; min-width: 0; }
         .batch-member-name { display: block; font-size: 12px; font-weight: 700; color: #FAFAFA; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -599,7 +712,34 @@ export default function BatchGeneratorPage() {
         .batch-q-name > span:first-child { font-size: 12px; font-weight: 700; color: #FAFAFA; }
         .batch-q-rarity { font-size: 8px; font-weight: 900; padding: 1px 4px; border-radius: 3px; border: 1px solid; flex-shrink: 0; }
         .batch-q-fields { display: flex; gap: 8px; flex-wrap: wrap; }
-        .batch-q-actions { display: flex; flex-direction: column; gap: 4px; align-items: center; flex-shrink: 0; }
+        .batch-q-right { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 4px; }
+        .batch-q-actions { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+        /* Queue controls bar */
+        .batch-queue-controls {
+          padding: 8px 16px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0;
+          display: flex; flex-direction: column; gap: 6px;
+        }
+        .batch-filter-tabs { display: flex; gap: 4px; }
+        .batch-filter-tab {
+          background: transparent; border: 1px solid #222; border-radius: 5px; color: #606060;
+          font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+          padding: 3px 7px; cursor: pointer; transition: all 100ms;
+        }
+        .batch-filter-tab:hover { background: #1a1a1a; color: #FAFAFA; }
+        .batch-filter-tab.active { background: rgba(255,215,0,0.12); border-color: #FFD700; color: #FFD700; }
+        .batch-bulk-type { display: flex; gap: 6px; align-items: center; }
+        /* Progress bar */
+        .batch-progress {
+          position: relative; height: 18px; background: #111; border-radius: 4px; overflow: hidden;
+        }
+        .batch-progress-bar {
+          position: absolute; inset: 0; background: linear-gradient(90deg, #40FFAF, #FFD700);
+          border-radius: 4px; transition: width 300ms ease;
+        }
+        .batch-progress-label {
+          position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+          font-size: 9px; font-weight: 800; color: #050505; letter-spacing: 0.06em;
+        }
         .batch-field { display: flex; flex-direction: column; gap: 3px; }
         .batch-field-label { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #505050; }
         .batch-select {

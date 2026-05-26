@@ -286,11 +286,11 @@
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
   font-weight: 700;
   text-shadow:
-    -0.75px -0.75px 0 #fff,  0.75px -0.75px 0 #fff,
-    -0.75px  0.75px 0 #fff,  0.75px  0.75px 0 #fff,
-    -0.75px  0      0 #fff,  0.75px  0      0 #fff,
-     0      -0.75px 0 #fff,  0       0.75px 0 #fff,
-     0       2px    4px rgba(0,0,0,0.25);
+    -0.4px -0.4px 0 #fff,  0.4px -0.4px 0 #fff,
+    -0.4px  0.4px 0 #fff,  0.4px  0.4px 0 #fff,
+    -0.4px  0     0 #fff,  0.4px  0     0 #fff,
+     0     -0.4px 0 #fff,  0      0.4px 0 #fff,
+     0      2px   4px rgba(0,0,0,0.25);
   opacity: 1;
   animation: none;
 }
