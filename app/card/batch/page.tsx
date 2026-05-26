@@ -67,16 +67,25 @@ export default function BatchGeneratorPage() {
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
-  /* filtered list */
+  /* IDs that are fully generated — hide from left panel */
+  const generatedIds = useMemo(
+    () => new Set(batch.filter(b => b.status === 'done').map(b => b.userId)),
+    [batch],
+  );
+
+  /* filtered list — exclude already-generated members */
   const filtered = useMemo(() => {
-    if (!filter.trim()) return allMembers;
-    const q = filter.toLowerCase();
-    return allMembers.filter(m =>
-      m.displayName.toLowerCase().includes(q) ||
-      m.username.toLowerCase().includes(q) ||
-      (m.contributorRole || '').toLowerCase().includes(q)
-    );
-  }, [allMembers, filter]);
+    const q = filter.toLowerCase().trim();
+    return allMembers.filter(m => {
+      if (generatedIds.has(m.userId)) return false;
+      if (!q) return true;
+      return (
+        m.displayName.toLowerCase().includes(q) ||
+        m.username.toLowerCase().includes(q) ||
+        (m.contributorRole || '').toLowerCase().includes(q)
+      );
+    });
+  }, [allMembers, filter, generatedIds]);
 
   /* batch helpers */
   const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
@@ -186,13 +195,21 @@ export default function BatchGeneratorPage() {
             <div className="gen-brand-sub">
               {listLoading
                 ? 'Loading contributors from Discord…'
-                : `${allMembers.length} contributors · ${batch.length} queued${doneCount > 0 ? ` · ${doneCount} ready` : ''}`
+                : `${allMembers.length} contributors${doneCount > 0 ? ` · ${doneCount} generated` : ''}${batch.length > doneCount ? ` · ${batch.length - doneCount} queued` : ''}`
               }
             </div>
           </div>
         </div>
         <div className="gen-header-actions">
           <a href="/card" className="gen-btn gen-btn-ghost">Single Card</a>
+          <button
+            className="gen-btn gen-btn-ghost"
+            onClick={loadMembers}
+            disabled={listLoading}
+            title="Refresh contributor list"
+          >
+            <RefreshCw size={13} className={listLoading ? 'batch-spin' : undefined}/>
+          </button>
           {doneCount > 0 && (
             <button className="gen-btn" onClick={saveToFolder} disabled={zipping}>
               <Download size={13}/>
@@ -231,7 +248,7 @@ export default function BatchGeneratorPage() {
             <div className="batch-browser-count">
               {listLoading
                 ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
-                : `${filtered.length} members`
+                : `${filtered.length} remaining${generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}`
               }
             </div>
           </div>

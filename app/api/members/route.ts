@@ -8,16 +8,24 @@ const DISCORD_API = 'https://discord.com/api/v10';
 
 // Roles that qualify as "contributors" — only these members are shown in the batch list
 const CONTRIBUTOR_ROLE_NAMES = new Set([
-  'Radiant Ritualist', 'Foundation Team', 'Mods',
-  'Mage', 'Ritualist', 'Siggy Soulsmith', 'Siggy Architect',
-  'Zealot', 'ritty', 'bitty',
+  'Foundation Team', 'Mods', 'Radiant Ritualist',
+  'Ritualist', 'Siggy Soulsmith', 'Siggy Architect',
+  'ritty', 'Zealot', 'Mage', 'Forerunner', 'bitty',
 ]);
 
+// Sort rank — higher = shown first in batch list (matches user-defined hierarchy)
 const RARITY_RANK: Record<string, number> = {
-  'Radiant Ritualist': 5, 'Foundation Team': 5, 'Mods': 5,
-  'Mage': 4, 'Ritualist': 4, 'Siggy Soulsmith': 4, 'Siggy Architect': 4,
-  'Zealot': 3, 'ritty': 3,
-  'bitty': 2,
+  'Foundation Team':   10,
+  'Mods':               9,
+  'Radiant Ritualist':  8,
+  'Ritualist':          7,
+  'Siggy Soulsmith':    6,
+  'Siggy Architect':    5,
+  'ritty':              4,
+  'Zealot':             4,
+  'Mage':               3,
+  'Forerunner':         2,
+  'bitty':              1,
 };
 
 // ── In-memory cache (30 min) ──────────────────────────────────────────
