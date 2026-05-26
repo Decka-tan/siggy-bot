@@ -495,7 +495,6 @@ export function RitualCard({
               <img src="/Logo_RItual_White.png" alt="Ritual" className="rc-back-mark"/>
               <div className="rc-back-title">RITUAL TCG</div>
               <div className="rc-back-divider"/>
-              <div className="rc-back-year">2026</div>
             </div>
           </div>
           <div className="rc-grain" aria-hidden="true"/>
