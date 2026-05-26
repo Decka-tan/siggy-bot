@@ -314,9 +314,6 @@ export function RitualCard({
             <div className="rc-watermark" aria-hidden="true">
               <div className="rc-watermark-inner">
                 <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-center" alt=""/>
-                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-tl" alt=""/>
-                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-tr" alt=""/>
-                <img src="/Logo_RItual_White.png" className="rc-wm-mark rc-wm-mark-bl" alt=""/>
               </div>
             </div>
             {showPrism && <div className="rc-prism" aria-hidden="true"/>}
