@@ -274,29 +274,33 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR name: black-dominant gold gradient + drop-shadow outline */
+/* SSR name: gold gradient top-to-bottom + paint-order outline */
 .rc-r-ssr .rc-name {
   background: linear-gradient(to bottom, #000 0%, #FFD700 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-text-stroke: 1.5px rgba(255,255,255,0.9); paint-order: stroke fill;
   opacity: 1; animation: none;
 }
-/* UR name: black-dominant pink gradient + drop-shadow outline */
+/* UR name: pink gradient top-to-bottom + paint-order outline */
 .rc-r-ur .rc-name {
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-text-stroke: 1.5px rgba(255,255,255,0.9); paint-order: stroke fill;
   opacity: 1; animation: none;
 }
-/* SSR REP: black-dominant gold gradient + drop-shadow outline */
+/* SSR REP: gold gradient + paint-order outline */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
   background: linear-gradient(to bottom, #000 0%, #FFD700 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-text-stroke: 1.5px rgba(255,255,255,0.9); paint-order: stroke fill;
 }
-/* UR REP: black-dominant pink gradient + drop-shadow outline */
+/* UR REP: pink gradient + paint-order outline */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  -webkit-text-stroke: 1.5px rgba(255,255,255,0.9); paint-order: stroke fill;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
