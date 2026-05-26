@@ -477,16 +477,12 @@
   border-radius: 4px;
   display: flex; align-items: center; gap: 5px;
 }
-.rc-stat-def { border-top-color: #60a5fa; }
-.rc-stat-spd { border-top-color: #a78bfa; }
 .rc-stat-k {
   font-size: 7.5px; font-weight: 900; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--rar-hi); opacity: 0.75; flex-shrink: 0;
 }
-.rc-stat-def .rc-stat-k { color: #60a5fa; }
-.rc-stat-spd .rc-stat-k { color: #a78bfa; }
 .rc-stat-v {
-  font-size: 13px; font-weight: 900; color: #f0f7f2;
+  font-size: 15px; font-weight: 900; color: #f0f7f2;
   letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1;
 }
 
