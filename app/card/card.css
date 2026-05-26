@@ -280,14 +280,16 @@
   background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   opacity: 1; animation: none;
-  padding-left: 3px; overflow: visible;
+  --rc-name-outline-pad: 3px;
+  padding-left: var(--rc-name-outline-pad); overflow: visible;
 }
 .rc-r-ssr .rc-name::before {
   content: attr(data-text);
-  position: absolute; top: 0; left: 0; right: 0;
+  position: absolute; inset: 0;
+  padding-left: var(--rc-name-outline-pad);
   font: inherit; letter-spacing: inherit; text-transform: inherit;
-  white-space: nowrap; overflow: hidden;
-  -webkit-text-stroke: 3px white;
+  white-space: nowrap; overflow: visible;
+  -webkit-text-stroke: 1.4px rgba(255,255,255,0.88);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
@@ -297,14 +299,16 @@
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   opacity: 1; animation: none;
-  padding-left: 3px; overflow: visible;
+  --rc-name-outline-pad: 3px;
+  padding-left: var(--rc-name-outline-pad); overflow: visible;
 }
 .rc-r-ur .rc-name::before {
   content: attr(data-text);
-  position: absolute; top: 0; left: 0; right: 0;
+  position: absolute; inset: 0;
+  padding-left: var(--rc-name-outline-pad);
   font: inherit; letter-spacing: inherit; text-transform: inherit;
-  white-space: nowrap; overflow: hidden;
-  -webkit-text-stroke: 3px white;
+  white-space: nowrap; overflow: visible;
+  -webkit-text-stroke: 1.4px rgba(255,255,255,0.88);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
@@ -321,7 +325,7 @@
   content: attr(data-text);
   position: absolute; top: 0; left: 0; right: 0;
   font: inherit; letter-spacing: inherit;
-  -webkit-text-stroke: 3px white;
+  -webkit-text-stroke: 1.2px rgba(255,255,255,0.86);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
@@ -338,7 +342,7 @@
   content: attr(data-text);
   position: absolute; top: 0; left: 0; right: 0;
   font: inherit; letter-spacing: inherit;
-  -webkit-text-stroke: 3px white;
+  -webkit-text-stroke: 1.2px rgba(255,255,255,0.86);
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
