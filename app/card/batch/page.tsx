@@ -53,10 +53,10 @@ export default function BatchGeneratorPage() {
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
   /* load member list from live Discord */
-  const loadMembers = useCallback(async () => {
+  const loadMembers = useCallback(async (force = false) => {
     setListLoading(true);
     try {
-      const res  = await fetch('/api/members');
+      const res  = await fetch(force ? '/api/members?force=true' : '/api/members');
       const data = await res.json();
       setAllMembers(data.members || []);
       setListLoaded(true);
@@ -204,9 +204,9 @@ export default function BatchGeneratorPage() {
           <a href="/card" className="gen-btn gen-btn-ghost">Single Card</a>
           <button
             className="gen-btn gen-btn-ghost"
-            onClick={loadMembers}
+            onClick={() => loadMembers(true)}
             disabled={listLoading}
-            title="Refresh contributor list"
+            title="Force-refresh from Discord"
           >
             <RefreshCw size={13} className={listLoading ? 'batch-spin' : undefined}/>
           </button>
