@@ -274,49 +274,18 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR name: gold fill + white outline */
+/* SSR name: gold gradient — same approach as SR/R */
 .rc-r-ssr .rc-name {
-  background: none; -webkit-background-clip: unset; background-clip: unset;
-  -webkit-text-fill-color: #C8900A; color: #C8900A;
-  -webkit-text-stroke: 0px transparent;
-  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
-  font-weight: 700;
-  text-shadow:
-    -0.75px -0.75px 0 #fff,  0.75px -0.75px 0 #fff,
-    -0.75px  0.75px 0 #fff,  0.75px  0.75px 0 #fff,
-    -0.75px  0      0 #fff,  0.75px  0      0 #fff,
-     0      -0.75px 0 #fff,  0       0.75px 0 #fff;
+  background: linear-gradient(120deg, #FFD700, #ffe8a0, #FFA500);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
   opacity: 1; animation: none;
 }
-/* UR name: pink fill + white outline */
+/* UR name: rainbow gradient */
 .rc-r-ur .rc-name {
-  background: none; -webkit-background-clip: unset; background-clip: unset;
-  -webkit-text-fill-color: #ff5fb8; color: #ff5fb8;
-  -webkit-text-stroke: 0px transparent;
-  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
-  font-weight: 700;
-  text-shadow:
-    -0.75px -0.75px 0 #fff,  0.75px -0.75px 0 #fff,
-    -0.75px  0.75px 0 #fff,  0.75px  0.75px 0 #fff,
-    -0.75px  0      0 #fff,  0.75px  0      0 #fff,
-     0      -0.75px 0 #fff,  0       0.75px 0 #fff;
-  opacity: 1; animation: none;
-}
-/* SSR/UR REP float: keep black + white outline */
-.rc-rep-float .rc-rep-label,
-.rc-rep-float .rc-rep-val {
-  background: none;
-  -webkit-background-clip: unset; background-clip: unset;
-  -webkit-text-fill-color: #000000; color: #000000;
-  -webkit-text-stroke: 0px transparent;
-  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
-  font-weight: 700;
-  text-shadow:
-    -0.75px -0.75px 0 #fff,  0.75px -0.75px 0 #fff,
-    -0.75px  0.75px 0 #fff,  0.75px  0.75px 0 #fff,
-    -0.75px  0      0 #fff,  0.75px  0      0 #fff,
-     0      -0.75px 0 #fff,  0       0.75px 0 #fff,
-     0       2px    4px rgba(0,0,0,0.25);
+  background: linear-gradient(120deg, #ff5fb8, #ffd84a, #5fffb8, #5fb8ff, #c4a5ff, #ff5fb8);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
   opacity: 1; animation: none;
 }
 
