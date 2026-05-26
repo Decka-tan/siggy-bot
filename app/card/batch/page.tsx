@@ -132,30 +132,38 @@ export default function BatchGeneratorPage() {
     } finally { el.classList.remove('rc-capture'); }
   };
 
-  /* download all as ZIP */
-  const downloadZip = async () => {
+  /* save all PNGs directly to a local folder (File System Access API) */
+  const saveToFolder = async () => {
     const done = batch.filter(b => b.status === 'done' && b.card);
     if (!done.length) return;
-    setZipping(true);
+    setZipping(true); // reuse loading state
     try {
-      const JSZip = (await import('jszip')).default;
-      const zip   = new JSZip();
+      // @ts-ignore — File System Access API (Chrome/Edge)
+      const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
 
       for (const item of done) {
         const dataUrl = await renderCardPng(item.userId);
         if (!dataUrl) continue;
-        // strip data:image/png;base64,
-        const base64 = dataUrl.split(',')[1];
-        const fname  = `${item.username}.png`;
-        zip.file(fname, base64, { base64: true });
+        const blob       = await (await fetch(dataUrl)).blob();
+        const fileHandle = await dir.getFileHandle(`${item.username}.png`, { create: true });
+        const writable   = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
       }
-
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const a    = document.createElement('a');
-      a.href     = URL.createObjectURL(blob);
-      a.download = 'ritual-cards.zip';
-      a.click();
-      URL.revokeObjectURL(a.href);
+    } catch (e: any) {
+      // user cancelled picker or browser unsupported — fall back to individual downloads
+      if (e?.name !== 'AbortError') {
+        const done2 = batch.filter(b => b.status === 'done' && b.card);
+        for (const item of done2) {
+          const dataUrl = await renderCardPng(item.userId);
+          if (!dataUrl) continue;
+          const a    = document.createElement('a');
+          a.href     = dataUrl;
+          a.download = `${item.username}.png`;
+          a.click();
+          await new Promise(r => setTimeout(r, 300));
+        }
+      }
     } finally { setZipping(false); }
   };
 
@@ -186,9 +194,9 @@ export default function BatchGeneratorPage() {
         <div className="gen-header-actions">
           <a href="/card" className="gen-btn gen-btn-ghost">Single Card</a>
           {doneCount > 0 && (
-            <button className="gen-btn" onClick={downloadZip} disabled={zipping}>
+            <button className="gen-btn" onClick={saveToFolder} disabled={zipping}>
               <Download size={13}/>
-              {zipping ? 'Zipping…' : `Download ZIP (${doneCount})`}
+              {zipping ? 'Saving…' : `Save to Folder (${doneCount})`}
             </button>
           )}
           {batch.some(b => b.status !== 'done') && (
