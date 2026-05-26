@@ -474,6 +474,11 @@
   border-bottom: 1px dashed rgba(255,255,255,0.07); flex-shrink: 0;
 }
 .rc-contrib:last-child { border-bottom: none; }
+.rc-contrib-empty {
+  min-height: 34px;
+  border-bottom: 1px dashed rgba(255,255,255,0.07);
+}
+.rc-contrib-empty:last-child { border-bottom: none; }
 .rc-contrib-icon {
   width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
   background: rgba(0,0,0,0.65);
