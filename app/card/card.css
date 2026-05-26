@@ -277,7 +277,7 @@
 /* SSR name: gold fill + white outline */
 .rc-r-ssr .rc-name {
   background: none; -webkit-background-clip: unset; background-clip: unset;
-  -webkit-text-fill-color: #FFD700; color: #FFD700;
+  -webkit-text-fill-color: #C8900A; color: #C8900A;
   -webkit-text-stroke: 0px transparent;
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, sans-serif);
   font-weight: 700;
