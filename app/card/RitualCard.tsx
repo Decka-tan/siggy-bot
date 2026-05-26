@@ -322,11 +322,7 @@ export function RitualCard({
   const ability  = ABILITIES[type] || null;
   const passive  = pickPassive(userId);
 
-  const baseContrib = contributions.length > 0
-    ? contributions.slice(0, 1)
-    : [{ icon: '◆', title: '—', flavor: '' }];
-
-  // Row 1: active ability (type-based), Row 2: passive (userId-hash), Row 3: contribution
+  // Row 1: active ability (type-based), Row 2: passive (userId-hash)
   const displayContribs: { icon?: React.ReactNode | string; title: string; flavor?: string; tag?: string }[] = [];
   if (ability) {
     displayContribs.push({ icon: <TypeIcon type={type} size={11}/> as unknown as string, title: ability.name, flavor: ability.effect, tag: 'ACT' });
@@ -334,7 +330,6 @@ export function RitualCard({
   if (passive) {
     displayContribs.push({ icon: '◈', title: passive.name, flavor: passive.effect, tag: 'PSV' });
   }
-  displayContribs.push(...baseContrib);
 
   const cardStyle = { '--accent': t.color } as React.CSSProperties;
 
