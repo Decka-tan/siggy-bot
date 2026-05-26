@@ -181,6 +181,7 @@ export default function CardGeneratorPage() {
           </div>
         </div>
         <div className="gen-header-actions">
+          <a href="/card/batch" className="gen-btn gen-btn-ghost">Batch</a>
           <button className="gen-btn gen-btn-ghost" onClick={() => { setCard(DEFAULT_CARD); setQuery(''); }}>
             <RefreshCw size={13}/> Reset
           </button>
