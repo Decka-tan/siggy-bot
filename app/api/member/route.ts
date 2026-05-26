@@ -145,6 +145,24 @@ function getActivityData(): Map<string, any> {
 
 const CONTRIBUTOR_ROLES = ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty'];
 
+const ROLE_RANK: Record<string, number> = {
+  'Radiant Ritualist': 5,
+  'Foundation Team':   5,
+  'Mods':              5,
+  'Mage':              4,
+  'Ritualist':         4,
+  'Siggy Soulsmith':   4,
+  'ritty':             3,
+  'bitty':             2,
+};
+
+function deriveRoleRank(roleNames: string[]): number {
+  for (const role of roleNames) {
+    if (ROLE_RANK[role] !== undefined) return ROLE_RANK[role];
+  }
+  return 1;
+}
+
 function deriveType(roleNames: string[]): string {
   if (roleNames.some((r) => r === 'Mods' || r === 'Moderator')) return 'moderator';
   if (roleNames.some((r) => r === 'Events' || r === 'event-manager')) return 'event-manager';
@@ -219,6 +237,7 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
       { icon: '✦', title: '', flavor: '' },
     ],
     contributorRole: roleNames.find((r) => CONTRIBUTOR_ROLES.includes(r)) || null,
+    roleRank: deriveRoleRank(roleNames),
   };
 }
 
@@ -256,6 +275,7 @@ export async function GET(req: NextRequest) {
           rarity: deriveRarity(roleNames),
           contributorRole: roleNames.find((r: string) => CONTRIBUTOR_ROLES.includes(r)) || null,
           globalMessages: stats.globalMessages || 0,
+          roleRank: deriveRoleRank(roleNames),
         };
       });
 
