@@ -236,7 +236,7 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     network: 'Ritual',
     rep,
     atk: rep,                              // days × rarity_mult
-    def: Math.floor(months * rarityMult),  // months × rarity_mult
+    def: Math.floor(rep * 0.6),            // 60% of ATK — always in same range, lower
     spd: roleRank * rarityMult,            // roleRank × rarity_mult
     artist: '',
     contributions: [
