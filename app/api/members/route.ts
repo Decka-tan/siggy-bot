@@ -56,7 +56,7 @@ async function readRedisCache(): Promise<{ members: ContributorMember[]; savedAt
     const redis = await getRedis();
     const raw   = await redis.get(REDIS_KEY);
     if (!raw) return null;
-    return JSON.parse(raw);
+    return JSON.parse(raw as string);
   } catch (e) {
     console.warn('[members] redis read error:', e);
     return null;
@@ -222,7 +222,7 @@ export async function GET(req: NextRequest) {
   try {
     const fresh   = await fetchContributors();
     memCache      = fresh;
-    memExpiry     = Date.now() + CACHE_TTL;
+    memExpiry     = Date.now() + MEM_TTL;
     await writeRedisCache(fresh);
     return NextResponse.json({ members: fresh, source: 'discord', count: fresh.length });
   } catch (e: any) {
