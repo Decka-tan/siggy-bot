@@ -364,7 +364,7 @@ export function RitualCard({
 
             <header className="rc-header">
               <div className="rc-header-left">
-                <h2 className="rc-name" title={name}>{name}</h2>
+                <h2 className="rc-name" data-text={name} title={name}>{name}</h2>
                 {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
               </div>
               <div className="rc-header-right">
@@ -383,8 +383,8 @@ export function RitualCard({
             {/* REP floats outside header for SSR/UR — doesn't affect header height */}
             {rep > 0 && (r === 'SSR' || r === 'UR') && (
               <div className="rc-rep-float">
-                <span className="rc-rep-label">REP</span>
-                <span className="rc-rep-val">{rep}</span>
+                <span className="rc-rep-label" data-text="REP">REP</span>
+                <span className="rc-rep-val" data-text={String(rep)}>{rep}</span>
               </div>
             )}
 
