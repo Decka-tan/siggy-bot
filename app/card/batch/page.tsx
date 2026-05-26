@@ -11,6 +11,7 @@ interface Member {
   displayName:     string;
   avatarUrl:       string;
   rarity:          string;
+  type:            string;
   contributorRole: string | null;
   roleRank:        number;
   roles:           string[];
@@ -26,12 +27,13 @@ interface BatchItem extends Member {
 /* ── Constants ────────────────────────────────────────────────────── */
 const TYPE_OPTIONS = [
   'builder', 'artist', 'threadoor', 'yapper', 'event-enjoyoor',
-  'moderator', 'event-manager', 'team',
+  'moderator', 'event-manager', 'team', 'ambassador',
 ];
 const TYPE_LABELS: Record<string, string> = {
   builder: 'Builder', artist: 'Artist', threadoor: 'Threadoor',
   yapper: 'Yapper', 'event-enjoyoor': 'Event Enjoyoor',
-  moderator: 'Moderator', 'event-manager': 'Event Manager', team: 'Team',
+  moderator: 'Moderator', 'event-manager': 'Event Manager',
+  team: 'Team', ambassador: 'Ambassador',
 };
 const RARITY_COLOR: Record<string, string> = {
   UR: '#ff5fb8', SSR: '#FFD700', SR: '#c084fc', R: '#60a5fa', common: '#40FFAF',
@@ -52,7 +54,7 @@ export default function BatchGeneratorPage() {
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
-  const LS_KEY = 'ritual-members-cache';
+  const LS_KEY = 'ritual-members-cache-v2';
   const LS_TTL = 12 * 60 * 60 * 1000; // 12 hours
 
   /* load member list — localStorage first, Discord only when stale or forced */
@@ -114,7 +116,7 @@ export default function BatchGeneratorPage() {
   const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
   const addMember = (m: Member) => {
     if (inBatch(m.userId)) return;
-    setBatch(prev => [...prev, { ...m, typeOverride: 'builder', xHandle: '', card: null, status: 'idle' }]);
+    setBatch(prev => [...prev, { ...m, typeOverride: m.type || 'builder', xHandle: '', card: null, status: 'idle' }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
   const update = (uid: string, patch: Partial<BatchItem>) =>

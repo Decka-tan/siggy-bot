@@ -38,7 +38,6 @@ async function generateContributions(
 
   const fallback = [
     { icon: '◆', title: '', flavor: '' },
-    { icon: '✦', title: '', flavor: '' },
   ];
 
   try {
@@ -57,22 +56,22 @@ async function generateContributions(
     const res = await deepseek.chat([
       {
         role: 'system',
-        content: 'You write exactly 2 short contribution lines for a TCG-style Web3 community member card. Output format — two lines, each: TITLE | flavor. TITLE = 3-5 words, action-oriented. flavor = 4-7 words, lowercase. No emojis, no markdown, no numbers. If tweet data is provided, use it to make the lines specific to the person.',
+        content: 'You write exactly 1 short contribution line for a TCG-style Web3 community member card. Output format — one line: TITLE | flavor. TITLE = 3-5 words, action-oriented. flavor = 4-7 words, lowercase. No emojis, no markdown, no numbers. If tweet data is provided, use it to make the line specific to the person.',
       },
       {
         role: 'user',
         content: `Member: ${displayName}\nRole: ${topRole}\nType: ${type}\nRarity: ${rarity}\nDays in Ritual: ${rep}${tweetContext}`,
       },
-    ], { temperature: 0.85, maxTokens: 80 });
+    ], { temperature: 0.85, maxTokens: 50 });
 
     const text = res.choices[0]?.message?.content || '';
-    const lines = text.trim().split('\n').filter((l: string) => l.includes('|')).slice(0, 2);
+    const lines = text.trim().split('\n').filter((l: string) => l.includes('|')).slice(0, 1);
 
-    if (lines.length < 2) return fallback;
+    if (lines.length < 1) return fallback;
 
-    const data = lines.map((line: string, i: number) => {
+    const data = lines.map((line: string) => {
       const [title, flavor] = line.split('|').map((s: string) => s.trim());
-      return { icon: i === 0 ? '◆' : '✦', title: title || '', flavor: flavor || '' };
+      return { icon: '◆', title: title || '', flavor: flavor || '' };
     });
 
     contribCache.set(cacheKey, { data, expiry: Date.now() + 60 * 60 * 1000 });
@@ -168,11 +167,11 @@ function deriveRoleRank(roleNames: string[]): number {
 }
 
 function deriveType(roleNames: string[]): string {
-  if (roleNames.some((r) => r === 'Mods' || r === 'Moderator')) return 'moderator';
-  // 'Events' is a notification sub-role — only real event manager staff role triggers this
+  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team'].includes(r))) return 'team';
+  if (roleNames.some(r => r === 'Mods' || r === 'Moderator')) return 'moderator';
   if (roleNames.includes('Event Manager')) return 'event-manager';
-  if (roleNames.includes('Radiant Ritualist')) return 'team';
-  if (roleNames.some((r) => ['Ritualist', 'Zealot', 'ritty'].includes(r))) return 'builder';
+  if (roleNames.includes('Zealot')) return 'ambassador';
+  if (roleNames.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
   if (roleNames.includes('bitty')) return 'yapper';
   return 'yapper';
 }
@@ -243,7 +242,6 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     artist: '',
     contributions: [
       { icon: '◆', title: '', flavor: '' },
-      { icon: '✦', title: '', flavor: '' },
     ],
     contributorRole: roleNames.find((r) => CONTRIBUTOR_ROLES.includes(r)) || null,
     roleRank,

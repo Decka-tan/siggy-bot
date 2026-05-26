@@ -141,7 +141,7 @@
     linear-gradient(175deg, var(--rar-frame-a) 0%, var(--rar-frame-b) 55%, var(--rar-frame-a) 100%);
   padding: 10px 10px 8px;
   display: grid;
-  grid-template-rows: auto auto auto 1fr auto auto auto;
+  grid-template-rows: auto auto auto auto 1fr auto auto auto;
   gap: 5px;
 }
 /* SSR/UR: frame bg adapts to PFP palette via JS-set vars */
@@ -418,6 +418,32 @@
 .rc-cat-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--rar-hi); box-shadow: 0 0 6px var(--rar-hi); flex-shrink: 0; }
 .rc-cat-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .rc-cat-text strong { color: #fff; font-weight: 700; }
+
+/* ── Ability row ── */
+.rc-ability {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 8px;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid var(--rar-hi-soft);
+  border-left: 2.5px solid var(--rar-hi);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.rc-ability-icon {
+  display: flex; align-items: center; flex-shrink: 0;
+  color: var(--rar-hi); opacity: 0.85;
+}
+.rc-ability-name {
+  font-size: 9.5px; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--rar-hi); white-space: nowrap; flex-shrink: 0;
+}
+.rc-ability-sep {
+  font-size: 9px; color: var(--rc-mute); flex-shrink: 0;
+}
+.rc-ability-effect {
+  font-size: 9px; color: #a8b5ad; font-style: italic; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
 
 /* ── Contributions ── */
 .rc-actions { display: flex; flex-direction: column; gap: 3px; padding: 2px 0; min-height: 0; overflow: hidden; }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
+import { ABILITIES } from '@/lib/abilities';
 
 export const TYPES: Record<string, { label: string; color: string; soft: string; deep: string }> = {
   builder:          { label: 'Builder',        color: '#f59e0b', soft: '#fbbf24', deep: '#78350f' },
@@ -11,6 +12,7 @@ export const TYPES: Record<string, { label: string; color: string; soft: string;
   moderator:        { label: 'Moderator',      color: '#94a3b8', soft: '#cbd5e1', deep: '#334155' },
   'event-manager':  { label: 'Event Manager',  color: '#a855f7', soft: '#c4b5fd', deep: '#4c1d95' },
   team:             { label: 'Team',           color: '#40FFAF', soft: '#7affc6', deep: '#0b4d33' },
+  ambassador:       { label: 'Ambassador',     color: '#f43f5e', soft: '#fb7185', deep: '#881337' },
 };
 
 export const RARITY_OPTIONS = ['UR', 'SSR', 'SR', 'R', 'common'] as const;
@@ -76,6 +78,10 @@ const TypeIcon = ({ type, size = 18 }: { type: string; size?: number }) => {
       return <svg {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>;
     case 'event-manager':
       return <svg {...p}><path d="M8 2v4M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/></svg>;
+    case 'team':
+      return <svg {...p}><path d="M4 17L3 7l5.5 4L12 4l3.5 7L21 7l-1 10H4z"/><path d="M9 17v4M15 17v4"/></svg>;
+    case 'ambassador':
+      return <svg {...p}><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/><path d="M2 12h20"/></svg>;
     default:
       return <svg {...p}><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.735H5.81a1 1 0 0 1-.957-.735L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/><path d="M5 21h14"/></svg>;
   }
@@ -288,8 +294,10 @@ export function RitualCard({
   // cleanup rAF on unmount
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, [runSpring]);
 
+  const ability = ABILITIES[type] || null;
+
   const displayContribs = contributions.length > 0
-    ? contributions.slice(0, 2)
+    ? contributions.slice(0, 1)
     : [{ icon: '◆', title: '—', flavor: '' }];
 
   const cardStyle = { '--accent': t.color } as React.CSSProperties;
@@ -368,6 +376,17 @@ export function RitualCard({
                 Ritual <strong>{t.label}</strong>
               </span>
             </div>
+
+            {ability && (
+              <div className="rc-ability">
+                <span className="rc-ability-icon" aria-hidden="true">
+                  <TypeIcon type={type} size={10}/>
+                </span>
+                <span className="rc-ability-name">{ability.name}</span>
+                <span className="rc-ability-sep">—</span>
+                <span className="rc-ability-effect">{ability.effect}</span>
+              </div>
+            )}
 
             <div className="rc-actions">
               {displayContribs.map((c, i) => (

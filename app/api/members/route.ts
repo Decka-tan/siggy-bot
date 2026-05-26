@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
+import { getRedis } from '@/lib/redis-client';
 
 export const runtime = 'nodejs';
 
@@ -29,9 +29,10 @@ const RARITY_RANK: Record<string, number> = {
   'bitty':              1,
 };
 
-// ── Disk cache — survives redeploys (Vercel /tmp persists across warm instances) ──
-const CACHE_FILE = '/tmp/ritual-members-cache.json';
-const CACHE_TTL  = 6 * 60 * 60 * 1000; // 6 hours
+// ── Redis cache — survives redeploys AND cold starts AND cross-device ──
+const REDIS_KEY = 'ritual:members:v1';
+const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours (ms, for in-memory)
+const REDIS_TTL = 6 * 60 * 60;        // 6 hours (seconds, for Redis EX)
 
 export interface ContributorMember {
   userId:          string;
@@ -39,28 +40,35 @@ export interface ContributorMember {
   displayName:     string;
   avatarUrl:       string;
   rarity:          string;
+  type:            string;
   contributorRole: string | null;
   roleRank:        number;
   roles:           string[];
 }
 
-// ── In-memory layer (fast path within same instance) ─────────────────────────
+// ── In-memory layer (fast path within same warm instance) ────────────────────
 let memCache: ContributorMember[] | null = null;
 let memExpiry = 0;
 let loading   = false;
 
-function readDiskCache(): { members: ContributorMember[]; savedAt: number } | null {
+async function readRedisCache(): Promise<{ members: ContributorMember[]; savedAt: number } | null> {
   try {
-    const raw = fs.readFileSync(CACHE_FILE, 'utf8');
+    const redis = await getRedis();
+    const raw   = await redis.get(REDIS_KEY);
+    if (!raw) return null;
     return JSON.parse(raw);
-  } catch { return null; }
+  } catch (e) {
+    console.warn('[members] redis read error:', e);
+    return null;
+  }
 }
 
-function writeDiskCache(members: ContributorMember[]) {
+async function writeRedisCache(members: ContributorMember[]) {
   try {
-    fs.writeFileSync(CACHE_FILE, JSON.stringify({ members, savedAt: Date.now() }));
+    const redis = await getRedis();
+    await redis.set(REDIS_KEY, JSON.stringify({ members, savedAt: Date.now() }), { EX: REDIS_TTL });
   } catch (e) {
-    console.warn('[members] could not write disk cache:', e);
+    console.warn('[members] redis write error:', e);
   }
 }
 
@@ -90,6 +98,16 @@ function deriveRarity(roleNames: string[]): string {
   if (roleNames.some(r => ['ritty', 'Mage'].includes(r))) return 'SR';
   if (roleNames.some(r => ['bitty', 'Forerunner'].includes(r))) return 'R';
   return 'common';
+}
+
+function deriveType(roleNames: string[]): string {
+  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team'].includes(r))) return 'team';
+  if (roleNames.some(r => r === 'Mods' || r === 'Moderator')) return 'moderator';
+  if (roleNames.includes('Event Manager')) return 'event-manager';
+  if (roleNames.includes('Zealot')) return 'ambassador';
+  if (roleNames.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
+  if (roleNames.includes('bitty')) return 'yapper';
+  return 'yapper';
 }
 
 async function fetchContributors(): Promise<ContributorMember[]> {
@@ -143,6 +161,7 @@ async function fetchContributors(): Promise<ContributorMember[]> {
         displayName:     m.nick || m.user.global_name || m.user.username,
         avatarUrl:       `/api/proxy-avatar?url=${encodeURIComponent(getAvatarUrl(m))}`,
         rarity,
+        type:            deriveType(roleNames),
         contributorRole: topRole,
         roleRank,
         roles:           roleNames.filter(r => CONTRIBUTOR_ROLE_NAMES.has(r)),
@@ -171,21 +190,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ members: memCache, source: 'memory' });
   }
 
-  // 2. Disk cache hit (survives redeploys)
+  // 2. Redis hit (survives cold starts, redeploys, cross-device)
   if (!force) {
-    const disk = readDiskCache();
-    if (disk && Date.now() - disk.savedAt < CACHE_TTL) {
-      // Warm in-memory from disk so next request is instant
-      memCache  = disk.members;
-      memExpiry = disk.savedAt + CACHE_TTL;
-      return NextResponse.json({ members: disk.members, source: 'disk', savedAt: disk.savedAt });
+    const cached = await readRedisCache();
+    if (cached && Date.now() - cached.savedAt < CACHE_TTL) {
+      memCache  = cached.members;
+      memExpiry = cached.savedAt + CACHE_TTL;
+      return NextResponse.json({ members: cached.members, source: 'redis', savedAt: cached.savedAt });
     }
   }
 
   // 3. Another request already fetching — return best available stale data
   if (loading) {
-    const disk = readDiskCache();
-    return NextResponse.json({ members: memCache ?? disk?.members ?? [], source: 'stale', loading: true });
+    const cached = await readRedisCache();
+    return NextResponse.json({ members: memCache ?? cached?.members ?? [], source: 'stale', loading: true });
   }
 
   // 4. Full Discord fetch
@@ -194,13 +212,13 @@ export async function GET(req: NextRequest) {
     const fresh   = await fetchContributors();
     memCache      = fresh;
     memExpiry     = Date.now() + CACHE_TTL;
-    writeDiskCache(fresh);
+    await writeRedisCache(fresh);
     return NextResponse.json({ members: fresh, source: 'discord', count: fresh.length });
   } catch (e: any) {
-    // On error, fall back to stale disk cache rather than returning empty
-    const disk = readDiskCache();
-    if (disk) {
-      return NextResponse.json({ members: disk.members, source: 'disk-fallback', error: e.message });
+    // On error, fall back to stale Redis cache rather than returning empty
+    const cached = await readRedisCache();
+    if (cached) {
+      return NextResponse.json({ members: cached.members, source: 'redis-fallback', error: e.message });
     }
     return NextResponse.json({ error: e.message }, { status: 500 });
   } finally {
