@@ -651,7 +651,7 @@ export default function BatchGeneratorPage() {
                     </div>
                   </div>
 
-                  {/* Actions + thumbnail */}
+                  {/* Actions + compact status. Full cards render offscreen only for PNG export. */}
                   <div className="batch-q-right">
                     <div className="batch-q-actions">
                       {item.status === 'error' && <span style={{ fontSize: 9, color: '#f87171' }}>ERR</span>}
@@ -670,26 +670,9 @@ export default function BatchGeneratorPage() {
                         <X size={12}/>
                       </button>
                     </div>
-                    {item.status === 'done' && item.card && (() => {
-                      const isLarge = item.rarity === 'SSR' || item.rarity === 'UR';
-                      const scale   = isLarge ? 80 / 468 : 80 / 360;
-                      const h       = Math.round((isLarge ? 655 : 504) * scale);
-                      const count   = item.allRarityCards?.length ?? 1;
-                      return (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, marginTop: 6 }}>
-                          <div style={{ width: 80, height: h, overflow: 'hidden', borderRadius: 8, flexShrink: 0, position: 'relative' }}>
-                            <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none', position: 'absolute' }}>
-                              <RitualCard {...item.card}/>
-                            </div>
-                          </div>
-                          {count > 1 && (
-                            <span style={{ fontSize: 8, color: '#606060', fontWeight: 700, letterSpacing: '0.08em' }}>
-                              +{count - 1} variants
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
+                    {item.status === 'done' && item.allRarityCards?.length && (
+                      <span className="batch-ready-pill">{item.allRarityCards.length} PNG</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -812,6 +795,12 @@ export default function BatchGeneratorPage() {
         .batch-q-fields { display: flex; gap: 8px; flex-wrap: wrap; }
         .batch-q-right { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; gap: 4px; }
         .batch-q-actions { display: flex; flex-direction: column; gap: 4px; align-items: center; }
+        .batch-ready-pill {
+          font-size: 8px; font-weight: 900; letter-spacing: 0.08em;
+          color: #40FFAF; border: 1px solid rgba(64,255,175,0.28);
+          background: rgba(64,255,175,0.08); border-radius: 999px;
+          padding: 2px 6px; white-space: nowrap;
+        }
         /* Queue controls bar */
         .batch-queue-controls {
           padding: 8px 16px; border-bottom: 1px solid #1a1a1a; flex-shrink: 0;
