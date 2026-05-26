@@ -746,15 +746,40 @@
     repeating-linear-gradient(90deg,  rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 24px),
     repeating-linear-gradient(45deg,  rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 34px);
 }
+.rc-back-glow {
+  position: absolute; inset: 0; border-radius: 18px; pointer-events: none;
+  background: radial-gradient(ellipse 70% 60% at 50% 50%, var(--rar-hi-soft) 0%, transparent 70%);
+  opacity: 0.35;
+}
+.rc-back-content {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; gap: 14px; z-index: 1;
+}
+.rc-back-mark {
+  width: 90px; height: 90px; object-fit: contain;
+  filter: drop-shadow(0 0 18px var(--rar-hi));
+  opacity: 0.95;
+}
 .rc-back-title {
   font-size: 20px; font-weight: 900; letter-spacing: 0.22em;
   color: var(--rar-hi); text-shadow: 0 0 28px var(--rar-glow);
-  position: relative;
   font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
 }
-.rc-back-year {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.18em;
-  color: rgba(255,255,255,0.3); position: relative;
+.rc-back-divider {
+  width: 60px; height: 1.5px;
+  background: linear-gradient(to right, transparent, var(--rar-hi), transparent);
+  opacity: 0.6;
+}
+.rc-back-rarity-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.rc-back-rar-badge {
+  font-size: 9px; font-weight: 900; letter-spacing: 0.1em;
+  padding: 2px 7px; border-radius: 4px;
+}
+.rc-back-stars {
+  font-size: 10px; color: var(--rar-hi);
+  text-shadow: 0 0 6px var(--rar-hi); letter-spacing: -0.5px;
 }
 
 /* ── Copyright strip (foil border bottom) ── */
