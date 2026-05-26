@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { getDeepSeekClient } from '@/lib/deepseek-client';
 import { computeStats } from '@/lib/card-stats';
 
@@ -120,29 +118,6 @@ async function getGuildRoles(): Promise<Map<string, string>> {
   return rolesCache;
 }
 
-let activityCache: Map<string, any> | null = null;
-
-function getActivityData(): Map<string, any> {
-  if (activityCache) return activityCache;
-  activityCache = new Map();
-  try {
-    const p = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
-    if (fs.existsSync(p)) {
-      const data = JSON.parse(fs.readFileSync(p, 'utf8'));
-      (data.members || []).forEach((m: any) => {
-        if (m.userId) {
-          activityCache!.set(m.userId, {
-            contributionsCount: m.contributionsCount || 0,
-            eventsCount: m.eventsCount || 0,
-            globalMessages: m.globalMessages || 0,
-          });
-        }
-      });
-    }
-  } catch {}
-  return activityCache;
-}
-
 const CONTRIBUTOR_ROLES = ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty'];
 
 const ROLE_RANK: Record<string, number> = {
@@ -196,7 +171,7 @@ function getAvatarUrl(member: any): string {
   return `https://cdn.discordapp.com/embed/avatars/${parseInt(uid.slice(-1)) % 5}.png`;
 }
 
-function buildCardData(member: any, roleNames: string[], stats: any, memberCount: number) {
+function buildCardData(member: any, roleNames: string[], memberCount: number) {
   const uid: string = member.user.id;
   const username: string = member.user.username;
   const displayName: string = member.nick || member.user.global_name || username;
@@ -224,9 +199,9 @@ function buildCardData(member: any, roleNames: string[], stats: any, memberCount
     joinDate,
     joinedAt: member.joined_at,
     roles: roleNames.filter((r) => !/^\d+$/.test(r) && r !== '@everyone'),
-    contributionsCount: stats.contributionsCount || 0,
-    eventsCount: stats.eventsCount || 0,
-    globalMessages: stats.globalMessages || 0,
+    contributionsCount: 0,
+    eventsCount: 0,
+    globalMessages: 0,
     // card fields (live data only — no static stats on card)
     name: displayName,
     pfpUrl: `/api/proxy-avatar?url=${encodeURIComponent(getAvatarUrl(member))}`,
@@ -261,7 +236,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [rolesMap, activityData, memberCount] = await Promise.all([getGuildRoles(), Promise.resolve(getActivityData()), getGuildMemberCount()]);
+    const [rolesMap, memberCount] = await Promise.all([getGuildRoles(), getGuildMemberCount()]);
 
     if (autocomplete && username) {
       // Fast autocomplete: use existing static contributor API logic
@@ -274,7 +249,6 @@ export async function GET(req: NextRequest) {
 
       const results = members.map((m) => {
         const roleNames = (m.roles || []).map((id: string) => rolesMap.get(id) || id);
-        const stats = activityData.get(m.user.id) || {};
         return {
           userId: m.user.id,
           username: m.user.username,
@@ -283,7 +257,7 @@ export async function GET(req: NextRequest) {
           rarity: deriveRarity(roleNames),
           type: deriveType(roleNames),
           contributorRole: roleNames.find((r: string) => CONTRIBUTOR_ROLES.includes(r)) || null,
-          globalMessages: stats.globalMessages || 0,
+          globalMessages: 0,
           roleRank: deriveRoleRank(roleNames),
         };
       });
@@ -320,8 +294,7 @@ export async function GET(req: NextRequest) {
     }
 
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
-    const stats = activityData.get(member.user.id) || {};
-    const cardData = buildCardData(member, roleNames, stats, memberCount);
+    const cardData = buildCardData(member, roleNames, memberCount);
 
     // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
     cardData.contributions = await generateContributions(

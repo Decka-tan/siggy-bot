@@ -280,6 +280,7 @@
   background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   opacity: 1; animation: none;
+  padding-left: 3px; overflow: visible;
 }
 .rc-r-ssr .rc-name::before {
   content: attr(data-text);
@@ -296,6 +297,7 @@
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   opacity: 1; animation: none;
+  padding-left: 3px; overflow: visible;
 }
 .rc-r-ur .rc-name::before {
   content: attr(data-text);
@@ -532,10 +534,15 @@
 }
 .rc-stat-cell {
   padding: 4px 6px 5px;
-  background: var(--pfp-bg-a, var(--rar-frame-a));
+  background: var(--rar-frame-a);
   border-top: 2px solid var(--rar-hi);
   border-radius: 4px;
   display: flex; align-items: center; gap: 5px;
+}
+/* SSR/UR stat cells follow PFP palette — same as frame */
+.rc-r-ssr .rc-stat-cell,
+.rc-r-ur  .rc-stat-cell {
+  background: var(--pfp-bg-a, var(--rar-frame-a));
 }
 .rc-stat-k {
   font-size: 7.5px; font-weight: 900; letter-spacing: 0.12em;

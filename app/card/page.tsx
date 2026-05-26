@@ -60,6 +60,21 @@ export default function CardGeneratorPage() {
     setTimeout(() => setToast(null), 2500);
   };
 
+  const waitForImages = async (el: HTMLElement) => {
+    const imgs = Array.from(el.querySelectorAll('img'));
+    await Promise.all(imgs.map(async img => {
+      if (img.complete && img.naturalWidth > 0) {
+        await img.decode?.().catch(() => {});
+        return;
+      }
+      await new Promise<void>(resolve => {
+        img.onload = () => resolve();
+        img.onerror = () => resolve();
+      });
+      await img.decode?.().catch(() => {});
+    }));
+  };
+
   const search = useCallback(async (q: string) => {
     if (!q.trim()) { setResults([]); return; }
     setLoading(true);
@@ -120,7 +135,9 @@ export default function CardGeneratorPage() {
     setDownloading(true);
     try {
       cardRef.current.classList.add('rc-capture');
-      await new Promise((r) => setTimeout(r, 60));
+      await waitForImages(cardRef.current);
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      await new Promise((r) => setTimeout(r, 80));
       const { toPng } = await import('html-to-image');
       const dataUrl = await toPng(cardRef.current, {
         pixelRatio: 2.5,

@@ -261,7 +261,7 @@ export default function BatchGeneratorPage() {
       if (data.member) {
         const base = data.member;
         const days: number = base.days ?? 0;
-        const roleRank: number = item.roleRank ?? 1;
+        const roleRank: number = base.roleRank ?? item.roleRank ?? 1;
         const baseCard: CardData = {
           ...base,
           type:           item.typeOverride,
@@ -275,7 +275,7 @@ export default function BatchGeneratorPage() {
           const { rep, atk, def, spd } = computeStats(days, roleRank, rar);
           return { ...baseCard, rarity: rar, rep, atk, def, spd };
         });
-        update(item.userId, { status: 'done', card: allRarityCards[0], allRarityCards });
+        update(item.userId, { status: 'done', roleRank, card: allRarityCards[0], allRarityCards });
       } else {
         update(item.userId, { status: 'error' });
       }
@@ -294,13 +294,33 @@ export default function BatchGeneratorPage() {
     setGenProgress(null);
   };
 
+  /* wait for all <img> inside el to finish loading before capture */
+  const waitForImages = (el: HTMLElement): Promise<void> => {
+    const imgs = Array.from(el.querySelectorAll('img'));
+    return Promise.all(
+      imgs.map(async img => {
+        if (img.complete && img.naturalWidth > 0) {
+          await img.decode?.().catch(() => {});
+          return;
+        }
+        await new Promise<void>(resolve => {
+          img.onload  = () => resolve();
+          img.onerror = () => resolve(); // don't block on broken image
+        });
+        await img.decode?.().catch(() => {});
+      })
+    ).then(() => {});
+  };
+
   /* render card to PNG data-url — key is `${userId}-${rarity}` */
   const renderCardPng = async (key: string): Promise<string | null> => {
     const el = cardRefs.current.get(key);
     if (!el) return null;
     try {
       el.classList.add('rc-capture');
-      await new Promise(r => setTimeout(r, 60));
+      await waitForImages(el);
+      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      await new Promise(r => setTimeout(r, 80));
       const { toPng } = await import('html-to-image');
       const url = await toPng(el, { pixelRatio: 2.5, cacheBust: true, backgroundColor: 'transparent' });
       return url;
