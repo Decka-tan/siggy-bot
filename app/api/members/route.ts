@@ -23,7 +23,7 @@ const RARITY_RANK: Record<string, number> = {
   'Siggy Soulsmith':    6,
   'Siggy Architect':    5,
   'ritty':              4,
-  'Zealot':             4,
+  'Zealot':             8,
   'Mage':               3,
   'Forerunner':         1,
   'bitty':              1,
@@ -85,9 +85,9 @@ function getAvatarUrl(member: any): string {
 }
 
 function deriveRarity(roleNames: string[]): string {
-  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods'].includes(r))) return 'UR';
+  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods', 'Zealot'].includes(r))) return 'UR';
   if (roleNames.some(r => ['Ritualist', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'SSR';
-  if (roleNames.some(r => ['Zealot', 'ritty', 'Mage'].includes(r))) return 'SR';
+  if (roleNames.some(r => ['ritty', 'Mage'].includes(r))) return 'SR';
   if (roleNames.some(r => ['bitty', 'Forerunner'].includes(r))) return 'R';
   return 'common';
 }
