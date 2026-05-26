@@ -388,7 +388,7 @@
 }
 .rc-r-ssr .rc-art-holo,
 .rc-r-ur  .rc-art-holo {
-  opacity: var(--card-opacity, 0);
+  opacity: 0.65;
   animation: rc-sweep 3s ease-in-out infinite;
   transition: opacity 0.25s ease;
 }
