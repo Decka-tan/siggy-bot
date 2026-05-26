@@ -419,7 +419,17 @@ export default function BatchGeneratorPage() {
         {/* Right: queue */}
         <div className="batch-queue-panel">
           <div className="batch-queue-title">
-            Queue {batch.length > 0 && <span style={{ color: '#A3A3A3', fontWeight: 400 }}>({batch.length})</span>}
+            <span>Queue {batch.length > 0 && <span style={{ color: '#A3A3A3', fontWeight: 400 }}>({batch.length})</span>}</span>
+            {batch.length > 0 && (
+              <button
+                className="gen-btn gen-btn-ghost"
+                onClick={() => setBatch([])}
+                title="Clear all"
+                style={{ padding: '3px 8px', fontSize: 11, marginLeft: 'auto' }}
+              >
+                <X size={12}/> Clear all
+              </button>
+            )}
           </div>
 
           {batch.length === 0 ? (
@@ -570,6 +580,7 @@ export default function BatchGeneratorPage() {
           padding: 16px 20px 12px;
           font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 800; color: #FFD700;
           border-bottom: 1px solid #1a1a1a; flex-shrink: 0;
+          display: flex; align-items: center;
         }
         .batch-empty {
           padding: 48px 20px; color: #404040; font-size: 12px;
