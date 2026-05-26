@@ -132,7 +132,7 @@ const PfpPlaceholder = ({ seed = 'ritual', typeColor }: { seed?: string; typeCol
   );
 };
 
-const ContribRow = ({ item }: { item: Contribution & { tag?: string } }) => (
+const ContribRow = ({ item }: { item: { icon?: React.ReactNode | string; title: string; flavor?: string; tag?: string } }) => (
   <div className="rc-contrib">
     <div className="rc-contrib-icon">
       <span style={{ fontSize: '10px', fontWeight: 900 }}>{item.icon || '◆'}</span>
@@ -327,7 +327,7 @@ export function RitualCard({
     : [{ icon: '◆', title: '—', flavor: '' }];
 
   // Row 1: active ability (type-based), Row 2: passive (userId-hash), Row 3: contribution
-  const displayContribs: { icon: React.ReactNode | string; title: string; flavor?: string; tag?: string }[] = [];
+  const displayContribs: { icon?: React.ReactNode | string; title: string; flavor?: string; tag?: string }[] = [];
   if (ability) {
     displayContribs.push({ icon: <TypeIcon type={type} size={11}/> as unknown as string, title: ability.name, flavor: ability.effect, tag: 'ACT' });
   }
