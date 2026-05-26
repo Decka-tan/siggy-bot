@@ -63,10 +63,10 @@ function getAvatarUrl(member: any): string {
 }
 
 function deriveRarity(roleNames: string[]): string {
-  if (roleNames.includes('Radiant Ritualist')) return 'UR';
-  if (roleNames.includes('Ritualist'))         return 'SSR';
+  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods'].includes(r))) return 'UR';
+  if (roleNames.some(r => ['Ritualist', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'SSR';
   if (roleNames.some(r => ['Zealot', 'ritty'].includes(r))) return 'SR';
-  if (roleNames.includes('bitty'))             return 'R';
+  if (roleNames.some(r => ['bitty', 'Forerunner'].includes(r))) return 'R';
   return 'common';
 }
 
@@ -88,7 +88,10 @@ async function fetchContributors(): Promise<ContributorMember[]> {
       `${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`,
       { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
     );
-    if (!res.ok) break;
+    if (!res.ok) {
+      console.warn(`[members] pagination stopped at page ${page}, status ${res.status}`);
+      break;
+    }
 
     const members: any[] = await res.json();
     if (members.length === 0) break;
