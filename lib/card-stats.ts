@@ -19,11 +19,9 @@ export const RARITY_BASE: Record<string, { atk: number; def: number; spd: number
 export function computeStats(days: number, roleRank: number, rarity: string) {
   const mult = RARITY_MULT[rarity] ?? 1;
   const base = RARITY_BASE[rarity] ?? RARITY_BASE.common;
-  const rep  = Math.floor(days * mult);
-  return {
-    rep,
-    atk: rep + base.atk,
-    def: Math.floor(roleRank * mult * 80) + base.def,
-    spd: Math.floor(days * roleRank * mult * 0.3) + base.spd,
-  };
+  const atk  = Math.floor(days * mult) + base.atk;
+  const def  = Math.floor(roleRank * mult * 80) + base.def;
+  const spd  = Math.floor(days * roleRank * mult * 0.3) + base.spd;
+  const rep  = atk + def + spd;
+  return { rep, atk, def, spd };
 }
