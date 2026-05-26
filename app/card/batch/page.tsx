@@ -47,6 +47,13 @@ export default function BatchGeneratorPage() {
   const [listLoaded, setListLoaded]   = useState(false);
   const [filter, setFilter]           = useState('');
 
+  // search
+  const [searchQuery, setSearchQuery]   = useState('');
+  const [searchResults, setSearchResults] = useState<Member[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // batch queue
   const [batch, setBatch]     = useState<BatchItem[]>([]);
   const [genAll, setGenAll]   = useState(false);
@@ -91,6 +98,38 @@ export default function BatchGeneratorPage() {
   }, []);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  const onSearchChange = (q: string) => {
+    setSearchQuery(q);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!q.trim()) { setSearchResults([]); return; }
+    searchTimer.current = setTimeout(async () => {
+      setSearchLoading(true);
+      try {
+        const res  = await fetch(`/api/member?autocomplete=true&username=${encodeURIComponent(q.trim())}`);
+        const data = await res.json();
+        setSearchResults(data.members || []);
+      } catch { setSearchResults([]); }
+      finally { setSearchLoading(false); }
+    }, 300);
+  };
+
+  const addFromSearch = (m: Member) => {
+    addMember(m);
+    setSearchQuery('');
+    setSearchResults([]);
+  };
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
+        setSearchResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   /* IDs that are fully generated — hide from left panel */
   const generatedIds = useMemo(
@@ -256,6 +295,56 @@ export default function BatchGeneratorPage() {
       <div className="batch-workspace">
         {/* Left: member browser */}
         <div className="batch-browser">
+          {/* Discord-wide search */}
+          <div className="batch-search-wrap" ref={searchRef}>
+            <div className="gen-search-box" style={{ margin: 0 }}>
+              <Search size={14} className="gen-search-icon"/>
+              <input
+                className="gen-search-input"
+                placeholder="Search any Discord member…"
+                value={searchQuery}
+                onChange={e => onSearchChange(e.target.value)}
+                style={{ padding: '10px 8px', fontSize: 13 }}
+              />
+              {searchLoading && <span className="gen-search-spinner"/>}
+              {searchQuery && !searchLoading && (
+                <button className="gen-search-clear" onClick={() => { setSearchQuery(''); setSearchResults([]); }}><X size={13}/></button>
+              )}
+            </div>
+            {searchResults.length > 0 && (
+              <div className="batch-search-dropdown">
+                {searchResults.map(m => {
+                  const added = inBatch(m.userId);
+                  return (
+                    <button
+                      key={m.userId}
+                      className="batch-search-result"
+                      onClick={() => !added && addFromSearch(m)}
+                      disabled={added}
+                    >
+                      <img src={m.avatarUrl} alt="" className="batch-member-avatar"/>
+                      <div className="batch-member-info">
+                        <span className="batch-member-name">{m.displayName}</span>
+                        <span className="batch-member-sub">@{m.username}</span>
+                      </div>
+                      <div className="batch-member-right">
+                        {m.contributorRole && (
+                          <span className="batch-member-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
+                            {m.contributorRole}
+                          </span>
+                        )}
+                        {added
+                          ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
+                          : <span className="batch-member-add">+</span>
+                        }
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="batch-browser-header">
             <div className="gen-search-box" style={{ margin: 0 }}>
               <Search size={14} className="gen-search-icon"/>
@@ -418,6 +507,23 @@ export default function BatchGeneratorPage() {
           border-right: 1px solid #1a1a1a;
           display: flex; flex-direction: column; overflow: hidden;
         }
+        .batch-search-wrap {
+          position: relative; padding: 10px 16px 0; flex-shrink: 0;
+        }
+        .batch-search-dropdown {
+          position: absolute; top: calc(100% - 2px); left: 16px; right: 16px;
+          background: #121212; border: 1px solid #2a2a2a; border-radius: 0 0 10px 10px;
+          overflow: hidden; z-index: 50;
+          box-shadow: 0 12px 32px -8px rgba(0,0,0,0.9);
+        }
+        .batch-search-result {
+          width: 100%; background: transparent; border: none; border-bottom: 1px solid #1a1a1a;
+          display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+          cursor: pointer; text-align: left; transition: background 80ms;
+        }
+        .batch-search-result:last-child { border-bottom: none; }
+        .batch-search-result:hover:not(:disabled) { background: rgba(255,215,0,0.06); }
+        .batch-search-result:disabled { opacity: 0.45; cursor: default; }
         .batch-browser-header {
           padding: 12px 16px; border-bottom: 1px solid #1a1a1a;
           display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;

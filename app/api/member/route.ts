@@ -280,6 +280,7 @@ export async function GET(req: NextRequest) {
           displayName: m.nick || m.user.global_name || m.user.username,
           avatarUrl: `/api/proxy-avatar?url=${encodeURIComponent(getAvatarUrl(m))}`,
           rarity: deriveRarity(roleNames),
+          type: deriveType(roleNames),
           contributorRole: roleNames.find((r: string) => CONTRIBUTOR_ROLES.includes(r)) || null,
           globalMessages: stats.globalMessages || 0,
           roleRank: deriveRoleRank(roleNames),
