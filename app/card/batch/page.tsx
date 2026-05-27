@@ -41,6 +41,7 @@ const ROLE_FILTER_OPTIONS = [
   'Siggy Architect',
   'Mage',
   'ritty',
+  'Forerunner',
   'bitty',
 ];
 const ROLE_FILTER_LABELS: Record<string, string> = {
@@ -54,6 +55,7 @@ const ROLE_FILTER_LABELS: Record<string, string> = {
   'Siggy Architect':   'Architect',
   'Mage':              'Mage',
   'ritty':             'ritty',
+  'Forerunner':        'Forerunner',
   'bitty':             'bitty',
 };
 
