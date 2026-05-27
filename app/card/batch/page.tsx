@@ -100,6 +100,7 @@ export default function BatchGeneratorPage() {
   // batch queue
   const [batch, setBatch]           = useState<BatchItem[]>([]);
   const [genAll, setGenAll]         = useState(false);
+  const [autoUploadPending, setAutoUploadPending] = useState(false);
   const [zipping, setZipping]       = useState(false);
   const [genProgress, setGenProgress] = useState<{ current: number; total: number } | null>(null);
   const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'done' | 'error'>('all');
@@ -428,7 +429,17 @@ export default function BatchGeneratorPage() {
     }
     setGenAll(false);
     setGenProgress(null);
+    // Flag auto-upload — fires via useEffect with fresh closures (avoids stale batch closure)
+    setAutoUploadPending(true);
   };
+
+  // Auto-upload: runs after generateAll sets the flag, with the latest batch in scope
+  useEffect(() => {
+    if (!autoUploadPending || genAll || uploading) return;
+    setAutoUploadPending(false);
+    uploadToR2();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoUploadPending, genAll, uploading]);
 
   /* wait for all <img> inside el to finish loading before capture */
   const waitForImages = (el: HTMLElement): Promise<void> => {
@@ -784,14 +795,14 @@ export default function BatchGeneratorPage() {
             <button
               className="gen-btn gen-btn-r2"
               onClick={uploadToR2}
-              disabled={uploading || zipping}
-              title="Upload all generated PNGs to Cloudflare R2"
+              disabled={uploading || zipping || genAll}
+              title="Re-upload manually if auto-upload failed"
             >
               {uploading
                 ? <><span className="batch-spin">⟳</span> {uploadProgress ? `${uploadProgress.current}/${uploadProgress.total}` : 'Uploading…'}</>
                 : uploadResults
-                  ? <>{uploadResults.fail === 0 ? '✓' : '!'} {uploadResults.ok} uploaded{uploadResults.fail > 0 ? `, ${uploadResults.fail} failed` : ''}</>
-                  : <>☁ Upload to R2 ({batch.filter(b=>b.status==='done').reduce((s,b)=>s+(b.allRarityCards?.length??1),0)})</>
+                  ? <>{uploadResults.fail === 0 ? '✓' : '⚠'} {uploadResults.ok} ok{uploadResults.fail > 0 ? ` · ${uploadResults.fail} failed` : ''}</>
+                  : <>☁ Re-upload ({batch.filter(b=>b.status==='done').reduce((s,b)=>s+(b.allRarityCards?.length??1),0)})</>
               }
             </button>
           )}
@@ -799,9 +810,12 @@ export default function BatchGeneratorPage() {
             <button
               className="gen-btn gen-btn-primary"
               onClick={generateAll}
-              disabled={genAll || batch.length === 0}
+              disabled={genAll || uploading || batch.length === 0}
             >
-              {genAll ? <><span className="batch-spin">⟳</span> Generating…</> : 'Generate All'}
+              {genAll
+                ? <><span className="batch-spin">⟳</span> {genProgress ? `${genProgress.current}/${genProgress.total}` : 'Generating…'}</>
+                : '⚡ Generate + Upload'
+              }
             </button>
           )}
           {/* Repair manifest — recover missing entries from actual R2 files */}
@@ -1089,11 +1103,18 @@ export default function BatchGeneratorPage() {
                   </button>
                 ))}
               </div>
-              {/* Progress bar */}
+              {/* Progress bar — generate phase */}
               {genProgress && (
                 <div className="batch-progress">
                   <div className="batch-progress-bar" style={{ width: `${(genProgress.current / genProgress.total) * 100}%` }}/>
-                  <span className="batch-progress-label">{genProgress.current} / {genProgress.total}</span>
+                  <span className="batch-progress-label">⚡ {genProgress.current} / {genProgress.total} generated</span>
+                </div>
+              )}
+              {/* Progress bar — upload phase */}
+              {!genProgress && uploadProgress && (
+                <div className="batch-progress">
+                  <div className="batch-progress-bar" style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%`, background: 'linear-gradient(90deg, #f77f00, #ffaa44)' }}/>
+                  <span className="batch-progress-label">☁ {uploadProgress.current} / {uploadProgress.total} uploading</span>
                 </div>
               )}
             </div>
