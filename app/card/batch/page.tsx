@@ -226,7 +226,7 @@ export default function BatchGeneratorPage() {
       try {
         const res  = await fetch(`/api/member?autocomplete=true&username=${encodeURIComponent(q.trim())}`);
         const data = await res.json();
-        setSearchResults((data.members || []).filter((m: Member) => !uploadedUsernames.has(String(m.username || '').toLowerCase())));
+        setSearchResults(data.members || []);
       } catch { setSearchResults([]); }
       finally { setSearchLoading(false); }
     }, 300);
@@ -278,6 +278,20 @@ export default function BatchGeneratorPage() {
       );
     });
   }, [allMembers, filter, filterType, generatedIds, uploadedUsernames]);
+
+  const uploadedFiltered = useMemo(() => {
+    const q = filter.toLowerCase().trim();
+    return allMembers.filter(m => {
+      if (!uploadedUsernames.has(String(m.username || '').toLowerCase())) return false;
+      if (filterType && !m.roles.includes(filterType)) return false;
+      if (!q) return true;
+      return (
+        m.displayName.toLowerCase().includes(q) ||
+        m.username.toLowerCase().includes(q) ||
+        (m.contributorRole || '').toLowerCase().includes(q)
+      );
+    });
+  }, [allMembers, filter, filterType, uploadedUsernames]);
 
   /* multi-select */
   const toggleSelect = (uid: string) => setSelectedIds(prev => {
@@ -738,12 +752,13 @@ export default function BatchGeneratorPage() {
               <div className="batch-search-dropdown">
                 {searchResults.map(m => {
                   const added = inBatch(m.userId);
+                  const uploaded = uploadedUsernames.has(String(m.username || '').toLowerCase());
                   return (
                     <button
                       key={m.userId}
-                      className="batch-search-result"
-                      onClick={() => !added && addFromSearch(m)}
-                      disabled={added}
+                      className={`batch-search-result${uploaded ? ' is-uploaded' : ''}`}
+                      onClick={() => !added && !uploaded && addFromSearch(m)}
+                      disabled={added || uploaded}
                     >
                       <img src={m.avatarUrl} alt="" className="batch-member-avatar"/>
                       <div className="batch-member-info">
@@ -756,7 +771,9 @@ export default function BatchGeneratorPage() {
                             {m.contributorRole}
                           </span>
                         )}
-                        {added
+                        {uploaded
+                          ? <span className="batch-uploaded-pill">R2</span>
+                          : added
                           ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
                           : <span className="batch-member-add">+</span>
                         }
@@ -819,7 +836,7 @@ export default function BatchGeneratorPage() {
               {listLoading
                 ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
                 : <>
-                    <span>{filtered.length} remaining{uploadedUsernames.size > 0 ? ` · ${uploadedUsernames.size} uploaded hidden` : ''}{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
+                    <span>{filtered.length} remaining{uploadedFiltered.length > 0 ? ` · ${uploadedFiltered.length} uploaded in R2` : ''}{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
                     <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', alignItems: 'center' }}>
                       {selectableFiltered.length > 0 && (
                         <button
@@ -879,9 +896,37 @@ export default function BatchGeneratorPage() {
                 </div>
               );
             })}
-            {listLoaded && filtered.length === 0 && (
+            {listLoaded && filtered.length === 0 && uploadedFiltered.length === 0 && (
               <div style={{ padding: '32px 16px', textAlign: 'center', color: '#404040', fontSize: 12 }}>
                 No contributors found
+              </div>
+            )}
+            {uploadedFiltered.length > 0 && (
+              <div className="batch-uploaded-section">
+                <div className="batch-uploaded-title">
+                  <span>Uploaded to R2</span>
+                  <b>{uploadedFiltered.length}</b>
+                </div>
+                {uploadedFiltered.map(m => (
+                  <div key={`uploaded-${m.userId}`} className="batch-member-row is-uploaded">
+                    <button className="batch-member-btn" disabled title="Already uploaded to R2">
+                      <img src={m.avatarUrl} alt="" className="batch-member-avatar"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
+                      <div className="batch-member-info">
+                        <span className="batch-member-name">{m.displayName}</span>
+                        <span className="batch-member-sub">@{m.username}</span>
+                      </div>
+                      <div className="batch-member-right">
+                        {m.contributorRole && (
+                          <span className="batch-member-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
+                            {m.contributorRole}
+                          </span>
+                        )}
+                        <span className="batch-uploaded-pill">R2</span>
+                      </div>
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -1065,6 +1110,7 @@ export default function BatchGeneratorPage() {
         .batch-search-result:last-child { border-bottom: none; }
         .batch-search-result:hover:not(:disabled) { background: rgba(255,215,0,0.06); }
         .batch-search-result:disabled { opacity: 0.45; cursor: default; }
+        .batch-search-result.is-uploaded { background: rgba(64,255,175,0.03); }
         .batch-browser-header {
           padding: 12px 16px; border-bottom: 1px solid #1a1a1a;
           display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
@@ -1083,7 +1129,27 @@ export default function BatchGeneratorPage() {
         }
         .batch-member-row:hover:not(.is-added) { background: rgba(255,215,0,0.05); }
         .batch-member-row.is-added { opacity: 0.45; }
+        .batch-member-row.is-uploaded { opacity: 0.7; background: rgba(64,255,175,0.025); }
+        .batch-member-row.is-uploaded:hover { background: rgba(64,255,175,0.04); }
         .batch-member-row.is-selected { background: rgba(255,215,0,0.08); }
+        .batch-uploaded-section {
+          margin-top: 10px; border-top: 1px solid #262626; padding-top: 6px;
+        }
+        .batch-uploaded-title {
+          display: flex; align-items: center; justify-content: space-between;
+          padding: 8px 16px; font-size: 9px; letter-spacing: 0.12em;
+          text-transform: uppercase; font-weight: 900; color: #40FFAF;
+          background: rgba(64,255,175,0.04); border-bottom: 1px solid rgba(64,255,175,0.12);
+        }
+        .batch-uploaded-title b {
+          font-size: 10px; color: #0A0A0A; background: #40FFAF;
+          border-radius: 3px; padding: 1px 5px;
+        }
+        .batch-uploaded-pill {
+          font-size: 8px; line-height: 1; font-weight: 900; letter-spacing: 0.08em;
+          color: #40FFAF; border: 1px solid rgba(64,255,175,0.45);
+          background: rgba(64,255,175,0.08); border-radius: 3px; padding: 3px 5px;
+        }
         .batch-cb { width: 14px; height: 14px; flex-shrink: 0; accent-color: #FFD700; cursor: pointer; }
         .batch-member-btn {
           flex: 1; background: transparent; border: none;
