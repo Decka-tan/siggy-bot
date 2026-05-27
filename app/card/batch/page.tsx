@@ -350,7 +350,7 @@ export default function BatchGeneratorPage() {
     try {
       el.classList.add('rc-capture');
       await waitForImages(el);
-      await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
+      // Use setTimeout instead of requestAnimationFrame so upload continues when tab is hidden
       await new Promise(r => setTimeout(r, 60));
       const { toPng } = await import('html-to-image');
       const url = await toPng(el, {
