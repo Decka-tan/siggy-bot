@@ -785,7 +785,7 @@ export default function BatchGeneratorPage() {
         </div>
         <div className="gen-header-actions">
           <a href="/card" className="gen-btn gen-btn-ghost">Single Card</a>
-          <button
+<button
             className="gen-btn gen-btn-ghost"
             onClick={() => loadMembers(true)}
             disabled={listLoading}
