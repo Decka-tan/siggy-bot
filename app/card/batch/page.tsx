@@ -361,7 +361,11 @@ export default function BatchGeneratorPage() {
     if (inBatch(m.userId)) return;
     if (!force && uploadedUsernames.has(String(m.username || '').toLowerCase())) return;
     const remembered = getTypeMemory()[m.userId];
-    const typeOverride = remembered || m.type || deriveTypeFromRoles(m.roles || []);
+    // If force-adding from Uploaded tab, try to recover type from manifest
+    const manifestType = force
+      ? uploadedCards.find(c => String(c.username || '').toLowerCase() === String(m.username || '').toLowerCase())?.type ?? null
+      : null;
+    const typeOverride = remembered || manifestType || m.type || deriveTypeFromRoles(m.roles || []);
     setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle', forceUpload: force }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
@@ -650,6 +654,7 @@ export default function BatchGeneratorPage() {
             roleSlug,
             roles:           item.roles,
             rep:             cardData.rep,
+            type:            item.typeOverride || item.type || null,
             url: `${R2_PUBLIC_BASE}/cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
           }));
         });
