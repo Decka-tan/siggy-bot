@@ -312,39 +312,21 @@
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
-/* SSR REP: gold gradient, white outline via ::before */
+/* SSR REP: solid gold — no gradient trick, no outline bug in exports */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
-  position: relative; display: block;
-  background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  color: #C9960C;
+  -webkit-text-fill-color: #C9960C;
+  text-shadow: 0 0 12px rgba(201,150,12,0.5);
   opacity: 1;
 }
-.rc-r-ssr .rc-rep-float .rc-rep-label::before,
-.rc-r-ssr .rc-rep-float .rc-rep-val::before {
-  content: attr(data-text);
-  position: absolute; top: 0; left: 0; right: 0;
-  font: inherit; letter-spacing: inherit;
-  -webkit-text-stroke: 1.6px rgba(255,255,255,0.9);
-  -webkit-text-fill-color: transparent;
-  z-index: -1; pointer-events: none;
-}
-/* UR REP: pink gradient, white outline via ::before */
+/* UR REP: solid pink */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
-  position: relative; display: block;
-  background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  color: #ff5fb8;
+  -webkit-text-fill-color: #ff5fb8;
+  text-shadow: 0 0 12px rgba(255,95,184,0.5);
   opacity: 1;
-}
-.rc-r-ur .rc-rep-float .rc-rep-label::before,
-.rc-r-ur .rc-rep-float .rc-rep-val::before {
-  content: attr(data-text);
-  position: absolute; top: 0; left: 0; right: 0;
-  font: inherit; letter-spacing: inherit;
-  -webkit-text-stroke: 1.6px rgba(255,255,255,0.9);
-  -webkit-text-fill-color: transparent;
-  z-index: -1; pointer-events: none;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
