@@ -364,7 +364,7 @@
 .rc-r-ur  .rc-header {
   position: relative;
   z-index: 3;
-  background: rgba(0,0,0,0.70);
+  background: rgba(0,0,0,0.45);
   border: none;
   border-bottom: 1px solid rgba(255,255,255,0.10);
   box-shadow: none;
@@ -373,7 +373,7 @@
   /* Bleed past the frame's 10px padding on left / right / top */
   margin: -10px -10px 0;
   border-radius: 0;
-  padding: 6px 20px;
+  padding: 10px 20px;
 }
 .rc-r-ssr .rc-header::before,
 .rc-r-ur  .rc-header::before,
