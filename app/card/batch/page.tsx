@@ -332,18 +332,22 @@ export default function BatchGeneratorPage() {
     ).then(() => {});
   };
 
-  /* render card to PNG data-url — key is `${userId}-${rarity}` */
-  const renderCardPng = async (key: string): Promise<string | null> => {
+  /* render card to PNG — fontEmbedCSS pre-fetched once and passed in to avoid per-card font fetching */
+  const renderCardPng = async (key: string, fontEmbedCSS: string): Promise<string | null> => {
     const el = cardRefs.current.get(key);
     if (!el) return null;
     try {
       el.classList.add('rc-capture');
       await waitForImages(el);
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
-      await new Promise(r => setTimeout(r, 80));
+      await new Promise(r => setTimeout(r, 60));
       const { toPng } = await import('html-to-image');
-      // cacheBust: false — pfpUrl is already a data URI, appending ?t=… invalidates it and hangs
-      const url = await toPng(el, { pixelRatio: 2.5, cacheBust: false, backgroundColor: 'transparent' });
+      const url = await toPng(el, {
+        pixelRatio: 2.5,
+        cacheBust: false,
+        backgroundColor: 'transparent',
+        fontEmbedCSS,
+      });
       return url;
     } catch { return null; }
     finally { el.classList.remove('rc-capture'); }
@@ -355,33 +359,44 @@ export default function BatchGeneratorPage() {
     if (!done.length) return;
     setZipping(true);
     try {
-      // @ts-ignore — File System Access API (Chrome/Edge)
-      const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
-      for (const item of done) {
+      // Pre-fetch font CSS once — reused for every card so toPng never re-fetches fonts
+      const { getFontEmbedCSS, toPng } = await import('html-to-image');
+      const firstKey = `${done[0].userId}-${done[0].allRarityCards![0].rarity}`;
+      const firstEl  = cardRefs.current.get(firstKey);
+      const fontEmbedCSS = firstEl ? await getFontEmbedCSS(firstEl).catch(() => '') : '';
+
+      const capture = async (item: BatchItem) => {
+        const results: { name: string; dataUrl: string }[] = [];
         for (const cardData of item.allRarityCards!) {
-          const key     = `${item.userId}-${cardData.rarity}`;
-          const dataUrl = await renderCardPng(key);
-          if (!dataUrl) continue;
-          const blob       = await (await fetch(dataUrl)).blob();
-          const fileHandle = await dir.getFileHandle(`${item.username}_${cardData.rarity}.png`, { create: true });
-          const writable   = await fileHandle.createWritable();
-          await writable.write(blob);
-          await writable.close();
+          const key    = `${item.userId}-${cardData.rarity}`;
+          const dataUrl = await renderCardPng(key, fontEmbedCSS);
+          if (dataUrl) results.push({ name: `${item.username}_${cardData.rarity}.png`, dataUrl });
         }
-      }
-    } catch (e: any) {
-      if (e?.name !== 'AbortError') {
-        const done2 = batch.filter(b => b.status === 'done' && b.allRarityCards?.length);
-        for (const item of done2) {
-          for (const cardData of item.allRarityCards!) {
-            const key     = `${item.userId}-${cardData.rarity}`;
-            const dataUrl = await renderCardPng(key);
-            if (!dataUrl) continue;
+        return results;
+      };
+
+      try {
+        // @ts-ignore — File System Access API (Chrome/Edge)
+        const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+        for (const item of done) {
+          for (const { name, dataUrl } of await capture(item)) {
+            const blob     = await (await fetch(dataUrl)).blob();
+            const handle   = await dir.getFileHandle(name, { create: true });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+          }
+        }
+      } catch (e: any) {
+        if ((e as any)?.name === 'AbortError') return; // user cancelled picker
+        // Fallback: trigger individual <a> downloads
+        for (const item of done) {
+          for (const { name, dataUrl } of await capture(item)) {
             const a    = document.createElement('a');
             a.href     = dataUrl;
-            a.download = `${item.username}_${cardData.rarity}.png`;
+            a.download = name;
             a.click();
-            await new Promise(r => setTimeout(r, 200));
+            await new Promise(r => setTimeout(r, 150));
           }
         }
       }
