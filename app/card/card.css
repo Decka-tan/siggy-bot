@@ -274,75 +274,59 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* SSR name: gold gradient top-to-bottom, white outline via ::before layer */
+/* ── Name wrapper: replaces .rc-name's flex role in .rc-header-left ── */
+.rc-name-wrap {
+  flex: 1 1 auto; min-width: 0;
+  position: relative; display: flex; align-items: center;
+}
+/* SSR name: gold gradient — real DOM stroke span behind via .rc-name-stroke */
 .rc-r-ssr .rc-name {
-  position: relative;
   background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  opacity: 1; animation: none;
-  --rc-name-outline-pad: 3px;
-  padding-left: var(--rc-name-outline-pad); padding-right: var(--rc-name-outline-pad); overflow: visible;
+  position: relative; z-index: 1;
 }
-.rc-r-ssr .rc-name::before {
-  content: attr(data-text);
-  position: absolute; inset: 0;
-  padding-left: var(--rc-name-outline-pad);
-  font: inherit; letter-spacing: inherit; text-transform: inherit;
-  white-space: nowrap; overflow: visible;
-  -webkit-text-stroke: 1.8px rgba(255,255,255,0.9);
-  -webkit-text-fill-color: transparent;
-  z-index: -1; pointer-events: none;
-}
-/* UR name: pink gradient top-to-bottom, white outline via ::before layer */
+/* UR name: pink gradient — real DOM stroke span behind via .rc-name-stroke */
 .rc-r-ur .rc-name {
-  position: relative;
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  opacity: 1; animation: none;
-  --rc-name-outline-pad: 3px;
-  padding-left: var(--rc-name-outline-pad); padding-right: var(--rc-name-outline-pad); overflow: visible;
+  position: relative; z-index: 1;
 }
-.rc-r-ur .rc-name::before {
-  content: attr(data-text);
+/* Stroke layer: real DOM element (not ::before) for reliable html-to-image rendering */
+.rc-r-ssr .rc-name-stroke,
+.rc-r-ur  .rc-name-stroke {
   position: absolute; inset: 0;
-  padding-left: var(--rc-name-outline-pad);
-  font: inherit; letter-spacing: inherit; text-transform: inherit;
-  white-space: nowrap; overflow: visible;
+  font-size: 15px; font-weight: 900; letter-spacing: 0.01em;
+  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
+  text-transform: none; white-space: nowrap; overflow: hidden;
+  display: flex; align-items: center;
   -webkit-text-stroke: 1.8px rgba(255,255,255,0.9);
-  -webkit-text-fill-color: transparent;
-  z-index: -1; pointer-events: none;
+  color: transparent;
+  pointer-events: none; z-index: 0;
 }
-/* SSR REP: gold gradient + white outline */
+/* SSR REP: gold gradient + real DOM stroke span */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
   position: relative; display: inline-block;
   background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  opacity: 1;
 }
-.rc-r-ssr .rc-rep-float .rc-rep-label::before,
-.rc-r-ssr .rc-rep-float .rc-rep-val::before {
-  content: attr(data-text);
-  position: absolute; inset: 0;
-  font: inherit; letter-spacing: inherit; text-transform: inherit;
-  -webkit-text-stroke: 3px white; -webkit-text-fill-color: transparent;
-  z-index: -1; pointer-events: none;
-}
-/* UR REP: pink gradient + white outline */
+/* UR REP: pink gradient + real DOM stroke span */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
   position: relative; display: inline-block;
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  opacity: 1;
 }
-.rc-r-ur .rc-rep-float .rc-rep-label::before,
-.rc-r-ur .rc-rep-float .rc-rep-val::before {
-  content: attr(data-text);
-  position: absolute; inset: 0;
+/* REP stroke: child of label/val → font: inherit gives exact match */
+.rc-r-ssr .rc-rep-float .rc-rep-stroke,
+.rc-r-ur  .rc-rep-float .rc-rep-stroke {
+  position: absolute; top: 0; left: 0;
   font: inherit; letter-spacing: inherit; text-transform: inherit;
-  -webkit-text-stroke: 3px white; -webkit-text-fill-color: transparent;
-  z-index: -1; pointer-events: none;
+  white-space: nowrap;
+  -webkit-text-stroke: 3px white;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  pointer-events: none;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
