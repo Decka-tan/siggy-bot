@@ -352,9 +352,13 @@ export default function BatchGeneratorPage() {
     if (roles.includes('Event Manager')) return 'event-manager';
     if (roles.includes('Radiant Ritualist')) return 'ambassador';
     if (roles.includes('Zealot')) return 'ambassador';
-    if (roles.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
-    if (roles.includes('bitty')) return 'yapper';
-    return 'yapper';
+    // All other roles (Ritualist, ritty, bitty, Mage, Soulsmith, Architect, Forerunner, etc.)
+    // Randomized: 40% yapper, 40% threadoor, 10% artist, 10% builder
+    const rand = Math.random();
+    if (rand < 0.40) return 'yapper';
+    if (rand < 0.80) return 'threadoor';
+    if (rand < 0.90) return 'artist';
+    return 'builder';
   };
 
   const addMember = (m: Member, force = false) => {
