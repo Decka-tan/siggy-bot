@@ -7,7 +7,7 @@ const R2_BUCKET        = process.env.R2_BUCKET_NAME ?? 'ritual-cards';
 const R2_PUBLIC_URL    = (process.env.R2_PUBLIC_URL ?? '').replace(/\/$/, '');
 const R2_ENDPOINT      = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
-// ── AWS Sig v4 (GET / ListObjectsV2) ─────────────────────────────────────────
+// ── AWS Sig v4 helpers ────────────────────────────────────────────────────────
 
 function toBuffer(key: ArrayBuffer | Uint8Array): ArrayBuffer {
   if (key instanceof Uint8Array)
@@ -27,7 +27,20 @@ function toHex(buf: Uint8Array) {
   return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function listHeaders(queryString: string) {
+/**
+ * Build a canonical query string per AWS Sig v4 spec:
+ *   - keys sorted alphabetically
+ *   - both key and value percent-encoded (uppercase hex, space → %20)
+ *   - joined with &
+ */
+function canonicalQS(params: Record<string, string>): string {
+  return Object.keys(params)
+    .sort()
+    .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
+    .join('&');
+}
+
+async function listHeaders(qsStr: string) {
   const now        = new Date();
   const dateStamp  = now.toISOString().slice(0, 10).replace(/-/g, '');
   const amzDate    = now.toISOString().replace(/[:-]/g, '').slice(0, 15) + 'Z';
@@ -36,7 +49,7 @@ async function listHeaders(queryString: string) {
 
   const canonicalHeaders  = `host:${host}\nx-amz-content-sha256:${emptyHash}\nx-amz-date:${amzDate}\n`;
   const signedHeadersList = 'host;x-amz-content-sha256;x-amz-date';
-  const canonicalRequest  = ['GET', `/${R2_BUCKET}`, queryString, canonicalHeaders, signedHeadersList, emptyHash].join('\n');
+  const canonicalRequest  = ['GET', `/${R2_BUCKET}`, qsStr, canonicalHeaders, signedHeadersList, emptyHash].join('\n');
 
   const credScope   = `${dateStamp}/auto/s3/aws4_request`;
   const stringToSign = ['AWS4-HMAC-SHA256', amzDate, credScope, await sha256hex(canonicalRequest)].join('\n');
@@ -60,7 +73,7 @@ function parseKeys(xml: string): string[] {
   const keys: string[] = [];
   const re = /<Key>([^<]+)<\/Key>/g;
   let m;
-  while ((m = re.exec(xml)) !== null) keys.push(decodeURIComponent(m[1]));
+  while ((m = re.exec(xml)) !== null) keys.push(decodeURIComponent(m[1].replace(/\+/g, ' ')));
   return keys;
 }
 
@@ -73,9 +86,16 @@ export async function GET(req: NextRequest) {
     let page = 0;
 
     do {
-      const qs = new URLSearchParams({ 'list-type': '2', prefix, 'max-keys': '1000' });
-      if (continuationToken) qs.set('continuation-token', continuationToken);
-      const qsStr = qs.toString();
+      // Build params — MUST be sorted alphabetically for Sig v4 canonical query string
+      const params: Record<string, string> = {
+        'list-type': '2',
+        'max-keys':  '1000',
+        prefix,
+      };
+      if (continuationToken) params['continuation-token'] = continuationToken;
+
+      // canonicalQS sorts keys alphabetically and percent-encodes properly
+      const qsStr = canonicalQS(params);
 
       const headers = await listHeaders(qsStr);
       const res = await fetch(`${R2_ENDPOINT}/${R2_BUCKET}?${qsStr}`, {
@@ -85,6 +105,7 @@ export async function GET(req: NextRequest) {
 
       if (!res.ok) {
         const txt = await res.text();
+        console.error('[list-r2] R2 error:', res.status, txt);
         return NextResponse.json({ error: `R2 ${res.status}: ${txt}` }, { status: 502 });
       }
 
@@ -93,7 +114,7 @@ export async function GET(req: NextRequest) {
 
       // check for NextContinuationToken
       const contMatch = /<NextContinuationToken>([^<]+)<\/NextContinuationToken>/.exec(xml);
-      continuationToken = contMatch ? decodeURIComponent(contMatch[1]) : '';
+      continuationToken = contMatch ? decodeURIComponent(contMatch[1].replace(/\+/g, ' ')) : '';
       page++;
     } while (continuationToken && page < 20); // safety limit
 
