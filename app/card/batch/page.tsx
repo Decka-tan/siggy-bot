@@ -71,6 +71,16 @@ const RARITY_COLOR: Record<string, string> = {
 };
 const R2_WORKER_BASE = 'https://ritual-tcg.artelamon.workers.dev';
 const R2_PUBLIC_BASE = 'https://pub-6e7d7fa0c27b4a9aa07575fad91eaeac.r2.dev';
+const ASSUMED_R2_UPLOADED_ROLES = new Set([
+  'Foundation Team',
+  'Mods',
+  'Moderator',
+  'Radiant Ritualist',
+  'Event Manager',
+  'Zealot',
+  'Siggy Architect',
+  'Siggy Soulsmith',
+]);
 
 /* ── Component ────────────────────────────────────────────────────── */
 export default function BatchGeneratorPage() {
@@ -95,6 +105,7 @@ export default function BatchGeneratorPage() {
   const [queueFilter, setQueueFilter] = useState<'all' | 'pending' | 'done' | 'error'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [filterType, setFilterType] = useState('');
+  const [browserTab, setBrowserTab] = useState<'remaining' | 'uploaded'>('remaining');
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
@@ -150,10 +161,15 @@ export default function BatchGeneratorPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${R2_WORKER_BASE}/api/cards?t=${Date.now()}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!cancelled) setUploadedCards(Array.isArray(data.cards) ? data.cards : []);
+        const manifestRes = await fetch(`${R2_WORKER_BASE}/api/cards?t=${Date.now()}`);
+        const merged = new Map<string, any>();
+        if (manifestRes.ok) {
+          const data = await manifestRes.json();
+          for (const card of Array.isArray(data.cards) ? data.cards : []) {
+            merged.set(`${card.roleSlug || 'contributor'}/${card.username}_${card.rarity}`.toLowerCase(), card);
+          }
+        }
+        if (!cancelled) setUploadedCards(Array.from(merged.values()));
       } catch {}
     })();
     return () => { cancelled = true; };
@@ -255,8 +271,14 @@ export default function BatchGeneratorPage() {
     [batch],
   );
   const uploadedUsernames = useMemo(
-    () => new Set(uploadedCards.map(c => String(c.username || '').toLowerCase()).filter(Boolean)),
-    [uploadedCards],
+    () => new Set([
+      ...uploadedCards.map(c => String(c.username || '').toLowerCase()).filter(Boolean),
+      ...allMembers
+        .filter(m => (m.roles || []).some(role => ASSUMED_R2_UPLOADED_ROLES.has(role)))
+        .map(m => String(m.username || '').toLowerCase())
+        .filter(Boolean),
+    ]),
+    [uploadedCards, allMembers],
   );
   const uploadedKeys = useMemo(
     () => new Set(uploadedCards.map(c => `${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase())),
@@ -292,6 +314,8 @@ export default function BatchGeneratorPage() {
       );
     });
   }, [allMembers, filter, filterType, uploadedUsernames]);
+
+  const activeMembers = browserTab === 'uploaded' ? uploadedFiltered : filtered;
 
   /* multi-select */
   const toggleSelect = (uid: string) => setSelectedIds(prev => {
@@ -537,7 +561,7 @@ export default function BatchGeneratorPage() {
       const roleSlug = toRoleSlug(item.roles || []);
       for (const cardData of item.allRarityCards!) {
         const uploadKey = `${roleSlug}/${item.username}_${cardData.rarity}`.toLowerCase();
-        if (uploadedKeys.has(uploadKey)) continue;
+        if (uploadedUsernames.has(String(item.username || '').toLowerCase()) || uploadedKeys.has(uploadKey)) continue;
         tasks.push({
           itemUsername: item.username,
           userId:       item.userId,
@@ -786,6 +810,23 @@ export default function BatchGeneratorPage() {
           </div>
 
           <div className="batch-browser-header">
+            <div className="batch-browser-tabs">
+              <button
+                className={`batch-browser-tab${browserTab === 'remaining' ? ' active' : ''}`}
+                onClick={() => setBrowserTab('remaining')}
+              >
+                Remaining <b>{filtered.length}</b>
+              </button>
+              <button
+                className={`batch-browser-tab uploaded${browserTab === 'uploaded' ? ' active' : ''}`}
+                onClick={() => {
+                  setBrowserTab('uploaded');
+                  setSelectedIds(new Set());
+                }}
+              >
+                Uploaded to R2 <b>{uploadedFiltered.length}</b>
+              </button>
+            </div>
             {/* Role filter chips */}
             <div className="batch-type-chips">
               <button
@@ -807,7 +848,7 @@ export default function BatchGeneratorPage() {
                     >
                       {ROLE_FILTER_LABELS[r]}
                     </button>
-                    {roleMembers.length > 0 && (
+                    {browserTab === 'remaining' && roleMembers.length > 0 && (
                       <button
                         className="batch-chip-add"
                         title={`Add all ${r} (${roleMembers.length})`}
@@ -836,9 +877,9 @@ export default function BatchGeneratorPage() {
               {listLoading
                 ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
                 : <>
-                    <span>{filtered.length} remaining{uploadedFiltered.length > 0 ? ` · ${uploadedFiltered.length} uploaded in R2` : ''}{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
+                    <span>{browserTab === 'uploaded' ? `${uploadedFiltered.length} uploaded to R2` : `${filtered.length} remaining`}{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
                     <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', alignItems: 'center' }}>
-                      {selectableFiltered.length > 0 && (
+                      {browserTab === 'remaining' && selectableFiltered.length > 0 && (
                         <button
                           className="gen-btn gen-btn-ghost"
                           onClick={() => setSelectedIds(
@@ -851,7 +892,7 @@ export default function BatchGeneratorPage() {
                           {allFilteredSelected ? 'Deselect All' : `Select All (${selectableFiltered.length})`}
                         </button>
                       )}
-                      {selectedIds.size > 0 && (
+                      {browserTab === 'remaining' && selectedIds.size > 0 && (
                         <button className="gen-btn gen-btn-primary" onClick={addSelected}
                           style={{ padding: '3px 8px', fontSize: 11 }}>
                           + Add {selectedIds.size}
@@ -864,17 +905,18 @@ export default function BatchGeneratorPage() {
           </div>
 
           <div className="batch-member-list">
-            {filtered.map(m => {
+            {activeMembers.map(m => {
               const added    = inBatch(m.userId);
               const selected = selectedIds.has(m.userId);
+              const uploaded = uploadedUsernames.has(String(m.username || '').toLowerCase());
               return (
-                <div key={m.userId} className={`batch-member-row${added ? ' is-added' : ''}${selected ? ' is-selected' : ''}`}>
-                  {!added && (
+                <div key={m.userId} className={`batch-member-row${added ? ' is-added' : ''}${selected ? ' is-selected' : ''}${uploaded ? ' is-uploaded' : ''}`}>
+                  {!added && !uploaded && (
                     <input type="checkbox" className="batch-cb" checked={selected}
                       onChange={() => toggleSelect(m.userId)}
                       onClick={e => e.stopPropagation()}/>
                   )}
-                  <button className="batch-member-btn" onClick={() => !added && addMember(m)} disabled={added}>
+                  <button className="batch-member-btn" onClick={() => !added && !uploaded && addMember(m)} disabled={added || uploaded}>
                     <img src={m.avatarUrl} alt="" className="batch-member-avatar"
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
                     <div className="batch-member-info">
@@ -887,7 +929,9 @@ export default function BatchGeneratorPage() {
                           {m.contributorRole}
                         </span>
                       )}
-                      {added
+                      {uploaded
+                        ? <span className="batch-uploaded-pill">R2</span>
+                        : added
                         ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
                         : <span className="batch-member-add">+</span>
                       }
@@ -896,37 +940,9 @@ export default function BatchGeneratorPage() {
                 </div>
               );
             })}
-            {listLoaded && filtered.length === 0 && uploadedFiltered.length === 0 && (
+            {listLoaded && activeMembers.length === 0 && (
               <div style={{ padding: '32px 16px', textAlign: 'center', color: '#404040', fontSize: 12 }}>
-                No contributors found
-              </div>
-            )}
-            {uploadedFiltered.length > 0 && (
-              <div className="batch-uploaded-section">
-                <div className="batch-uploaded-title">
-                  <span>Uploaded to R2</span>
-                  <b>{uploadedFiltered.length}</b>
-                </div>
-                {uploadedFiltered.map(m => (
-                  <div key={`uploaded-${m.userId}`} className="batch-member-row is-uploaded">
-                    <button className="batch-member-btn" disabled title="Already uploaded to R2">
-                      <img src={m.avatarUrl} alt="" className="batch-member-avatar"
-                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
-                      <div className="batch-member-info">
-                        <span className="batch-member-name">{m.displayName}</span>
-                        <span className="batch-member-sub">@{m.username}</span>
-                      </div>
-                      <div className="batch-member-right">
-                        {m.contributorRole && (
-                          <span className="batch-member-role" style={{ color: RARITY_COLOR[m.rarity] || '#888' }}>
-                            {m.contributorRole}
-                          </span>
-                        )}
-                        <span className="batch-uploaded-pill">R2</span>
-                      </div>
-                    </button>
-                  </div>
-                ))}
+                {browserTab === 'uploaded' ? 'No uploaded R2 cards found' : 'No contributors found'}
               </div>
             )}
           </div>
@@ -1115,6 +1131,26 @@ export default function BatchGeneratorPage() {
           padding: 12px 16px; border-bottom: 1px solid #1a1a1a;
           display: flex; flex-direction: column; gap: 8px; flex-shrink: 0;
         }
+        .batch-browser-tabs {
+          display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+        }
+        .batch-browser-tab {
+          border: 1px solid #262626; background: #0F0F0F; color: #8A8A8A;
+          border-radius: 5px; padding: 8px 10px; cursor: pointer;
+          font-size: 10px; font-weight: 900; letter-spacing: 0.08em;
+          text-transform: uppercase; display: flex; justify-content: space-between;
+          align-items: center; gap: 8px;
+        }
+        .batch-browser-tab b {
+          color: #FAFAFA; background: #1E1E1E; border-radius: 3px;
+          min-width: 22px; padding: 2px 5px; text-align: center;
+        }
+        .batch-browser-tab.active {
+          border-color: #FFD700; color: #FFD700; background: rgba(255,215,0,0.08);
+        }
+        .batch-browser-tab.uploaded.active {
+          border-color: #40FFAF; color: #40FFAF; background: rgba(64,255,175,0.08);
+        }
         .batch-browser-count {
           font-size: 10px; color: #404040; letter-spacing: 0.08em; text-transform: uppercase;
           font-weight: 700; display: flex; align-items: center; gap: 6px;
@@ -1132,19 +1168,6 @@ export default function BatchGeneratorPage() {
         .batch-member-row.is-uploaded { opacity: 0.7; background: rgba(64,255,175,0.025); }
         .batch-member-row.is-uploaded:hover { background: rgba(64,255,175,0.04); }
         .batch-member-row.is-selected { background: rgba(255,215,0,0.08); }
-        .batch-uploaded-section {
-          margin-top: 10px; border-top: 1px solid #262626; padding-top: 6px;
-        }
-        .batch-uploaded-title {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 8px 16px; font-size: 9px; letter-spacing: 0.12em;
-          text-transform: uppercase; font-weight: 900; color: #40FFAF;
-          background: rgba(64,255,175,0.04); border-bottom: 1px solid rgba(64,255,175,0.12);
-        }
-        .batch-uploaded-title b {
-          font-size: 10px; color: #0A0A0A; background: #40FFAF;
-          border-radius: 3px; padding: 1px 5px;
-        }
         .batch-uploaded-pill {
           font-size: 8px; line-height: 1; font-weight: 900; letter-spacing: 0.08em;
           color: #40FFAF; border: 1px solid rgba(64,255,175,0.45);
