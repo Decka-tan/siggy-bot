@@ -365,15 +365,12 @@ export function RitualCard({
             <header className="rc-header">
               <div className="rc-header-left">
                 <div className="rc-name-wrap" title={name}>
-                  {(r === 'SSR' || r === 'UR') && (
-                    <span className="rc-name-stroke" aria-hidden="true">{name}</span>
-                  )}
                   <h2 className="rc-name">{name}</h2>
                 </div>
                 {r !== 'common' && <span className={`rc-rar-badge rc-rar-badge-${r.toLowerCase()}`}>{r}</span>}
               </div>
               <div className="rc-header-right">
-                {rep > 0 && (r !== 'SSR' && r !== 'UR') && (
+                {rep > 0 && (
                   <div className="rc-rep">
                     <span className="rc-rep-label">REP</span>
                     <span className="rc-rep-val">{rep}</span>
@@ -386,18 +383,6 @@ export function RitualCard({
             </header>
 
             {/* REP floats outside header for SSR/UR — doesn't affect header height */}
-            {rep > 0 && (r === 'SSR' || r === 'UR') && (
-              <div className="rc-rep-float">
-                <span className="rc-rep-item">
-                  <span className="rc-rep-stroke" aria-hidden="true">REP</span>
-                  <span className="rc-rep-label">REP</span>
-                </span>
-                <span className="rc-rep-item">
-                  <span className="rc-rep-stroke" aria-hidden="true">{rep}</span>
-                  <span className="rc-rep-val">{rep}</span>
-                </span>
-              </div>
-            )}
 
             <div className="rc-art-wrap">
               <div className="rc-art-inner">

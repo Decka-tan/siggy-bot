@@ -274,73 +274,25 @@
   background: linear-gradient(120deg, #c084fc, #f3e8ff, #a855f7);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* ── Name wrapper: replaces .rc-name's flex role in .rc-header-left ── */
+/* ── Name wrapper ── */
 .rc-name-wrap {
   flex: 1 1 auto; min-width: 0;
-  position: relative; display: flex; align-items: center;
-}
-/* SSR name: gold gradient — real DOM stroke span behind via .rc-name-stroke */
-.rc-r-ssr .rc-name {
-  background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  position: relative; z-index: 1;
-}
-/* UR name: pink gradient — real DOM stroke span behind via .rc-name-stroke */
-.rc-r-ur .rc-name {
-  background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  position: relative; z-index: 1;
-}
-/* Stroke layer: real DOM element (not ::before) for reliable html-to-image rendering */
-.rc-r-ssr .rc-name-stroke,
-.rc-r-ur  .rc-name-stroke {
-  position: absolute; inset: 0;
-  font-size: 15px; font-weight: 900; letter-spacing: 0.01em;
-  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
-  text-transform: none; white-space: nowrap; overflow: hidden;
   display: flex; align-items: center;
-  -webkit-text-stroke: 1.8px rgba(255,255,255,0.9);
-  color: transparent;
-  pointer-events: none; z-index: 0;
 }
-/* REP item wrapper — stacking context for stroke + gradient siblings */
-.rc-rep-item {
-  position: relative; display: inline-flex;
-  justify-content: center; align-items: center;
+/* SSR/UR name: plain white — no gradient, no stroke */
+.rc-r-ssr .rc-name,
+.rc-r-ur  .rc-name {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
 }
-/* SSR REP: gold gradient — z-index:1 so it paints above stroke sibling */
-.rc-r-ssr .rc-rep-float .rc-rep-label,
-.rc-r-ssr .rc-rep-float .rc-rep-val {
-  position: relative; z-index: 1; display: inline-block;
-  background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-/* UR REP: pink gradient — z-index:1 */
-.rc-r-ur .rc-rep-float .rc-rep-label,
-.rc-r-ur .rc-rep-float .rc-rep-val {
-  position: relative; z-index: 1; display: inline-block;
-  background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-}
-/* REP stroke: sibling before gradient, absolute inset:0, explicit font per slot */
-.rc-r-ssr .rc-rep-float .rc-rep-stroke,
-.rc-r-ur  .rc-rep-float .rc-rep-stroke {
-  position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  white-space: nowrap;
-  -webkit-text-stroke: 3px white;
-  color: transparent;
-  pointer-events: none;
-}
-/* Label slot (first item) → 7 px caps */
-.rc-rep-float .rc-rep-item:first-child .rc-rep-stroke {
-  font-size: 7px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase;
-  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
-}
-/* Val slot (last item) → 15 px number */
-.rc-rep-float .rc-rep-item:last-child .rc-rep-stroke {
-  font-size: 15px; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
-  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
+/* SSR/UR REP: plain white */
+.rc-r-ssr .rc-rep .rc-rep-label,
+.rc-r-ssr .rc-rep .rc-rep-val,
+.rc-r-ur  .rc-rep .rc-rep-label,
+.rc-r-ur  .rc-rep .rc-rep-val {
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  opacity: 1;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
@@ -356,15 +308,6 @@
 .rc-header-right { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; position: relative; z-index: 1; }
 .rc-type-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .rc-rep { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-/* SSR/UR REP floats outside the header bar, absolute over art */
-.rc-rep-float {
-  position: absolute;
-  top: calc(10px + 44px + 4px); /* frame padding + header height + gap */
-  right: 20px;
-  z-index: 4;
-  display: flex; flex-direction: column; align-items: center; line-height: 1;
-  pointer-events: none;
-}
 .rc-rep-label { font-size: 7px; font-weight: 900; letter-spacing: 0.14em; color: var(--rar-hi); opacity: 0.9; text-transform: uppercase; }
 .rc-rep-val { font-size: 15px; font-weight: 900; color: var(--rar-hi); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 .rc-type-circle {
@@ -416,16 +359,21 @@
   background: linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 45%);
   pointer-events: none; z-index: 1;
 }
-/* Header floats above art — transparent so PFP scrim underneath handles readability */
+/* Header: dark bar flush to frame edges (bleeds past frame padding) */
 .rc-r-ssr .rc-header,
 .rc-r-ur  .rc-header {
   position: relative;
   z-index: 3;
-  background: transparent;
+  background: rgba(0,0,0,0.70);
   border: none;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  /* Bleed past the frame's 10px padding on left / right / top */
+  margin: -10px -10px 0;
+  border-radius: 0;
+  padding: 6px 20px;
 }
 .rc-r-ssr .rc-header::before,
 .rc-r-ur  .rc-header::before,
