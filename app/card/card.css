@@ -312,19 +312,37 @@
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
-/* SSR REP: gold gradient, no outline (outline caused white shadow bug in exports) */
+/* SSR REP: gold gradient + white outline */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
+  position: relative; display: block;
   background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  opacity: 1;
+  opacity: 1; text-align: center;
 }
-/* UR REP: pink gradient, no outline */
+.rc-r-ssr .rc-rep-float .rc-rep-label::before,
+.rc-r-ssr .rc-rep-float .rc-rep-val::before {
+  content: attr(data-text);
+  position: absolute; top: 0; left: 0; right: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: center;
+  -webkit-text-stroke: 3px white; -webkit-text-fill-color: transparent;
+  z-index: -1; pointer-events: none;
+}
+/* UR REP: pink gradient + white outline */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
+  position: relative; display: block;
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  opacity: 1;
+  opacity: 1; text-align: center;
+}
+.rc-r-ur .rc-rep-float .rc-rep-label::before,
+.rc-r-ur .rc-rep-float .rc-rep-val::before {
+  content: attr(data-text);
+  position: absolute; top: 0; left: 0; right: 0;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: center;
+  -webkit-text-stroke: 3px white; -webkit-text-fill-color: transparent;
+  z-index: -1; pointer-events: none;
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
