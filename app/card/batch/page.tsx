@@ -342,9 +342,11 @@ export default function BatchGeneratorPage() {
       await new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
       await new Promise(r => setTimeout(r, 80));
       const { toPng } = await import('html-to-image');
-      const url = await toPng(el, { pixelRatio: 2.5, cacheBust: true, backgroundColor: 'transparent' });
+      // cacheBust: false — pfpUrl is already a data URI, appending ?t=… invalidates it and hangs
+      const url = await toPng(el, { pixelRatio: 2.5, cacheBust: false, backgroundColor: 'transparent' });
       return url;
-    } finally { el.classList.remove('rc-capture'); }
+    } catch { return null; }
+    finally { el.classList.remove('rc-capture'); }
   };
 
   /* save all PNGs — one file per rarity variant, e.g. claire3653_UR.png */
