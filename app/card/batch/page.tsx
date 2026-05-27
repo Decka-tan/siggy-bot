@@ -371,7 +371,9 @@ export default function BatchGeneratorPage() {
     const manifestType = force
       ? uploadedCards.find(c => String(c.username || '').toLowerCase() === String(m.username || '').toLowerCase())?.type ?? null
       : null;
-    const typeOverride = remembered || manifestType || m.type || deriveTypeFromRoles(m.roles || []);
+    const shouldRandomize = (m.roles || []).some(r => r === 'Forerunner' || r === 'bitty') &&
+      !(m.roles || []).some(r => ['Foundation Team','Mods','Moderator','Event Manager','Radiant Ritualist','Zealot','Ritualist','ritty','Mage','Siggy Soulsmith','Siggy Architect'].includes(r));
+    const typeOverride = remembered || manifestType || (shouldRandomize ? deriveTypeFromRoles(m.roles || []) : (m.type || deriveTypeFromRoles(m.roles || [])));
     setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle', forceUpload: force }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
