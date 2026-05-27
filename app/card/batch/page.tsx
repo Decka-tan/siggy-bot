@@ -320,7 +320,7 @@ export default function BatchGeneratorPage() {
     return next;
   });
   const addSelected = () => {
-    filtered.filter(m => selectedIds.has(m.userId) && !inBatch(m.userId)).forEach(addMember);
+    filtered.filter(m => selectedIds.has(m.userId) && !inBatch(m.userId)).forEach(m => addMember(m));
     setSelectedIds(new Set());
   };
 
