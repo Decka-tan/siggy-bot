@@ -93,7 +93,7 @@ function getAvatarUrl(member: any): string {
 }
 
 function deriveRarity(roleNames: string[]): string {
-  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods', 'Zealot'].includes(r))) return 'UR';
+  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods', 'Zealot', 'Event Manager'].includes(r))) return 'UR';
   if (roleNames.some(r => ['Ritualist', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'SSR';
   if (roleNames.some(r => ['ritty', 'Mage'].includes(r))) return 'SR';
   if (roleNames.some(r => ['bitty', 'Forerunner'].includes(r))) return 'R';
