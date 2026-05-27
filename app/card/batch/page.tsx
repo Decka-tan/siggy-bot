@@ -221,6 +221,16 @@ export default function BatchGeneratorPage() {
     setSelectedIds(new Set());
   };
 
+  /* selectable members in the current filtered view (not yet in batch) */
+  const selectableFiltered = useMemo(
+    () => filtered.filter(m => !batch.some(b => b.userId === m.userId)),
+    [filtered, batch],
+  );
+  const allFilteredSelected = useMemo(
+    () => selectableFiltered.length > 0 && selectableFiltered.every(m => selectedIds.has(m.userId)),
+    [selectableFiltered, selectedIds],
+  );
+
   /* filtered queue */
   const filteredBatch = useMemo(() => {
     if (queueFilter === 'pending') return batch.filter(b => b.status === 'idle' || b.status === 'loading');
@@ -546,12 +556,27 @@ export default function BatchGeneratorPage() {
                 ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
                 : <>
                     <span>{filtered.length} remaining{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
-                    {selectedIds.size > 0 && (
-                      <button className="gen-btn gen-btn-primary" onClick={addSelected}
-                        style={{ padding: '3px 8px', fontSize: 11, marginLeft: 'auto' }}>
-                        + Add {selectedIds.size} selected
-                      </button>
-                    )}
+                    <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', alignItems: 'center' }}>
+                      {selectableFiltered.length > 0 && (
+                        <button
+                          className="gen-btn gen-btn-ghost"
+                          onClick={() => setSelectedIds(
+                            allFilteredSelected
+                              ? new Set()
+                              : new Set(selectableFiltered.map(m => m.userId))
+                          )}
+                          style={{ padding: '3px 8px', fontSize: 11 }}
+                        >
+                          {allFilteredSelected ? 'Deselect All' : `Select All (${selectableFiltered.length})`}
+                        </button>
+                      )}
+                      {selectedIds.size > 0 && (
+                        <button className="gen-btn gen-btn-primary" onClick={addSelected}
+                          style={{ padding: '3px 8px', fontSize: 11 }}>
+                          + Add {selectedIds.size}
+                        </button>
+                      )}
+                    </div>
                   </>
               }
             </div>
