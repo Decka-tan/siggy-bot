@@ -270,15 +270,11 @@ export default function BatchGeneratorPage() {
     () => new Set(batch.filter(b => b.status === 'done').map(b => b.userId)),
     [batch],
   );
+  // Only trust the live manifest — ASSUMED_R2_UPLOADED_ROLES is NOT used to block anymore
+  // (it caused members to be un-re-generatable even when missing from manifest)
   const uploadedUsernames = useMemo(
-    () => new Set([
-      ...uploadedCards.map(c => String(c.username || '').toLowerCase()).filter(Boolean),
-      ...allMembers
-        .filter(m => (m.roles || []).some(role => ASSUMED_R2_UPLOADED_ROLES.has(role)))
-        .map(m => String(m.username || '').toLowerCase())
-        .filter(Boolean),
-    ]),
-    [uploadedCards, allMembers],
+    () => new Set(uploadedCards.map(c => String(c.username || '').toLowerCase()).filter(Boolean)),
+    [uploadedCards],
   );
   const uploadedKeys = useMemo(
     () => new Set(uploadedCards.map(c => `${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase())),
@@ -359,9 +355,9 @@ export default function BatchGeneratorPage() {
     return 'yapper';
   };
 
-  const addMember = (m: Member) => {
+  const addMember = (m: Member, force = false) => {
     if (inBatch(m.userId)) return;
-    if (uploadedUsernames.has(String(m.username || '').toLowerCase())) return;
+    if (!force && uploadedUsernames.has(String(m.username || '').toLowerCase())) return;
     const remembered = getTypeMemory()[m.userId];
     const typeOverride = remembered || m.type || deriveTypeFromRoles(m.roles || []);
     setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle' }]);
@@ -979,6 +975,16 @@ export default function BatchGeneratorPage() {
                           + Add {selectedIds.size}
                         </button>
                       )}
+                      {browserTab === 'uploaded' && uploadedFiltered.length > 0 && (
+                        <button
+                          className="gen-btn gen-btn-repair"
+                          title="Force re-add ALL uploaded members to batch for re-generation"
+                          onClick={() => uploadedFiltered.filter(m => !inBatch(m.userId)).forEach(m => addMember(m, true))}
+                          style={{ padding: '3px 8px', fontSize: 11 }}
+                        >
+                          ↺ Re-gen All ({uploadedFiltered.filter(m => !inBatch(m.userId)).length})
+                        </button>
+                      )}
                     </div>
                   </>
               }
@@ -990,6 +996,7 @@ export default function BatchGeneratorPage() {
               const added    = inBatch(m.userId);
               const selected = selectedIds.has(m.userId);
               const uploaded = uploadedUsernames.has(String(m.username || '').toLowerCase());
+              const isUploadedTab = browserTab === 'uploaded';
               return (
                 <div key={m.userId} className={`batch-member-row${added ? ' is-added' : ''}${selected ? ' is-selected' : ''}${uploaded ? ' is-uploaded' : ''}`}>
                   {!added && !uploaded && (
@@ -997,7 +1004,15 @@ export default function BatchGeneratorPage() {
                       onChange={() => toggleSelect(m.userId)}
                       onClick={e => e.stopPropagation()}/>
                   )}
-                  <button className="batch-member-btn" onClick={() => !added && !uploaded && addMember(m)} disabled={added || uploaded}>
+                  <button
+                    className="batch-member-btn"
+                    onClick={() => {
+                      if (added) return;
+                      if (isUploadedTab) addMember(m, true); // force re-add from uploaded tab
+                      else if (!uploaded) addMember(m);
+                    }}
+                    disabled={added}
+                  >
                     <img src={m.avatarUrl} alt="" className="batch-member-avatar"
                       onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}/>
                     <div className="batch-member-info">
@@ -1010,10 +1025,12 @@ export default function BatchGeneratorPage() {
                           {m.contributorRole}
                         </span>
                       )}
-                      {uploaded
-                        ? <span className="batch-uploaded-pill">R2</span>
-                        : added
+                      {added
                         ? <Check size={13} style={{ color: '#40FFAF', flexShrink: 0 }}/>
+                        : isUploadedTab
+                        ? <span className="batch-regen-btn" title="Force re-generate">↺</span>
+                        : uploaded
+                        ? <span className="batch-uploaded-pill">R2</span>
                         : <span className="batch-member-add">+</span>
                       }
                     </div>
@@ -1254,6 +1271,11 @@ export default function BatchGeneratorPage() {
           color: #40FFAF; border: 1px solid rgba(64,255,175,0.45);
           background: rgba(64,255,175,0.08); border-radius: 3px; padding: 3px 5px;
         }
+        .batch-regen-btn {
+          font-size: 14px; line-height: 1; color: #f77f00;
+          opacity: 0.7; transition: opacity 100ms;
+        }
+        .batch-member-row.is-uploaded:hover .batch-regen-btn { opacity: 1; }
         .batch-cb { width: 14px; height: 14px; flex-shrink: 0; accent-color: #FFD700; cursor: pointer; }
         .batch-member-btn {
           flex: 1; background: transparent; border: none;
