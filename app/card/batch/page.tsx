@@ -505,7 +505,10 @@ export default function BatchGeneratorPage() {
       const cardKey = `${t.userId}-${t.rarity}`;
       try {
         const dataUrl = await renderCardPng(cardKey, fontEmbedCSS);
-        if (!dataUrl) { fail++; continue; }
+        if (!dataUrl) {
+          console.warn(`[R2] renderCardPng returned null for key=${cardKey} (el exists: ${!!cardRefs.current.get(cardKey)})`);
+          fail++; continue;
+        }
 
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], `${t.itemUsername}_${t.rarity}.png`, { type: 'image/png' });
@@ -516,8 +519,16 @@ export default function BatchGeneratorPage() {
 
         const res = await fetch('/api/upload-cards', { method: 'POST', body: form });
         const data = await res.json();
-        data.ok ? ok++ : fail++;
-      } catch { fail++; }
+        if (data.ok) {
+          ok++;
+        } else {
+          console.error(`[R2] upload failed for ${t.key}:`, data);
+          fail++;
+        }
+      } catch (e) {
+        console.error(`[R2] exception for ${t.key}:`, e);
+        fail++;
+      }
 
       setUploadProgress({ current: i + 1, total: tasks.length });
     }
