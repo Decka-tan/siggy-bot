@@ -414,6 +414,113 @@ export default function BatchGeneratorPage() {
     } finally { setZipping(false); }
   };
 
+  /* ── R2 upload state ─────────────────────────────────────────────── */
+  const [uploading, setUploading]           = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
+  const [uploadResults, setUploadResults]   = useState<{ ok: number; fail: number } | null>(null);
+
+  /* role → folder slug: Foundation Team → foundation-team */
+  const toRoleSlug = (roles: string[]): string => {
+    if (roles.includes('Foundation Team'))   return 'foundation-team';
+    if (roles.some(r => r === 'Mods'))       return 'mods';
+    if (roles.includes('Event Manager'))     return 'event-manager';
+    if (roles.includes('Radiant Ritualist')) return 'radiant-ritualist';
+    if (roles.includes('Zealot'))            return 'zealot';
+    if (roles.includes('Ritualist'))         return 'ritualist';
+    if (roles.includes('Siggy Soulsmith'))   return 'soulsmith';
+    if (roles.includes('Siggy Architect'))   return 'architect';
+    if (roles.includes('Mage'))              return 'mage';
+    if (roles.includes('ritty'))             return 'ritty';
+    if (roles.includes('bitty'))             return 'bitty';
+    return 'contributor';
+  };
+
+  const uploadToR2 = async () => {
+    const done = batch.filter(b => b.status === 'done' && b.allRarityCards?.length);
+    if (!done.length) return;
+    setUploading(true);
+    setUploadResults(null);
+
+    const { getFontEmbedCSS } = await import('html-to-image');
+    const firstKey = `${done[0].userId}-${done[0].allRarityCards![0].rarity}`;
+    const firstEl  = cardRefs.current.get(firstKey);
+    const fontEmbedCSS = firstEl ? await getFontEmbedCSS(firstEl).catch(() => '') : '';
+
+    // e.g. cards/foundation-team/artelamon_UR.png
+    const tasks: { itemUsername: string; userId: string; rarity: string; roleSlug: string; key: string }[] = [];
+    for (const item of done) {
+      const roleSlug = toRoleSlug(item.roles || []);
+      for (const cardData of item.allRarityCards!) {
+        tasks.push({
+          itemUsername: item.username,
+          userId:       item.userId,
+          rarity:       cardData.rarity,
+          roleSlug,
+          key: `cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
+        });
+      }
+    }
+
+    setUploadProgress({ current: 0, total: tasks.length });
+    let ok = 0, fail = 0;
+
+    for (let i = 0; i < tasks.length; i++) {
+      const t = tasks[i];
+      const cardKey = `${t.userId}-${t.rarity}`;
+      try {
+        const dataUrl = await renderCardPng(cardKey, fontEmbedCSS);
+        if (!dataUrl) { fail++; continue; }
+
+        const blob = await (await fetch(dataUrl)).blob();
+        const file = new File([blob], `${t.itemUsername}_${t.rarity}.png`, { type: 'image/png' });
+
+        const form = new FormData();
+        form.append('file', file);
+        form.append('key', t.key);
+
+        const res = await fetch('/api/upload-cards', { method: 'POST', body: form });
+        const data = await res.json();
+        data.ok ? ok++ : fail++;
+      } catch { fail++; }
+
+      setUploadProgress({ current: i + 1, total: tasks.length });
+    }
+
+    // Build + upload manifest.json
+    if (ok > 0) {
+      try {
+        const R2_PUB = 'https://pub-6e7d7fa0c27b4a9aa07575fad91eaeac.r2.dev';
+        const manifest = {
+          updatedAt: Date.now(),
+          cards: done.flatMap(item => {
+            const roleSlug = toRoleSlug(item.roles || []);
+            return item.allRarityCards!.map(cardData => ({
+              userId:          item.userId,
+              username:        item.username,
+              displayName:     item.displayName,
+              rarity:          cardData.rarity,
+              contributorRole: item.contributorRole ?? null,
+              roleSlug,
+              roles:           item.roles,
+              rep:             cardData.rep,
+              url: `${R2_PUB}/cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
+            }));
+          }),
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+        const manifestFile = new File([manifestBlob], 'manifest.json', { type: 'application/json' });
+        const form = new FormData();
+        form.append('file', manifestFile);
+        form.append('key', 'manifest.json');
+        await fetch('/api/upload-cards', { method: 'POST', body: form });
+      } catch (e) { console.warn('manifest upload failed', e); }
+    }
+
+    setUploading(false);
+    setUploadProgress(null);
+    setUploadResults({ ok, fail });
+  };
+
   const doneCount = batch.filter(b => b.status === 'done').length;
 
   return (
@@ -449,9 +556,24 @@ export default function BatchGeneratorPage() {
             <RefreshCw size={13} className={listLoading ? 'batch-spin' : undefined}/>
           </button>
           {doneCount > 0 && (
-            <button className="gen-btn" onClick={saveToFolder} disabled={zipping}>
+            <button className="gen-btn" onClick={saveToFolder} disabled={zipping || uploading}>
               <Download size={13}/>
               {zipping ? 'Saving…' : `Save to Folder (${batch.filter(b=>b.status==='done').reduce((s,b)=>s+(b.allRarityCards?.length??1),0)} files)`}
+            </button>
+          )}
+          {doneCount > 0 && (
+            <button
+              className="gen-btn gen-btn-r2"
+              onClick={uploadToR2}
+              disabled={uploading || zipping}
+              title="Upload all generated PNGs to Cloudflare R2"
+            >
+              {uploading
+                ? <><span className="batch-spin">⟳</span> {uploadProgress ? `${uploadProgress.current}/${uploadProgress.total}` : 'Uploading…'}</>
+                : uploadResults
+                  ? <>{uploadResults.fail === 0 ? '✓' : '!'} {uploadResults.ok} uploaded{uploadResults.fail > 0 ? `, ${uploadResults.fail} failed` : ''}</>
+                  : <>☁ Upload to R2 ({batch.filter(b=>b.status==='done').reduce((s,b)=>s+(b.allRarityCards?.length??1),0)})</>
+              }
             </button>
           )}
           {batch.some(b => b.status !== 'done') && (
@@ -945,6 +1067,12 @@ export default function BatchGeneratorPage() {
         }
         .batch-select:focus { border-color: #FFD700; }
         .batch-spin { display: inline-block; animation: gen-spin 0.7s linear infinite; }
+        .gen-btn-r2 {
+          background: rgba(247,127,0,0.15); border-color: #f77f00; color: #f77f00;
+        }
+        .gen-btn-r2:hover:not(:disabled) {
+          background: rgba(247,127,0,0.28); border-color: #ffaa44; color: #ffaa44;
+        }
 
         @media (max-width: 900px) {
           .batch-workspace { grid-template-columns: 1fr; height: auto; }
