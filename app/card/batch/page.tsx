@@ -251,6 +251,21 @@ export default function BatchGeneratorPage() {
   const update = (uid: string, patch: Partial<BatchItem>) =>
     setBatch(prev => prev.map(b => b.userId === uid ? { ...b, ...patch } : b));
 
+  /* pre-fetch image → base64 data URI so html-to-image never re-fetches */
+  const toDataUri = async (url: string): Promise<string> => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return url;
+      const blob = await res.blob();
+      return await new Promise<string>(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror  = () => resolve(url);
+        reader.readAsDataURL(blob);
+      });
+    } catch { return url; }
+  };
+
   /* generate one card — builds all rarity variants from their tier down to common */
   const generateOne = async (item: BatchItem) => {
     update(item.userId, { status: 'loading' });
@@ -262,8 +277,13 @@ export default function BatchGeneratorPage() {
         const base = data.member;
         const days: number = base.days ?? 0;
         const roleRank: number = base.roleRank ?? item.roleRank ?? 1;
+
+        // Pre-convert PFP to data URI — html-to-image embeds it directly, no re-fetch
+        const pfpDataUri = base.pfpUrl ? await toDataUri(base.pfpUrl) : base.pfpUrl;
+
         const baseCard: CardData = {
           ...base,
+          pfpUrl:         pfpDataUri,
           type:           item.typeOverride,
           social:         handle ? `@${handle}` : base.social,
           socialPlatform: handle ? 'x' : 'discord',
