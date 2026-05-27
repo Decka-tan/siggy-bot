@@ -703,8 +703,8 @@ export default function BatchGeneratorPage() {
         </div>
       </div>
 
-      {/* Hidden cards — all rarity variants per member, keyed by userId-rarity */}
-      <div style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none' }}>
+      {/* Hidden cards — off-viewport, fixed so they never affect page layout or scrollbar */}
+      <div style={{ position: 'fixed', top: '-9999px', left: '-9999px', pointerEvents: 'none' }}>
         {batch.filter(b => b.status === 'done' && b.allRarityCards).flatMap(item =>
           item.allRarityCards!.map(cardData => {
             const key = `${item.userId}-${cardData.rarity}`;
