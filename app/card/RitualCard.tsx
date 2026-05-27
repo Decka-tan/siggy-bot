@@ -388,13 +388,13 @@ export function RitualCard({
             {/* REP floats outside header for SSR/UR — doesn't affect header height */}
             {rep > 0 && (r === 'SSR' || r === 'UR') && (
               <div className="rc-rep-float">
-                <span className="rc-rep-label">
+                <span className="rc-rep-item">
                   <span className="rc-rep-stroke" aria-hidden="true">REP</span>
-                  REP
+                  <span className="rc-rep-label">REP</span>
                 </span>
-                <span className="rc-rep-val">
+                <span className="rc-rep-item">
                   <span className="rc-rep-stroke" aria-hidden="true">{rep}</span>
-                  {rep}
+                  <span className="rc-rep-val">{rep}</span>
                 </span>
               </div>
             )}

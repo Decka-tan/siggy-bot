@@ -303,30 +303,44 @@
   color: transparent;
   pointer-events: none; z-index: 0;
 }
-/* SSR REP: gold gradient + real DOM stroke span */
+/* REP item wrapper — stacking context for stroke + gradient siblings */
+.rc-rep-item {
+  position: relative; display: inline-flex;
+  justify-content: center; align-items: center;
+}
+/* SSR REP: gold gradient — z-index:1 so it paints above stroke sibling */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
-  position: relative; display: inline-block;
+  position: relative; z-index: 1; display: inline-block;
   background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* UR REP: pink gradient + real DOM stroke span */
+/* UR REP: pink gradient — z-index:1 */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
-  position: relative; display: inline-block;
+  position: relative; z-index: 1; display: inline-block;
   background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-/* REP stroke: child of label/val → font: inherit gives exact match */
+/* REP stroke: sibling before gradient, absolute inset:0, explicit font per slot */
 .rc-r-ssr .rc-rep-float .rc-rep-stroke,
 .rc-r-ur  .rc-rep-float .rc-rep-stroke {
-  position: absolute; top: 0; left: 0;
-  font: inherit; letter-spacing: inherit; text-transform: inherit;
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
   white-space: nowrap;
   -webkit-text-stroke: 3px white;
-  -webkit-text-fill-color: transparent;
   color: transparent;
   pointer-events: none;
+}
+/* Label slot (first item) → 7 px caps */
+.rc-rep-float .rc-rep-item:first-child .rc-rep-stroke {
+  font-size: 7px; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase;
+  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
+}
+/* Val slot (last item) → 15 px number */
+.rc-rep-float .rc-rep-item:last-child .rc-rep-stroke {
+  font-size: 15px; font-weight: 900; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+  font-family: var(--font-rajdhani, "Rajdhani", ui-sans-serif, system-ui, sans-serif);
 }
 
 @keyframes rc-name-gold { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
