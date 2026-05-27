@@ -124,6 +124,8 @@ const ROLE_RANK: Record<string, number> = {
   'Radiant Ritualist': 2,
   'Foundation Team':   2,
   'Mods':              2,
+  'Event Manager':     2,
+  'Zealot':            2,
   'Mage':              1.7,
   'Ritualist':         1.7,
   'Siggy Soulsmith':   1.7,
@@ -153,7 +155,7 @@ function deriveType(roleNames: string[]): string {
 }
 
 function deriveRarity(roleNames: string[]): string {
-  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods', 'Zealot'].includes(r))) return 'UR';
+  if (roleNames.some(r => ['Radiant Ritualist', 'Foundation Team', 'Mods', 'Zealot', 'Event Manager'].includes(r))) return 'UR';
   if (roleNames.some(r => ['Ritualist', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'SSR';
   if (roleNames.some(r => ['ritty', 'Mage'].includes(r))) return 'SR';
   if (roleNames.some(r => ['bitty', 'Forerunner'].includes(r))) return 'R';
