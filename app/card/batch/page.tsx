@@ -24,6 +24,7 @@ interface BatchItem extends Member {
   card:           CardData | null;        // primary (actual rarity) for thumbnail
   allRarityCards: CardData[] | null;      // from their rarity down to common
   status:         'idle' | 'loading' | 'done' | 'error';
+  forceUpload?:   boolean;               // bypass manifest-already-uploaded check
 }
 
 /* ── Constants ────────────────────────────────────────────────────── */
@@ -361,7 +362,7 @@ export default function BatchGeneratorPage() {
     if (!force && uploadedUsernames.has(String(m.username || '').toLowerCase())) return;
     const remembered = getTypeMemory()[m.userId];
     const typeOverride = remembered || m.type || deriveTypeFromRoles(m.roles || []);
-    setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle' }]);
+    setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle', forceUpload: force }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
   const update = (uid: string, patch: Partial<BatchItem>) =>
@@ -564,18 +565,19 @@ export default function BatchGeneratorPage() {
     const fontEmbedCSS = firstEl ? await getFontEmbedCSS(firstEl).catch(() => '') : '';
 
     // e.g. cards/foundation-team/artelamon_UR.png
-    const tasks: { itemUsername: string; userId: string; rarity: string; roleSlug: string; key: string }[] = [];
+    const tasks: { itemUsername: string; userId: string; rarity: string; roleSlug: string; key: string; forceUpload: boolean }[] = [];
     for (const item of done) {
       const roleSlug = toRoleSlug(item.roles || []);
       for (const cardData of item.allRarityCards!) {
         const uploadKey = `${roleSlug}/${item.username}_${cardData.rarity}`.toLowerCase();
-        if (uploadedUsernames.has(String(item.username || '').toLowerCase()) || uploadedKeys.has(uploadKey)) continue;
+        if (!item.forceUpload && (uploadedUsernames.has(String(item.username || '').toLowerCase()) || uploadedKeys.has(uploadKey))) continue;
         tasks.push({
           itemUsername: item.username,
           userId:       item.userId,
           rarity:       cardData.rarity,
           roleSlug,
           key: `cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
+          forceUpload:  !!item.forceUpload,
         });
       }
     }
