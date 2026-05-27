@@ -69,6 +69,8 @@ const TYPE_LABELS: Record<string, string> = {
 const RARITY_COLOR: Record<string, string> = {
   UR: '#ff5fb8', SSR: '#FFD700', SR: '#c084fc', R: '#60a5fa', common: '#40FFAF',
 };
+const R2_WORKER_BASE = 'https://ritual-tcg.artelamon.workers.dev';
+const R2_PUBLIC_BASE = 'https://pub-6e7d7fa0c27b4a9aa07575fad91eaeac.r2.dev';
 
 /* ── Component ────────────────────────────────────────────────────── */
 export default function BatchGeneratorPage() {
@@ -99,6 +101,15 @@ export default function BatchGeneratorPage() {
   const LS_KEY   = 'ritual-members-cache-v2';
   const LS_TTL   = 12 * 60 * 60 * 1000;
   const QUEUE_KEY = 'ritual-batch-queue-v1';
+  const TYPE_MEMORY_KEY = 'ritual-batch-type-memory-v1';
+  const [uploadedCards, setUploadedCards] = useState<any[]>([]);
+
+  const getTypeMemory = (): Record<string, string> => {
+    try { return JSON.parse(localStorage.getItem(TYPE_MEMORY_KEY) || '{}'); } catch { return {}; }
+  };
+  const rememberType = (userId: string, type: string) => {
+    try { localStorage.setItem(TYPE_MEMORY_KEY, JSON.stringify({ ...getTypeMemory(), [userId]: type })); } catch {}
+  };
 
   /* load member list — localStorage first, Discord only when stale or forced */
   const loadMembers = useCallback(async (force = false) => {
@@ -134,6 +145,19 @@ export default function BatchGeneratorPage() {
   }, []);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`${R2_WORKER_BASE}/api/cards?t=${Date.now()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setUploadedCards(Array.isArray(data.cards) ? data.cards : []);
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Restore queue from localStorage on mount — wait for allMembers to be available
   const queueRestoredRef = useRef(false);
@@ -202,7 +226,7 @@ export default function BatchGeneratorPage() {
       try {
         const res  = await fetch(`/api/member?autocomplete=true&username=${encodeURIComponent(q.trim())}`);
         const data = await res.json();
-        setSearchResults(data.members || []);
+        setSearchResults((data.members || []).filter((m: Member) => !uploadedUsernames.has(String(m.username || '').toLowerCase())));
       } catch { setSearchResults([]); }
       finally { setSearchLoading(false); }
     }, 300);
@@ -230,12 +254,21 @@ export default function BatchGeneratorPage() {
     () => new Set(batch.filter(b => b.status === 'done').map(b => b.userId)),
     [batch],
   );
+  const uploadedUsernames = useMemo(
+    () => new Set(uploadedCards.map(c => String(c.username || '').toLowerCase()).filter(Boolean)),
+    [uploadedCards],
+  );
+  const uploadedKeys = useMemo(
+    () => new Set(uploadedCards.map(c => `${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase())),
+    [uploadedCards],
+  );
 
   /* filtered list — exclude already-generated members */
   const filtered = useMemo(() => {
     const q = filter.toLowerCase().trim();
     return allMembers.filter(m => {
       if (generatedIds.has(m.userId)) return false;
+      if (uploadedUsernames.has(String(m.username || '').toLowerCase())) return false;
       if (filterType && !m.roles.includes(filterType)) return false;
       if (!q) return true;
       return (
@@ -244,7 +277,7 @@ export default function BatchGeneratorPage() {
         (m.contributorRole || '').toLowerCase().includes(q)
       );
     });
-  }, [allMembers, filter, filterType, generatedIds]);
+  }, [allMembers, filter, filterType, generatedIds, uploadedUsernames]);
 
   /* multi-select */
   const toggleSelect = (uid: string) => setSelectedIds(prev => {
@@ -290,7 +323,9 @@ export default function BatchGeneratorPage() {
 
   const addMember = (m: Member) => {
     if (inBatch(m.userId)) return;
-    const typeOverride = m.type || deriveTypeFromRoles(m.roles || []);
+    if (uploadedUsernames.has(String(m.username || '').toLowerCase())) return;
+    const remembered = getTypeMemory()[m.userId];
+    const typeOverride = remembered || m.type || deriveTypeFromRoles(m.roles || []);
     setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle' }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
@@ -487,6 +522,8 @@ export default function BatchGeneratorPage() {
     for (const item of done) {
       const roleSlug = toRoleSlug(item.roles || []);
       for (const cardData of item.allRarityCards!) {
+        const uploadKey = `${roleSlug}/${item.username}_${cardData.rarity}`.toLowerCase();
+        if (uploadedKeys.has(uploadKey)) continue;
         tasks.push({
           itemUsername: item.username,
           userId:       item.userId,
@@ -495,6 +532,13 @@ export default function BatchGeneratorPage() {
           key: `cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
         });
       }
+    }
+
+    if (tasks.length === 0) {
+      setUploading(false);
+      setUploadProgress(null);
+      setUploadResults({ ok: 0, fail: 0 });
+      return;
     }
 
     setUploadProgress({ current: 0, total: tasks.length });
@@ -536,23 +580,37 @@ export default function BatchGeneratorPage() {
     // Build + upload manifest.json
     if (ok > 0) {
       try {
-        const R2_PUB = 'https://pub-6e7d7fa0c27b4a9aa07575fad91eaeac.r2.dev';
+        const existing = uploadedCards.map(c => ({
+          userId:          c.userId,
+          username:        c.username,
+          displayName:     c.displayName,
+          rarity:          c.rarity,
+          contributorRole: c.contributorRole ?? null,
+          roleSlug:        c.roleSlug || 'contributor',
+          roles:           c.roles || [],
+          rep:             c.rep,
+          url:             c.url,
+        }));
+        const fresh = done.flatMap(item => {
+          const roleSlug = toRoleSlug(item.roles || []);
+          return item.allRarityCards!.map(cardData => ({
+            userId:          item.userId,
+            username:        item.username,
+            displayName:     item.displayName,
+            rarity:          cardData.rarity,
+            contributorRole: item.contributorRole ?? null,
+            roleSlug,
+            roles:           item.roles,
+            rep:             cardData.rep,
+            url: `${R2_PUBLIC_BASE}/cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
+          }));
+        });
+        const mergedMap = new Map<string, any>();
+        for (const c of existing) mergedMap.set(`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c);
+        for (const c of fresh) mergedMap.set(`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c);
         const manifest = {
           updatedAt: Date.now(),
-          cards: done.flatMap(item => {
-            const roleSlug = toRoleSlug(item.roles || []);
-            return item.allRarityCards!.map(cardData => ({
-              userId:          item.userId,
-              username:        item.username,
-              displayName:     item.displayName,
-              rarity:          cardData.rarity,
-              contributorRole: item.contributorRole ?? null,
-              roleSlug,
-              roles:           item.roles,
-              rep:             cardData.rep,
-              url: `${R2_PUB}/cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
-            }));
-          }),
+          cards: Array.from(mergedMap.values()),
         };
         const manifestBlob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
         const manifestFile = new File([manifestBlob], 'manifest.json', { type: 'application/json' });
@@ -566,6 +624,28 @@ export default function BatchGeneratorPage() {
     setUploading(false);
     setUploadProgress(null);
     setUploadResults({ ok, fail });
+    if (ok > 0) {
+      setUploadedCards(prev => {
+        const merged = new Map(prev.map(c => [`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c]));
+        for (const item of done) {
+          const roleSlug = toRoleSlug(item.roles || []);
+          for (const cardData of item.allRarityCards || []) {
+            merged.set(`${roleSlug}/${item.username}_${cardData.rarity}`.toLowerCase(), {
+              userId: item.userId,
+              username: item.username,
+              displayName: item.displayName,
+              rarity: cardData.rarity,
+              contributorRole: item.contributorRole ?? null,
+              roleSlug,
+              roles: item.roles,
+              rep: cardData.rep,
+              url: `${R2_PUBLIC_BASE}/cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
+            });
+          }
+        }
+        return Array.from(merged.values());
+      });
+    }
   };
 
   const doneCount = batch.filter(b => b.status === 'done').length;
@@ -697,7 +777,9 @@ export default function BatchGeneratorPage() {
               >All</button>
               {ROLE_FILTER_OPTIONS.map(r => {
                 const roleMembers = allMembers.filter(m =>
-                  m.roles.includes(r) && !batch.some(b => b.userId === m.userId)
+                  m.roles.includes(r) &&
+                  !batch.some(b => b.userId === m.userId) &&
+                  !uploadedUsernames.has(String(m.username || '').toLowerCase())
                 );
                 return (
                   <span key={r} className="batch-chip-wrap">
@@ -737,7 +819,7 @@ export default function BatchGeneratorPage() {
               {listLoading
                 ? <span className="batch-spin" style={{ fontSize: 16 }}>⟳</span>
                 : <>
-                    <span>{filtered.length} remaining{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
+                    <span>{filtered.length} remaining{uploadedUsernames.size > 0 ? ` · ${uploadedUsernames.size} uploaded hidden` : ''}{generatedIds.size > 0 ? ` · ${generatedIds.size} done` : ''}</span>
                     <div style={{ display: 'flex', gap: 4, marginLeft: 'auto', alignItems: 'center' }}>
                       {selectableFiltered.length > 0 && (
                         <button
@@ -838,7 +920,11 @@ export default function BatchGeneratorPage() {
                     key={t}
                     className="batch-type-chip batch-type-chip-sm"
                     title={`Set all pending to ${TYPE_LABELS[t]}`}
-                    onClick={() => setBatch(prev => prev.map(b => b.status !== 'done' ? { ...b, typeOverride: t } : b))}
+                    onClick={() => setBatch(prev => prev.map(b => {
+                      if (b.status === 'done') return b;
+                      rememberType(b.userId, t);
+                      return { ...b, typeOverride: t };
+                    }))}
                   >
                     {TYPE_LABELS[t].replace('Event ', 'Ev.')}
                   </button>
@@ -877,7 +963,10 @@ export default function BatchGeneratorPage() {
                           key={t}
                           className={`batch-type-chip batch-type-chip-sm${item.typeOverride === t ? ' active' : ''}`}
                           title={TYPE_LABELS[t]}
-                          onClick={() => update(item.userId, { typeOverride: t, status: item.status === 'done' ? 'idle' : item.status })}
+                          onClick={() => {
+                            rememberType(item.userId, t);
+                            update(item.userId, { typeOverride: t, status: item.status === 'done' ? 'idle' : item.status });
+                          }}
                         >
                           {TYPE_LABELS[t].replace('Event ', 'Ev.')}
                         </button>
