@@ -288,14 +288,15 @@ export default function BatchGeneratorPage() {
           social:         handle ? `@${handle}` : base.social,
           socialPlatform: handle ? 'x' : 'discord',
         };
-        // generate from their actual rarity down to common
-        const startIdx = RARITIES_ORDERED.indexOf(item.rarity as typeof RARITIES_ORDERED[number]);
+        // use fresh rarity from API, not stale cache in item.rarity
+        const freshRarity = base.rarity || item.rarity;
+        const startIdx = RARITIES_ORDERED.indexOf(freshRarity as typeof RARITIES_ORDERED[number]);
         const applicableRarities = RARITIES_ORDERED.slice(startIdx >= 0 ? startIdx : 0);
         const allRarityCards: CardData[] = applicableRarities.map(rar => {
           const { rep, atk, def, spd } = computeStats(days, roleRank, rar);
           return { ...baseCard, rarity: rar, rep, atk, def, spd };
         });
-        update(item.userId, { status: 'done', roleRank, card: allRarityCards[0], allRarityCards });
+        update(item.userId, { status: 'done', rarity: freshRarity, roleRank, card: allRarityCards[0], allRarityCards });
       } else {
         update(item.userId, { status: 'error' });
       }
