@@ -135,26 +135,62 @@ export default function BatchGeneratorPage() {
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
 
-  // Restore queue from localStorage on mount
+  // Restore queue from localStorage on mount — wait for allMembers to be available
+  const queueRestoredRef = useRef(false);
   useEffect(() => {
+    if (queueRestoredRef.current || allMembers.length === 0) return;
+    queueRestoredRef.current = true;
     try {
       const raw = localStorage.getItem(QUEUE_KEY);
-      if (raw) {
-        const saved: BatchItem[] = JSON.parse(raw);
-        if (Array.isArray(saved) && saved.length > 0) setBatch(saved);
-      }
-    } catch {}
-  }, []);
+      if (!raw) return;
+      // Support both slim format { userId, status, typeOverride, xHandle }
+      // and legacy full format (older saves)
+      const saved: Array<{ userId: string; status: string; typeOverride?: string; xHandle?: string } & Partial<Member>> = JSON.parse(raw);
+      if (!Array.isArray(saved) || saved.length === 0) return;
 
-  // Persist queue on every change (skip card data — too large)
-  useEffect(() => {
-    try {
-      const toSave = batch.map(({ card, allRarityCards, ...rest }) => ({
-        ...rest, card: null, allRarityCards: null,
-        status: rest.status === 'loading' ? 'idle' : rest.status,
-      }));
-      localStorage.setItem(QUEUE_KEY, JSON.stringify(toSave));
+      const memberMap = new Map(allMembers.map(m => [m.userId, m]));
+      const restored: BatchItem[] = saved.map(s => {
+        const m = memberMap.get(s.userId) ?? (s as unknown as Member);
+        return {
+          ...m,
+          typeOverride: s.typeOverride ?? m.type ?? deriveTypeFromRoles(m.roles ?? []),
+          xHandle:      s.xHandle ?? '',
+          card:         null,
+          allRarityCards: null,
+          status:       (s.status === 'done' || s.status === 'error') ? s.status : 'idle',
+        } as BatchItem;
+      }).filter(b => b.userId);
+
+      if (restored.length > 0) setBatch(restored);
     } catch {}
+  }, [allMembers]); // re-run once allMembers loads
+
+  // Persist queue — save only slim fields to avoid localStorage quota issues
+  useEffect(() => {
+    if (batch.length === 0) return;
+    try {
+      const slim = batch.map(b => ({
+        userId:       b.userId,
+        username:     b.username,       // keep for display before allMembers loads
+        displayName:  b.displayName,
+        rarity:       b.rarity,
+        status:       b.status === 'loading' ? 'idle' : b.status,
+        typeOverride: b.typeOverride,
+        xHandle:      b.xHandle,
+      }));
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(slim));
+    } catch (e) {
+      // Quota exceeded — try saving without displayName/username to save space
+      try {
+        const minimal = batch.map(b => ({
+          userId:      b.userId,
+          status:      b.status === 'loading' ? 'idle' : b.status,
+          typeOverride: b.typeOverride,
+          xHandle:     b.xHandle,
+        }));
+        localStorage.setItem(QUEUE_KEY, JSON.stringify(minimal));
+      } catch {}
+    }
   }, [batch]);
 
   const onSearchChange = (q: string) => {
