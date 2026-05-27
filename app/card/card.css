@@ -373,7 +373,7 @@
   /* Bleed past the frame's 10px padding on left / right / top */
   margin: -10px -10px 0;
   border-radius: 0;
-  padding: 10px 20px;
+  padding: 14px 20px 10px;
 }
 .rc-r-ssr .rc-header::before,
 .rc-r-ur  .rc-header::before,
