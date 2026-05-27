@@ -616,19 +616,19 @@ export default function BatchGeneratorPage() {
     }
 
     // Build + upload manifest.json
+    // ALWAYS re-fetch live manifest right before merge so concurrent sessions don't clobber each other
     if (ok > 0) {
       try {
-        const existing = uploadedCards.map(c => ({
-          userId:          c.userId,
-          username:        c.username,
-          displayName:     c.displayName,
-          rarity:          c.rarity,
-          contributorRole: c.contributorRole ?? null,
-          roleSlug:        c.roleSlug || 'contributor',
-          roles:           c.roles || [],
-          rep:             c.rep,
-          url:             c.url,
-        }));
+        // Fresh fetch — bypass KV cache with unique timestamp
+        let liveCards: any[] = [];
+        try {
+          const liveRes = await fetch(`${R2_WORKER_BASE}/api/cards?_bust=${Date.now()}`, { cache: 'no-store' });
+          if (liveRes.ok) {
+            const liveData = await liveRes.json();
+            liveCards = Array.isArray(liveData.cards) ? liveData.cards : [];
+          }
+        } catch (e) { console.warn('manifest live-fetch failed, falling back to state', e); liveCards = uploadedCards; }
+
         const fresh = done.flatMap(item => {
           const roleSlug = toRoleSlug(item.roles || []);
           return item.allRarityCards!.map(cardData => ({
@@ -644,7 +644,9 @@ export default function BatchGeneratorPage() {
           }));
         });
         const mergedMap = new Map<string, any>();
-        for (const c of existing) mergedMap.set(`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c);
+        // Base: live manifest (most up-to-date)
+        for (const c of liveCards) mergedMap.set(`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c);
+        // Override with freshly-uploaded cards
         for (const c of fresh) mergedMap.set(`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c);
         const manifest = {
           updatedAt: Date.now(),
@@ -656,37 +658,93 @@ export default function BatchGeneratorPage() {
         form.append('file', manifestFile);
         form.append('key', 'manifest.json');
         await fetch('/api/upload-cards', { method: 'POST', body: form });
+        // Update local state to match
+        setUploadedCards(Array.from(mergedMap.values()));
       } catch (e) { console.warn('manifest upload failed', e); }
     }
 
     setUploading(false);
     setUploadProgress(null);
     setUploadResults({ ok, fail });
-    if (ok > 0) {
-      setUploadedCards(prev => {
-        const merged = new Map(prev.map(c => [`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c]));
-        for (const item of done) {
-          const roleSlug = toRoleSlug(item.roles || []);
-          for (const cardData of item.allRarityCards || []) {
-            merged.set(`${roleSlug}/${item.username}_${cardData.rarity}`.toLowerCase(), {
-              userId: item.userId,
-              username: item.username,
-              displayName: item.displayName,
-              rarity: cardData.rarity,
-              contributorRole: item.contributorRole ?? null,
-              roleSlug,
-              roles: item.roles,
-              rep: cardData.rep,
-              url: `${R2_PUBLIC_BASE}/cards/${roleSlug}/${item.username}_${cardData.rarity}.png`,
-            });
-          }
-        }
-        return Array.from(merged.values());
-      });
-    }
   };
 
   const doneCount = batch.filter(b => b.status === 'done').length;
+
+  /* ── Repair Manifest — list R2 bucket and rebuild from actual files ── */
+  const [repairState, setRepairState] = useState<'idle' | 'listing' | 'fetching' | 'uploading' | 'done' | 'error'>('idle');
+  const [repairLog,   setRepairLog]   = useState<string[]>([]);
+
+  const repairManifest = async () => {
+    setRepairState('listing');
+    setRepairLog(['Listing R2 bucket…']);
+    try {
+      // 1. List all PNGs from R2
+      const listRes = await fetch('/api/upload-cards/list?prefix=cards/');
+      if (!listRes.ok) throw new Error(`List failed: ${listRes.status}`);
+      const listData = await listRes.json();
+      const r2Files: { key: string; roleSlug: string; username: string; rarity: string; url: string }[] = listData.cards ?? [];
+      setRepairLog(p => [...p, `Found ${r2Files.length} PNG files in R2`]);
+
+      // 2. Fetch current live manifest as base
+      setRepairState('fetching');
+      setRepairLog(p => [...p, 'Fetching current live manifest…']);
+      let liveCards: any[] = [];
+      try {
+        const liveRes = await fetch(`${R2_WORKER_BASE}/api/cards?_bust=${Date.now()}`, { cache: 'no-store' });
+        if (liveRes.ok) liveCards = (await liveRes.json()).cards ?? [];
+      } catch {}
+      setRepairLog(p => [...p, `Live manifest has ${liveCards.length} cards`]);
+
+      // 3. Build merged manifest — live cards are base, R2 listing fills in any missing entries
+      const mergedMap = new Map<string, any>();
+      // Seed from live manifest first
+      for (const c of liveCards) {
+        mergedMap.set(`${c.roleSlug || 'contributor'}/${c.username}_${c.rarity}`.toLowerCase(), c);
+      }
+      // For R2 files not yet in manifest, create stub entries from allMembers data
+      const memberByUsername = new Map(allMembers.map(m => [m.username.toLowerCase(), m]));
+      let recovered = 0;
+      for (const f of r2Files) {
+        const mapKey = `${f.roleSlug}/${f.username}_${f.rarity}`.toLowerCase();
+        if (!mergedMap.has(mapKey)) {
+          // Try to find member data from loaded members list
+          const m = memberByUsername.get(f.username.toLowerCase());
+          mergedMap.set(mapKey, {
+            userId:          m?.userId ?? f.username,
+            username:        f.username,
+            displayName:     m?.displayName ?? f.username,
+            rarity:          f.rarity,
+            contributorRole: m?.contributorRole ?? null,
+            roleSlug:        f.roleSlug,
+            roles:           m?.roles ?? [],
+            rep:             0,
+            url:             f.url,
+          });
+          recovered++;
+        }
+      }
+      setRepairLog(p => [...p, `Recovered ${recovered} missing entries · total now ${mergedMap.size}`]);
+
+      // 4. Upload rebuilt manifest
+      setRepairState('uploading');
+      setRepairLog(p => [...p, 'Uploading repaired manifest.json…']);
+      const manifest = { updatedAt: Date.now(), cards: Array.from(mergedMap.values()) };
+      const blob = new Blob([JSON.stringify(manifest, null, 2)], { type: 'application/json' });
+      const file = new File([blob], 'manifest.json', { type: 'application/json' });
+      const form = new FormData();
+      form.append('file', file);
+      form.append('key', 'manifest.json');
+      const upRes = await fetch('/api/upload-cards', { method: 'POST', body: form });
+      if (!upRes.ok) throw new Error(`Upload failed: ${upRes.status}`);
+
+      setUploadedCards(Array.from(mergedMap.values()));
+      setRepairLog(p => [...p, `✓ Manifest repaired! ${mergedMap.size} total cards`]);
+      setRepairState('done');
+    } catch (e) {
+      setRepairLog(p => [...p, `✗ Error: ${String(e)}`]);
+      setRepairState('error');
+    }
+  };
 
   return (
     <div className="gen-root">
@@ -750,8 +808,31 @@ export default function BatchGeneratorPage() {
               {genAll ? <><span className="batch-spin">⟳</span> Generating…</> : 'Generate All'}
             </button>
           )}
+          {/* Repair manifest — recover missing entries from actual R2 files */}
+          <button
+            className="gen-btn gen-btn-repair"
+            onClick={repairManifest}
+            disabled={repairState === 'listing' || repairState === 'fetching' || repairState === 'uploading' || uploading}
+            title="List all R2 PNGs and rebuild manifest (recovers cards lost from manifest)"
+          >
+            {repairState === 'idle' || repairState === 'done' || repairState === 'error'
+              ? '🛠 Repair Manifest'
+              : <><span className="batch-spin">⟳</span> {repairState === 'listing' ? 'Listing R2…' : repairState === 'fetching' ? 'Fetching…' : 'Uploading…'}</>
+            }
+          </button>
         </div>
       </div>
+      {/* Repair log */}
+      {repairLog.length > 0 && (
+        <div className="repair-log">
+          {repairLog.map((line, i) => (
+            <div key={i} className={line.startsWith('✓') ? 'repair-log-ok' : line.startsWith('✗') ? 'repair-log-err' : ''}>{line}</div>
+          ))}
+          {(repairState === 'done' || repairState === 'error') && (
+            <button className="repair-log-close" onClick={() => { setRepairLog([]); setRepairState('idle'); }}>Dismiss</button>
+          )}
+        </div>
+      )}
 
       <div className="batch-workspace">
         {/* Left: member browser */}
@@ -1298,6 +1379,35 @@ export default function BatchGeneratorPage() {
         .gen-btn-r2:hover:not(:disabled) {
           background: rgba(247,127,0,0.28); border-color: #ffaa44; color: #ffaa44;
         }
+        .gen-btn-repair {
+          background: rgba(239,68,68,0.12); border-color: #ef4444; color: #ef4444;
+        }
+        .gen-btn-repair:hover:not(:disabled) {
+          background: rgba(239,68,68,0.24); border-color: #f87171; color: #f87171;
+        }
+        .repair-log {
+          margin: 0 24px 12px;
+          background: #0d0d0d;
+          border: 1px solid #2a2a2a;
+          border-radius: 8px;
+          padding: 12px 14px;
+          font-family: monospace;
+          font-size: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .repair-log div { color: #a0a0a0; }
+        .repair-log .repair-log-ok  { color: #40FFAF; }
+        .repair-log .repair-log-err { color: #f87171; }
+        .repair-log-close {
+          align-self: flex-start;
+          margin-top: 6px;
+          background: #1a1a1a; border: 1px solid #333;
+          border-radius: 4px; color: #777; font-size: 11px;
+          padding: 3px 10px; cursor: pointer;
+        }
+        .repair-log-close:hover { color: #FAFAFA; border-color: #555; }
 
         @media (max-width: 900px) {
           .batch-workspace { grid-template-columns: 1fr; height: auto; }
