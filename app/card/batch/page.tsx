@@ -526,16 +526,29 @@ export default function BatchGeneratorPage() {
                 className={`batch-type-chip${!filterType ? ' active' : ''}`}
                 onClick={() => setFilterType('')}
               >All</button>
-              {ROLE_FILTER_OPTIONS.map(r => (
-                <button
-                  key={r}
-                  className={`batch-type-chip${filterType === r ? ' active' : ''}`}
-                  onClick={() => setFilterType(prev => prev === r ? '' : r)}
-                  title={r}
-                >
-                  {ROLE_FILTER_LABELS[r]}
-                </button>
-              ))}
+              {ROLE_FILTER_OPTIONS.map(r => {
+                const roleMembers = allMembers.filter(m =>
+                  m.roles.includes(r) && !batch.some(b => b.userId === m.userId)
+                );
+                return (
+                  <span key={r} className="batch-chip-wrap">
+                    <button
+                      className={`batch-type-chip${filterType === r ? ' active' : ''}`}
+                      onClick={() => setFilterType(prev => prev === r ? '' : r)}
+                      title={r}
+                    >
+                      {ROLE_FILTER_LABELS[r]}
+                    </button>
+                    {roleMembers.length > 0 && (
+                      <button
+                        className="batch-chip-add"
+                        title={`Add all ${r} (${roleMembers.length})`}
+                        onClick={() => roleMembers.forEach(addMember)}
+                      >+{roleMembers.length}</button>
+                    )}
+                  </span>
+                );
+              })}
             </div>
             {/* Name filter */}
             <div className="gen-search-box" style={{ margin: 0 }}>
@@ -881,6 +894,9 @@ export default function BatchGeneratorPage() {
         .batch-type-chips {
           display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 0 2px;
         }
+        .batch-chip-wrap {
+          display: inline-flex; align-items: center; gap: 1px;
+        }
         .batch-type-chip {
           background: #0e0e0e; border: 1px solid #222; border-radius: 4px;
           color: #666; font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
@@ -889,6 +905,14 @@ export default function BatchGeneratorPage() {
         .batch-type-chip:hover { background: #1a1a1a; color: #ccc; border-color: #444; }
         .batch-type-chip.active { background: rgba(255,215,0,0.14); border-color: #FFD700; color: #FFD700; }
         .batch-type-chip-sm { font-size: 8px; padding: 2px 5px; }
+        .batch-chip-add {
+          background: #0e0e0e; border: 1px solid #222; border-left: none;
+          border-radius: 0 4px 4px 0; color: #40FFAF;
+          font-size: 8px; font-weight: 800; letter-spacing: 0.02em;
+          padding: 3px 5px; cursor: pointer; transition: all 100ms; white-space: nowrap;
+        }
+        .batch-chip-add:hover { background: rgba(64,255,175,0.12); border-color: #40FFAF; }
+        .batch-chip-wrap .batch-type-chip { border-radius: 4px 0 0 4px; }
         /* Bulk type chips row */
         .batch-bulk-chips {
           display: flex; flex-wrap: wrap; gap: 4px; align-items: center;
