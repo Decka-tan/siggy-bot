@@ -312,20 +312,18 @@
   -webkit-text-fill-color: transparent;
   z-index: -1; pointer-events: none;
 }
-/* SSR REP: solid gold — no gradient trick, no outline bug in exports */
+/* SSR REP: gold gradient, no outline (outline caused white shadow bug in exports) */
 .rc-r-ssr .rc-rep-float .rc-rep-label,
 .rc-r-ssr .rc-rep-float .rc-rep-val {
-  color: #C9960C;
-  -webkit-text-fill-color: #C9960C;
-  text-shadow: 0 0 12px rgba(201,150,12,0.5);
+  background: linear-gradient(to bottom, #000 0%, #B8860B 50%, #000 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   opacity: 1;
 }
-/* UR REP: solid pink */
+/* UR REP: pink gradient, no outline */
 .rc-r-ur .rc-rep-float .rc-rep-label,
 .rc-r-ur .rc-rep-float .rc-rep-val {
-  color: #ff5fb8;
-  -webkit-text-fill-color: #ff5fb8;
-  text-shadow: 0 0 12px rgba(255,95,184,0.5);
+  background: linear-gradient(to bottom, #000 0%, #ff5fb8 50%, #000 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   opacity: 1;
 }
 
