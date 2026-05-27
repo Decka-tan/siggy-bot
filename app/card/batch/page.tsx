@@ -433,14 +433,6 @@ export default function BatchGeneratorPage() {
     setAutoUploadPending(true);
   };
 
-  // Auto-upload: runs after generateAll sets the flag, with the latest batch in scope
-  useEffect(() => {
-    if (!autoUploadPending || genAll || uploading) return;
-    setAutoUploadPending(false);
-    uploadToR2();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoUploadPending, genAll, uploading]);
-
   /* wait for all <img> inside el to finish loading before capture */
   const waitForImages = (el: HTMLElement): Promise<void> => {
     const imgs = Array.from(el.querySelectorAll('img'));
@@ -534,6 +526,15 @@ export default function BatchGeneratorPage() {
   const [uploading, setUploading]           = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
   const [uploadResults, setUploadResults]   = useState<{ ok: number; fail: number } | null>(null);
+
+  // Auto-upload: runs after generateAll sets the flag, with the latest batch in scope
+  // Must be declared after `uploading` to avoid "used before declaration" TS error
+  useEffect(() => {
+    if (!autoUploadPending || genAll || uploading) return;
+    setAutoUploadPending(false);
+    uploadToR2();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoUploadPending, genAll, uploading]);
 
   /* role → folder slug: Foundation Team → foundation-team */
   const toRoleSlug = (roles: string[]): string => {
