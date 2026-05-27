@@ -929,7 +929,7 @@ export default function BatchGeneratorPage() {
                       <button
                         className="batch-chip-add"
                         title={`Add all ${r} (${roleMembers.length})`}
-                        onClick={() => roleMembers.forEach(addMember)}
+                        onClick={() => roleMembers.forEach(m => addMember(m))}
                       >+{roleMembers.length}</button>
                     )}
                   </span>
