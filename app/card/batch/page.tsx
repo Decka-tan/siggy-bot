@@ -113,6 +113,16 @@ export default function BatchGeneratorPage() {
 
   const cardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
 
+  // Pre-load queue from URL param ?queue=userId1,userId2,...
+  const queueParam = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('queue')
+    : null;
+  const queueParamIds = useMemo(
+    () => new Set((queueParam || '').split(',').map(s => s.trim()).filter(Boolean)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   const LS_KEY   = 'ritual-members-cache-v2';
   const LS_TTL   = 12 * 60 * 60 * 1000;
   const QUEUE_KEY = 'ritual-batch-queue-v1';
@@ -160,6 +170,17 @@ export default function BatchGeneratorPage() {
   }, []);
 
   useEffect(() => { loadMembers(); }, [loadMembers]);
+
+  // Auto-add members from ?queue= URL param once member list is loaded
+  const queueAutoAdded = useRef(false);
+  useEffect(() => {
+    if (queueAutoAdded.current || queueParamIds.size === 0 || allMembers.length === 0) return;
+    queueAutoAdded.current = true;
+    allMembers
+      .filter(m => queueParamIds.has(m.userId))
+      .forEach(m => addMember(m, true)); // force=true in case they're already in manifest
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allMembers, queueParamIds]);
 
   useEffect(() => {
     let cancelled = false;

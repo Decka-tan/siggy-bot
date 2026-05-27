@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/check-role-changes",
+      "schedule": "0 0 * * 1"
+    }
+  ]
+}
