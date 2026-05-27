@@ -10,16 +10,23 @@ const R2_ENDPOINT   = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
 // ── AWS Signature v4 (minimal, for R2 PUT) ────────────────────────────────────
 
+function toBuffer(key: ArrayBuffer | Uint8Array): ArrayBuffer {
+  if (key instanceof Uint8Array) {
+    return key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer;
+  }
+  return key as ArrayBuffer;
+}
+
 async function hmac(key: ArrayBuffer | Uint8Array, data: string) {
   const k = await crypto.subtle.importKey(
-    'raw', key instanceof Uint8Array ? key : new Uint8Array(key),
+    'raw', toBuffer(key),
     { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'],
   );
   return new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(data)));
 }
 
 async function sha256hex(data: ArrayBuffer | string) {
-  const buf = typeof data === 'string' ? new TextEncoder().encode(data) : data;
+  const buf = typeof data === 'string' ? new TextEncoder().encode(data).buffer as ArrayBuffer : data as ArrayBuffer;
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', buf)))
     .map(b => b.toString(16).padStart(2, '0')).join('');
 }
