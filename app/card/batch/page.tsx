@@ -369,14 +369,28 @@ export default function BatchGeneratorPage() {
 
   /* batch helpers */
   const inBatch  = (uid: string) => batch.some(b => b.userId === uid);
-  const deriveTypeFromRoles = (roles: string[]): string => {
+
+  // Deterministic type for Forerunner/bitty based on username hash.
+  // Used when force-re-uploading and no remembered/manifest type exists —
+  // ensures the same user always gets the same type on re-generation.
+  const deterministicType = (username: string): string => {
+    const hash = username.toLowerCase().split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 0);
+    const val = hash % 100;
+    if (val < 40) return 'yapper';
+    if (val < 80) return 'threadoor';
+    if (val < 90) return 'artist';
+    return 'builder';
+  };
+
+  const deriveTypeFromRoles = (roles: string[], username = ''): string => {
     if (roles.includes('Foundation Team')) return 'team';
     if (roles.some(r => r === 'Mods' || r === 'Moderator')) return 'moderator';
     if (roles.includes('Event Manager')) return 'event-manager';
     if (roles.includes('Radiant Ritualist')) return 'ambassador';
     if (roles.includes('Zealot')) return 'ambassador';
     if (roles.some(r => ['Ritualist', 'ritty', 'Mage', 'Siggy Soulsmith', 'Siggy Architect'].includes(r))) return 'builder';
-    // Forerunner and bitty — randomized: 40% yapper, 40% threadoor, 10% artist, 10% builder
+    // Forerunner and bitty — random for first-time, deterministic if username provided (re-upload)
+    if (username) return deterministicType(username);
     const rand = Math.random();
     if (rand < 0.40) return 'yapper';
     if (rand < 0.80) return 'threadoor';
@@ -392,9 +406,13 @@ export default function BatchGeneratorPage() {
     const manifestType = force
       ? uploadedCards.find(c => String(c.username || '').toLowerCase() === String(m.username || '').toLowerCase())?.type ?? null
       : null;
-    const shouldRandomize = (m.roles || []).some(r => r === 'Forerunner' || r === 'bitty') &&
+    const isRandomRole = (m.roles || []).some(r => r === 'Forerunner' || r === 'bitty') &&
       !(m.roles || []).some(r => ['Foundation Team','Mods','Moderator','Event Manager','Radiant Ritualist','Zealot','Ritualist','ritty','Mage','Siggy Soulsmith','Siggy Architect'].includes(r));
-    const typeOverride = remembered || manifestType || (shouldRandomize ? deriveTypeFromRoles(m.roles || []) : (m.type || deriveTypeFromRoles(m.roles || [])));
+    // For force re-uploads with no saved type: use deterministic hash so same user always gets same type
+    const fallbackType = isRandomRole
+      ? (force ? deterministicType(m.username) : deriveTypeFromRoles(m.roles || []))
+      : (m.type || deriveTypeFromRoles(m.roles || [], m.username));
+    const typeOverride = remembered || manifestType || fallbackType;
     setBatch(prev => [...prev, { ...m, typeOverride, xHandle: '', card: null, allRarityCards: null, status: 'idle', forceUpload: force }]);
   };
   const removeMember = (uid: string) => setBatch(prev => prev.filter(b => b.userId !== uid));
@@ -751,8 +769,11 @@ export default function BatchGeneratorPage() {
       for (const f of r2Files) {
         const mapKey = `${f.roleSlug}/${f.username}_${f.rarity}`.toLowerCase();
         if (!mergedMap.has(mapKey)) {
-          // Try to find member data from loaded members list
           const m = memberByUsername.get(f.username.toLowerCase());
+          const roles = m?.roles ?? [];
+          const isRandomRole = roles.some((r: string) => r === 'Forerunner' || r === 'bitty') &&
+            !roles.some((r: string) => ['Foundation Team','Mods','Moderator','Event Manager','Radiant Ritualist','Zealot','Ritualist','ritty','Mage','Siggy Soulsmith','Siggy Architect'].includes(r));
+          const recoveredType = isRandomRole ? deterministicType(f.username) : undefined;
           mergedMap.set(mapKey, {
             userId:          m?.userId ?? f.username,
             username:        f.username,
@@ -760,9 +781,10 @@ export default function BatchGeneratorPage() {
             rarity:          f.rarity,
             contributorRole: m?.contributorRole ?? null,
             roleSlug:        f.roleSlug,
-            roles:           m?.roles ?? [],
+            roles,
             rep:             0,
             url:             f.url,
+            ...(recoveredType ? { type: recoveredType } : {}),
           });
           recovered++;
         }
