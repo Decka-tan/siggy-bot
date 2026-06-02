@@ -108,6 +108,18 @@ const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => m.toRole))]
 
 export default function PromotionPage() {
   const [filter, setFilter] = useState<FilterType>('all');
+  const [query, setQuery] = useState('');
+  const [searchResult, setSearchResult] = useState<typeof promotions[0] | null | 'not-found' | 'idle'>('idle');
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = query.trim().toLowerCase().replace(/^@/, '');
+    if (!q) return;
+    const found = GENUINE_PROMOS.find(
+      m => m.username.toLowerCase() === q || m.displayName.toLowerCase() === q
+    );
+    setSearchResult(found ?? 'not-found');
+  }
 
   const filtered = (filter === 'all'
     ? promotions
@@ -140,6 +152,53 @@ export default function PromotionPage() {
           <p className="text-[var(--color-text-secondary)] text-sm">
             {GENUINE_PROMOS.length} members promoted in Ritual
           </p>
+        </div>
+
+        {/* Search Form */}
+        <div className="max-w-md mx-auto mb-12">
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input
+              type="text"
+              value={query}
+              onChange={e => { setQuery(e.target.value); setSearchResult('idle'); }}
+              placeholder="Enter your Discord username..."
+              className="flex-1 px-4 py-2.5 rounded-lg border bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent)] transition-colors"
+              style={{ borderColor: 'var(--color-border)' }}
+            />
+            <button
+              type="submit"
+              className="px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+              style={{ backgroundColor: 'var(--color-accent)', color: '#000' }}
+            >
+              Check
+            </button>
+          </form>
+
+          {searchResult !== 'idle' && (
+            <div className="mt-4 p-4 rounded-xl border text-center"
+              style={{
+                borderColor: searchResult === 'not-found' ? 'var(--color-border)' : ROLE_COLOR[(searchResult as any).toRole] + '66',
+                backgroundColor: searchResult === 'not-found' ? 'var(--color-surface)' : ROLE_COLOR[(searchResult as any).toRole] + '12',
+              }}>
+              {searchResult === 'not-found' ? (
+                <p className="text-[var(--color-text-secondary)]">
+                  ❌ <span className="font-semibold text-[var(--color-text-primary)]">@{query.replace(/^@/, '')}</span> not in this promotion list.
+                </p>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-lg font-bold" style={{ color: ROLE_COLOR[searchResult.toRole] }}>
+                    🎉 Congrats!
+                  </p>
+                  <p className="font-semibold">{searchResult.displayName}</p>
+                  <div className="flex items-center gap-2">
+                    <RoleBadge role={searchResult.fromRole} />
+                    <span className="text-[var(--color-text-secondary)]">→</span>
+                    <RoleBadge role={searchResult.toRole} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Stats row */}
