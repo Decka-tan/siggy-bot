@@ -13,6 +13,17 @@ const PROMO_IDS = new Set(
   promotions.filter(m => VALID.has(`${m.fromRole}→${m.toRole}`)).map(m => m.userId)
 );
 
+function getAvatarUrl(member) {
+  const uid = member.user.id;
+  if (member.avatar) {
+    return `https://cdn.discordapp.com/guilds/${GUILD_ID}/users/${uid}/avatars/${member.avatar}.png?size=256`;
+  }
+  if (member.user.avatar) {
+    return `https://cdn.discordapp.com/avatars/${uid}/${member.user.avatar}.png?size=256`;
+  }
+  return `https://cdn.discordapp.com/embed/avatars/${parseInt(uid.slice(-1)) % 5}.png`;
+}
+
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function main() {
@@ -29,7 +40,6 @@ async function main() {
       });
       if (res.status !== 429) break;
       const wait = parseFloat(res.headers.get('Retry-After') || '1');
-      console.log(`  Rate limited, waiting ${wait}s...`);
       await sleep(wait * 1000 + 200);
     }
     const batch = await res.json();
@@ -37,32 +47,27 @@ async function main() {
 
     for (const m of batch) {
       if (!PROMO_IDS.has(m.user.id)) continue;
-      const hash = m.avatar || m.user.avatar;
-      if (hash) {
-        const ext = hash.startsWith('a_') ? 'gif' : 'png';
-        avatarMap[m.user.id] = `https://cdn.discordapp.com/avatars/${m.user.id}/${hash}.${ext}?size=128`;
-      } else {
-        const idx = (BigInt(m.user.id) >> 22n) % 6n;
-        avatarMap[m.user.id] = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
-      }
+      const cdnUrl = getAvatarUrl(m);
+      avatarMap[m.user.id] = `/api/proxy-avatar?url=${encodeURIComponent(cdnUrl)}`;
     }
 
-    console.log(`  Page ${++page}: found ${Object.keys(avatarMap).length}/${PROMO_IDS.size}`);
+    console.log(`  Page ${++page}: ${Object.keys(avatarMap).length}/${PROMO_IDS.size}`);
     after = batch[batch.length - 1].user.id;
     if (batch.length < 1000) break;
   }
 
-  // Fill missing with default
+  // Fill missing
   for (const userId of PROMO_IDS) {
     if (!avatarMap[userId]) {
-      const idx = (BigInt(userId) >> 22n) % 6n;
-      avatarMap[userId] = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+      const idx = parseInt(userId.slice(-1)) % 5;
+      const cdnUrl = `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
+      avatarMap[userId] = `/api/proxy-avatar?url=${encodeURIComponent(cdnUrl)}`;
     }
   }
 
   const outPath = path.join(__dirname, '../lib/promotion-avatars.json');
   fs.writeFileSync(outPath, JSON.stringify(avatarMap, null, 2));
-  console.log(`\n✅ Saved ${Object.keys(avatarMap).length} avatar URLs to lib/promotion-avatars.json`);
+  console.log(`\n✅ Saved ${Object.keys(avatarMap).length} entries`);
 }
 
 main().catch(console.error);
