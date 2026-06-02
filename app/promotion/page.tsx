@@ -452,7 +452,7 @@ export default function PromotionPage() {
                     style={{ borderColor: '#1a1a1a' }}>
                     <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#222]">
                       <Image
-                        src={s.avatarUrl || `/api/avatar?id=${s.userId}`}
+                        src={`/api/avatar?id=${s.userId}`}
                         alt={s.displayName}
                         fill className="object-cover"
                         unoptimized
