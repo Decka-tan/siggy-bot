@@ -20,7 +20,7 @@ const ROLE_LABEL: Record<string, string> = {
 
 const ROLE_COLOR: Record<string, string> = {
   ritualist: '#22c55e',  // green
-  soulsmith: '#a855f7',
+  soulsmith: '#FFD700',
   architect: '#3b82f6',
   mage: '#1ABC9C',
   forerunner: '#f59e0b',
@@ -391,7 +391,7 @@ export default function PromotionPage() {
 
         {/* Radial glow top */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse, #a855f7 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(ellipse, #FFD700 0%, transparent 70%)' }} />
 
         <div className="relative z-10 max-w-4xl mx-auto">
           <p className="hero-line opacity-0 font-mono text-xs tracking-[0.3em] uppercase mb-6"
@@ -403,7 +403,7 @@ export default function PromotionPage() {
             Are You
           </h1>
           <h1 className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-10"
-            style={{ color: '#a855f7', WebkitTextStroke: '1px #a855f7' }}>
+            style={{ color: '#FFD700', WebkitTextStroke: '1px #FFD700' }}>
             Upgraded?
           </h1>
 
@@ -424,13 +424,13 @@ export default function PromotionPage() {
                 placeholder="Your Discord username..."
                 className="flex-1 px-5 py-3.5 rounded-xl border text-white placeholder:text-[#444] outline-none transition-all"
                 style={{ backgroundColor: '#111', borderColor: '#222', fontSize: 15 }}
-                onFocusCapture={e => (e.target.style.borderColor = '#a855f7')}
+                onFocusCapture={e => (e.target.style.borderColor = '#FFD700')}
                 onBlurCapture={e => (e.target.style.borderColor = '#222')}
                 autoComplete="off"
               />
               <button type="submit"
                 className="px-6 py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80 whitespace-nowrap"
-                style={{ backgroundColor: '#a855f7', color: '#fff' }}>
+                style={{ backgroundColor: '#FFD700', color: '#000' }}>
                 Check
               </button>
             </form>
