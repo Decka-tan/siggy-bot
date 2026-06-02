@@ -105,9 +105,8 @@ async function main() {
   const changed = [];
   for (const m of discordMembers) {
     const existing = manifestByUser.get(m.username.toLowerCase());
-    if (!existing) {
-      changed.push({ ...m, reason: 'new contributor (no card)' });
-    } else if (existing.roleSlug !== m.roleSlug) {
+    // Only include members already in R2 whose role changed
+    if (existing && existing.roleSlug !== m.roleSlug) {
       changed.push({ ...m, reason: `role changed: ${existing.roleSlug} → ${m.roleSlug}` });
     }
   }
