@@ -467,13 +467,13 @@ export default function PromotionPage() {
       <div ref={listRef} className="max-w-7xl mx-auto px-4 pb-24 pt-12">
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-14">
+        <div className="flex flex-wrap justify-center gap-4 mb-14">
           {ALL_TO_ROLES.map(role => {
             const count = GENUINE_PROMOS.filter(m => m.toRole === role).length;
             const color = ROLE_COLOR[role];
             return (
-              <div key={role} className="relative rounded-2xl p-6 border overflow-hidden"
-                style={{ borderColor: `${color}33`, backgroundColor: '#0a0a0a' }}>
+              <div key={role} className="relative rounded-2xl p-6 border overflow-hidden text-center"
+                style={{ borderColor: `${color}33`, backgroundColor: '#0a0a0a', minWidth: '140px' }}>
                 <div className="absolute inset-0 opacity-10"
                   style={{ background: `radial-gradient(ellipse at 50% 100%, ${color} 0%, transparent 70%)` }} />
                 <p className="relative text-4xl font-display" style={{ color }}>{count}</p>
