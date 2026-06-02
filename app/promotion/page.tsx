@@ -124,13 +124,20 @@ export default function PromotionPage() {
 
         {/* Header */}
         <div className="text-center mb-12">
-          <p className="text-[var(--color-accent)] font-mono text-sm tracking-widest uppercase mb-3">
-            June 1, 2026
+          <p className="text-[var(--color-accent)] font-mono text-sm tracking-widest uppercase mb-4">
+            May 2026 Nomination Period · Results June 1, 2026
           </p>
-          <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tight mb-4">
-            Hall of Fame
+          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl uppercase tracking-tight mb-5 leading-tight">
+            Are You Upgraded?
           </h1>
-          <p className="text-[var(--color-text-secondary)] text-lg">
+          <p className="text-[var(--color-text-secondary)] text-xl md:text-2xl mb-2">
+            Getting a promotion from the
+          </p>
+          <p className="font-display text-2xl md:text-3xl uppercase tracking-wide mb-6"
+            style={{ color: 'var(--color-accent)' }}>
+            May 2026 Nomination Period?
+          </p>
+          <p className="text-[var(--color-text-secondary)] text-sm">
             {GENUINE_PROMOS.length} members promoted in Ritual
           </p>
         </div>
