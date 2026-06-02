@@ -1,186 +1,1290 @@
 [
-  {"userId":"375327885776650240","displayName":"Weeklang","username":"weeklang","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"378868297573072896","displayName":"ghooolyache","username":"ghooolyache","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"401697502119854080","displayName":". Judochy","username":"judochy","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"412575927436836864","displayName":"yusuke","username":"omaeroi","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"431826144459751424","displayName":"Gus. 0xrumora","username":"opnion_","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"434561417933225987","displayName":"鳳Cabsolpii🌸","username":"absollothareclya","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"443922241185513472","displayName":"KIMCHI","username":"kimchiii0319","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"444415364273537025","displayName":"LegendLeO","username":"toanleo","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"445395174693011457","displayName":"Duteyang","username":"jinnv0802","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"464317476013080576","displayName":"Alandz","username":"alandz","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"492712343189454858","displayName":"UnyilL NB","username":"unyillnb","fromRole":"contributor","toRole":"forerunner"},
-  {"userId":"495808260029284364","displayName":"AgataaXBT","username":"agata2525","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"498082394641924096","displayName":"Stussy","username":"stussy_eth","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"498486381161611265","displayName":"S H Ξ N²⁶ |89|","username":"1btc.eth","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"515924753043685417","displayName":"rudi","username":"rudi020701","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"522051127655530539","displayName":"BADANG","username":"badang","fromRole":"mage","toRole":"ritualist"},
-  {"userId":"527940515941974037","displayName":"afonso003","username":"afonso003","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"546374092446629906","displayName":"! 𝕃𝔸ℝ𝔸","username":"larasings","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"564123480526946325","displayName":"mrdcs","username":".mrdcs","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"574875922164088852","displayName":"Damggu","username":"damggu","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"580006380883279877","displayName":"Kamall","username":"kamal1723","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"581228315575058480","displayName":"MS","username":"mahabubshanto24","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"583001132671172611","displayName":"Vans","username":"vans_1611","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"621136687107407882","displayName":"Splendor","username":"splendor_0","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"623069909794029568","displayName":"Rahul","username":"rahul8096","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"659358327565975562","displayName":"0xJuniorr","username":"juniorr1945","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"670597003876761630","displayName":"OxSzaJoestar","username":"szaxbt","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"675602510823555072","displayName":"Cutie HanVis","username":"hanvis_75","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"689966738120376437","displayName":"adelkhater","username":"elkhawaga20222","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"696735263275352124","displayName":"0xhaiyoo_","username":"0xhaiyo","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"697804182975021097","displayName":"Riyade","username":"riyadekhezzane","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"714452147923582977","displayName":"Nexthral","username":"sevix48","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"717582881999945818","displayName":"BIEN","username":"tanjiiiiiiii","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"736946962011652098","displayName":"Asu x Asra","username":"kambingputih","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"742370610583175282","displayName":"키키운도","username":"kikiundo","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"743031011234807848","displayName":"Heat🔥","username":"heatweb3","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"743478851346104418","displayName":"Psycho | alybadbad","username":"alybadbad","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"749514588021719121","displayName":"Park Jing Goy","username":"arronkun","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"752134014147493909","displayName":"Billie Simpsons","username":"billykrukru","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"769192900072046602","displayName":"ArokMub","username":"arokmub","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"775484547806527491","displayName":"whuan","username":"whuanjg","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"783142521810714684","displayName":"icebear 아이스베어","username":"bbrruangkutub","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"820539217628626985","displayName":"MarkSocrates","username":"marksocrates","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"827558086444843048","displayName":"Believe","username":"vivaan2018","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"835203900763668501","displayName":"KALMEUNITY","username":"kalmeunity","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"837205972387627048","displayName":"biig_classic","username":"classic7045","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"841704400125034506","displayName":"Pasopati","username":"pasopatii","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"844223422681710603","displayName":"Minury","username":"minuryyyyy","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"862038217422536734","displayName":"esper°","username":"esper5868","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"864816252290859018","displayName":"l0nw0lf","username":"l0nw0lf_","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"869625621637128212","displayName":"welwel08","username":"welwel08","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"870332080570138704","displayName":"Cutie Sonnui","username":"sonpro21082002","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"872501285826482247","displayName":"Sabphire","username":"sabphire","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"873442739881115658","displayName":"dappy","username":"dappy0070","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"875329177635655720","displayName":"ahmad.a.m.3","username":"ahmad.a.m.3","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"877585910223470633","displayName":"KK","username":"slook0","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"879970626708840458","displayName":"zydney","username":"zydneykyliee","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"883762495637041152","displayName":"joh","username":"joh3729","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"885170588518326312","displayName":"Rebirth","username":"rebirth90","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"886220928655187990","displayName":"ivanplayer26","username":"ivanplayer_26","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"889088865741185084","displayName":"SaintEx✞","username":"saintex1","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"889905604565532762","displayName":"Cao Thần Quang","username":"thanquang_","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"891672724043350096","displayName":"wooam_","username":"wooam_","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"891719384123441192","displayName":"Cutie Enzo","username":"thangchelsea0636","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"891740635135107113","displayName":"Mad | Spens","username":"noob_spencer","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"895520312479870977","displayName":"Chuarlii","username":"charrly4020","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"895546410261438476","displayName":"celineboo","username":"celinemamboo","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"896028359727931462","displayName":"vidang","username":"vidangnhat","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"896451419350134824","displayName":"jinee 지니","username":"jinee.super","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"897438248580821012","displayName":"INVESTOR","username":"investsecrety","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"905070757606989824","displayName":"Vương Quang Vinh","username":"vinh92220","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"906225436013527040","displayName":"tutubear","username":"tutubear","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"908308979845845022","displayName":"Sytada","username":"sytada","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"909838028946690099","displayName":"Pugovka_Mari_Van","username":"pugovka_mari","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"915201869142429706","displayName":"yes2511","username":"yes2511","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"921711000095424523","displayName":"! boss baby","username":"bossbaby19_","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"923690297475612712","displayName":"0xAetherion","username":"aetherion.eth","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"926074436065583155","displayName":"jindo $$","username":"jindo_88","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"928307927318675476","displayName":"jimgreen","username":"jimgreen.btc","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"929184829218648091","displayName":"kkuri","username":"kkuri2","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"929409454838005770","displayName":"junel","username":"junel2","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"932955105710440468","displayName":"Babysyen Sayang","username":"aleeyasyen","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"937203084038373386","displayName":"HYSHOW","username":"hyshowcrypto","fromRole":"contributor","toRole":"forerunner"},
-  {"userId":"937701600179413022","displayName":"OfficerPayne","username":"officerpayne07","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"939011327689621546","displayName":"Eugene Krabs","username":"m1sterkrabss","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"946703696278994944","displayName":"omartuta","username":"omarnouval","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"948826437983563848","displayName":"Mao","username":"mao_mao1l","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"948868332461912075","displayName":"Pikachuuu","username":"greejerr","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"951657967546151022","displayName":"Puttichai Anastasia","username":"puttichai_crypto","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"953150131786612796","displayName":"Sagar","username":"sagar0u","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"953548263057948684","displayName":"Captain Kid","username":"eustasskid56","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"953586071734730782","displayName":"𝙂𝙤𝙡𝙙𝙚𝙣 𝘽𝙤𝙮","username":"goldenboyvee","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"955591506964676688","displayName":"Big Meech","username":"bigmeech2905","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"959315165550104628","displayName":"0xPamanSam","username":"chronic_10","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"959948706562592768","displayName":"Emeli_mag","username":"emeli_mag","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"968309935412764713","displayName":"Dian | cvk","username":"zknetwork","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"970805903664226325","displayName":"Browny 🧸","username":"herrybrown09","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"977361304329256980","displayName":"jajah","username":"jajah_jah","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"983980663243935815","displayName":"jeya","username":"sijeya","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"984964206740774963","displayName":"Aylos","username":"aylos_","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"988653447677100050","displayName":"Smith","username":"captainlsmith","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"999354202499321907","displayName":"Skyzee","username":"pemburuhadiah_","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1004685933460865075","displayName":"Doctor_Op","username":"flyhigh005","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1016673595793100871","displayName":"Rinzz","username":"rinzz_88","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1021085321489825913","displayName":"omexii","username":"omexii.","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1021478084593057893","displayName":"Cutie Doris","username":"hazun2305","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1043885945541373992","displayName":"SHAFIN","username":"web3shafin","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1059766065028141146","displayName":"jas","username":"jasminei","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1070024503276601405","displayName":"Sayang","username":"sayangxbt","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1070605950962122762","displayName":"Reena✨","username":"reena6787","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1071154031659077734","displayName":"Baster","username":"bas_baster","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1078324834553036801","displayName":"Perezclifford","username":"perezclifford","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1090303327776030751","displayName":"nadsar","username":"irfann04","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"1090910686714015744","displayName":"fromsa","username":"fromsa11","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1092221053129982022","displayName":"MayorHuncho","username":"mayorhuncho72","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1093409763624226846","displayName":"ASH","username":"ashweb3_2","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1095129428188745758","displayName":"Elegantwinter","username":"septian227","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1099326120609988619","displayName":"ProManas","username":"manas_pro76178","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1109424547758878740","displayName":"Aakriti","username":"aakriti64","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1116717049121615945","displayName":"Cutie Mạnh100k","username":"manh100kk","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1136098510714966076","displayName":"Psycho | Chaddette","username":"henloworld2002","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1137790107169075280","displayName":"Ares","username":"0xarees","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1144587221282848769","displayName":"Hulk","username":"vikash517","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1153958317983547392","displayName":"Hami | Ritual","username":"hamiweb3","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1157166095736774686","displayName":"raps","username":"rapspoint_","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1189105324976775169","displayName":"Nxrskyaa","username":"nxrskyaa","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1194216896074096640","displayName":"Won","username":"wo1n1","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"1194615201564205170","displayName":"Tema","username":"temofeiwe99","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1197585790931304579","displayName":"Lucky77","username":"lucky77_god","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1200068540024229962","displayName":"Qazi Haris","username":"qaziharis1","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1200464545244790835","displayName":"FLAKKYYYY","username":"snooowflake.","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1201586094165196899","displayName":"Creed","username":"silent_501","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1202161042160107521","displayName":"Xklusif","username":"cypherlon","fromRole":"bitty","toRole":"forerunner"},
-  {"userId":"1202221935711227986","displayName":"Nika","username":"nika06551","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1202570648187043870","displayName":"Mav","username":"mav_1k","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1208298796891643938","displayName":"iamlummyjay","username":"lumi_48903_49675","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1208647435669471273","displayName":"CaptainMarvel","username":"hitman_4577","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1209902562468298805","displayName":"Mạnh","username":"manhlouiss","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1210120435329400833","displayName":"Ayaan09","username":"ayanmridha379","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1215978559659708462","displayName":"Prodigal SabiBoy","username":"sabi_boy11","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1216407223475896441","displayName":"0xMrn","username":"imrn2.","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1222100457439236180","displayName":"Tynoihfly","username":"tynoih_11186","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1225792790533771339","displayName":"ari","username":"ariii0770","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1229823646684418149","displayName":"Uzzal Das","username":"uzzal222_89783","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1232690602508816487","displayName":"Fenie","username":"fenie_1039","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1233038347744706645","displayName":"ZAIN","username":"mzain2292","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1233260681906753549","displayName":"mihoyolim","username":"mihoyolim500","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1244492312843784315","displayName":"Lady tee","username":"ladytee0650","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1247197494526480396","displayName":"Thi Mai","username":"thimaiii","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1248703429124034650","displayName":"DUBEST","username":"oxdubest","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1251228084670300161","displayName":"Dream 💭","username":"dream07a","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1253628994486800517","displayName":"FFINN","username":"fffin","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1256557375842943037","displayName":"Tanoy","username":"0xtanoy","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"1260630867751993407","displayName":"yy cc","username":"yycc0156","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1264603032306450447","displayName":"CHOGOWE","username":"chogowe","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1267115880966258789","displayName":"nicx","username":"nicx777","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1280451645540663316","displayName":"Kadriweee","username":"kadriweee","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1280736233005252660","displayName":"Ferryfadillah","username":"ferryfadillahhh","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1288267875039186968","displayName":"NICK","username":"nickpc2025","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1291786136242491444","displayName":"Nana","username":"elliei43134","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1304852598993719329","displayName":"Kamrul","username":"kamrulbroz","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1305815133779398667","displayName":"𝐀𝐑𝐈𝐒𝐄𝐀𝐔𝐑𝐀 - INVICTUS","username":"ariseaura","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1307042160230797413","displayName":"Akash","username":"akashkumarwtf","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1310605191887982614","displayName":"크리","username":"ccrriiy","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"1314716771693105234","displayName":"Kazekage IGARA","username":"killian_117","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1320864294400819262","displayName":"chala cilung","username":"ch4laa","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1322472141525880832","displayName":"tutufly","username":"tutufly_yy","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"1327596841746960388","displayName":"Flylucifer","username":"flylucifer666","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1331021135189643384","displayName":"Mikan","username":"mikan_nft","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1331109229066715197","displayName":"Katitune","username":"katitune","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1333034684036419667","displayName":"Bunz","username":"abdo095546","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1333895178330706032","displayName":"FeryXBT","username":"feryrustandi_93944","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1335186346901372929","displayName":"Dezzy","username":"0x_dezzy","fromRole":"ritty","toRole":"ritualist"},
-  {"userId":"1372567235377238077","displayName":"Sûmî","username":"0xmiisty","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1377934034084302931","displayName":"Cryptic Ream","username":"crypticream_73120","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1380516191679811596","displayName":"𝕂𝕣𝕖𝕜𝕠XBT","username":"0xkreko","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1402325658125729832","displayName":"de.doubleu","username":"de.doubleu","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1404155460919103531","displayName":"Ayush","username":"iamayushpareek","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1419963453342355518","displayName":"Tata","username":"tataweb3","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1420462067772686427","displayName":"MIRA","username":"kathrine03765","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1430463201925005422","displayName":"Cutie Sera","username":"sera_nie204","fromRole":"bitty","toRole":"ritty"},
-  {"userId":"1445154319425863763","displayName":"White","username":"white_999","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1445402755035300015","displayName":"Fatima","username":"fatima_1o1","fromRole":"contributor","toRole":"bitty"},
-  {"userId":"1453424808627929098","displayName":"Bella","username":"bella98321","fromRole":"contributor","toRole":"bitty"}
+  {
+    "userId": "375327885776650240",
+    "displayName": "Weeklang",
+    "username": "weeklang",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "378868297573072896",
+    "displayName": "ghooolyache",
+    "username": "ghooolyache",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "401697502119854080",
+    "displayName": ". Judochy",
+    "username": "judochy",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "412575927436836864",
+    "displayName": "yusuke",
+    "username": "omaeroi",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "431826144459751424",
+    "displayName": "Gus. 0xrumora",
+    "username": "opnion_",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "434561417933225987",
+    "displayName": "鳳Cabsolpii🌸",
+    "username": "absollothareclya",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "443922241185513472",
+    "displayName": "KIMCHI",
+    "username": "kimchiii0319",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "444415364273537025",
+    "displayName": "LegendLeO",
+    "username": "toanleo",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "445395174693011457",
+    "displayName": "Duteyang",
+    "username": "jinnv0802",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "464317476013080576",
+    "displayName": "Alandz",
+    "username": "alandz",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "492712343189454858",
+    "displayName": "UnyilL NB",
+    "username": "unyillnb",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "495808260029284364",
+    "displayName": "AgataaXBT",
+    "username": "agata2525",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "498082394641924096",
+    "displayName": "Stussy",
+    "username": "stussy_eth",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "498486381161611265",
+    "displayName": "S H Ξ N²⁶ |89|",
+    "username": "1btc.eth",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "515924753043685417",
+    "displayName": "rudi",
+    "username": "rudi020701",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "522051127655530539",
+    "displayName": "BADANG",
+    "username": "badang",
+    "fromRole": "mage",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "527940515941974037",
+    "displayName": "afonso003",
+    "username": "afonso003",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "546374092446629906",
+    "displayName": "! 𝕃𝔸ℝ𝔸",
+    "username": "larasings",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "564123480526946325",
+    "displayName": "mrdcs",
+    "username": ".mrdcs",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "574875922164088852",
+    "displayName": "Damggu",
+    "username": "damggu",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "580006380883279877",
+    "displayName": "Kamall",
+    "username": "kamal1723",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "581228315575058480",
+    "displayName": "MS",
+    "username": "mahabubshanto24",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "583001132671172611",
+    "displayName": "Vans",
+    "username": "vans_1611",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "621136687107407882",
+    "displayName": "Splendor",
+    "username": "splendor_0",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "623069909794029568",
+    "displayName": "Rahul",
+    "username": "rahul8096",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "659358327565975562",
+    "displayName": "0xJuniorr",
+    "username": "juniorr1945",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "670597003876761630",
+    "displayName": "OxSzaJoestar",
+    "username": "szaxbt",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "675602510823555072",
+    "displayName": "Cutie HanVis",
+    "username": "hanvis_75",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "689966738120376437",
+    "displayName": "adelkhater",
+    "username": "elkhawaga20222",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "696735263275352124",
+    "displayName": "0xhaiyoo_",
+    "username": "0xhaiyo",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "697804182975021097",
+    "displayName": "Riyade",
+    "username": "riyadekhezzane",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "714452147923582977",
+    "displayName": "Nexthral",
+    "username": "sevix48",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "717582881999945818",
+    "displayName": "BIEN",
+    "username": "tanjiiiiiiii",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "736946962011652098",
+    "displayName": "Asu x Asra",
+    "username": "kambingputih",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "742370610583175282",
+    "displayName": "키키운도",
+    "username": "kikiundo",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "743031011234807848",
+    "displayName": "Heat🔥",
+    "username": "heatweb3",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "743478851346104418",
+    "displayName": "Psycho | alybadbad",
+    "username": "alybadbad",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "749514588021719121",
+    "displayName": "Park Jing Goy",
+    "username": "arronkun",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "752134014147493909",
+    "displayName": "Billie Simpsons",
+    "username": "billykrukru",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "769192900072046602",
+    "displayName": "ArokMub",
+    "username": "arokmub",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "775484547806527491",
+    "displayName": "whuan",
+    "username": "whuanjg",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "783142521810714684",
+    "displayName": "icebear 아이스베어",
+    "username": "bbrruangkutub",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "820539217628626985",
+    "displayName": "MarkSocrates",
+    "username": "marksocrates",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "827558086444843048",
+    "displayName": "Believe",
+    "username": "vivaan2018",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "835203900763668501",
+    "displayName": "KALMEUNITY",
+    "username": "kalmeunity",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "837205972387627048",
+    "displayName": "biig_classic",
+    "username": "classic7045",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "841704400125034506",
+    "displayName": "Pasopati",
+    "username": "pasopatii",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "844223422681710603",
+    "displayName": "Minury",
+    "username": "minuryyyyy",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "862038217422536734",
+    "displayName": "esper°",
+    "username": "esper5868",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "864816252290859018",
+    "displayName": "l0nw0lf",
+    "username": "l0nw0lf_",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "869625621637128212",
+    "displayName": "welwel08",
+    "username": "welwel08",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "870332080570138704",
+    "displayName": "Cutie Sonnui",
+    "username": "sonpro21082002",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "872501285826482247",
+    "displayName": "Sabphire",
+    "username": "sabphire",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "873442739881115658",
+    "displayName": "dappy",
+    "username": "dappy0070",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "875329177635655720",
+    "displayName": "ahmad.a.m.3",
+    "username": "ahmad.a.m.3",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "877585910223470633",
+    "displayName": "KK",
+    "username": "slook0",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "879970626708840458",
+    "displayName": "zydney",
+    "username": "zydneykyliee",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "883762495637041152",
+    "displayName": "joh",
+    "username": "joh3729",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "885170588518326312",
+    "displayName": "Rebirth",
+    "username": "rebirth90",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "886220928655187990",
+    "displayName": "ivanplayer26",
+    "username": "ivanplayer_26",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "889088865741185084",
+    "displayName": "SaintEx✞",
+    "username": "saintex1",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "889905604565532762",
+    "displayName": "Cao Thần Quang",
+    "username": "thanquang_",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "891672724043350096",
+    "displayName": "wooam_",
+    "username": "wooam_",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "891719384123441192",
+    "displayName": "Cutie Enzo",
+    "username": "thangchelsea0636",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "891740635135107113",
+    "displayName": "Mad | Spens",
+    "username": "noob_spencer",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "895520312479870977",
+    "displayName": "Chuarlii",
+    "username": "charrly4020",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "895546410261438476",
+    "displayName": "celineboo",
+    "username": "celinemamboo",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "896028359727931462",
+    "displayName": "vidang",
+    "username": "vidangnhat",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "896451419350134824",
+    "displayName": "jinee 지니",
+    "username": "jinee.super",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "897438248580821012",
+    "displayName": "INVESTOR",
+    "username": "investsecrety",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "905070757606989824",
+    "displayName": "Vương Quang Vinh",
+    "username": "vinh92220",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "906225436013527040",
+    "displayName": "tutubear",
+    "username": "tutubear",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "908308979845845022",
+    "displayName": "Sytada",
+    "username": "sytada",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "909838028946690099",
+    "displayName": "Pugovka_Mari_Van",
+    "username": "pugovka_mari",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "915201869142429706",
+    "displayName": "yes2511",
+    "username": "yes2511",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "921711000095424523",
+    "displayName": "! boss baby",
+    "username": "bossbaby19_",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "923690297475612712",
+    "displayName": "0xAetherion",
+    "username": "aetherion.eth",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "926074436065583155",
+    "displayName": "jindo $$",
+    "username": "jindo_88",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "928307927318675476",
+    "displayName": "jimgreen",
+    "username": "jimgreen.btc",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "929184829218648091",
+    "displayName": "kkuri",
+    "username": "kkuri2",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "929409454838005770",
+    "displayName": "junel",
+    "username": "junel2",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "932955105710440468",
+    "displayName": "Babysyen Sayang",
+    "username": "aleeyasyen",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "937203084038373386",
+    "displayName": "HYSHOW",
+    "username": "hyshowcrypto",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "937701600179413022",
+    "displayName": "OfficerPayne",
+    "username": "officerpayne07",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "939011327689621546",
+    "displayName": "Eugene Krabs",
+    "username": "m1sterkrabss",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "946703696278994944",
+    "displayName": "omartuta",
+    "username": "omarnouval",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "948826437983563848",
+    "displayName": "Mao",
+    "username": "mao_mao1l",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "948868332461912075",
+    "displayName": "Pikachuuu",
+    "username": "greejerr",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "951657967546151022",
+    "displayName": "Puttichai Anastasia",
+    "username": "puttichai_crypto",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "953150131786612796",
+    "displayName": "Sagar",
+    "username": "sagar0u",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "953548263057948684",
+    "displayName": "Captain Kid",
+    "username": "eustasskid56",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "953586071734730782",
+    "displayName": "𝙂𝙤𝙡𝙙𝙚𝙣 𝘽𝙤𝙮",
+    "username": "goldenboyvee",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "955591506964676688",
+    "displayName": "Big Meech",
+    "username": "bigmeech2905",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "959315165550104628",
+    "displayName": "0xPamanSam",
+    "username": "chronic_10",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "959948706562592768",
+    "displayName": "Emeli_mag",
+    "username": "emeli_mag",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "968309935412764713",
+    "displayName": "Dian | cvk",
+    "username": "zknetwork",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "970805903664226325",
+    "displayName": "Browny 🧸",
+    "username": "herrybrown09",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "977361304329256980",
+    "displayName": "jajah",
+    "username": "jajah_jah",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "983980663243935815",
+    "displayName": "jeya",
+    "username": "sijeya",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "984964206740774963",
+    "displayName": "Aylos",
+    "username": "aylos_",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "988653447677100050",
+    "displayName": "Smith",
+    "username": "captainlsmith",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "999354202499321907",
+    "displayName": "Skyzee",
+    "username": "pemburuhadiah_",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1004685933460865075",
+    "displayName": "Doctor_Op",
+    "username": "flyhigh005",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1016673595793100871",
+    "displayName": "Rinzz",
+    "username": "rinzz_88",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1021085321489825913",
+    "displayName": "omexii",
+    "username": "omexii.",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1021478084593057893",
+    "displayName": "Cutie Doris",
+    "username": "hazun2305",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1043885945541373992",
+    "displayName": "SHAFIN",
+    "username": "web3shafin",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1059766065028141146",
+    "displayName": "jas",
+    "username": "jasminei",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1070024503276601405",
+    "displayName": "Sayang",
+    "username": "sayangxbt",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1070605950962122762",
+    "displayName": "Reena✨",
+    "username": "reena6787",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1071154031659077734",
+    "displayName": "Baster",
+    "username": "bas_baster",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1078324834553036801",
+    "displayName": "Perezclifford",
+    "username": "perezclifford",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1090303327776030751",
+    "displayName": "nadsar",
+    "username": "irfann04",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1090910686714015744",
+    "displayName": "fromsa",
+    "username": "fromsa11",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1092221053129982022",
+    "displayName": "MayorHuncho",
+    "username": "mayorhuncho72",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1093409763624226846",
+    "displayName": "ASH",
+    "username": "ashweb3_2",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1095129428188745758",
+    "displayName": "Elegantwinter",
+    "username": "septian227",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1099326120609988619",
+    "displayName": "ProManas",
+    "username": "manas_pro76178",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1109424547758878740",
+    "displayName": "Aakriti",
+    "username": "aakriti64",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1116717049121615945",
+    "displayName": "Cutie Mạnh100k",
+    "username": "manh100kk",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1136098510714966076",
+    "displayName": "Psycho | Chaddette",
+    "username": "henloworld2002",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1137790107169075280",
+    "displayName": "Ares",
+    "username": "0xarees",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1144587221282848769",
+    "displayName": "Hulk",
+    "username": "vikash517",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1153958317983547392",
+    "displayName": "Hami | Ritual",
+    "username": "hamiweb3",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1157166095736774686",
+    "displayName": "raps",
+    "username": "rapspoint_",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1189105324976775169",
+    "displayName": "Nxrskyaa",
+    "username": "nxrskyaa",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1194216896074096640",
+    "displayName": "Won",
+    "username": "wo1n1",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "1194615201564205170",
+    "displayName": "Tema",
+    "username": "temofeiwe99",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1197585790931304579",
+    "displayName": "Lucky77",
+    "username": "lucky77_god",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1200068540024229962",
+    "displayName": "Qazi Haris",
+    "username": "qaziharis1",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1200464545244790835",
+    "displayName": "FLAKKYYYY",
+    "username": "snooowflake.",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1201586094165196899",
+    "displayName": "Creed",
+    "username": "silent_501",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1202161042160107521",
+    "displayName": "Xklusif",
+    "username": "cypherlon",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1202221935711227986",
+    "displayName": "Nika",
+    "username": "nika06551",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1202570648187043870",
+    "displayName": "Mav",
+    "username": "mav_1k",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1208298796891643938",
+    "displayName": "iamlummyjay",
+    "username": "lumi_48903_49675",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1208647435669471273",
+    "displayName": "CaptainMarvel",
+    "username": "hitman_4577",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1209902562468298805",
+    "displayName": "Mạnh",
+    "username": "manhlouiss",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1210120435329400833",
+    "displayName": "Ayaan09",
+    "username": "ayanmridha379",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1215978559659708462",
+    "displayName": "Prodigal SabiBoy",
+    "username": "sabi_boy11",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1216407223475896441",
+    "displayName": "0xMrn",
+    "username": "imrn2.",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1222100457439236180",
+    "displayName": "Tynoihfly",
+    "username": "tynoih_11186",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1225792790533771339",
+    "displayName": "ari",
+    "username": "ariii0770",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1229823646684418149",
+    "displayName": "Uzzal Das",
+    "username": "uzzal222_89783",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1232690602508816487",
+    "displayName": "Fenie",
+    "username": "fenie_1039",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1233038347744706645",
+    "displayName": "ZAIN",
+    "username": "mzain2292",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1233260681906753549",
+    "displayName": "mihoyolim",
+    "username": "mihoyolim500",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1244492312843784315",
+    "displayName": "Lady tee",
+    "username": "ladytee0650",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1247197494526480396",
+    "displayName": "Thi Mai",
+    "username": "thimaiii",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1248703429124034650",
+    "displayName": "DUBEST",
+    "username": "oxdubest",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1251228084670300161",
+    "displayName": "Dream 💭",
+    "username": "dream07a",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1253628994486800517",
+    "displayName": "FFINN",
+    "username": "fffin",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1256557375842943037",
+    "displayName": "Tanoy",
+    "username": "0xtanoy",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "1260630867751993407",
+    "displayName": "yy cc",
+    "username": "yycc0156",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1264603032306450447",
+    "displayName": "CHOGOWE",
+    "username": "chogowe",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1267115880966258789",
+    "displayName": "nicx",
+    "username": "nicx777",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1280451645540663316",
+    "displayName": "Kadriweee",
+    "username": "kadriweee",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1280736233005252660",
+    "displayName": "Ferryfadillah",
+    "username": "ferryfadillahhh",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1288267875039186968",
+    "displayName": "NICK",
+    "username": "nickpc2025",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1291786136242491444",
+    "displayName": "Nana",
+    "username": "elliei43134",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1304852598993719329",
+    "displayName": "Kamrul",
+    "username": "kamrulbroz",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1305815133779398667",
+    "displayName": "𝐀𝐑𝐈𝐒𝐄𝐀𝐔𝐑𝐀 - INVICTUS",
+    "username": "ariseaura",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1307042160230797413",
+    "displayName": "Akash",
+    "username": "akashkumarwtf",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1310605191887982614",
+    "displayName": "크리",
+    "username": "ccrriiy",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "1314716771693105234",
+    "displayName": "Kazekage IGARA",
+    "username": "killian_117",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1320864294400819262",
+    "displayName": "chala cilung",
+    "username": "ch4laa",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1322472141525880832",
+    "displayName": "tutufly",
+    "username": "tutufly_yy",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "1327596841746960388",
+    "displayName": "Flylucifer",
+    "username": "flylucifer666",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1331021135189643384",
+    "displayName": "Mikan",
+    "username": "mikan_nft",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1331109229066715197",
+    "displayName": "Katitune",
+    "username": "katitune",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1333034684036419667",
+    "displayName": "Bunz",
+    "username": "abdo095546",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1333895178330706032",
+    "displayName": "FeryXBT",
+    "username": "feryrustandi_93944",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1335186346901372929",
+    "displayName": "Dezzy",
+    "username": "0x_dezzy",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "1372567235377238077",
+    "displayName": "Sûmî",
+    "username": "0xmiisty",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1377934034084302931",
+    "displayName": "Cryptic Ream",
+    "username": "crypticream_73120",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1380516191679811596",
+    "displayName": "𝕂𝕣𝕖𝕜𝕠XBT",
+    "username": "0xkreko",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1402325658125729832",
+    "displayName": "de.doubleu",
+    "username": "de.doubleu",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1404155460919103531",
+    "displayName": "Ayush",
+    "username": "iamayushpareek",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1419963453342355518",
+    "displayName": "Tata",
+    "username": "tataweb3",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1420462067772686427",
+    "displayName": "MIRA",
+    "username": "kathrine03765",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1430463201925005422",
+    "displayName": "Cutie Sera",
+    "username": "sera_nie204",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1445154319425863763",
+    "displayName": "White",
+    "username": "white_999",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1445402755035300015",
+    "displayName": "Fatima",
+    "username": "fatima_1o1",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  },
+  {
+    "userId": "1453424808627929098",
+    "displayName": "Bella",
+    "username": "bella98321",
+    "fromRole": "contributor",
+    "toRole": "bitty"
+  }
 ]
