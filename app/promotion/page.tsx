@@ -216,7 +216,9 @@ function formatDays(days: number) {
 
 function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promotions[0]; avatarUrl?: string }) {
   const [imgError, setImgError] = useState(false);
-  const avatarUrl = imgError ? getDiscordAvatar(member.userId) : (avatarFromApi || getDiscordAvatar(member.userId));
+  const avatarUrl = imgError
+    ? `/api/avatar?id=${member.userId}`
+    : (avatarFromApi || `/api/avatar?id=${member.userId}`);
   const color = ROLE_COLOR[member.toRole] || '#fff';
   const joinInfo = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
 
