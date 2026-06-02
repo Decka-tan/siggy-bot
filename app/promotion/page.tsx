@@ -98,8 +98,14 @@ function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promo
   );
 }
 
+const VALID_TRANSITIONS = new Set([
+  'contributor→bitty',
+  'bitty→ritty',
+  'ritty→ritualist',
+]);
+
 const GENUINE_PROMOS = promotions.filter(
-  m => (ROLE_RANK[m.toRole] ?? 0) > (ROLE_RANK[m.fromRole] ?? 0)
+  m => VALID_TRANSITIONS.has(`${m.fromRole}→${m.toRole}`)
 );
 
 const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => m.toRole))]
