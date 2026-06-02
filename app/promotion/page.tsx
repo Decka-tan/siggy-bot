@@ -232,25 +232,53 @@ export default function PromotionPage() {
             </form>
 
             {searchResult !== 'idle' && (
-              <div className="mt-3 p-5 rounded-xl border text-center"
+              <div className="mt-4 rounded-2xl border overflow-hidden"
                 style={{
-                  borderColor: searchResult === 'not-found' ? '#222' : `${ROLE_COLOR[(searchResult as any).toRole]}55`,
-                  backgroundColor: searchResult === 'not-found' ? '#111' : `${ROLE_COLOR[(searchResult as any).toRole]}10`,
+                  borderColor: searchResult === 'not-found' ? '#1a1a1a' : `${ROLE_COLOR[(searchResult as any).toRole]}44`,
+                  backgroundColor: '#0a0a0a',
                 }}>
                 {searchResult === 'not-found' ? (
-                  <p style={{ color: '#666' }}>
-                    ❌ <span className="text-white font-semibold">@{query.replace(/^@/, '')}</span> not in this promotion list.
-                  </p>
+                  <div className="flex items-end gap-6 px-6 pt-4 pb-0">
+                    <Image
+                      src="/Siggy_01/Face/Girl/Girl_Sad.png"
+                      alt="Siggy sad"
+                      width={100}
+                      height={100}
+                      className="shrink-0 opacity-90 drop-shadow-lg"
+                      unoptimized
+                    />
+                    <div className="text-left pb-6">
+                      <p className="font-display text-2xl uppercase tracking-wide mb-1" style={{ color: '#3a3a3a' }}>
+                        Not This Time...
+                      </p>
+                      <p className="text-sm leading-relaxed" style={{ color: '#444' }}>
+                        Every great Ritualist started without a role.<br />
+                        Keep showing up. Your nomination is coming. 🌱
+                      </p>
+                    </div>
+                  </div>
                 ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <p className="text-2xl font-display uppercase" style={{ color: ROLE_COLOR[searchResult.toRole] }}>
-                      🎉 Congrats!
-                    </p>
-                    <p className="font-semibold text-lg">{searchResult.displayName}</p>
-                    <div className="flex items-center gap-3">
-                      <RoleBadge role={searchResult.fromRole} size="md" />
-                      <span style={{ color: '#444' }}>→</span>
-                      <RoleBadge role={searchResult.toRole} size="md" />
+                  <div className="flex items-end gap-6 px-6 pt-4 pb-0"
+                    style={{ background: `linear-gradient(135deg, ${ROLE_COLOR[(searchResult as any).toRole]}08 0%, transparent 60%)` }}>
+                    <Image
+                      src="/Siggy_01/Face/Girl/Girl_Happy.png"
+                      alt="Siggy happy"
+                      width={100}
+                      height={100}
+                      className="shrink-0 drop-shadow-lg"
+                      unoptimized
+                    />
+                    <div className="text-left pb-6">
+                      <p className="font-display text-2xl uppercase tracking-wide mb-2"
+                        style={{ color: ROLE_COLOR[(searchResult as any).toRole] }}>
+                        Congrats! 🎉
+                      </p>
+                      <p className="font-semibold text-white mb-3">{(searchResult as any).displayName}</p>
+                      <div className="flex items-center gap-3">
+                        <RoleBadge role={(searchResult as any).fromRole} size="md" />
+                        <span style={{ color: '#444' }}>→</span>
+                        <RoleBadge role={(searchResult as any).toRole} size="md" />
+                      </div>
                     </div>
                   </div>
                 )}
