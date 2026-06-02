@@ -124,7 +124,10 @@ export default function PromotionPage() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch('/api/promotion-avatars').then(r => r.json()).then(setAvatars).catch(() => {});
+    // Use static JSON first (from R2 download), fallback to API
+    import('@/lib/promotion-avatars.json').then(m => setAvatars(m.default as Record<string,string>)).catch(() => {
+      fetch('/api/promotion-avatars').then(r => r.json()).then(setAvatars).catch(() => {});
+    });
   }, []);
 
   // Close suggestions on outside click
