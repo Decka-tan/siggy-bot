@@ -216,6 +216,78 @@ function RoleBadge({ role, size = 'sm' }: { role: string; size?: 'sm' | 'md' }) 
   );
 }
 
+function MemberModal({ member, avatarUrl, onClose }: {
+  member: typeof promotions[0];
+  avatarUrl?: string;
+  onClose: () => void;
+}) {
+  const color = ROLE_COLOR[member.toRole] || '#fff';
+  const joinInfo = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
+  const fallback = `/api/avatar?id=${member.userId}`;
+  const [imgError, setImgError] = useState(false);
+  const src = imgError ? fallback : (avatarUrl || fallback);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 backdrop-blur-xl" style={{ backgroundColor: '#050505cc' }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-sm rounded-2xl border overflow-hidden"
+          style={{ backgroundColor: '#0a0a0a', borderColor: `${color}44`, boxShadow: `0 0 60px ${color}18` }}
+        >
+          <button onClick={onClose}
+            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm hover:bg-white/10 transition-all"
+            style={{ color: '#555' }}>✕</button>
+
+          {/* Avatar */}
+          <div className="relative w-full aspect-square">
+            <Image src={src} alt={member.displayName} fill className="object-cover" onError={() => setImgError(true)} unoptimized />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, #0a0a0a 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, ${color}11 100%)` }} />
+          </div>
+
+          {/* Info */}
+          <div className="px-5 pb-6 -mt-10 relative z-10">
+            <p className="font-display text-2xl uppercase tracking-tight text-white leading-tight mb-0.5">{member.displayName}</p>
+            <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{member.username}</p>
+
+            <div className="flex items-center gap-2 mb-4">
+              <RoleBadge role={member.fromRole} size="md" />
+              <span style={{ color: '#333' }}>→</span>
+              <RoleBadge role={member.toRole} size="md" />
+            </div>
+
+            {joinInfo && (
+              <div className="rounded-xl p-3 border" style={{ borderColor: `${color}22`, backgroundColor: `${color}08` }}>
+                <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: `${color}88` }}>Time to earn this role</p>
+                <p className="text-2xl font-display" style={{ color }}>{formatDays(joinInfo.daysToPromo)}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#444' }}>since joining Ritual</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function formatDays(days: number) {
   if (days < 30) return `${days}d`;
   if (days < 365) return `${Math.floor(days / 30)}mo`;
@@ -224,7 +296,7 @@ function formatDays(days: number) {
   return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
 }
 
-function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promotions[0]; avatarUrl?: string }) {
+function MemberCard({ member, avatarUrl: avatarFromApi, onClick }: { member: typeof promotions[0]; avatarUrl?: string; onClick: () => void }) {
   const [imgError, setImgError] = useState(false);
   const fallback = `/api/avatar?id=${member.userId}`;
   const avatarUrl = imgError ? fallback : (avatarFromApi || fallback);
@@ -233,7 +305,8 @@ function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promo
 
   return (
     <div
-      className="promo-card group relative flex flex-col rounded-xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-default"
+      onClick={onClick}
+      className="promo-card group relative flex flex-col rounded-xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer"
       style={{
         backgroundColor: '#0a0a0a',
         borderColor: `${color}55`,
@@ -293,6 +366,7 @@ export default function PromotionPage() {
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResult>('idle');
   const [avatars, setAvatars] = useState<Record<string, string>>({});
+  const [selectedMember, setSelectedMember] = useState<typeof promotions[0] | null>(null);
   const [suggestions, setSuggestions] = useState<{userId:string;username:string;displayName:string}[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -388,6 +462,15 @@ export default function PromotionPage() {
 
   return (
     <div className="bg-[#050505] text-white">
+      {/* Member Modal */}
+      {selectedMember && (
+        <MemberModal
+          member={selectedMember}
+          avatarUrl={avatars[selectedMember.userId]}
+          onClose={() => setSelectedMember(null)}
+        />
+      )}
+
       {/* Result Overlay */}
       {searchResult !== 'idle' && (
         <ResultOverlay
@@ -535,7 +618,7 @@ export default function PromotionPage() {
         <div ref={gridRef}
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {sorted.map(member => (
-            <MemberCard key={member.userId} member={member} avatarUrl={avatars[member.userId]} />
+            <MemberCard key={member.userId} member={member} avatarUrl={avatars[member.userId]} onClick={() => setSelectedMember(member)} />
           ))}
         </div>
       </div>
