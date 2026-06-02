@@ -83,12 +83,7 @@ export function Header() {
           <Link href="/" className="hover:text-accent transition-colors">Home</Link>
           <a href="#about" className="hover:text-accent transition-colors">About</a>
           <Link href="/story" className="hover:text-accent transition-colors">Story</Link>
-          <Link href="/invoice/dashboard" className="hover:text-accent transition-colors">Invoices</Link>
           <Link href="/chat?new=true" className="hover:text-accent transition-colors">Chat</Link>
-          <Link href="/card" className="hover:text-accent transition-colors flex items-center gap-1">
-            <span>Cards</span>
-            <span className="text-[9px] font-mono bg-accent/20 text-accent border border-accent/30 px-1.5 py-0.5 rounded-full uppercase tracking-wide">New</span>
-          </Link>
         </nav>
 
         {/* Right Buttons - Adaptive */}
@@ -186,25 +181,11 @@ export function Header() {
                 Story
               </Link>
               <Link
-                href="/invoice/dashboard"
-                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Invoices
-              </Link>
-              <Link
                 href="/chat"
                 className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Chat
-              </Link>
-              <Link
-                href="/card"
-                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface mb-2"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Cards ✦
               </Link>
               <button
                 onClick={() => {
