@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { animate, stagger } from 'animejs';
 import promotions from '@/lib/promotions-june-2026.json';
 import promotionAvatars from '@/lib/promotion-avatars.json';
+import joinDates from '@/lib/promotion-join-dates.json';
 
 const ROLE_RANK: Record<string, number> = {
   ritualist: 7, soulsmith: 6, architect: 5, mage: 4,
@@ -205,10 +206,19 @@ function RoleBadge({ role, size = 'sm' }: { role: string; size?: 'sm' | 'md' }) 
   );
 }
 
+function formatDays(days: number) {
+  if (days < 30) return `${days}d`;
+  if (days < 365) return `${Math.floor(days / 30)}mo`;
+  const y = Math.floor(days / 365);
+  const mo = Math.floor((days % 365) / 30);
+  return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
+}
+
 function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promotions[0]; avatarUrl?: string }) {
   const [imgError, setImgError] = useState(false);
   const avatarUrl = imgError ? getDiscordAvatar(member.userId) : (avatarFromApi || getDiscordAvatar(member.userId));
   const color = ROLE_COLOR[member.toRole] || '#fff';
+  const joinInfo = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
 
   return (
     <div
@@ -229,7 +239,6 @@ function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promo
           onError={() => setImgError(true)}
           unoptimized
         />
-        {/* Bottom fade into card */}
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to bottom, transparent 50%, #0a0a0a 100%)' }} />
       </div>
@@ -240,11 +249,16 @@ function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promo
           {member.displayName}
         </p>
         <p className="text-xs truncate mb-2" style={{ color: '#555' }}>@{member.username}</p>
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
           <RoleBadge role={member.fromRole} />
           <span className="text-[#333] text-xs">→</span>
           <RoleBadge role={member.toRole} />
         </div>
+        {joinInfo && (
+          <p className="text-[10px] font-mono" style={{ color: '#444' }}>
+            {formatDays(joinInfo.daysToPromo)} since join
+          </p>
+        )}
       </div>
     </div>
   );
@@ -436,8 +450,18 @@ export default function PromotionPage() {
                   <button key={s.username} onMouseDown={() => selectSuggestion(s)}
                     className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors border-b last:border-0"
                     style={{ borderColor: '#1a1a1a' }}>
-                    <div className="text-sm font-semibold text-white truncate">{s.displayName}</div>
-                    <div className="text-xs shrink-0" style={{ color: '#555' }}>@{s.username}</div>
+                    <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#222]">
+                      <Image
+                        src={s.avatarUrl || `/api/avatar?id=${s.userId}`}
+                        alt={s.displayName}
+                        fill className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-white truncate">{s.displayName}</div>
+                      <div className="text-xs truncate" style={{ color: '#555' }}>@{s.username}</div>
+                    </div>
                   </button>
                 ))}
               </div>
