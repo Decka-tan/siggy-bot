@@ -99,16 +99,17 @@ function MemberCard({ member }: { member: typeof promotions[0] }) {
   );
 }
 
-const ALL_TO_ROLES = [...new Set(promotions.map(m => m.toRole))].sort(
-  (a, b) => ROLE_RANK[b] - ROLE_RANK[a]
-);
+const ALL_TO_ROLES = [...new Set(promotions.map(m => m.toRole))]
+  .filter(r => r !== 'forerunner')
+  .sort((a, b) => ROLE_RANK[b] - ROLE_RANK[a]);
 
 export default function PromotionPage() {
   const [filter, setFilter] = useState<FilterType>('all');
 
-  const filtered = filter === 'all'
+  const filtered = (filter === 'all'
     ? promotions
-    : promotions.filter(m => m.toRole === filter);
+    : promotions.filter(m => m.toRole === filter)
+  ).filter(m => m.toRole !== 'forerunner');
 
   const sorted = [...filtered].sort(
     (a, b) => (ROLE_RANK[b.toRole] ?? 0) - (ROLE_RANK[a.toRole] ?? 0)
@@ -127,7 +128,7 @@ export default function PromotionPage() {
             Hall of Fame
           </h1>
           <p className="text-[var(--color-text-secondary)] text-lg">
-            {promotions.length} members promoted in Ritual
+            {promotions.filter(m => m.toRole !== 'forerunner').length} members promoted in Ritual
           </p>
         </div>
 
@@ -157,7 +158,7 @@ export default function PromotionPage() {
               color: filter === 'all' ? '#000' : 'var(--color-text-secondary)',
             }}
           >
-            All ({promotions.length})
+            All ({promotions.filter(m => m.toRole !== 'forerunner').length})
           </button>
           {ALL_TO_ROLES.map(role => (
             <button
