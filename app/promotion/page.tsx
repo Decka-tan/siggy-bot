@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import promotions from '@/lib/promotions-june-2026.json';
 
@@ -51,7 +51,7 @@ function MemberCard({ member }: { member: typeof promotions[0] }) {
     ? getDiscordAvatar(member.userId)
     : `https://cdn.discordapp.com/avatars/${member.userId}/avatar.png?size=128`;
 
-  const isHighlight = ROLE_RANK[member.toRole] >= 3; // forerunner+
+  const isHighlight = ROLE_RANK[member.toRole] >= 3;
 
   return (
     <div
@@ -110,6 +110,7 @@ export default function PromotionPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<typeof promotions[0] | null | 'not-found' | 'idle'>('idle');
+  const listRef = useRef<HTMLDivElement>(null);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -119,6 +120,10 @@ export default function PromotionPage() {
       m => m.username.toLowerCase() === q || m.displayName.toLowerCase() === q
     );
     setSearchResult(found ?? 'not-found');
+  }
+
+  function scrollToList() {
+    listRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
   const filtered = (filter === 'all'
@@ -131,43 +136,38 @@ export default function PromotionPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text-primary)]">
-      <div className="max-w-6xl mx-auto px-4 py-16">
+    <div className="bg-[var(--color-bg)] text-[var(--color-text-primary)]">
 
-        {/* Header */}
-        <div className="text-center mb-12">
-          <p className="text-[var(--color-accent)] font-mono text-sm tracking-widest uppercase mb-4">
-            May 2026 Nomination Period · Results June 1, 2026
-          </p>
-          <h1 className="font-display text-4xl md:text-6xl lg:text-7xl uppercase tracking-tight mb-5 leading-tight">
-            Are You Upgraded?
-          </h1>
-          <p className="text-[var(--color-text-secondary)] text-xl md:text-2xl mb-2">
-            Getting a promotion from the
-          </p>
-          <p className="font-display text-2xl md:text-3xl uppercase tracking-wide mb-6"
-            style={{ color: 'var(--color-accent)' }}>
-            May 2026 Nomination Period?
-          </p>
-          <p className="text-[var(--color-text-secondary)] text-sm">
-            {GENUINE_PROMOS.length} members promoted in Ritual
-          </p>
-        </div>
+      {/* Hero — full viewport height */}
+      <section className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+        <p className="text-[var(--color-accent)] font-mono text-sm tracking-widest uppercase mb-4">
+          May 2026 Nomination Period · Results June 1, 2026
+        </p>
+        <h1 className="font-display text-5xl md:text-7xl lg:text-8xl uppercase tracking-tight mb-5 leading-tight">
+          Are You Upgraded?
+        </h1>
+        <p className="text-[var(--color-text-secondary)] text-xl md:text-2xl mb-2">
+          Getting a promotion from the
+        </p>
+        <p className="font-display text-3xl md:text-4xl uppercase tracking-wide mb-10"
+          style={{ color: 'var(--color-accent)' }}>
+          May 2026 Nomination Period?
+        </p>
 
         {/* Search Form */}
-        <div className="max-w-md mx-auto mb-12">
+        <div className="w-full max-w-md mb-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <input
               type="text"
               value={query}
               onChange={e => { setQuery(e.target.value); setSearchResult('idle'); }}
               placeholder="Enter your Discord username..."
-              className="flex-1 px-4 py-2.5 rounded-lg border bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent)] transition-colors"
+              className="flex-1 px-4 py-3 rounded-lg border bg-[var(--color-surface)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-secondary)] outline-none focus:border-[var(--color-accent)] transition-colors"
               style={{ borderColor: 'var(--color-border)' }}
             />
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+              className="px-6 py-3 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
               style={{ backgroundColor: 'var(--color-accent)', color: '#000' }}
             >
               Check
@@ -200,6 +200,21 @@ export default function PromotionPage() {
             </div>
           )}
         </div>
+
+        {/* See who's upgraded */}
+        <button
+          onClick={scrollToList}
+          className="flex flex-col items-center gap-2 text-[var(--color-text-secondary)] hover:text-[var(--color-accent)] transition-colors group"
+        >
+          <span className="text-sm font-mono tracking-widest uppercase">
+            See who's upgraded
+          </span>
+          <span className="text-xl animate-bounce">↓</span>
+        </button>
+      </section>
+
+      {/* List section */}
+      <div ref={listRef} className="max-w-6xl mx-auto px-4 py-16">
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
