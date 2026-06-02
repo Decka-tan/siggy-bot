@@ -100,8 +100,8 @@ function ResultOverlay({ result, query, onClose }: {
                 <Image
                   src="/Siggy_01/Face/Girl/Girl_Happy.png"
                   alt="Siggy happy"
-                  width={220}
-                  height={220}
+                  width={300}
+                  height={300}
                   className="relative z-10 drop-shadow-2xl"
                   unoptimized
                 />
@@ -157,27 +157,27 @@ function ResultOverlay({ result, query, onClose }: {
                 <Image
                   src="/Siggy_01/Face/Girl/Girl_Sad.png"
                   alt="Siggy sad"
-                  width={200}
-                  height={200}
-                  className="relative z-10 drop-shadow-xl opacity-80"
+                  width={280}
+                  height={280}
+                  className="relative z-10 drop-shadow-xl opacity-90"
                   unoptimized
                 />
               </div>
 
               {/* Right */}
               <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
-                <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: '#333' }}>
+                <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: '#555' }}>
                   May 2026 Nomination Period
                 </p>
-                <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-4" style={{ color: '#2a2a2a' }}>
+                <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-4" style={{ color: '#888' }}>
                   Not This<br />Time...
                 </h2>
                 <p className="font-semibold text-white mb-1">@{query.replace(/^@/, '')}</p>
-                <div className="w-12 h-px mb-6" style={{ backgroundColor: '#222' }} />
-                <p className="text-sm leading-relaxed mb-2" style={{ color: '#444' }}>
+                <div className="w-12 h-px mb-6" style={{ backgroundColor: '#333' }} />
+                <p className="text-sm leading-relaxed mb-2" style={{ color: '#aaa' }}>
                   Every great Ritualist started somewhere.
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: '#333' }}>
+                <p className="text-sm leading-relaxed" style={{ color: '#777' }}>
                   Keep showing up, keep contributing — your nomination will come. 🌱
                 </p>
               </div>
