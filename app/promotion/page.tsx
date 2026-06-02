@@ -138,6 +138,16 @@ function ResultOverlay({ result, query, onClose }: {
                   <RoleBadge role={member.toRole} size="md" />
                 </div>
 
+                {(() => {
+                  const info = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
+                  return info ? (
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#888' }}>
+                      It took you{' '}
+                      <span className="font-bold" style={{ color }}>{formatDays(info.daysToPromo)}</span>
+                      {' '}since joining Ritual to earn this role. Worth the grind. 🔥
+                    </p>
+                  ) : null;
+                })()}
                 <p className="text-sm leading-relaxed" style={{ color: '#555' }}>
                   Your dedication to Ritual has been recognized. Welcome to the next level. 🌟
                 </p>
