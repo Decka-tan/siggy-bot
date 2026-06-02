@@ -269,8 +269,6 @@ function MemberModal({ member, avatarUrl, onClose }: {
             <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{member.username}</p>
 
             <div className="flex items-center gap-2 mb-4">
-              <RoleBadge role={member.fromRole} size="md" />
-              <span style={{ color: '#333' }}>→</span>
               <RoleBadge role={member.toRole} size="md" />
             </div>
 
