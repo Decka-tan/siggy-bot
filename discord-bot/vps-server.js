@@ -4,6 +4,7 @@
  * Features: Rate limiting, Caching, Error handling
  */
 
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } = require('discord.js');
 
 // ============ CONFIG ============

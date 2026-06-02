@@ -1,120 +1,200 @@
-# Deploy Siggy Bot on VPS (DigitalOcean/Linode)
-
-## For 100k+ Member Servers - Production Ready
+# Deploy Siggy Bot on VPS (Ubuntu non-root)
 
 ## Prerequisites
-- VPS with Ubuntu 20.04+ (2GB RAM minimum)
-- Domain name (optional)
+- VPS dengan Ubuntu 20.04+ (2GB RAM minimum)
+- Login sebagai user `ubuntu` (non-root)
 
-## Quick Setup (10 minutes)
+---
 
-### 1. Create VPS
-- **DigitalOcean**: https://digitalocean.com (use code for $200 credit)
-- **Linode**: https://linode.com (similar pricing)
-- **Specs**: 2GB RAM, 1 CPU ($4-6/month)
-
-### 2. Connect to VPS
+## 1. Koneksi ke VPS
 ```bash
-ssh root@your-vps-ip
+ssh ubuntu@IP_VPS_KAMU
 ```
 
-### 3. Install Node.js 20
+---
+
+## 2. Install Node.js 20 & Git
 ```bash
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt-get install -y nodejs git
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+sudo apt-get install -y nodejs git
 ```
 
-### 4. Clone Repo
+Verifikasi:
+```bash
+node -v   # harus v20.x.x
+npm -v
+```
+
+---
+
+## 3. Install PM2
+```bash
+sudo npm install -g pm2
+```
+
+---
+
+## 4. Clone Repo
 ```bash
 cd /opt
-git clone https://github.com/Decka-tan/siggy-bot.git
-cd siggy-bot
+sudo git clone https://github.com/Decka-tan/siggy-bot.git
+sudo chown -R ubuntu:ubuntu /opt/siggy-bot
+cd /opt/siggy-bot
 npm install
 ```
 
-### 5. Setup Environment
-```bash
-nano .env
-```
+---
 
-Paste:
+## 5. Setup Environment Variables
+
+**A. Root `.env`** (untuk web Next.js):
+```bash
+nano /opt/siggy-bot/.env
+```
+Isi:
 ```env
 DISCORD_BOT_TOKEN=your_token
 DISCORD_CLIENT_ID=your_client_id
+DISCORD_PUBLIC_KEY=your_public_key
 DISCORD_GUILD_ID=1164825060440281128
-OPENAI_API_KEY=your_openai_key
-API_BASE_URL=https://siggy-bot.vercel.app
+DISCORD_SERVER_ID=1210468736205852672
+RITUAL_GUILD_ID=1210468736205852672
+OPENAI_API_KEY=sk-...
+DEEPSEEK_API_KEY=sk-...
+DATA_DIR=/opt/siggy-bot/discord-bot/data
+API_BASE_URL=http://localhost:3000
 ```
 
-### 6. Test Bot
+**B. `discord-bot/.env`** (untuk bot):
 ```bash
-node discord-bot/vps-server.js
+nano /opt/siggy-bot/discord-bot/.env
+```
+Isi sama seperti di atas (copy dari `.env.example`).
+
+---
+
+## 6. Jalankan Discord Bot
+```bash
+cd /opt/siggy-bot
+pm2 start discord-bot/vps-server.js --name siggy
 ```
 
-Should see:
+Cek berjalan:
+```bash
+pm2 logs siggy
+```
+Harus muncul:
 ```
 ✅ Siggy#XXXX is online!
 ✅ Commands registered to guild
 ```
 
-Ctrl+C to stop.
+---
 
-### 7. Setup PM2 (Auto-restart)
+## 7. Build & Jalankan Siggy Web (Next.js)
 ```bash
-npm install -g pm2
-pm2 start discord-bot/vps-server.js --name siggy
+cd /opt/siggy-bot
+npm run build
+pm2 start npm --name siggy-web -- start
+```
+
+Kalau mau port custom (default 3000):
+```bash
+pm2 start npm --name siggy-web -- start -- -p 3000
+```
+
+---
+
+## 8. Auto-start saat VPS Reboot
+```bash
 pm2 save
 pm2 startup
 ```
+Copy-paste perintah output dari `pm2 startup` (biasanya ada `sudo env PATH=...`), lalu jalankan.
 
-Run the command from `pm2 startup` output.
+---
 
-### 8. Done!
+## 9. (Opsional) Nginx Reverse Proxy
 
-Bot now runs 24/7, auto-restarts if crashes.
-
-## Commands
 ```bash
-pm2 logs siggy     # View logs
-pm2 restart siggy  # Restart bot
-pm2 stop siggy     # Stop bot
-pm2 status         # Check status
+sudo apt install nginx -y
+sudo nano /etc/nginx/sites-available/siggy
+```
+Isi:
+```nginx
+server {
+    listen 80;
+    server_name domain-kamu.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+```bash
+sudo ln -s /etc/nginx/sites-available/siggy /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
 ```
 
-## Monitoring
-- CPU/Memory: `htop` (install with `apt install htop`)
-- Logs: `pm2 logs siggy --lines 100`
+---
+
+## Commands PM2
+```bash
+pm2 status              # Cek semua proses
+pm2 logs siggy          # Log bot
+pm2 logs siggy-web      # Log web
+pm2 restart siggy       # Restart bot
+pm2 restart siggy-web   # Restart web
+pm2 stop siggy          # Stop bot
+```
+
+---
 
 ## Update Bot
 ```bash
 cd /opt/siggy-bot
 git pull
 npm install
-pm2 restart siggy
+npm run build
+pm2 restart all
 ```
 
-## Rate Limits & Caching
-- 3 commands per 5 seconds per user
-- /check: 5 min cache
-- /research: 10 min cache
-- Auto cleanup expired cache
+---
+
+## Migrate Data dari VPS Lama
+
+Kalau ada data di VPS lama (folder `discord-bot/data`):
+```bash
+# Dari VPS lama
+scp -r /opt/siggy-bot/discord-bot/data ubuntu@IP_VPS_BARU:/opt/siggy-bot/discord-bot/
+```
+
+---
 
 ## Troubleshooting
-**Bot not responding:**
+
+**Permission denied saat npm install:**
+```bash
+sudo chown -R ubuntu:ubuntu /opt/siggy-bot
+```
+
+**Bot tidak respond:**
 ```bash
 pm2 logs siggy
 ```
 
-**High memory usage:**
+**Web tidak bisa diakses:**
 ```bash
-pm2 restart siggy
+pm2 logs siggy-web
+sudo ufw allow 3000   # buka port jika pakai firewall
 ```
 
-**Commands not appearing:**
-- Check DISCORD_GUILD_ID is correct
-- Bot has "applications.commands" scope
-
-## Cost
-- DigitalOcean 2GB: $6/month
-- Linode 2GB: $5/month
-- Total: ~$5-6/month for reliable 24/7
+**High memory:**
+```bash
+pm2 restart all
+```
