@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
 import { animate, stagger } from 'animejs';
 import promotions from '@/lib/promotions-june-2026.json';
+import promotionAvatars from '@/lib/promotion-avatars.json';
 
 const ROLE_RANK: Record<string, number> = {
   ritualist: 7, soulsmith: 6, architect: 5, mage: 4,
@@ -28,6 +30,163 @@ const ROLE_COLOR: Record<string, string> = {
 };
 
 type FilterType = 'all' | string;
+type SearchResult = typeof promotions[0] | 'not-found' | 'idle';
+
+function ResultOverlay({ result, query, onClose }: {
+  result: SearchResult;
+  query: string;
+  onClose: () => void;
+}) {
+  const isFound = result !== 'not-found' && result !== 'idle';
+  const member = isFound ? result as typeof promotions[0] : null;
+  const color = member ? ROLE_COLOR[member.toRole] : '#333';
+  const avatarUrl = member
+    ? (promotionAvatars as Record<string, string>)[member.userId] || getDiscordAvatar(member.userId)
+    : null;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-center justify-center"
+        onClick={onClose}
+      >
+        {/* Backdrop */}
+        <div className="absolute inset-0 backdrop-blur-xl" style={{ backgroundColor: '#050505ee' }} />
+
+        {/* Panel */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 24 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-3xl mx-4 rounded-3xl overflow-hidden border"
+          style={{
+            backgroundColor: '#0a0a0a',
+            borderColor: isFound ? `${color}44` : '#1a1a1a',
+            boxShadow: isFound ? `0 0 80px ${color}22` : 'none',
+          }}
+        >
+          {/* Close */}
+          <button onClick={onClose}
+            className="absolute top-5 right-5 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10"
+            style={{ color: '#555' }}>
+            ✕
+          </button>
+
+          {isFound && member ? (
+            /* ── PROMOTED ── */
+            <div className="relative min-h-[420px] flex flex-col md:flex-row">
+              {/* Left — color block */}
+              <div className="relative md:w-2/5 flex items-end justify-center pt-10 pb-0 md:pb-0 overflow-hidden"
+                style={{ background: `linear-gradient(160deg, ${color}18 0%, ${color}08 60%, transparent 100%)` }}>
+                {/* Diagonal line accent */}
+                <div className="absolute inset-0 opacity-[0.06]"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${color} 25%, transparent 25%, transparent 75%, ${color} 75%)`,
+                    backgroundSize: '40px 40px',
+                  }} />
+                <div className="absolute top-0 right-0 w-px h-full opacity-20" style={{ background: `linear-gradient(to bottom, transparent, ${color}, transparent)` }} />
+                <Image
+                  src="/Siggy_01/Face/Girl/Girl_Happy.png"
+                  alt="Siggy happy"
+                  width={220}
+                  height={220}
+                  className="relative z-10 drop-shadow-2xl"
+                  unoptimized
+                />
+              </div>
+
+              {/* Right — content */}
+              <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
+                <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: `${color}99` }}>
+                  May 2026 Nomination Period
+                </p>
+                <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-6"
+                  style={{ color }}>
+                  Promoted! 🎉
+                </h2>
+
+                {/* Avatar + name */}
+                <div className="flex items-center gap-4 mb-6">
+                  {avatarUrl && (
+                    <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0"
+                      style={{ boxShadow: `0 0 0 2px ${color}66` }}>
+                      <Image src={avatarUrl} alt={member.displayName} fill className="object-cover" unoptimized />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold text-white text-lg leading-tight">{member.displayName}</p>
+                    <p className="font-mono text-sm" style={{ color: '#555' }}>@{member.username}</p>
+                  </div>
+                </div>
+
+                {/* Role change */}
+                <div className="flex items-center gap-3 mb-8">
+                  <RoleBadge role={member.fromRole} size="md" />
+                  <span className="text-2xl" style={{ color: '#333' }}>→</span>
+                  <RoleBadge role={member.toRole} size="md" />
+                </div>
+
+                <p className="text-sm leading-relaxed" style={{ color: '#555' }}>
+                  Your dedication to Ritual has been recognized. Welcome to the next level. 🌟
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* ── NOT PROMOTED ── */
+            <div className="relative min-h-[400px] flex flex-col md:flex-row">
+              {/* Left */}
+              <div className="relative md:w-2/5 flex items-end justify-center pt-10 overflow-hidden"
+                style={{ background: 'linear-gradient(160deg, #1a1a1a 0%, transparent 100%)' }}>
+                <div className="absolute inset-0 opacity-[0.03]"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%)`,
+                    backgroundSize: '40px 40px',
+                  }} />
+                <Image
+                  src="/Siggy_01/Face/Girl/Girl_Sad.png"
+                  alt="Siggy sad"
+                  width={200}
+                  height={200}
+                  className="relative z-10 drop-shadow-xl opacity-80"
+                  unoptimized
+                />
+              </div>
+
+              {/* Right */}
+              <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
+                <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: '#333' }}>
+                  May 2026 Nomination Period
+                </p>
+                <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-4" style={{ color: '#2a2a2a' }}>
+                  Not This<br />Time...
+                </h2>
+                <p className="font-semibold text-white mb-1">@{query.replace(/^@/, '')}</p>
+                <div className="w-12 h-px mb-6" style={{ backgroundColor: '#222' }} />
+                <p className="text-sm leading-relaxed mb-2" style={{ color: '#444' }}>
+                  Every great Ritualist started somewhere.
+                </p>
+                <p className="text-sm leading-relaxed" style={{ color: '#333' }}>
+                  Keep showing up, keep contributing — your nomination will come. 🌱
+                </p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
 
 function getDiscordAvatar(userId: string) {
   const defaultIndex = (BigInt(userId) >> 22n) % 6n;
@@ -114,7 +273,7 @@ const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => m.toRole))]
 export default function PromotionPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [query, setQuery] = useState('');
-  const [searchResult, setSearchResult] = useState<typeof promotions[0] | null | 'not-found' | 'idle'>('idle');
+  const [searchResult, setSearchResult] = useState<SearchResult>('idle');
   const [avatars, setAvatars] = useState<Record<string, string>>({});
   const [suggestions, setSuggestions] = useState<{userId:string;username:string;displayName:string}[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -124,10 +283,7 @@ export default function PromotionPage() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Use static JSON first (from R2 download), fallback to API
-    import('@/lib/promotion-avatars.json').then(m => setAvatars(m.default as Record<string,string>)).catch(() => {
-      fetch('/api/promotion-avatars').then(r => r.json()).then(setAvatars).catch(() => {});
-    });
+    setAvatars(promotionAvatars as Record<string, string>);
   }, []);
 
   // Close suggestions on outside click
@@ -214,6 +370,14 @@ export default function PromotionPage() {
 
   return (
     <div className="bg-[#050505] text-white">
+      {/* Result Overlay */}
+      {searchResult !== 'idle' && (
+        <ResultOverlay
+          result={searchResult}
+          query={query}
+          onClose={() => setSearchResult('idle')}
+        />
+      )}
 
       {/* ── HERO ── */}
       <section ref={heroRef} className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center overflow-hidden">
@@ -287,59 +451,6 @@ export default function PromotionPage() {
             )}
             </div>
 
-            {searchResult !== 'idle' && (
-              <div className="mt-4 rounded-2xl border overflow-hidden"
-                style={{
-                  borderColor: searchResult === 'not-found' ? '#1a1a1a' : `${ROLE_COLOR[(searchResult as any).toRole]}44`,
-                  backgroundColor: '#0a0a0a',
-                }}>
-                {searchResult === 'not-found' ? (
-                  <div className="flex items-end gap-6 px-6 pt-4 pb-0">
-                    <Image
-                      src="/Siggy_01/Face/Girl/Girl_Sad.png"
-                      alt="Siggy sad"
-                      width={100}
-                      height={100}
-                      className="shrink-0 opacity-90 drop-shadow-lg"
-                      unoptimized
-                    />
-                    <div className="text-left pb-6">
-                      <p className="font-display text-2xl uppercase tracking-wide mb-1" style={{ color: '#3a3a3a' }}>
-                        Not This Time...
-                      </p>
-                      <p className="text-sm leading-relaxed" style={{ color: '#444' }}>
-                        Every great Ritualist started without a role.<br />
-                        Keep showing up. Your nomination is coming. 🌱
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-end gap-6 px-6 pt-4 pb-0"
-                    style={{ background: `linear-gradient(135deg, ${ROLE_COLOR[(searchResult as any).toRole]}08 0%, transparent 60%)` }}>
-                    <Image
-                      src="/Siggy_01/Face/Girl/Girl_Happy.png"
-                      alt="Siggy happy"
-                      width={100}
-                      height={100}
-                      className="shrink-0 drop-shadow-lg"
-                      unoptimized
-                    />
-                    <div className="text-left pb-6">
-                      <p className="font-display text-2xl uppercase tracking-wide mb-2"
-                        style={{ color: ROLE_COLOR[(searchResult as any).toRole] }}>
-                        Congrats! 🎉
-                      </p>
-                      <p className="font-semibold text-white mb-3">{(searchResult as any).displayName}</p>
-                      <div className="flex items-center gap-3">
-                        <RoleBadge role={(searchResult as any).fromRole} size="md" />
-                        <span style={{ color: '#444' }}>→</span>
-                        <RoleBadge role={(searchResult as any).toRole} size="md" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Scroll CTA */}
