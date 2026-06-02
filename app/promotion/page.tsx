@@ -6,7 +6,7 @@ import promotions from '@/lib/promotions-june-2026.json';
 
 const ROLE_RANK: Record<string, number> = {
   ritualist: 7, soulsmith: 6, architect: 5, mage: 4,
-  forerunner: 3, ritty: 2, bitty: 1, contributor: 0,
+  ritty: 3, bitty: 2, forerunner: 1, contributor: 0,
 };
 
 const ROLE_LABEL: Record<string, string> = {
@@ -99,8 +99,11 @@ function MemberCard({ member }: { member: typeof promotions[0] }) {
   );
 }
 
-const ALL_TO_ROLES = [...new Set(promotions.map(m => m.toRole))]
-  .filter(r => r !== 'forerunner')
+const GENUINE_PROMOS = promotions.filter(
+  m => (ROLE_RANK[m.toRole] ?? 0) > (ROLE_RANK[m.fromRole] ?? 0)
+);
+
+const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => m.toRole))]
   .sort((a, b) => ROLE_RANK[b] - ROLE_RANK[a]);
 
 export default function PromotionPage() {
@@ -109,7 +112,7 @@ export default function PromotionPage() {
   const filtered = (filter === 'all'
     ? promotions
     : promotions.filter(m => m.toRole === filter)
-  ).filter(m => m.toRole !== 'forerunner');
+  ).filter(m => (ROLE_RANK[m.toRole] ?? 0) > (ROLE_RANK[m.fromRole] ?? 0));
 
   const sorted = [...filtered].sort(
     (a, b) => (ROLE_RANK[b.toRole] ?? 0) - (ROLE_RANK[a.toRole] ?? 0)
@@ -128,14 +131,14 @@ export default function PromotionPage() {
             Hall of Fame
           </h1>
           <p className="text-[var(--color-text-secondary)] text-lg">
-            {promotions.filter(m => m.toRole !== 'forerunner').length} members promoted in Ritual
+            {GENUINE_PROMOS.length} members promoted in Ritual
           </p>
         </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
           {ALL_TO_ROLES.map(role => {
-            const count = promotions.filter(m => m.toRole === role).length;
+            const count = GENUINE_PROMOS.filter(m => m.toRole === role).length;
             return (
               <div key={role}
                 className="rounded-lg p-3 border text-center"
@@ -158,7 +161,7 @@ export default function PromotionPage() {
               color: filter === 'all' ? '#000' : 'var(--color-text-secondary)',
             }}
           >
-            All ({promotions.filter(m => m.toRole !== 'forerunner').length})
+            All ({GENUINE_PROMOS.length})
           </button>
           {ALL_TO_ROLES.map(role => (
             <button
@@ -171,7 +174,7 @@ export default function PromotionPage() {
                 color: filter === role ? '#000' : 'var(--color-text-secondary)',
               }}
             >
-              {ROLE_LABEL[role]} ({promotions.filter(m => m.toRole === role).length})
+              {ROLE_LABEL[role]} ({GENUINE_PROMOS.filter(m => m.toRole === role).length})
             </button>
           ))}
         </div>
