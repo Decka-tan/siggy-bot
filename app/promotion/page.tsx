@@ -116,13 +116,51 @@ export default function PromotionPage() {
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<typeof promotions[0] | null | 'not-found' | 'idle'>('idle');
   const [avatars, setAvatars] = useState<Record<string, string>>({});
+  const [suggestions, setSuggestions] = useState<{userId:string;username:string;displayName:string}[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
+  const suggestRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('/api/promotion-avatars').then(r => r.json()).then(setAvatars).catch(() => {});
   }, []);
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (suggestRef.current && !suggestRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  async function handleQueryChange(val: string) {
+    setQuery(val);
+    setSearchResult('idle');
+    if (val.trim().length < 2) { setSuggestions([]); setShowSuggestions(false); return; }
+    try {
+      const res = await fetch(`/api/member?autocomplete=true&username=${encodeURIComponent(val.trim())}`);
+      const data = await res.json();
+      // Filter to only promoted members
+      const promoUsernames = new Set(GENUINE_PROMOS.map(m => m.username.toLowerCase()));
+      const filtered = (data.members || data || []).filter((m: any) =>
+        promoUsernames.has((m.username || '').toLowerCase())
+      ).slice(0, 6);
+      setSuggestions(filtered);
+      setShowSuggestions(filtered.length > 0);
+    } catch { setSuggestions([]); }
+  }
+
+  function selectSuggestion(m: {username:string;displayName:string}) {
+    setQuery(m.username);
+    setShowSuggestions(false);
+    const found = GENUINE_PROMOS.find(p => p.username.toLowerCase() === m.username.toLowerCase());
+    setSearchResult(found ?? 'not-found');
+  }
 
   // Hero entrance animation
   useEffect(() => {
@@ -213,16 +251,19 @@ export default function PromotionPage() {
 
           {/* Search */}
           <div className="hero-line opacity-0 w-full max-w-lg mx-auto mb-8">
+            <div ref={suggestRef} className="relative">
             <form onSubmit={handleSearch} className="flex gap-2">
               <input
                 type="text"
                 value={query}
-                onChange={e => { setQuery(e.target.value); setSearchResult('idle'); }}
+                onChange={e => handleQueryChange(e.target.value)}
+                onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 placeholder="Your Discord username..."
                 className="flex-1 px-5 py-3.5 rounded-xl border text-white placeholder:text-[#444] outline-none transition-all"
                 style={{ backgroundColor: '#111', borderColor: '#222', fontSize: 15 }}
-                onFocus={e => (e.target.style.borderColor = '#a855f7')}
-                onBlur={e => (e.target.style.borderColor = '#222')}
+                onFocusCapture={e => (e.target.style.borderColor = '#a855f7')}
+                onBlurCapture={e => (e.target.style.borderColor = '#222')}
+                autoComplete="off"
               />
               <button type="submit"
                 className="px-6 py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80 whitespace-nowrap"
@@ -230,6 +271,22 @@ export default function PromotionPage() {
                 Check
               </button>
             </form>
+
+            {/* Suggestions dropdown */}
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 rounded-xl border overflow-hidden z-50"
+                style={{ backgroundColor: '#111', borderColor: '#222' }}>
+                {suggestions.map(s => (
+                  <button key={s.username} onMouseDown={() => selectSuggestion(s)}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors border-b last:border-0"
+                    style={{ borderColor: '#1a1a1a' }}>
+                    <div className="text-sm font-semibold text-white truncate">{s.displayName}</div>
+                    <div className="text-xs shrink-0" style={{ color: '#555' }}>@{s.username}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            </div>
 
             {searchResult !== 'idle' && (
               <div className="mt-4 rounded-2xl border overflow-hidden"
