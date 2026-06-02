@@ -148,13 +148,9 @@ export default function PromotionPage() {
     try {
       const res = await fetch(`/api/member?autocomplete=true&username=${encodeURIComponent(val.trim())}`);
       const data = await res.json();
-      // Filter to only promoted members
-      const promoUsernames = new Set(GENUINE_PROMOS.map(m => m.username.toLowerCase()));
-      const filtered = (data.members || data || []).filter((m: any) =>
-        promoUsernames.has((m.username || '').toLowerCase())
-      ).slice(0, 6);
-      setSuggestions(filtered);
-      setShowSuggestions(filtered.length > 0);
+      const results = (data.members || data || []).slice(0, 6);
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
     } catch { setSuggestions([]); }
   }
 
