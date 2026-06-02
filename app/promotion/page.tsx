@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import promotions from '@/lib/promotions-june-2026.json';
 
@@ -45,11 +45,11 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
-function MemberCard({ member }: { member: typeof promotions[0] }) {
+function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promotions[0]; avatarUrl?: string }) {
   const [imgError, setImgError] = useState(false);
   const avatarUrl = imgError
     ? getDiscordAvatar(member.userId)
-    : `https://cdn.discordapp.com/avatars/${member.userId}/avatar.png?size=128`;
+    : (avatarFromApi || getDiscordAvatar(member.userId));
 
   const isHighlight = ROLE_RANK[member.toRole] >= 3;
 
@@ -110,7 +110,15 @@ export default function PromotionPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<typeof promotions[0] | null | 'not-found' | 'idle'>('idle');
+  const [avatars, setAvatars] = useState<Record<string, string>>({});
   const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch('/api/promotion-avatars')
+      .then(r => r.json())
+      .then(setAvatars)
+      .catch(() => {});
+  }, []);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -263,7 +271,7 @@ export default function PromotionPage() {
         {/* Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {sorted.map(member => (
-            <MemberCard key={member.userId} member={member} />
+            <MemberCard key={member.userId} member={member} avatarUrl={avatars[member.userId]} />
           ))}
         </div>
 
