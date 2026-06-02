@@ -209,49 +209,42 @@ function MemberCard({ member, avatarUrl: avatarFromApi }: { member: typeof promo
   const [imgError, setImgError] = useState(false);
   const avatarUrl = imgError ? getDiscordAvatar(member.userId) : (avatarFromApi || getDiscordAvatar(member.userId));
   const color = ROLE_COLOR[member.toRole] || '#fff';
-  const isTop = ROLE_RANK[member.toRole] >= 3;
 
   return (
     <div
-      className="promo-card group relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-2 cursor-default overflow-hidden"
+      className="promo-card group relative flex flex-col rounded-xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-default"
       style={{
         backgroundColor: '#0a0a0a',
-        borderColor: `${color}33`,
-        boxShadow: isTop ? `0 0 30px ${color}22, inset 0 1px 0 ${color}22` : `inset 0 1px 0 ${color}11`,
+        borderColor: `${color}55`,
+        boxShadow: `0 0 20px ${color}11`,
       }}
     >
-      {/* Glow bg */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `radial-gradient(circle at 50% 0%, ${color}18 0%, transparent 70%)` }} />
-
-      {/* Top badge */}
-      {isTop && (
-        <div className="absolute top-3 right-3 text-xs font-bold font-mono px-1.5 py-0.5 rounded"
-          style={{ backgroundColor: color, color: '#000' }}>
-          ↑
-        </div>
-      )}
-
-      {/* Avatar */}
-      <div className="relative w-16 h-16 rounded-full overflow-hidden"
-        style={{ boxShadow: `0 0 0 2px ${color}66, 0 0 16px ${color}44` }}>
-        <Image src={avatarUrl} alt={member.displayName} fill className="object-cover"
-          onError={() => setImgError(true)} unoptimized />
+      {/* Top: PFP full bleed */}
+      <div className="relative w-full aspect-square overflow-hidden">
+        <Image
+          src={avatarUrl}
+          alt={member.displayName}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={() => setImgError(true)}
+          unoptimized
+        />
+        {/* Bottom fade into card */}
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(to bottom, transparent 50%, #0a0a0a 100%)' }} />
       </div>
 
-      {/* Name */}
-      <div className="text-center min-w-0 w-full">
-        <p className="font-semibold text-sm truncate text-white" title={member.displayName}>
+      {/* Bottom: info */}
+      <div className="px-3 pb-3 -mt-4 relative z-10">
+        <p className="font-semibold text-sm truncate text-white leading-tight" title={member.displayName}>
           {member.displayName}
         </p>
-        <p className="text-xs truncate mt-0.5" style={{ color: '#666' }}>@{member.username}</p>
-      </div>
-
-      {/* Role change */}
-      <div className="flex items-center gap-1.5 flex-wrap justify-center">
-        <RoleBadge role={member.fromRole} />
-        <span className="text-[#444] text-xs">→</span>
-        <RoleBadge role={member.toRole} />
+        <p className="text-xs truncate mb-2" style={{ color: '#555' }}>@{member.username}</p>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <RoleBadge role={member.fromRole} />
+          <span className="text-[#333] text-xs">→</span>
+          <RoleBadge role={member.toRole} />
+        </div>
       </div>
     </div>
   );
