@@ -1286,5 +1286,47 @@
     "username": "badang",
     "fromRole": "ritty",
     "toRole": "ritualist"
+  },
+  {
+    "userId": "311545772438978561",
+    "displayName": "Raka",
+    "username": "rakswp",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "398382848081526796",
+    "displayName": "shroomskull",
+    "username": "shroomskull",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "757232685042368553",
+    "displayName": "Kippo.G",
+    "username": "kippoxbt",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "802158561248935967",
+    "displayName": "Batagor",
+    "username": "0xbatagor",
+    "fromRole": "ritty",
+    "toRole": "ritualist"
+  },
+  {
+    "userId": "802845819900264458",
+    "displayName": "Temnik-cook",
+    "username": "temnik_84",
+    "fromRole": "bitty",
+    "toRole": "ritty"
+  },
+  {
+    "userId": "1239368655196782684",
+    "displayName": "Shen",
+    "username": "marshalahushein",
+    "fromRole": "bitty",
+    "toRole": "ritty"
   }
 ]
