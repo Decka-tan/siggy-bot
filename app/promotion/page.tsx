@@ -9,24 +9,25 @@ import promotionAvatars from '@/lib/promotion-avatars.json';
 import joinDates from '@/lib/promotion-join-dates.json';
 
 const ROLE_RANK: Record<string, number> = {
-  ritualist: 7, soulsmith: 6, architect: 5, mage: 4,
+  'radiant-ritualist': 9, ritualist: 7, soulsmith: 6, architect: 5, mage: 4,
   ritty: 3, bitty: 2, forerunner: 1, contributor: 0,
 };
 
 const ROLE_LABEL: Record<string, string> = {
-  ritualist: 'Ritualist', soulsmith: 'Soulsmith', architect: 'Architect',
-  mage: 'Mage', forerunner: 'Forerunner', ritty: 'ritty', bitty: 'bitty',
-  contributor: 'No Role',
+  'radiant-ritualist': 'Radiant Ritualist', ritualist: 'Ritualist', soulsmith: 'Soulsmith',
+  architect: 'Architect', mage: 'Mage', forerunner: 'Forerunner',
+  ritty: 'ritty', bitty: 'bitty', contributor: 'No Role',
 };
 
 const ROLE_COLOR: Record<string, string> = {
-  ritualist: '#22c55e',  // green
-  soulsmith: '#FFD700',
+  'radiant-ritualist': '#FFD700',
+  ritualist: '#22c55e',
+  soulsmith: '#a855f7',
   architect: '#3b82f6',
   mage: '#1ABC9C',
   forerunner: '#f59e0b',
-  ritty: '#a855f7',      // purple
-  bitty: '#3b82f6',      // blue
+  ritty: '#a855f7',
+  bitty: '#3b82f6',
   contributor: '#555',
 };
 
@@ -350,6 +351,7 @@ const VALID_TRANSITIONS = new Set([
   'contributor→bitty',
   'bitty→ritty',
   'ritty→ritualist',
+  'ritualist→radiant-ritualist',
 ]);
 
 const GENUINE_PROMOS = promotions.filter(
