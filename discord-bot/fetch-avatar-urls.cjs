@@ -8,7 +8,7 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID = '1210468736205852672';
 const DISCORD_API = 'https://discord.com/api/v10';
 
-const VALID = new Set(['contributor→bitty','bitty→ritty','ritty→ritualist']);
+const VALID = new Set(['contributor→bitty','bitty→ritty','ritty→ritualist','ritualist→radiant-ritualist']);
 const PROMO_IDS = new Set(
   promotions.filter(m => VALID.has(`${m.fromRole}→${m.toRole}`)).map(m => m.userId)
 );
