@@ -20,6 +20,8 @@ const SNAPSHOT_FILE = path.join(DATA_DIR, 'role-snapshot.json');
 const LOG_FILE      = path.join(DATA_DIR, 'upgrade-log.json');
 
 const promotions = require('../lib/promotions-june-2026.json');
+let promoAvatars = {};
+try { promoAvatars = require('../lib/promotion-avatars.json'); } catch {}
 
 // promotions JSON uses slugs; community feed uses Discord display names
 const SLUG_TO_DISPLAY = {
@@ -48,6 +50,7 @@ for (const m of promotions) {
     displayName: m.displayName,
     fromRole: disp(m.fromRole),
     toRole: disp(m.toRole),
+    avatarUrl: promoAvatars[m.userId] || `/api/proxy-avatar?url=${encodeURIComponent('https://cdn.discordapp.com/embed/avatars/' + (parseInt(m.userId.slice(-1)) % 5) + '.png')}`,
     at: JUNE_1,
   });
   // Seed snapshot with their current (post-promotion) top role so the hourly

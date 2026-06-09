@@ -21,7 +21,7 @@ const ROLE_ORDER = [
 ];
 
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
-type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number };
+type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string };
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
@@ -82,7 +82,7 @@ function UpgradeCard({ u }: { u: Upgrade }) {
       style={{ backgroundColor: '#0a0a0a', borderColor: `${c}44` }}>
       <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#1a1a1a]"
         style={{ boxShadow: `0 0 0 2px ${c}55` }}>
-        <Image src={err ? 'https://cdn.discordapp.com/embed/avatars/0.png' : `/api/avatar?id=${u.userId}`}
+        <Image src={err ? 'https://cdn.discordapp.com/embed/avatars/0.png' : (u.avatarUrl || `/api/avatar?id=${u.userId}`)}
           alt={u.displayName} fill className="object-cover" onError={() => setErr(true)} unoptimized />
       </div>
       <div className="min-w-0 flex-1">

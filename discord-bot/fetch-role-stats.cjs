@@ -56,6 +56,15 @@ const s3 = new S3Client({
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+function avatarProxy(m) {
+  const uid = m.user.id;
+  let cdn;
+  if (m.avatar)            cdn = `https://cdn.discordapp.com/guilds/${GUILD_ID}/users/${uid}/avatars/${m.avatar}.png?size=128`;
+  else if (m.user.avatar)  cdn = `https://cdn.discordapp.com/avatars/${uid}/${m.user.avatar}.png?size=128`;
+  else                     cdn = `https://cdn.discordapp.com/embed/avatars/${parseInt(uid.slice(-1)) % 5}.png`;
+  return `/api/proxy-avatar?url=${encodeURIComponent(cdn)}`;
+}
+
 async function getRolesMap() {
   const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/roles`, {
     headers: { Authorization: `Bot ${BOT_TOKEN}` },
@@ -97,6 +106,7 @@ async function fetchAllMembers(rolesMap) {
         username: m.user.username,
         displayName: m.nick || m.user.global_name || m.user.username,
         topRole: top,
+        avatarUrl: avatarProxy(m),
       });
     }
     after = batch[batch.length - 1].user.id;
@@ -154,6 +164,7 @@ async function main() {
         displayName: m.displayName,
         fromRole: prev,
         toRole: m.topRole,
+        avatarUrl: m.avatarUrl,
         at: now,
       });
       console.log(`  ⬆ ${m.displayName}: ${prev} → ${m.topRole}`);
