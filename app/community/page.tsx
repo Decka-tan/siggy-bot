@@ -9,8 +9,6 @@ const ROLE_COLOR: Record<string, string> = {
   'Radiant Ritualist': '#c58d04',
   'Zealot': '#9e6bff',
   'Ritualist': '#34d399',
-  'Siggy Soulsmith': '#d4843d',
-  'Siggy Architect': '#e2a671',
   'Mage': '#b059bc',
   'ritty': '#826bc2',
   'bitty': '#3498db',
@@ -247,20 +245,15 @@ export default function CommunityPage() {
             {/* ── ANALYTICS ── */}
             {view === 'analytics' && (
               <>
-                {/* Distribution — full width vertical bars */}
-                <Card title="Distribution" subtitle="Members per role">
-                  <VBars rows={rows} max={maxCount} />
-                </Card>
-
-                <div className="grid lg:grid-cols-2 gap-6">
-                  {/* Composition donut */}
-                  <Card title="Composition" subtitle="Share by role">
-                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                {/* Composition donut (left, wider) + Ranking (right) */}
+                <div className="grid lg:grid-cols-5 gap-6">
+                  <Card title="Composition" subtitle="Share by role" className="lg:col-span-2">
+                    <div className="flex flex-col items-center gap-5">
                       <Donut rows={rows} sum={sum} centerValue={total} />
-                      <div className="flex-1 w-full space-y-1.5">
+                      <div className="w-full space-y-1.5">
                         {rows.map(d => (
                           <div key={d.role} className="flex items-center gap-2 text-sm">
-                            <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: color(d.role) }} />
+                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color(d.role) }} />
                             <span className="flex-1 truncate text-[#ccc]">{d.role}</span>
                             <span className="font-mono text-xs text-[#555]">{d.percent}%</span>
                           </div>
@@ -269,13 +262,12 @@ export default function CommunityPage() {
                     </div>
                   </Card>
 
-                  {/* Ranking — with mini bars */}
-                  <Card title="Ranking" subtitle="Roles by size">
+                  <Card title="Ranking" subtitle="Roles by size" className="lg:col-span-3">
                     <div className="space-y-1">
                       {rows.map((d, i) => {
                         const c = color(d.role);
                         return (
-                          <div key={d.role} className="flex items-center gap-3 py-2 border-b last:border-0" style={{ borderColor: '#161616' }}>
+                          <div key={d.role} className="flex items-center gap-3 py-2.5 border-b last:border-0" style={{ borderColor: '#161616' }}>
                             <span className="font-mono text-xs w-4 text-center shrink-0" style={{ color: '#444' }}>{i + 1}</span>
                             <span className="text-sm text-[#ccc] w-28 truncate shrink-0">{d.role}</span>
                             <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
@@ -290,6 +282,11 @@ export default function CommunityPage() {
                     </div>
                   </Card>
                 </div>
+
+                {/* Distribution — full width vertical bars */}
+                <Card title="Distribution" subtitle="Members per role">
+                  <VBars rows={rows} max={maxCount} />
+                </Card>
               </>
             )}
 

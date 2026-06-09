@@ -33,8 +33,6 @@ const ROLE_RANK = {
   'Radiant Ritualist': 8,
   'Zealot': 7,
   'Ritualist': 6,
-  'Siggy Soulsmith': 5,
-  'Siggy Architect': 4,
   'Mage': 3,
   'ritty': 2,
   'bitty': 1,
