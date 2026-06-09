@@ -23,26 +23,54 @@ const ROLE_ORDER = [
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
 type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number };
 
-function color(role: string) { return ROLE_COLOR[role] || '#888'; }
+const color = (r: string) => ROLE_COLOR[r] || '#888';
 
 function relativeTime(ts: number) {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return 'just now';
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
 function RoleBadge({ role }: { role: string }) {
   const c = color(role);
   return (
     <span className="text-xs font-mono px-2 py-0.5 rounded-full border"
-      style={{ color: c, borderColor: c, backgroundColor: `${c}20` }}>
-      {role}
-    </span>
+      style={{ color: c, borderColor: c, backgroundColor: `${c}20` }}>{role}</span>
+  );
+}
+
+/* ── SVG Donut (composition / share) ─────────────────────────────── */
+function Donut({ rows, total }: { rows: DistRow[]; total: number }) {
+  const size = 240, stroke = 30, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
+  let offset = 0;
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#161616" strokeWidth={stroke} />
+        {rows.map(d => {
+          const frac = total ? d.count / total : 0;
+          const len = frac * circ;
+          const seg = (
+            <motion.circle key={d.role}
+              cx={size / 2} cy={size / 2} r={r} fill="none"
+              stroke={color(d.role)} strokeWidth={stroke}
+              strokeDasharray={`${len} ${circ - len}`}
+              initial={{ strokeDashoffset: circ }}
+              animate={{ strokeDashoffset: -offset }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
+          );
+          offset += len;
+          return seg;
+        })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-display text-3xl">{total.toLocaleString()}</span>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-[#555]">members</span>
+      </div>
+    </div>
   );
 }
 
@@ -54,20 +82,26 @@ function UpgradeCard({ u }: { u: Upgrade }) {
       style={{ backgroundColor: '#0a0a0a', borderColor: `${c}44` }}>
       <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#1a1a1a]"
         style={{ boxShadow: `0 0 0 2px ${c}55` }}>
-        <Image
-          src={err ? `https://cdn.discordapp.com/embed/avatars/0.png` : `/api/avatar?id=${u.userId}`}
-          alt={u.displayName} fill className="object-cover" onError={() => setErr(true)} unoptimized
-        />
+        <Image src={err ? 'https://cdn.discordapp.com/embed/avatars/0.png' : `/api/avatar?id=${u.userId}`}
+          alt={u.displayName} fill className="object-cover" onError={() => setErr(true)} unoptimized />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-white truncate">{u.displayName}</p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          <RoleBadge role={u.fromRole} />
-          <span className="text-[#444] text-xs">→</span>
-          <RoleBadge role={u.toRole} />
+          <RoleBadge role={u.fromRole} /><span className="text-[#444] text-xs">→</span><RoleBadge role={u.toRole} />
         </div>
       </div>
       <span className="text-[10px] font-mono shrink-0" style={{ color: '#555' }}>{relativeTime(u.at)}</span>
+    </div>
+  );
+}
+
+function ChartCard({ title, subtitle, children, className = '' }: any) {
+  return (
+    <div className={`rounded-2xl border p-6 ${className}`} style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+      <h2 className="font-display text-xl uppercase tracking-wide">{title}</h2>
+      <p className="text-xs font-mono text-[#555] mb-5">{subtitle}</p>
+      {children}
     </div>
   );
 }
@@ -79,18 +113,16 @@ export default function CommunityPage() {
   const [contributorOnly, setContributorOnly] = useState(false);
 
   useEffect(() => {
-    fetch('/api/community')
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then(setData)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+    fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
+      .then(setData).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
 
-  const dist: DistRow[] = data?.stats?.distribution ?? [];
-  const shown = (contributorOnly ? dist.filter(d => d.contributor) : dist)
+  const distAll: DistRow[] = data?.stats?.distribution ?? [];
+  const rows = (contributorOnly ? distAll.filter(d => d.contributor) : distAll)
     .filter(d => d.count > 0)
     .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
-  const maxCount = Math.max(1, ...shown.map(d => d.count));
+  const subtotal = rows.reduce((s, d) => s + d.count, 0);
+  const maxCount = Math.max(1, ...rows.map(d => d.count));
   const upgrades: Upgrade[] = data?.upgrades?.upgrades ?? [];
   const total = data?.stats?.totalMembers ?? 0;
   const updatedAt = data?.stats?.updatedAt;
@@ -100,97 +132,95 @@ export default function CommunityPage() {
       <div className="max-w-6xl mx-auto px-4 py-20">
 
         {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="font-mono text-xs tracking-[0.3em] uppercase" style={{ color: '#22c55e' }}>
-              Live · Updates Hourly
-            </span>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
+          <div>
+            <div className="inline-flex items-center gap-2 mb-3">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="font-mono text-xs tracking-[0.3em] uppercase text-green-500">Live · Updates Hourly</span>
+            </div>
+            <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tight leading-none">Ritual Analytics</h1>
+            {updatedAt && <p className="text-[#555] text-sm mt-2 font-mono">synced {relativeTime(updatedAt)}</p>}
           </div>
-          <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tight mb-4">
-            Ritual Community
-          </h1>
-          <p className="text-[#888] text-lg">
-            {total.toLocaleString()} contributors across the ranks
-            {updatedAt && <span className="text-[#555]"> · synced {relativeTime(updatedAt)}</span>}
-          </p>
+          <button onClick={() => setContributorOnly(v => !v)}
+            className="self-start md:self-auto px-4 py-2 rounded-full text-xs font-mono border transition-all"
+            style={{
+              borderColor: contributorOnly ? 'var(--color-accent)' : '#222',
+              backgroundColor: contributorOnly ? 'var(--color-accent)' : 'transparent',
+              color: contributorOnly ? '#000' : '#666',
+            }}>
+            {contributorOnly ? '✓ Contributor only' : 'Contributor only'}
+          </button>
         </div>
 
         {loading && <p className="text-center text-[#555] font-mono">Loading...</p>}
-        {error && (
-          <p className="text-center text-[#555] font-mono">
-            Stats not available yet. The hourly job may not have run.
-          </p>
-        )}
+        {error && <p className="text-center text-[#555] font-mono">Stats not available yet. The hourly job may not have run.</p>}
 
         {data && (
-          <div className="grid lg:grid-cols-5 gap-8">
+          <>
+            {/* Total card */}
+            <div className="rounded-2xl border p-6 mb-6 flex items-baseline gap-4"
+              style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+              <span className="font-display text-5xl md:text-6xl" style={{ color: 'var(--color-accent)' }}>
+                {subtotal.toLocaleString()}
+              </span>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#555]">
+                {contributorOnly ? 'contributors (ladder)' : 'total ranked members'}
+              </span>
+            </div>
 
-            {/* Distribution */}
-            <div className="lg:col-span-3">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-2xl uppercase tracking-wide">Role Distribution</h2>
-                <button
-                  onClick={() => setContributorOnly(v => !v)}
-                  className="px-4 py-1.5 rounded-full text-xs font-mono border transition-all"
-                  style={{
-                    borderColor: contributorOnly ? 'var(--color-accent)' : '#222',
-                    backgroundColor: contributorOnly ? 'var(--color-accent)' : 'transparent',
-                    color: contributorOnly ? '#000' : '#666',
-                  }}>
-                  Contributor only
-                </button>
-              </div>
+            {/* Charts row */}
+            <div className="grid lg:grid-cols-2 gap-6 mb-6">
+              {/* Composition donut */}
+              <ChartCard title="Composition" subtitle="Share by role">
+                <div className="flex flex-col sm:flex-row items-center gap-6">
+                  <Donut rows={rows} total={subtotal} />
+                  <div className="flex-1 w-full space-y-1.5">
+                    {rows.map(d => (
+                      <div key={d.role} className="flex items-center gap-2 text-sm">
+                        <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: color(d.role) }} />
+                        <span className="flex-1 truncate text-[#ccc]">{d.role}</span>
+                        <span className="font-mono text-xs text-[#555]">{d.percent}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ChartCard>
 
-              <div className="space-y-3">
-                {shown.map((d, i) => {
-                  const c = color(d.role);
-                  return (
-                    <motion.div key={d.role}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.04 }}
-                      className="rounded-xl border p-4"
-                      style={{ backgroundColor: '#0a0a0a', borderColor: `${c}33` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <RoleBadge role={d.role} />
-                        <div className="flex items-baseline gap-2">
-                          <span className="font-display text-xl" style={{ color: c }}>{d.count}</span>
-                          <span className="text-xs font-mono text-[#555]">{d.percent}%</span>
+              {/* Distribution / ranking bars */}
+              <ChartCard title="Distribution" subtitle="Members per role">
+                <div className="space-y-3">
+                  {rows.map((d, i) => {
+                    const c = color(d.role);
+                    return (
+                      <div key={d.role}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm text-[#ccc]">{d.role}</span>
+                          <span className="font-mono text-xs"><span style={{ color: c }}>{d.count}</span> <span className="text-[#555]">· {d.percent}%</span></span>
+                        </div>
+                        <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
+                          <motion.div className="h-full rounded-full"
+                            initial={{ width: 0 }} animate={{ width: `${(d.count / maxCount) * 100}%` }}
+                            transition={{ delay: i * 0.04 + 0.1, duration: 0.6, ease: 'easeOut' }}
+                            style={{ backgroundColor: c }} />
                         </div>
                       </div>
-                      <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#1a1a1a' }}>
-                        <motion.div className="h-full rounded-full"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(d.count / maxCount) * 100}%` }}
-                          transition={{ delay: i * 0.04 + 0.1, duration: 0.6, ease: 'easeOut' }}
-                          style={{ backgroundColor: c }} />
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </ChartCard>
             </div>
 
             {/* Recently Upgraded */}
-            <div className="lg:col-span-2">
-              <h2 className="font-display text-2xl uppercase tracking-wide mb-6">
-                Recently Upgraded
-                <span className="block text-xs font-mono text-[#555] mt-1 normal-case tracking-normal">
-                  last 14 days
-                </span>
-              </h2>
-
+            <ChartCard title="Recently Upgraded" subtitle="last 14 days" className="">
               {upgrades.length === 0 ? (
                 <p className="text-[#555] text-sm font-mono">No upgrades in the last 14 days yet.</p>
               ) : (
-                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[520px] overflow-y-auto pr-1">
                   {upgrades.map(u => <UpgradeCard key={`${u.userId}-${u.at}`} u={u} />)}
                 </div>
               )}
-            </div>
-
-          </div>
+            </ChartCard>
+          </>
         )}
       </div>
     </div>
