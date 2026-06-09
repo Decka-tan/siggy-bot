@@ -51,7 +51,7 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 /* ── SVG Donut (composition / share) ─────────────────────────────── */
-function Donut({ rows, total }: { rows: DistRow[]; total: number }) {
+function Donut({ rows, total, centerValue }: { rows: DistRow[]; total: number; centerValue: number }) {
   const size = 240, stroke = 30, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
   let offset = 0;
   return (
@@ -76,7 +76,7 @@ function Donut({ rows, total }: { rows: DistRow[]; total: number }) {
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-display text-3xl">{total.toLocaleString()}</span>
+        <span className="font-display text-3xl">{centerValue.toLocaleString()}</span>
         <span className="text-[10px] font-mono uppercase tracking-widest text-[#555]">members</span>
       </div>
     </div>
@@ -182,10 +182,10 @@ export default function CommunityPage() {
             <div className="rounded-2xl border p-6 mb-6 flex items-baseline gap-4"
               style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
               <span className="font-display text-5xl md:text-6xl" style={{ color: 'var(--color-accent)' }}>
-                {subtotal.toLocaleString()}
+                {total.toLocaleString()}
               </span>
               <span className="font-mono text-xs uppercase tracking-widest text-[#555]">
-                {contributorOnly ? 'contributors (ladder)' : 'total ranked members'}
+                ranked members · {rows.length} roles
               </span>
             </div>
 
@@ -194,7 +194,7 @@ export default function CommunityPage() {
               {/* Composition donut */}
               <ChartCard title="Composition" subtitle="Share by role">
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <Donut rows={rows} total={subtotal} />
+                  <Donut rows={rows} total={subtotal} centerValue={total} />
                   <div className="flex-1 w-full space-y-1.5">
                     {rows.map(d => (
                       <div key={d.role} className="flex items-center gap-2 text-sm">

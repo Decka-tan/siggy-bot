@@ -105,7 +105,8 @@ async function fetchAllMembers(rolesMap) {
         userId: m.user.id,
         username: m.user.username,
         displayName: m.nick || m.user.global_name || m.user.username,
-        topRole: top,
+        topRole: top,            // for upgrade detection only
+        roles: tracked,          // ALL tracked roles this member has (counted independently)
         avatarUrl: avatarProxy(m),
         joinedAt: m.joined_at || null,
       });
@@ -138,15 +139,17 @@ async function main() {
   const members = await fetchAllMembers(rolesMap);
   console.log(`  ${members.length} members with tracked roles`);
 
-  // 1. Distribution
+  // 1. Distribution — each member counted in EVERY tracked role they hold
+  //    (someone with Mage + Ritualist counts in both)
   const counts = {};
   for (const r of TRACKED_ROLES) counts[r] = 0;
-  for (const m of members) counts[m.topRole]++;
-  const total = members.length;
+  for (const m of members) for (const r of m.roles) counts[r]++;
+  const total = members.length;                         // unique members with >=1 tracked role
+  const sumCounts = TRACKED_ROLES.reduce((s, r) => s + counts[r], 0);
   const distribution = TRACKED_ROLES.map(role => ({
     role,
     count: counts[role],
-    percent: total ? +((counts[role] / total) * 100).toFixed(2) : 0,
+    percent: sumCounts ? +((counts[role] / sumCounts) * 100).toFixed(2) : 0, // share of all role holdings
     contributor: CONTRIBUTOR_LADDER.has(role),
   }));
 
