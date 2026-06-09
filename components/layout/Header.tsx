@@ -83,6 +83,7 @@ export function Header() {
           <Link href="/" className="hover:text-accent transition-colors">Home</Link>
           <a href="#about" className="hover:text-accent transition-colors">About</a>
           <Link href="/story" className="hover:text-accent transition-colors">Story</Link>
+          <Link href="/community" className="hover:text-accent transition-colors">Community</Link>
           <Link href="/chat?new=true" className="hover:text-accent transition-colors">Chat</Link>
         </nav>
 
@@ -179,6 +180,13 @@ export function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Story
+              </Link>
+              <Link
+                href="/community"
+                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Community
               </Link>
               <Link
                 href="/chat"
