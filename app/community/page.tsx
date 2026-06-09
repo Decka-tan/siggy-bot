@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 const ROLE_COLOR: Record<string, string> = {
   'Radiant Ritualist': '#c58d04',
   'Zealot': '#9e6bff',
-  'Ritualist': '#caebde',
+  'Ritualist': '#34d399',
   'Siggy Soulsmith': '#d4843d',
   'Siggy Architect': '#e2a671',
   'Mage': '#b059bc',
