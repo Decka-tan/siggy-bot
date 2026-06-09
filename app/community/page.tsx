@@ -6,14 +6,14 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const ROLE_COLOR: Record<string, string> = {
-  'Radiant Ritualist': '#FFD700',
-  'Zealot': '#ef4444',
-  'Ritualist': '#22c55e',
-  'Siggy Soulsmith': '#ec4899',
-  'Siggy Architect': '#06b6d4',
-  'Mage': '#14b8a6',
-  'ritty': '#a855f7',
-  'bitty': '#3b82f6',
+  'Radiant Ritualist': '#c58d04',
+  'Zealot': '#9e6bff',
+  'Ritualist': '#caebde',
+  'Siggy Soulsmith': '#d4843d',
+  'Siggy Architect': '#e2a671',
+  'Mage': '#b059bc',
+  'ritty': '#826bc2',
+  'bitty': '#3498db',
 };
 
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
