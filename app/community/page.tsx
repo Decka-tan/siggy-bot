@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 
 const ROLE_COLOR: Record<string, string> = {
@@ -211,7 +212,18 @@ export default function CommunityPage() {
             </div>
 
             {/* Recently Upgraded */}
-            <ChartCard title="Recently Upgraded" subtitle="last 14 days" className="">
+            <div className="rounded-2xl border p-6" style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+              <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
+                <div>
+                  <h2 className="font-display text-xl uppercase tracking-wide">Recently Upgraded</h2>
+                  <p className="text-xs font-mono text-[#555]">last 14 days</p>
+                </div>
+                <Link href="/promotion"
+                  className="shrink-0 px-4 py-2 rounded-full text-xs font-mono border transition-all hover:opacity-80"
+                  style={{ borderColor: '#FFD70055', color: '#FFD700', backgroundColor: '#FFD70010' }}>
+                  See June 2026 Promotion →
+                </Link>
+              </div>
               {upgrades.length === 0 ? (
                 <p className="text-[#555] text-sm font-mono">No upgrades in the last 14 days yet.</p>
               ) : (
@@ -219,7 +231,7 @@ export default function CommunityPage() {
                   {upgrades.map(u => <UpgradeCard key={`${u.userId}-${u.at}`} u={u} />)}
                 </div>
               )}
-            </ChartCard>
+            </div>
           </>
         )}
       </div>
