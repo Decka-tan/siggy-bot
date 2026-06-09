@@ -177,15 +177,24 @@ export default function CommunityPage() {
                   return (
                     <motion.div key={d.role}
                       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
-                      className="rounded-2xl border p-5 relative overflow-hidden"
-                      style={{ backgroundColor: '#0a0a0a', borderColor: `${c}33` }}>
-                      <div className="absolute inset-0 opacity-[0.07]" style={{ background: `radial-gradient(circle at 100% 0%, ${c}, transparent 70%)` }} />
-                      <div className="relative">
-                        <RoleBadge role={d.role} />
-                        <div className="mt-4 flex items-baseline gap-2">
-                          <span className="font-display text-3xl" style={{ color: c }}>{d.percent}%</span>
+                      className="rounded-2xl border relative overflow-hidden"
+                      style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+                      {/* top accent bar */}
+                      <div className="h-1 w-full" style={{ backgroundColor: c, boxShadow: `0 0 12px ${c}` }} />
+                      <div className="p-6 relative">
+                        <div className="absolute inset-0 opacity-[0.06]" style={{ background: `radial-gradient(circle at 100% 0%, ${c}, transparent 65%)` }} />
+                        <div className="relative">
+                          {/* header row: role name + % pill */}
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="font-mono text-xs uppercase tracking-wider font-semibold" style={{ color: '#ddd' }}>{d.role}</span>
+                            <span className="text-[11px] font-mono px-2 py-0.5 rounded" style={{ color: '#888', backgroundColor: '#161616' }}>{d.percent}%</span>
+                          </div>
+                          {/* big count */}
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-display text-5xl tracking-tight text-white">{d.count.toLocaleString()}</span>
+                            <span className="font-mono text-[10px] uppercase tracking-widest text-[#555]">members</span>
+                          </div>
                         </div>
-                        <p className="text-sm mt-1"><span className="text-white font-semibold">{d.count.toLocaleString()}</span> <span className="text-[#555]">members</span></p>
                       </div>
                     </motion.div>
                   );
