@@ -107,6 +107,7 @@ async function fetchAllMembers(rolesMap) {
         displayName: m.nick || m.user.global_name || m.user.username,
         topRole: top,
         avatarUrl: avatarProxy(m),
+        joinedAt: m.joined_at || null,
       });
     }
     after = batch[batch.length - 1].user.id;
@@ -165,6 +166,7 @@ async function main() {
         fromRole: prev,
         toRole: m.topRole,
         avatarUrl: m.avatarUrl,
+        daysToPromo: m.joinedAt ? Math.max(0, Math.floor((now - Date.parse(m.joinedAt)) / 86400000)) : null,
         at: now,
       });
       console.log(`  ⬆ ${m.displayName}: ${prev} → ${m.topRole}`);

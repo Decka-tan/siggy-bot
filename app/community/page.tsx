@@ -22,7 +22,15 @@ const ROLE_ORDER = [
 ];
 
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
-type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string };
+type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string; daysToPromo?: number | null };
+
+function fmtDays(d?: number | null) {
+  if (d == null) return null;
+  if (d < 30) return `${d}d`;
+  if (d < 365) return `${Math.floor(d / 30)}mo`;
+  const y = Math.floor(d / 365), mo = Math.floor((d % 365) / 30);
+  return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
+}
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
@@ -92,7 +100,14 @@ function UpgradeCard({ u }: { u: Upgrade }) {
           <RoleBadge role={u.fromRole} /><span className="text-[#444] text-xs">→</span><RoleBadge role={u.toRole} />
         </div>
       </div>
-      <span className="text-[10px] font-mono shrink-0" style={{ color: '#555' }}>{relativeTime(u.at)}</span>
+      <div className="flex flex-col items-end shrink-0 gap-0.5">
+        <span className="text-[10px] font-mono" style={{ color: '#555' }}>{relativeTime(u.at)}</span>
+        {fmtDays(u.daysToPromo) && (
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded" style={{ color: c, backgroundColor: `${c}15` }}>
+            {fmtDays(u.daysToPromo)} climb
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -124,7 +139,12 @@ export default function CommunityPage() {
     .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
   const subtotal = rows.reduce((s, d) => s + d.count, 0);
   const maxCount = Math.max(1, ...rows.map(d => d.count));
-  const upgrades: Upgrade[] = data?.upgrades?.upgrades ?? [];
+  const upgrades: Upgrade[] = [...(data?.upgrades?.upgrades ?? [])].sort((a, b) => {
+    // group by day (newest event group first), then fastest climber within
+    const dayA = Math.floor(a.at / 86400000), dayB = Math.floor(b.at / 86400000);
+    if (dayA !== dayB) return dayB - dayA;
+    return (a.daysToPromo ?? 1e9) - (b.daysToPromo ?? 1e9);
+  });
   const total = data?.stats?.totalMembers ?? 0;
   const updatedAt = data?.stats?.updatedAt;
 
