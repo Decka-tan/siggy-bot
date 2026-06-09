@@ -14,11 +14,10 @@ const ROLE_COLOR: Record<string, string> = {
   'Mage': '#14b8a6',
   'ritty': '#a855f7',
   'bitty': '#3b82f6',
-  'Forerunner': '#64748b',
 };
 const ROLE_ORDER = [
   'Radiant Ritualist', 'Zealot', 'Ritualist', 'Siggy Soulsmith',
-  'Siggy Architect', 'Mage', 'ritty', 'bitty', 'Forerunner',
+  'Siggy Architect', 'Mage', 'ritty', 'bitty',
 ];
 
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
@@ -162,15 +161,26 @@ export default function CommunityPage() {
             <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tight leading-none">Ritual Analytics</h1>
             {updatedAt && <p className="text-[#555] text-sm mt-2 font-mono">synced {relativeTime(updatedAt)}</p>}
           </div>
-          <button onClick={() => setContributorOnly(v => !v)}
-            className="self-start md:self-auto px-4 py-2 rounded-full text-xs font-mono border transition-all"
-            style={{
-              borderColor: contributorOnly ? 'var(--color-accent)' : '#222',
-              backgroundColor: contributorOnly ? 'var(--color-accent)' : 'transparent',
-              color: contributorOnly ? '#000' : '#666',
-            }}>
-            {contributorOnly ? '✓ Contributor only' : 'Contributor only'}
-          </button>
+          {/* Segmented switch */}
+          <div className="self-start md:self-auto inline-flex p-1 rounded-full border"
+            style={{ borderColor: '#1a1a1a', backgroundColor: '#0a0a0a' }}>
+            {[
+              { k: false, label: 'All Roles' },
+              { k: true, label: 'Contributors' },
+            ].map(opt => {
+              const active = contributorOnly === opt.k;
+              return (
+                <button key={String(opt.k)} onClick={() => setContributorOnly(opt.k)}
+                  className="px-4 py-1.5 rounded-full text-xs font-mono transition-all"
+                  style={{
+                    backgroundColor: active ? 'var(--color-accent)' : 'transparent',
+                    color: active ? '#000' : '#666',
+                  }}>
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {loading && <p className="text-center text-[#555] font-mono">Loading...</p>}

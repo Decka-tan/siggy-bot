@@ -38,7 +38,6 @@ const ROLE_RANK = {
   'Mage': 3,
   'ritty': 2,
   'bitty': 1,
-  'Forerunner': 0,
 };
 const TRACKED_ROLES = Object.keys(ROLE_RANK);
 
