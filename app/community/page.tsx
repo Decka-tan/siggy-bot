@@ -15,21 +15,9 @@ const ROLE_COLOR: Record<string, string> = {
   'ritty': '#a855f7',
   'bitty': '#3b82f6',
 };
-const ROLE_ORDER = [
-  'Radiant Ritualist', 'Zealot', 'Ritualist', 'Siggy Soulsmith',
-  'Siggy Architect', 'Mage', 'ritty', 'bitty',
-];
 
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
 type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string; daysToPromo?: number | null };
-
-function fmtDays(d?: number | null) {
-  if (d == null) return null;
-  if (d < 30) return `${d}d`;
-  if (d < 365) return `${Math.floor(d / 30)}mo`;
-  const y = Math.floor(d / 365), mo = Math.floor((d % 365) / 30);
-  return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
-}
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
@@ -40,17 +28,22 @@ function relativeTime(ts: number) {
   const h = Math.floor(m / 60); if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
+function fmtDays(d?: number | null) {
+  if (d == null) return null;
+  if (d < 30) return `${d}d`;
+  if (d < 365) return `${Math.floor(d / 30)}mo`;
+  const y = Math.floor(d / 365), mo = Math.floor((d % 365) / 30);
+  return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
+}
 
 function RoleBadge({ role }: { role: string }) {
   const c = color(role);
-  return (
-    <span className="text-xs font-mono px-2 py-0.5 rounded-full border"
-      style={{ color: c, borderColor: c, backgroundColor: `${c}20` }}>{role}</span>
-  );
+  return <span className="text-xs font-mono px-2 py-0.5 rounded-full border"
+    style={{ color: c, borderColor: c, backgroundColor: `${c}20` }}>{role}</span>;
 }
 
-/* ── SVG Donut (composition / share) ─────────────────────────────── */
-function Donut({ rows, total, centerValue }: { rows: DistRow[]; total: number; centerValue: number }) {
+/* ── SVG Donut ─────────────────────────────────────── */
+function Donut({ rows, sum, centerValue }: { rows: DistRow[]; sum: number; centerValue: number }) {
   const size = 240, stroke = 30, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
   let offset = 0;
   return (
@@ -58,17 +51,12 @@ function Donut({ rows, total, centerValue }: { rows: DistRow[]; total: number; c
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#161616" strokeWidth={stroke} />
         {rows.map(d => {
-          const frac = total ? d.count / total : 0;
-          const len = frac * circ;
+          const len = (sum ? d.count / sum : 0) * circ;
           const seg = (
-            <motion.circle key={d.role}
-              cx={size / 2} cy={size / 2} r={r} fill="none"
-              stroke={color(d.role)} strokeWidth={stroke}
-              strokeDasharray={`${len} ${circ - len}`}
-              initial={{ strokeDashoffset: circ }}
-              animate={{ strokeDashoffset: -offset }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-            />
+            <motion.circle key={d.role} cx={size / 2} cy={size / 2} r={r} fill="none"
+              stroke={color(d.role)} strokeWidth={stroke} strokeDasharray={`${len} ${circ - len}`}
+              initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: -offset }}
+              transition={{ duration: 0.8, ease: 'easeOut' }} />
           );
           offset += len;
           return seg;
@@ -86,10 +74,8 @@ function UpgradeCard({ u }: { u: Upgrade }) {
   const [err, setErr] = useState(false);
   const c = color(u.toRole);
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border"
-      style={{ backgroundColor: '#0a0a0a', borderColor: `${c}44` }}>
-      <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#1a1a1a]"
-        style={{ boxShadow: `0 0 0 2px ${c}55` }}>
+    <div className="flex items-center gap-3 p-3 rounded-xl border" style={{ backgroundColor: '#0a0a0a', borderColor: `${c}44` }}>
+      <div className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 bg-[#1a1a1a]" style={{ boxShadow: `0 0 0 2px ${c}55` }}>
         <Image src={err ? 'https://cdn.discordapp.com/embed/avatars/0.png' : (u.avatarUrl || `/api/avatar?id=${u.userId}`)}
           alt={u.displayName} fill className="object-cover" onError={() => setErr(true)} unoptimized />
       </div>
@@ -111,11 +97,11 @@ function UpgradeCard({ u }: { u: Upgrade }) {
   );
 }
 
-function ChartCard({ title, subtitle, children, className = '' }: any) {
+function Card({ title, subtitle, children, className = '' }: any) {
   return (
     <div className={`rounded-2xl border p-6 ${className}`} style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
-      <h2 className="font-display text-xl uppercase tracking-wide">{title}</h2>
-      <p className="text-xs font-mono text-[#555] mb-5">{subtitle}</p>
+      {title && <h2 className="font-display text-xl uppercase tracking-wide">{title}</h2>}
+      {subtitle && <p className="text-xs font-mono text-[#555] mb-5">{subtitle}</p>}
       {children}
     </div>
   );
@@ -125,123 +111,151 @@ export default function CommunityPage() {
   const [data, setData] = useState<{ stats: any; upgrades: any } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [contributorOnly, setContributorOnly] = useState(false);
+  const [view, setView] = useState<'overview' | 'analytics'>('overview');
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
       .then(setData).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
 
-  const distAll: DistRow[] = data?.stats?.distribution ?? [];
-  const rows = (contributorOnly ? distAll.filter(d => d.contributor) : distAll)
-    .filter(d => d.count > 0)
-    .sort((a, b) => ROLE_ORDER.indexOf(a.role) - ROLE_ORDER.indexOf(b.role));
-  const subtotal = rows.reduce((s, d) => s + d.count, 0);
+  const dist: DistRow[] = data?.stats?.distribution ?? [];
+  const rows = dist.filter(d => d.count > 0).sort((a, b) => b.count - a.count); // biggest first
+  const sum = rows.reduce((s, d) => s + d.count, 0);
   const maxCount = Math.max(1, ...rows.map(d => d.count));
+  const total = data?.stats?.totalMembers ?? 0;
+  const updatedAt = data?.stats?.updatedAt;
+
   const upgrades: Upgrade[] = [...(data?.upgrades?.upgrades ?? [])].sort((a, b) => {
-    // group by day (newest event group first), then fastest climber within
     const dayA = Math.floor(a.at / 86400000), dayB = Math.floor(b.at / 86400000);
     if (dayA !== dayB) return dayB - dayA;
     return (a.daysToPromo ?? 1e9) - (b.daysToPromo ?? 1e9);
   });
-  const total = data?.stats?.totalMembers ?? 0;
-  const updatedAt = data?.stats?.updatedAt;
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       <div className="max-w-6xl mx-auto px-4 py-20">
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-10">
-          <div>
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="font-mono text-xs tracking-[0.3em] uppercase text-green-500">Live · Updates Hourly</span>
-            </div>
-            <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tight leading-none">Ritual Analytics</h1>
-            {updatedAt && <p className="text-[#555] text-sm mt-2 font-mono">synced {relativeTime(updatedAt)}</p>}
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 mb-3">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="font-mono text-xs tracking-[0.3em] uppercase text-green-500">Updates every hour</span>
           </div>
-          {/* Segmented switch */}
-          <div className="self-start md:self-auto inline-flex p-1 rounded-full border"
-            style={{ borderColor: '#1a1a1a', backgroundColor: '#0a0a0a' }}>
-            {[
-              { k: false, label: 'All Roles' },
-              { k: true, label: 'Contributors' },
-            ].map(opt => {
-              const active = contributorOnly === opt.k;
-              return (
-                <button key={String(opt.k)} onClick={() => setContributorOnly(opt.k)}
-                  className="px-4 py-1.5 rounded-full text-xs font-mono transition-all"
-                  style={{
-                    backgroundColor: active ? 'var(--color-accent)' : 'transparent',
-                    color: active ? '#000' : '#666',
-                  }}>
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
+          <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tight leading-none mb-1">Ritual Analytics</h1>
+          <p className="text-[#555] text-sm font-mono">
+            Live distribution{updatedAt ? ` · synced ${relativeTime(updatedAt)}` : ''}
+          </p>
+        </div>
+
+        {/* Nav switch */}
+        <div className="inline-flex p-1 rounded-full border mb-8" style={{ borderColor: '#1a1a1a', backgroundColor: '#0a0a0a' }}>
+          {(['overview', 'analytics'] as const).map(v => (
+            <button key={v} onClick={() => setView(v)}
+              className="px-6 py-2 rounded-full text-sm font-mono capitalize transition-all"
+              style={{ backgroundColor: view === v ? 'var(--color-accent)' : 'transparent', color: view === v ? '#000' : '#666' }}>
+              {v}
+            </button>
+          ))}
         </div>
 
         {loading && <p className="text-center text-[#555] font-mono">Loading...</p>}
         {error && <p className="text-center text-[#555] font-mono">Stats not available yet. The hourly job may not have run.</p>}
 
         {data && (
-          <>
+          <div className="space-y-6">
             {/* Total card */}
-            <div className="rounded-2xl border p-6 mb-6 flex items-baseline gap-4"
-              style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
-              <span className="font-display text-5xl md:text-6xl" style={{ color: 'var(--color-accent)' }}>
-                {total.toLocaleString()}
-              </span>
-              <span className="font-mono text-xs uppercase tracking-widest text-[#555]">
-                ranked members · {rows.length} roles
-              </span>
+            <div className="rounded-2xl border p-6 flex items-baseline gap-4" style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+              <span className="font-display text-5xl md:text-6xl" style={{ color: 'var(--color-accent)' }}>{total.toLocaleString()}</span>
+              <span className="font-mono text-xs uppercase tracking-widest text-[#555]">ranked members · {rows.length} roles</span>
             </div>
 
-            {/* Charts row */}
-            <div className="grid lg:grid-cols-2 gap-6 mb-6">
-              {/* Composition donut */}
-              <ChartCard title="Composition" subtitle="Share by role">
-                <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <Donut rows={rows} total={subtotal} centerValue={total} />
-                  <div className="flex-1 w-full space-y-1.5">
-                    {rows.map(d => (
-                      <div key={d.role} className="flex items-center gap-2 text-sm">
-                        <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: color(d.role) }} />
-                        <span className="flex-1 truncate text-[#ccc]">{d.role}</span>
-                        <span className="font-mono text-xs text-[#555]">{d.percent}%</span>
+            {/* ── OVERVIEW ── */}
+            {view === 'overview' && (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {rows.map((d, i) => {
+                  const c = color(d.role);
+                  return (
+                    <motion.div key={d.role}
+                      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                      className="rounded-2xl border p-5 relative overflow-hidden"
+                      style={{ backgroundColor: '#0a0a0a', borderColor: `${c}33` }}>
+                      <div className="absolute inset-0 opacity-[0.07]" style={{ background: `radial-gradient(circle at 100% 0%, ${c}, transparent 70%)` }} />
+                      <div className="relative">
+                        <RoleBadge role={d.role} />
+                        <div className="mt-4 flex items-baseline gap-2">
+                          <span className="font-display text-3xl" style={{ color: c }}>{d.percent}%</span>
+                        </div>
+                        <p className="text-sm mt-1"><span className="text-white font-semibold">{d.count.toLocaleString()}</span> <span className="text-[#555]">members</span></p>
                       </div>
-                    ))}
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── ANALYTICS ── */}
+            {view === 'analytics' && (
+              <>
+                <div className="grid lg:grid-cols-2 gap-6">
+                  {/* Composition donut */}
+                  <Card title="Composition" subtitle="Share by role">
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                      <Donut rows={rows} sum={sum} centerValue={total} />
+                      <div className="flex-1 w-full space-y-1.5">
+                        {rows.map(d => (
+                          <div key={d.role} className="flex items-center gap-2 text-sm">
+                            <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: color(d.role) }} />
+                            <span className="flex-1 truncate text-[#ccc]">{d.role}</span>
+                            <span className="font-mono text-xs text-[#555]">{d.percent}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Distribution bars */}
+                  <Card title="Distribution" subtitle="Members per role">
+                    <div className="space-y-3">
+                      {rows.map((d, i) => {
+                        const c = color(d.role);
+                        return (
+                          <div key={d.role}>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm text-[#ccc]">{d.role}</span>
+                              <span className="font-mono text-xs"><span style={{ color: c }}>{d.count}</span> <span className="text-[#555]">· {d.percent}%</span></span>
+                            </div>
+                            <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
+                              <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${(d.count / maxCount) * 100}%` }}
+                                transition={{ delay: i * 0.04 + 0.1, duration: 0.6, ease: 'easeOut' }} style={{ backgroundColor: c }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Ranking */}
+                <Card title="Ranking" subtitle="Roles by size">
+                  <div className="space-y-1">
+                    {rows.map((d, i) => {
+                      const c = color(d.role);
+                      return (
+                        <div key={d.role} className="flex items-center gap-3 py-2 border-b last:border-0" style={{ borderColor: '#161616' }}>
+                          <span className="font-display text-lg w-6 text-center" style={{ color: '#444' }}>{i + 1}</span>
+                          <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c }} />
+                          <span className="flex-1 text-sm text-[#ccc]">{d.role}</span>
+                          <span className="font-mono text-sm text-white">{d.count.toLocaleString()}</span>
+                          <span className="font-mono text-xs text-[#555] w-12 text-right">{d.percent}%</span>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-              </ChartCard>
+                </Card>
+              </>
+            )}
 
-              {/* Distribution / ranking bars */}
-              <ChartCard title="Distribution" subtitle="Members per role">
-                <div className="space-y-3">
-                  {rows.map((d, i) => {
-                    const c = color(d.role);
-                    return (
-                      <div key={d.role}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm text-[#ccc]">{d.role}</span>
-                          <span className="font-mono text-xs"><span style={{ color: c }}>{d.count}</span> <span className="text-[#555]">· {d.percent}%</span></span>
-                        </div>
-                        <div className="h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
-                          <motion.div className="h-full rounded-full"
-                            initial={{ width: 0 }} animate={{ width: `${(d.count / maxCount) * 100}%` }}
-                            transition={{ delay: i * 0.04 + 0.1, duration: 0.6, ease: 'easeOut' }}
-                            style={{ backgroundColor: c }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </ChartCard>
-            </div>
-
-            {/* Recently Upgraded */}
+            {/* Recently Upgraded (always) */}
             <div className="rounded-2xl border p-6" style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
               <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
                 <div>
@@ -262,7 +276,7 @@ export default function CommunityPage() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
