@@ -368,7 +368,7 @@ export default function CommunityPage() {
               <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-emerald-400 font-bold">Live Synced Hourly</span>
             </div>
              <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tighter leading-none mb-1 text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-gray-500">
-              Ritual Discord Community Stats
+              Ritual Community Stats
             </h1>
             <p className="text-[#555] text-xs font-mono tracking-wide">
               Server demographics & Contributor insights {updatedAt ? ` · updated ${relativeTime(updatedAt)}` : ''}
