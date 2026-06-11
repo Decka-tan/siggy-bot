@@ -57,8 +57,8 @@ function RoleBadge({ role }: { role: string }) {
   const c = color(role);
   return (
     <span 
-      className="text-[10px] font-mono px-2 py-0.5 rounded-full border font-semibold tracking-wide backdrop-blur-sm shadow-sm"
-      style={{ color: c, borderColor: `${c}44`, backgroundColor: `${c}12` }}
+      className="text-[10px] font-mono px-2 py-0.5 rounded-full border border-transparent font-semibold tracking-wide backdrop-blur-sm shadow-sm"
+      style={{ color: c, backgroundColor: `${c}16` }}
     >
       {role}
     </span>
