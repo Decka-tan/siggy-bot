@@ -279,8 +279,12 @@ export default function CommunityPage() {
           <div className="space-y-6">
             {/* Total card */}
             <div className="rounded-2xl border p-6 text-center" style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#555] mb-1">Total ranked members</p>
-              <p className="font-display text-5xl md:text-6xl" style={{ color: 'var(--color-accent)' }}>{total.toLocaleString()}</p>
+              <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#555] mb-1">
+                {view === 'insights' ? 'Total Ritual members' : 'Contributor members'}
+              </p>
+              <p className="font-display text-5xl md:text-6xl" style={{ color: 'var(--color-accent)' }}>
+                {(view === 'insights' ? totalGuild : total).toLocaleString()}
+              </p>
             </div>
 
             {/* ── OVERVIEW ── */}
