@@ -525,7 +525,7 @@ export default function CommunityPage() {
                 setShowAutocomplete(false);
                 setIsModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] flex items-center gap-2 max-w-[240px] truncate"
+              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] flex items-center gap-2 max-w-[320px] truncate"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -741,20 +741,23 @@ export default function CommunityPage() {
                       {/* Stats & Roles Content */}
                       <div className="mt-8 grid lg:grid-cols-5 gap-8 relative z-10">
                         {/* Discord Activity Stats (Left 3 Columns) */}
-                        <div className="lg:col-span-3 space-y-6">
+                        <div className="lg:col-span-3 space-y-6 w-full">
                           <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Activity Metrics</h4>
-                          <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02]">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2">Total Messages</span>
-                              <span className="text-2xl font-mono font-black text-white">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0 relative group/info">
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate flex items-center gap-1">
+                                Total Messages
+                                <span className="text-gray-500 cursor-help hover:text-white transition-colors" title="Excludes #ritual and private channels">ⓘ</span>
+                              </span>
+                              <span className="text-2xl font-mono font-black text-white truncate">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
                             </div>
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02]">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2">Contributions</span>
-                              <span className="text-2xl font-mono font-black text-amber-400">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
+                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Contributions</span>
+                              <span className="text-2xl font-mono font-black text-amber-400 truncate">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
                             </div>
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02]">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2">Events Joined</span>
-                              <span className="text-2xl font-mono font-black text-violet-400">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
+                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Events Joined</span>
+                              <span className="text-2xl font-mono font-black text-violet-400 truncate">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
                             </div>
                           </div>
                           
