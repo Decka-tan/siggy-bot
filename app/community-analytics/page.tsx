@@ -505,15 +505,26 @@ export default function CommunityPage() {
                           </div>
                         </div>
 
-                        <div className="space-y-2.5">
+                        {/* tier legend (composition mode) */}
+                        {tierFilter === 'all' && (
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 mb-4 pb-4 border-b" style={{ borderColor: '#161616' }}>
+                            {TIER_ORDER.map(tier => (
+                              <span key={tier} className="flex items-center gap-1.5 text-[11px] font-mono text-[#888]">
+                                <span className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: color(tier) }} />{tier}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="space-y-3">
                           {rrSorted.map((r, i) => {
                             const val = tierFilter === 'all' ? r.contributors : (r.tiers[tierFilter] || 0);
                             return (
                               <div key={r.region} className="flex items-center gap-3">
                                 <span className="font-mono text-xs w-5 text-center shrink-0" style={{ color: '#444' }}>{i + 1}</span>
-                                <span className="text-sm w-32 truncate shrink-0 text-[#ccc]">{REGION_LABEL[r.region] || r.region}</span>
+                                <span className="text-sm w-32 truncate shrink-0 text-[#ddd]">{REGION_LABEL[r.region] || r.region}</span>
                                 {/* stacked tier bar (all) or single tier bar */}
-                                <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: '#161616' }}>
+                                <div className="flex-1 h-4 rounded-md overflow-hidden flex" style={{ backgroundColor: '#161616' }}>
                                   {tierFilter === 'all'
                                     ? TIER_ORDER.map(tier => {
                                         const tv = r.tiers[tier] || 0;
@@ -522,9 +533,9 @@ export default function CommunityPage() {
                                           transition={{ duration: 0.6, delay: i * 0.03 }} style={{ backgroundColor: color(tier) }} title={`${tier}: ${tv}`} />;
                                       })
                                     : <motion.div initial={{ width: 0 }} animate={{ width: `${(val / rrMax) * 100}%` }}
-                                        transition={{ duration: 0.6, delay: i * 0.03 }} className="rounded-full" style={{ backgroundColor: color(tierFilter) }} />}
+                                        transition={{ duration: 0.6, delay: i * 0.03 }} className="rounded-md" style={{ backgroundColor: color(tierFilter) }} />}
                                 </div>
-                                <span className="font-mono text-sm text-white w-12 text-right shrink-0">{val.toLocaleString()}</span>
+                                <span className="font-mono text-sm text-white w-14 text-right shrink-0">{val.toLocaleString()}</span>
                                 {tierFilter === 'all' && (
                                   <span className="font-mono text-xs w-12 text-right shrink-0" style={{ color: '#555' }}>{r.rate}%</span>
                                 )}
