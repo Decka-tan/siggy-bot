@@ -688,15 +688,15 @@ export default function CommunityPage() {
                           <div>
                             <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold mb-3">Server Activity</p>
                             <div className="grid grid-cols-3 gap-3">
-                              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 text-center">
+                              <div className="bg-white/[0.02] rounded-xl p-3 text-center">
                                 <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Messages</span>
                                 <span className="text-sm font-mono font-black text-white">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
                               </div>
-                              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 text-center">
+                              <div className="bg-white/[0.02] rounded-xl p-3 text-center">
                                 <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Contribs</span>
                                 <span className="text-sm font-mono font-black text-amber-400">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
                               </div>
-                              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 text-center">
+                              <div className="bg-white/[0.02] rounded-xl p-3 text-center">
                                 <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Events</span>
                                 <span className="text-sm font-mono font-black text-violet-400">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
                               </div>
