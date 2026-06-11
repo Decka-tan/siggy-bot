@@ -68,14 +68,19 @@ function RoleBadge({ role }: { role: string }) {
 /* ── SVG Donut ─────────────────────────────────────── */
 function Donut({ rows, sum, centerValue }: { rows: DistRow[]; sum: number; centerValue: number }) {
   const size = 240, stroke = 24, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
+  const [hovered, setHovered] = useState<DistRow | null>(null);
   let offset = 0;
+
   return (
     <div className="relative flex items-center justify-center filter drop-shadow-[0_0_8px_rgba(255,255,255,0.02)]" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#121212" strokeWidth={stroke - 4} />
         {rows.map(d => {
           const len = (sum ? d.count / sum : 0) * circ;
-          const seg = (
+          const currentOffset = offset;
+          offset += len;
+
+          return (
             <motion.circle 
               key={d.role} 
               cx={size / 2} 
@@ -83,39 +88,50 @@ function Donut({ rows, sum, centerValue }: { rows: DistRow[]; sum: number; cente
               r={r} 
               fill="none"
               stroke={color(d.role)} 
-              strokeWidth={stroke} 
+              strokeWidth={hovered?.role === d.role ? stroke + 3 : stroke} 
               strokeDasharray={`${len} ${circ - len}`}
               initial={{ strokeDashoffset: circ }} 
-              animate={{ strokeDashoffset: -offset }}
+              animate={{ strokeDashoffset: -currentOffset }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }} 
+              className="cursor-pointer transition-all duration-200"
+              onMouseEnter={() => setHovered(d)}
+              onMouseLeave={() => setHovered(null)}
             />
           );
-          offset += len;
-          return seg;
         })}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-        <span className="font-display text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-tight">
-          {centerValue.toLocaleString()}
+      <div className="absolute inset-0 flex flex-col items-center justify-center select-none pointer-events-none">
+        <span className="font-display text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-tight transition-all">
+          {hovered ? hovered.count.toLocaleString() : centerValue.toLocaleString()}
         </span>
-        <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-[#666] mt-0.5">members</span>
+        <span 
+          className="text-[9px] font-mono uppercase tracking-[0.25em] text-[#666] mt-0.5 max-w-[150px] truncate text-center"
+          style={{ color: hovered ? color(hovered.role) : '#666' }}
+        >
+          {hovered ? hovered.role : 'members'}
+        </span>
       </div>
     </div>
   );
 }
 
 /* ── Generic donut (label/value/color) ─────────────── */
-function DonutG({ items, centerValue, centerLabel }: { items: { value: number; color: string }[]; centerValue: number; centerLabel: string }) {
+function DonutG({ items, centerValue, centerLabel }: { items: { value: number; color: string; label: string }[]; centerValue: number; centerLabel: string }) {
   const size = 220, stroke = 22, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
   const sum = items.reduce((s, it) => s + it.value, 0) || 1;
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   let offset = 0;
+
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#121212" strokeWidth={stroke - 4} />
         {items.map((it, i) => {
           const len = (it.value / sum) * circ;
-          const seg = (
+          const currentOffset = offset;
+          offset += len;
+
+          return (
             <motion.circle 
               key={i} 
               cx={size / 2} 
@@ -123,22 +139,28 @@ function DonutG({ items, centerValue, centerLabel }: { items: { value: number; c
               r={r} 
               fill="none"
               stroke={it.color} 
-              strokeWidth={stroke} 
+              strokeWidth={hoveredIdx === i ? stroke + 3 : stroke} 
               strokeDasharray={`${len} ${circ - len}`}
               initial={{ strokeDashoffset: circ }} 
-              animate={{ strokeDashoffset: -offset }}
+              animate={{ strokeDashoffset: -currentOffset }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }} 
+              className="cursor-pointer transition-all duration-200"
+              onMouseEnter={() => setHoveredIdx(i)}
+              onMouseLeave={() => setHoveredIdx(null)}
             />
           );
-          offset += len;
-          return seg;
         })}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+      <div className="absolute inset-0 flex flex-col items-center justify-center select-none pointer-events-none">
         <span className="font-display text-4xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 tracking-tight">
-          {centerValue.toLocaleString()}
+          {hoveredIdx !== null ? items[hoveredIdx].value.toLocaleString() : centerValue.toLocaleString()}
         </span>
-        <span className="text-[9px] font-mono uppercase tracking-[0.25em] text-[#666] mt-0.5">{centerLabel}</span>
+        <span 
+          className="text-[9px] font-mono uppercase tracking-[0.25em] text-[#666] mt-0.5 max-w-[140px] truncate text-center"
+          style={{ color: hoveredIdx !== null ? items[hoveredIdx].color : '#666' }}
+        >
+          {hoveredIdx !== null ? items[hoveredIdx].label : centerLabel}
+        </span>
       </div>
     </div>
   );
@@ -201,16 +223,45 @@ function VBars({ rows, max }: { rows: DistRow[]; max: number }) {
 /* ── Growth line/area chart (cumulative members over months) ── */
 function GrowthChart({ pts }: { pts: GrowthPt[] }) {
   const W = 800, H = 280, padL = 54, padB = 28, padT = 16, padR = 16;
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
   if (pts.length < 2) return <p className="text-[#555] text-sm font-mono">Not enough data.</p>;
   const maxCum = Math.max(...pts.map(p => p.cumulative));
   const niceMax = Math.ceil(maxCum / 10000) * 10000 || maxCum;
+  
   const x = (i: number) => padL + (i / (pts.length - 1)) * (W - padL - padR);
   const y = (v: number) => padT + (1 - v / niceMax) * (H - padT - padB);
+  
   const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(p.cumulative)}`).join(' ');
   const area = `${line} L ${x(pts.length - 1)} ${H - padB} L ${x(0)} ${H - padB} Z`;
   const grid = 4;
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    const svg = e.currentTarget;
+    const rect = svg.getBoundingClientRect();
+    const mouseX = ((e.clientX - rect.left) / rect.width) * W;
+    
+    let closestIndex = 0;
+    let minDiff = Infinity;
+    for (let i = 0; i < pts.length; i++) {
+      const px = x(i);
+      const diff = Math.abs(px - mouseX);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestIndex = i;
+      }
+    }
+    setHoverIndex(closestIndex);
+  };
+
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]" style={{ height: 280 }}>
+    <svg 
+      viewBox={`0 0 ${W} ${H}`} 
+      className="w-full filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] cursor-crosshair" 
+      style={{ height: 280 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoverIndex(null)}
+    >
       <defs>
         <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.18" />
@@ -242,6 +293,19 @@ function GrowthChart({ pts }: { pts: GrowthPt[] }) {
           {p.month.slice(2)}
         </text>
       ))}
+
+      {/* Interactive Tooltip / Crosshair */}
+      {hoverIndex !== null && (
+        <g>
+          <line x1={x(hoverIndex)} y1={padT} x2={x(hoverIndex)} y2={H - padB} stroke="var(--color-accent)" strokeOpacity="0.25" strokeWidth="1.5" strokeDasharray="2,2" />
+          <circle cx={x(hoverIndex)} cy={y(pts[hoverIndex].cumulative)} r="5.5" fill="var(--color-accent)" stroke="#030303" strokeWidth="2.5" />
+          <g transform={`translate(${x(hoverIndex) > W / 2 ? x(hoverIndex) - 150 : x(hoverIndex) + 14}, ${y(pts[hoverIndex].cumulative) - 30})`}>
+            <rect width="136" height="42" rx="6" fill="#0b0b0b" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))" />
+            <text x="12" y="17" fontSize="8" fill="#555" fontFamily="monospace" fontWeight="bold">DATE: {pts[hoverIndex].month}</text>
+            <text x="12" y="30" fontSize="10" fill="#fff" fontFamily="monospace" fontWeight="bold">TOTAL: {pts[hoverIndex].cumulative.toLocaleString()}</text>
+          </g>
+        </g>
+      )}
     </svg>
   );
 }
@@ -367,7 +431,7 @@ export default function CommunityPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="font-mono text-[9px] tracking-[0.25em] uppercase text-emerald-400 font-bold">Live Synced Hourly</span>
             </div>
-             <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tighter leading-none mb-1 text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-gray-500">
+            <h1 className="font-display text-5xl md:text-7xl uppercase tracking-tighter leading-none mb-1 text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-gray-500">
               Ritual Community Stats
             </h1>
             <p className="text-[#555] text-xs font-mono tracking-wide">
@@ -409,19 +473,33 @@ export default function CommunityPage() {
           </div>
         </div>
 
+        {/* Dashboard Skeleton Loading */}
         {loading && (
-          <div className="py-20 flex flex-col items-center justify-center gap-3">
-            <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-amber-400 animate-spin" />
-            <p className="text-[#555] font-mono text-xs uppercase tracking-widest">Compiling Analytics...</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div 
+                  key={i} 
+                  className="h-28 rounded-2xl border border-white/5 bg-black/45 animate-pulse relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.02] to-transparent -translate-x-full animate-[shimmer_1.5s_infinite]" />
+                </div>
+              ))}
+            </div>
+            <div className="grid lg:grid-cols-5 gap-6">
+              <div className="lg:col-span-2 h-[450px] rounded-2xl border border-white/5 bg-black/45 animate-pulse" />
+              <div className="lg:col-span-3 h-[450px] rounded-2xl border border-white/5 bg-black/45 animate-pulse" />
+            </div>
           </div>
         )}
+
         {error && (
           <div className="py-20 text-center border border-dashed border-red-500/20 bg-red-500/5 rounded-2xl p-6">
             <p className="text-red-400 font-mono text-sm">Engine status offline. The stats aggregator script has not executed yet.</p>
           </div>
         )}
 
-        {data && (
+        {data && !loading && (
           <div className="space-y-6">
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -548,7 +626,7 @@ export default function CommunityPage() {
                   className="space-y-6"
                 >
                   <div className="grid lg:grid-cols-5 gap-6">
-                    <Card title="Composition" subtitle="Share by tier distribution" className="lg:col-span-2 flex flex-col items-center">
+                    <Card title="Composition" subtitle="Share by tier distribution (Hover slices for details)" className="lg:col-span-2 flex flex-col items-center">
                       <div className="flex flex-col items-center gap-6 w-full">
                         <Donut rows={rows} sum={sum} centerValue={total} />
                         <div className="w-full space-y-2.5 mt-2">
@@ -611,7 +689,7 @@ export default function CommunityPage() {
                     <Card><p className="text-[#555] text-xs font-mono uppercase tracking-widest text-center py-6">Insights compiling under pipeline...</p></Card>
                   ) : (
                     <>
-                      <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} total members joined since launch`}>
+                      <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} total members joined since launch (Hover chart to track dates)`}>
                         <div className="mt-4">
                           <GrowthChart pts={growth} />
                         </div>
@@ -649,7 +727,11 @@ export default function CommunityPage() {
                         <div className="flex flex-col lg:flex-row items-center gap-10">
                           <div className="shrink-0">
                             <DonutG
-                              items={regional.map(r => ({ value: r.value, color: regionColor(r.region) }))}
+                              items={regional.map(r => ({ 
+                                value: r.value, 
+                                color: regionColor(r.region),
+                                label: REGION_LABEL[r.region] || r.region
+                              }))}
                               centerValue={regionSum}
                               centerLabel={regionMode === 'pure' ? 'single-region' : 'members'}
                             />
@@ -829,7 +911,7 @@ export default function CommunityPage() {
             </AnimatePresence>
 
             {/* Recently Upgraded — Overview only */}
-            {view === 'overview' && (
+            {view === 'overview' && !loading && (
               <motion.div 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
