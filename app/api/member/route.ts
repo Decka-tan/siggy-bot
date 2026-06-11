@@ -298,6 +298,20 @@ export async function GET(req: NextRequest) {
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
     const cardData = buildCardData(member, roleNames, memberCount);
 
+    // Enrich with community user checker stats (global messages, contributions, events)
+    try {
+      const { getUserChecker } = require('@/lib/user-checker');
+      const checker = getUserChecker();
+      const enriched = checker.findUser(cardData.userId) || checker.findUser(cardData.username);
+      if (enriched) {
+        cardData.globalMessages = enriched.globalMessages || 0;
+        cardData.contributionsCount = enriched.contributionsCount || 0;
+        cardData.eventsCount = enriched.eventsCount || 0;
+      }
+    } catch (err) {
+      console.error('[Member API Enrichment Error]', err);
+    }
+
     // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
     cardData.contributions = await generateContributions(
       cardData.userId,

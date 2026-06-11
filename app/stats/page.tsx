@@ -364,10 +364,38 @@ export default function CommunityPage() {
   const [rrSortMode, setRrSortMode] = useState<'count' | 'rate'>('count');
   const [regionRoleMode, setRegionRoleMode] = useState<'pure' | 'all'>('pure');
 
+  // Member Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [memberProfile, setMemberProfile] = useState<any | null>(null);
+  const [searchError, setSearchError] = useState('');
+
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
       .then(setData).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
+
+  const handleSearchMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    setSearching(true);
+    setSearchError('');
+    try {
+      const res = await fetch(`/api/member?username=${encodeURIComponent(searchQuery)}`);
+      const payload = await res.json();
+      if (payload.success && payload.member) {
+        setMemberProfile(payload.member);
+      } else {
+        setSearchError(payload.error || 'Member not found');
+        setMemberProfile(null);
+      }
+    } catch {
+      setSearchError('Search engine failed to resolve member');
+      setMemberProfile(null);
+    } finally {
+      setSearching(false);
+    }
+  };
 
   const dist: DistRow[] = data?.stats?.distribution ?? [];
   const rows = dist.filter(d => d.count > 0).sort((a, b) => b.count - a.count); // biggest first
@@ -582,37 +610,139 @@ export default function CommunityPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                  className="space-y-6"
                 >
-                  {rows.map((d, i) => {
-                    const c = color(d.role);
-                    return (
+                  {/* Member Profile Search Card */}
+                  <div className="rounded-2xl border border-white/5 bg-black/45 backdrop-blur-xl p-6 relative overflow-hidden group">
+                    <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
+                      <div>
+                        <h2 className="font-display text-lg uppercase tracking-wider text-white/95">Member Profile Lookup</h2>
+                        <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">Explore any Ritual member card statistics</p>
+                      </div>
+                      
+                      <form onSubmit={handleSearchMember} className="flex gap-2 max-w-md w-full">
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Enter Discord username..."
+                          className="flex-1 bg-black/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-[#444] focus:outline-none focus:border-amber-400/30 transition-all"
+                        />
+                        <button
+                          type="submit"
+                          disabled={searching}
+                          className="px-5 py-2.5 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 disabled:opacity-50 transition-all shrink-0"
+                        >
+                          {searching ? 'SEARCHING...' : 'SEARCH'}
+                        </button>
+                      </form>
+                    </div>
+
+                    {searchError && (
+                      <p className="text-red-400 text-xs font-mono mt-2">{searchError}</p>
+                    )}
+
+                    {memberProfile && (
                       <motion.div 
-                        key={d.role}
-                        initial={{ opacity: 0, y: 15 }} 
-                        animate={{ opacity: 1, y: 0 }} 
-                        transition={{ delay: i * 0.05 }}
-                        whileHover={{ y: -5, borderColor: `${c}44`, boxShadow: `0 12px 30px -8px ${c}18` }}
-                        className="rounded-2xl border border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden group transition-all duration-300"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-6 pt-6 border-t border-white/[0.03] flex flex-col md:flex-row gap-6"
                       >
-                        {/* glow banner */}
-                        <div className="h-[2px] w-full" style={{ backgroundColor: c, boxShadow: `0 0 16px ${c}` }} />
-                        <div className="p-6 relative">
-                          <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at 80% 20%, ${c}, transparent 60%)` }} />
-                          <div className="relative">
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="font-mono text-xs uppercase tracking-wider font-bold text-white/70">{d.role}</span>
-                              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-white/5 bg-white/5 text-[#888]">{d.percent}%</span>
+                        {/* Profile Details (Left) */}
+                        <div className="flex items-center gap-4 shrink-0 md:w-72">
+                          <div 
+                            className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-[#141414] border-2" 
+                            style={{ borderColor: color(memberProfile.contributorRole || memberProfile.roles[0]) }}
+                          >
+                            <Image 
+                              src={memberProfile.avatarUrl} 
+                              alt={memberProfile.displayName} 
+                              fill 
+                              className="object-cover" 
+                              unoptimized
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="text-base font-bold text-white truncate">{memberProfile.displayName}</h3>
+                            <p className="text-xs text-[#555] font-mono truncate">@{memberProfile.username}</p>
+                            <p className="text-[10px] font-mono text-[#777] mt-1.5 uppercase font-bold tracking-wide">Joined {memberProfile.joinDate}</p>
+                          </div>
+                        </div>
+
+                        {/* Roles & Stats (Right) */}
+                        <div className="flex-1 grid sm:grid-cols-2 gap-6">
+                          {/* Roles List */}
+                          <div>
+                            <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold mb-3">Roles Held</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {memberProfile.roles.map((r: string) => (
+                                <RoleBadge key={r} role={r} />
+                              ))}
+                              {memberProfile.roles.length === 0 && (
+                                <span className="text-[#444] text-xs font-mono">No contributor roles</span>
+                              )}
                             </div>
-                            <div className="flex items-baseline gap-2 mt-2">
-                              <span className="font-display text-5xl tracking-tight text-white font-extrabold">{d.count.toLocaleString()}</span>
-                              <span className="font-mono text-[9px] uppercase tracking-widest text-[#555] font-semibold">members</span>
+                          </div>
+
+                          {/* Discord Activity Stats */}
+                          <div>
+                            <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold mb-3">Server Activity</p>
+                            <div className="grid grid-cols-3 gap-3">
+                              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 text-center">
+                                <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Messages</span>
+                                <span className="text-sm font-mono font-black text-white">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
+                              </div>
+                              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 text-center">
+                                <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Contribs</span>
+                                <span className="text-sm font-mono font-black text-amber-400">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
+                              </div>
+                              <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3 text-center">
+                                <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Events</span>
+                                <span className="text-sm font-mono font-black text-violet-400">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
+                              </div>
+                            </div>
+                            <div className="mt-2.5 text-[8px] font-mono text-[#444] uppercase tracking-wider text-right">
+                              Days active: {memberProfile.days} days
                             </div>
                           </div>
                         </div>
                       </motion.div>
-                    );
-                  })}
+                    )}
+                  </div>
+
+                  {/* Overview Roles list cards */}
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {rows.map((d, i) => {
+                      const c = color(d.role);
+                      return (
+                        <motion.div 
+                          key={d.role}
+                          initial={{ opacity: 0, y: 15 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          transition={{ delay: i * 0.05 }}
+                          whileHover={{ y: -5, borderColor: `${c}44`, boxShadow: `0 12px 30px -8px ${c}18` }}
+                          className="rounded-2xl border border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden group transition-all duration-300"
+                        >
+                          {/* glow banner */}
+                          <div className="h-[2px] w-full" style={{ backgroundColor: c, boxShadow: `0 0 16px ${c}` }} />
+                          <div className="p-6 relative">
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at 80% 20%, ${c}, transparent 60%)` }} />
+                            <div className="relative">
+                              <div className="flex items-center justify-between mb-4">
+                                <span className="font-mono text-xs uppercase tracking-wider font-bold text-white/70">{d.role}</span>
+                                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-white/5 bg-white/5 text-[#888]">{d.percent}%</span>
+                              </div>
+                              <div className="flex items-baseline gap-2 mt-2">
+                                <span className="font-display text-5xl tracking-tight text-white font-extrabold">{d.count.toLocaleString()}</span>
+                                <span className="font-mono text-[9px] uppercase tracking-widest text-[#555] font-semibold">members</span>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </motion.div>
               )}
 
