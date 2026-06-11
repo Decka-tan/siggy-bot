@@ -652,8 +652,7 @@ export default function CommunityPage() {
                         {/* Profile Details (Left) */}
                         <div className="flex items-center gap-4 shrink-0 md:w-72">
                           <div 
-                            className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-[#141414] border-2" 
-                            style={{ borderColor: color(memberProfile.contributorRole || memberProfile.roles[0]) }}
+                            className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-[#141414]" 
                           >
                             <Image 
                               src={memberProfile.avatarUrl} 
