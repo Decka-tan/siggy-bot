@@ -612,103 +612,134 @@ export default function CommunityPage() {
                   exit={{ opacity: 0 }}
                   className="space-y-6"
                 >
-                  {/* Member Profile Search Card */}
-                  <div className="rounded-2xl border border-white/5 bg-black/45 backdrop-blur-xl p-6 relative overflow-hidden group">
-                    <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-4">
-                      <div>
-                        <h2 className="font-display text-lg uppercase tracking-wider text-white/95">Member Profile Lookup</h2>
-                        <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">Explore any Ritual member card statistics</p>
-                      </div>
+                  {/* Member Dashboard Profile Section */}
+                  {!memberProfile ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="rounded-2xl border border-white/5 bg-black/45 backdrop-blur-xl p-8 text-center relative overflow-hidden group max-w-2xl mx-auto shadow-2xl"
+                    >
+                      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/20 to-transparent" />
+                      <div className="absolute -right-24 -top-24 w-48 h-48 rounded-full bg-amber-400/[0.02] blur-3xl pointer-events-none" />
                       
-                      <form onSubmit={handleSearchMember} className="flex gap-2 max-w-md w-full">
+                      <div className="w-16 h-16 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-6">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+
+                      <h2 className="font-display text-2xl uppercase tracking-wider text-white mb-2">Activate Your Dashboard</h2>
+                      <p className="text-xs text-[#555] font-mono uppercase tracking-wide max-w-md mx-auto mb-8 leading-relaxed">
+                        Input your Discord username to load your personal statistics, roles list, and real-time server activity breakdown
+                      </p>
+
+                      <form onSubmit={handleSearchMember} className="flex gap-2 max-w-md mx-auto w-full relative z-10">
                         <input
                           type="text"
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Enter Discord username..."
-                          className="flex-1 bg-black/60 border border-white/5 rounded-xl px-4 py-2.5 text-xs font-mono text-white placeholder-[#444] focus:outline-none focus:border-amber-400/30 transition-all"
+                          placeholder="Enter Discord username (e.g. kanzwafir)..."
+                          className="flex-1 bg-black/60 border border-white/5 rounded-xl px-4 py-3 text-xs font-mono text-white placeholder-[#444] focus:outline-none focus:border-amber-400/30 transition-all"
                         />
                         <button
                           type="submit"
                           disabled={searching}
-                          className="px-5 py-2.5 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 disabled:opacity-50 transition-all shrink-0"
+                          className="px-6 py-3 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 disabled:opacity-50 transition-all shrink-0 uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)]"
                         >
-                          {searching ? 'SEARCHING...' : 'SEARCH'}
+                          {searching ? 'Loading...' : 'Connect'}
                         </button>
                       </form>
-                    </div>
 
-                    {searchError && (
-                      <p className="text-red-400 text-xs font-mono mt-2">{searchError}</p>
-                    )}
+                      {searchError && (
+                        <p className="text-red-400 text-xs font-mono mt-4 animate-pulse">{searchError}</p>
+                      )}
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="rounded-2xl border border-white/5 bg-black/45 backdrop-blur-xl p-8 relative overflow-hidden group shadow-2xl"
+                    >
+                      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
+                      <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
 
-                    {memberProfile && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-6 pt-6 border-t border-white/[0.03] flex flex-col md:flex-row gap-6"
-                      >
-                        {/* Profile Details (Left) */}
-                        <div className="flex items-center gap-4 shrink-0 md:w-72">
-                          <div 
-                            className="relative w-16 h-16 rounded-full overflow-hidden shrink-0 bg-[#141414]" 
-                          >
-                            <Image 
-                              src={memberProfile.avatarUrl} 
-                              alt={memberProfile.displayName} 
-                              fill 
-                              className="object-cover" 
+                      <div className="flex flex-col md:flex-row justify-between items-start gap-6 pb-6 border-b border-white/[0.03]">
+                        {/* Profile Info */}
+                        <div className="flex items-center gap-5">
+                          <div className="relative w-20 h-20 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-2 ring-white/10 ring-offset-4 ring-offset-black">
+                            <Image
+                              src={memberProfile.avatarUrl}
+                              alt={memberProfile.displayName}
+                              fill
+                              className="object-cover"
                               unoptimized
                             />
                           </div>
                           <div className="min-w-0">
-                            <h3 className="text-base font-bold text-white truncate">{memberProfile.displayName}</h3>
-                            <p className="text-xs text-[#555] font-mono truncate">@{memberProfile.username}</p>
-                            <p className="text-[10px] font-mono text-[#777] mt-1.5 uppercase font-bold tracking-wide">Joined {memberProfile.joinDate}</p>
+                            <h3 className="text-2xl font-black text-white tracking-tight">{memberProfile.displayName}</h3>
+                            <p className="text-xs text-[#555] font-mono mt-0.5">@{memberProfile.username}</p>
+                            <p className="text-[10px] font-mono text-amber-400/80 mt-2 uppercase font-bold tracking-widest flex items-center gap-1.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              Joined {memberProfile.joinDate}
+                            </p>
                           </div>
                         </div>
 
-                        {/* Roles & Stats (Right) */}
-                        <div className="flex-1 grid sm:grid-cols-2 gap-6">
-                          {/* Roles List */}
-                          <div>
-                            <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold mb-3">Roles Held</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {memberProfile.roles.map((r: string) => (
-                                <RoleBadge key={r} role={r} />
-                              ))}
-                              {memberProfile.roles.length === 0 && (
-                                <span className="text-[#444] text-xs font-mono">No contributor roles</span>
-                              )}
+                        {/* Reset / Change button */}
+                        <button
+                          onClick={() => {
+                            setMemberProfile(null);
+                            setSearchQuery('');
+                            setSearchError('');
+                          }}
+                          className="px-4 py-2 rounded-xl text-[10px] font-mono font-bold border border-white/5 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white transition-all uppercase tracking-wider"
+                        >
+                          Change User
+                        </button>
+                      </div>
+
+                      {/* Stats & Roles Content */}
+                      <div className="mt-8 grid lg:grid-cols-5 gap-8">
+                        {/* Discord Activity Stats (Left 3 Columns) */}
+                        <div className="lg:col-span-3 space-y-6">
+                          <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Activity Metrics</h4>
+                          <div className="grid grid-cols-3 gap-4">
+                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02]">
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2">Total Messages</span>
+                              <span className="text-2xl font-mono font-black text-white">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02]">
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2">Contributions</span>
+                              <span className="text-2xl font-mono font-black text-amber-400">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02]">
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2">Events Joined</span>
+                              <span className="text-2xl font-mono font-black text-violet-400">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
                             </div>
                           </div>
-
-                          {/* Discord Activity Stats */}
-                          <div>
-                            <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold mb-3">Server Activity</p>
-                            <div className="grid grid-cols-3 gap-3">
-                              <div className="bg-white/[0.02] rounded-xl p-3 text-center">
-                                <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Messages</span>
-                                <span className="text-sm font-mono font-black text-white">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
-                              </div>
-                              <div className="bg-white/[0.02] rounded-xl p-3 text-center">
-                                <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Contribs</span>
-                                <span className="text-sm font-mono font-black text-amber-400">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
-                              </div>
-                              <div className="bg-white/[0.02] rounded-xl p-3 text-center">
-                                <span className="text-[9px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-1">Events</span>
-                                <span className="text-sm font-mono font-black text-violet-400">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
-                              </div>
-                            </div>
-                            <div className="mt-2.5 text-[8px] font-mono text-[#444] uppercase tracking-wider text-right">
-                              Days active: {memberProfile.days} days
-                            </div>
+                          
+                          <div className="flex items-center justify-between text-[10px] font-mono text-[#444] uppercase tracking-wider bg-white/[0.01] p-3.5 rounded-xl border border-white/[0.01]">
+                            <span>Active Membership Duration</span>
+                            <span className="text-white font-bold">{memberProfile.days} days</span>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </div>
+
+                        {/* Roles Held (Right 2 Columns) */}
+                        <div className="lg:col-span-2 space-y-4">
+                          <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Roles Held</h4>
+                          <div className="flex flex-wrap gap-2 max-h-[170px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                            {memberProfile.roles.map((r: string) => (
+                              <RoleBadge key={r} role={r} />
+                            ))}
+                            {memberProfile.roles.length === 0 && (
+                              <span className="text-[#444] text-xs font-mono uppercase tracking-wider">No roles assigned</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
 
                   {/* Overview Roles list cards */}
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
