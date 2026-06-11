@@ -659,9 +659,9 @@ export default function CommunityPage() {
                               const c = regionColor(r.region);
                               const pct = regionSum ? ((r.value / regionSum) * 100).toFixed(1) : '0';
                               return (
-                                <div key={r.region} className="flex items-center gap-3 py-1.5 border-b border-white/[0.02] last:border-0 hover:bg-white/[0.01] px-2 rounded transition-all">
-                                  <span className="font-mono text-xs w-5 text-center shrink-0 font-bold text-[#444]">{i + 1}</span>
-                                  <span className="text-xs w-36 truncate shrink-0 text-white/80 font-bold flex items-center gap-2">
+                                <div key={r.region} className="flex items-center gap-2 sm:gap-3 py-1.5 border-b border-white/[0.02] last:border-0 hover:bg-white/[0.01] px-2 rounded transition-all">
+                                  <span className="font-mono text-[10px] sm:text-xs w-4 sm:w-5 text-center shrink-0 font-bold text-[#444]">{i + 1}</span>
+                                  <span className="text-xs w-20 xs:w-28 sm:w-36 truncate shrink-0 text-white/80 font-bold flex items-center gap-1.5">
                                     <span className="w-2 h-2 rounded-full shrink-0 shadow-sm" style={{ backgroundColor: c }} />
                                     {REGION_LABEL[r.region] || r.region}
                                   </span>
@@ -674,8 +674,8 @@ export default function CommunityPage() {
                                       style={{ backgroundColor: c, boxShadow: `0 0 8px ${c}44` }} 
                                     />
                                   </div>
-                                  <span className="font-mono text-xs text-white font-bold w-16 text-right shrink-0">{r.value.toLocaleString()}</span>
-                                  <span className="font-mono text-[10px] text-[#555] font-bold w-11 text-right shrink-0">{pct}%</span>
+                                  <span className="font-mono text-[10px] sm:text-xs text-white font-bold w-10 sm:w-16 text-right shrink-0">{r.value.toLocaleString()}</span>
+                                  <span className="font-mono text-[9px] sm:text-[10px] text-[#555] font-bold w-9 sm:w-11 text-right shrink-0">{pct}%</span>
                                 </div>
                               );
                             })}
@@ -778,9 +778,9 @@ export default function CommunityPage() {
                             {rrSorted.map((r, i) => {
                               const val = tierFilter === 'all' ? r.contributors : (r.tiers[tierFilter] || 0);
                               return (
-                                <div key={r.region} className="flex items-center gap-3 py-1 hover:bg-white/[0.01] px-2 rounded transition-all">
-                                  <span className="font-mono text-xs w-5 text-center shrink-0 font-bold text-[#444]">{i + 1}</span>
-                                  <span className="text-xs w-36 truncate shrink-0 text-white/80 font-bold">{REGION_LABEL[r.region] || r.region}</span>
+                                <div key={r.region} className="flex items-center gap-2 sm:gap-3 py-1 hover:bg-white/[0.01] px-2 rounded transition-all">
+                                  <span className="font-mono text-[10px] sm:text-xs w-4 sm:w-5 text-center shrink-0 font-bold text-[#444]">{i + 1}</span>
+                                  <span className="text-xs w-20 xs:w-28 sm:w-36 truncate shrink-0 text-white/80 font-bold">{REGION_LABEL[r.region] || r.region}</span>
                                   
                                   {/* stacked tier bar (all) or single tier bar */}
                                   <div className="flex-1 h-3 rounded bg-[#121212] overflow-hidden flex border border-white/5">
@@ -809,9 +809,9 @@ export default function CommunityPage() {
                                         />
                                       )}
                                   </div>
-                                  <span className="font-mono text-xs text-white font-bold w-14 text-right shrink-0">{val.toLocaleString()}</span>
+                                  <span className="font-mono text-[10px] sm:text-xs text-white font-bold w-10 sm:w-14 text-right shrink-0">{val.toLocaleString()}</span>
                                   {tierFilter === 'all' && (
-                                    <span className="font-mono text-[10px] font-bold w-12 text-right shrink-0 text-amber-400">{r.rate}%</span>
+                                    <span className="font-mono text-[9px] sm:text-[10px] font-bold w-9 sm:w-12 text-right shrink-0 text-amber-400">{r.rate}%</span>
                                   )}
                                 </div>
                               );
