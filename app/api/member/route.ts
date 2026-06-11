@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDeepSeekClient } from '@/lib/deepseek-client';
 import { computeStats } from '@/lib/card-stats';
+import fs from 'fs';
+import path from 'path';
 
 // Cache generated contributions per userId+xHandle (1 hour TTL)
 const contribCache = new Map<string, { data: Array<{ icon: string; title: string; flavor: string }>; expiry: number }>();
@@ -82,6 +84,7 @@ async function generateContributions(
 export const runtime = 'nodejs';
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN || '';
+const USER_TOKEN = process.env.DISCORD_USER_TOKEN || '';
 const GUILD_ID = process.env.DISCORD_SERVER_ID || '1210468736205852672';
 const DISCORD_API = 'https://discord.com/api/v10';
 
@@ -235,6 +238,34 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
   };
 }
 
+function saveConnectedMember(member: { userId: string; username: string; displayName: string; avatarUrl: string; joinedAt?: string; roles: string[] }) {
+  try {
+    const dataDir = path.join(process.cwd(), 'extracted-data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    const filePath = path.join(dataDir, 'connected-members.json');
+    let data: Record<string, any> = {};
+    if (fs.existsSync(filePath)) {
+      data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+    
+    data[member.userId] = {
+      userId: member.userId,
+      username: member.username,
+      displayName: member.displayName,
+      avatarUrl: member.avatarUrl,
+      joinedAt: member.joinedAt,
+      roles: member.roles,
+      connectedAt: new Date().toISOString()
+    };
+    
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (err) {
+    console.error('[Failed to save connected member]', err);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const username = searchParams.get('username') || '';
@@ -312,10 +343,27 @@ export async function GET(req: NextRequest) {
       const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
       const EVENTS_CHANNEL_ID = '1389298240762937414';
 
-      const fetchCount = async (channelId?: string) => {
-        const url = channelId 
-          ? `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${cardData.userId}&channel_id=${channelId}`
-          : `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${cardData.userId}`;
+      const fetchCount = async (options: { channelId?: string; authorId?: string; mentions?: string }) => {
+        const params: string[] = [];
+        if (options.authorId) params.push(`author_id=${options.authorId}`);
+        if (options.mentions) params.push(`mentions=${options.mentions}`);
+        if (options.channelId) params.push(`channel_id=${options.channelId}`);
+        
+        const url = `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?${params.join('&')}`;
+        
+        if (USER_TOKEN) {
+          try {
+            const res = await fetch(url, {
+              headers: { Authorization: USER_TOKEN }
+            });
+            if (res.ok) {
+              const body = await res.json();
+              return body.total_results || 0;
+            }
+          } catch (e) {
+            console.error('[User search fallback error]', e);
+          }
+        }
         
         const res = await fetch(url, {
           headers: { Authorization: `Bot ${BOT_TOKEN}` }
@@ -326,9 +374,9 @@ export async function GET(req: NextRequest) {
       };
 
       const [globalCount, contribCount, eventCount] = await Promise.all([
-        fetchCount(),
-        fetchCount(CONTRIBUTIONS_CHANNEL_ID),
-        fetchCount(EVENTS_CHANNEL_ID)
+        fetchCount({ authorId: cardData.userId }),
+        fetchCount({ authorId: cardData.userId, channelId: CONTRIBUTIONS_CHANNEL_ID }),
+        fetchCount({ mentions: cardData.userId, channelId: EVENTS_CHANNEL_ID })
       ]);
 
       cardData.globalMessages = globalCount;
@@ -348,6 +396,9 @@ export async function GET(req: NextRequest) {
       cardData.rep,
       xHandle || undefined,
     );
+
+    // Persist connected member details for external usage
+    saveConnectedMember(cardData);
 
     return NextResponse.json({ success: true, member: cardData });
   } catch (e: any) {
