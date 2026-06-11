@@ -209,7 +209,9 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
         'Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty', 
         'Siggy Soulsmith', 'Siggy Architect'
       ];
-      const contributors = clean.filter(r => ladder.includes(r));
+      const contributors = clean
+        .filter(r => ladder.includes(r))
+        .sort((a, b) => ladder.indexOf(a) - ladder.indexOf(b));
       const others = clean.filter(r => !ladder.includes(r));
       return [...contributors, ...others];
     })(),
