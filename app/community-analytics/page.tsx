@@ -297,6 +297,7 @@ export default function CommunityPage() {
   const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
+  const [rrSortMode, setRrSortMode] = useState<'count' | 'rate'>('count');
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
@@ -329,13 +330,20 @@ export default function CommunityPage() {
 
   const regionRoles: RegionRoleRow[] = data?.insights?.regionRoles ?? [];
   const TIER_ORDER = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty'];
-  const rrSorted = [...regionRoles].sort((a, b) =>
-    tierFilter === 'all'
+  const rrSorted = [...regionRoles].sort((a, b) => {
+    if (tierFilter === 'all' && rrSortMode === 'rate') {
+      return b.rate - a.rate;
+    }
+    return tierFilter === 'all'
       ? b.contributors - a.contributors
-      : (b.tiers[tierFilter] || 0) - (a.tiers[tierFilter] || 0)
-  ).filter(r => tierFilter === 'all' || (r.tiers[tierFilter] || 0) > 0);
-  const rrMax = Math.max(1, ...rrSorted.map(r =>
-    tierFilter === 'all' ? r.contributors : (r.tiers[tierFilter] || 0)));
+      : (b.tiers[tierFilter] || 0) - (a.tiers[tierFilter] || 0);
+  }).filter(r => tierFilter === 'all' || (r.tiers[tierFilter] || 0) > 0);
+  const rrMax = Math.max(1, ...rrSorted.map(r => {
+    if (tierFilter === 'all' && rrSortMode === 'rate') {
+      return r.rate;
+    }
+    return tierFilter === 'all' ? r.contributors : (r.tiers[tierFilter] || 0);
+  }));
 
   return (
     <div className="min-h-screen bg-[#030303] text-white relative overflow-hidden selection:bg-amber-400 selection:text-black">
@@ -677,23 +685,46 @@ export default function CommunityPage() {
                         <div className="rounded-2xl border border-white/5 p-6 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden group">
                           <div className="absolute -right-20 -top-20 w-48 h-48 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
                           <div className="flex flex-col xl:flex-row xl:items-start justify-between mb-8 gap-5 border-b border-white/[0.03] pb-6">
-                            <div>
-                              <h2 className="font-display text-xl uppercase tracking-wider text-white/95">Region × Role Distribution</h2>
-                              <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
-                                {tierFilter === 'all'
-                                  ? 'Contributors per region categorized by tier composition'
-                                  : `Regions producing the most ${tierFilter} tier contributors`}
-                              </p>
+                            <div className="space-y-3">
+                              <div>
+                                <h2 className="font-display text-xl uppercase tracking-wider text-white/95">Region × Role Distribution</h2>
+                                <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
+                                  {tierFilter === 'all'
+                                    ? 'Contributors per region categorized by tier composition'
+                                    : `Regions producing the most ${tierFilter} tier contributors`}
+                                </p>
+                              </div>
+                              {/* sort toggle */}
+                              {tierFilter === 'all' && (
+                                <div className="inline-flex p-0.5 rounded-lg border border-white/5 bg-black/60 shrink-0">
+                                  {(['count', 'rate'] as const).map(mode => (
+                                    <button
+                                      key={mode}
+                                      onClick={() => setRrSortMode(mode)}
+                                      className="px-3 py-1 rounded text-[9px] font-mono font-bold uppercase tracking-wider transition-colors duration-200"
+                                      style={{
+                                        backgroundColor: rrSortMode === mode ? 'var(--color-accent)' : 'transparent',
+                                        color: rrSortMode === mode ? '#000' : '#555',
+                                      }}
+                                    >
+                                      Sort by {mode}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                             {/* tier selector */}
-                            <div className="flex flex-wrap gap-1.5 max-w-xl">
+                            <div className="flex flex-wrap gap-1.5 max-w-xl self-start">
                               {(['all', ...TIER_ORDER] as const).map(t => {
                                 const active = tierFilter === t;
                                 const c = t === 'all' ? '#888' : color(t);
                                 return (
                                   <button 
                                     key={t} 
-                                    onClick={() => setTierFilter(t)}
+                                    onClick={() => {
+                                      setTierFilter(t);
+                                      if (t !== 'all') setRrSortMode('count'); // force count for single tier view
+                                    }}
                                     className="px-3 py-1.5 rounded-full text-[9px] font-mono font-bold uppercase tracking-wider border transition-all"
                                     style={{
                                       borderColor: active ? c : 'rgba(255,255,255,0.05)',
