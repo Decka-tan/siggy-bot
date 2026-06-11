@@ -12,6 +12,8 @@ const ROLE_COLOR: Record<string, string> = {
   'Mage': '#b059bc',
   'ritty': '#826bc2',
   'bitty': '#3498db',
+  'Siggy Soulsmith': '#f59e0b',
+  'Siggy Architect': '#f59e0b',
 };
 
 const REGION_COLOR: Record<string, string> = {

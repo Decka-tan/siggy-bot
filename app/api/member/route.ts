@@ -200,7 +200,16 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
     avatarUrl: getAvatarUrl(member),
     joinDate,
     joinedAt: member.joined_at,
-    roles: roleNames.filter((r) => !/^\d+$/.test(r) && r !== '@everyone'),
+    roles: (() => {
+      const clean = roleNames.filter((r) => !/^\d+$/.test(r) && r !== '@everyone');
+      const ladder = [
+        'Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty', 
+        'Siggy Soulsmith', 'Siggy Architect'
+      ];
+      const contributors = clean.filter(r => ladder.includes(r));
+      const others = clean.filter(r => !ladder.includes(r));
+      return [...contributors, ...others];
+    })(),
     contributionsCount: 0,
     eventsCount: 0,
     globalMessages: 0,
