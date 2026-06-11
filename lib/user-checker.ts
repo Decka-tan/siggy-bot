@@ -183,6 +183,7 @@ export class UserChecker {
   }
 
   public findUser(query: string): EnrichedUser | null {
+    this.refreshData();
     const q = query.toLowerCase().replace('@', '').trim();
 
     // 1. Exact username match (highest priority)
