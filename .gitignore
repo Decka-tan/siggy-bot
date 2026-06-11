@@ -39,3 +39,4 @@ discord-bot/data/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+discord-bot/node_modules/
