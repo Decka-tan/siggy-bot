@@ -91,8 +91,9 @@ async function fetchAllMembers(rolesMap) {
   const regional = {};                    // regionRole -> count (any: member may hold several)
   const regionalPure = {};                // regionRole -> count (pure: member holds ONLY this region)
   let multiRegion = 0;                    // members holding >1 region role
-  const regionTiers = {};                 // region -> { role: count } (pure-region contributors, by top role)
-  for (const r of REGION_ROLES) { regional[r] = 0; regionalPure[r] = 0; regionTiers[r] = {}; }
+  const regionTiers = {};                 // region -> { role: count } (any-region contributors, by top role)
+  const regionTiersPure = {};             // region -> { role: count } (pure-region contributors, by top role)
+  for (const r of REGION_ROLES) { regional[r] = 0; regionalPure[r] = 0; regionTiers[r] = {}; regionTiersPure[r] = {}; }
 
   let after = '0';
   for (let page = 0; page < 200; page++) {
@@ -133,6 +134,10 @@ async function fetchAllMembers(rolesMap) {
       for (const rg of memberRegions) {
         regionTiers[rg][top] = (regionTiers[rg][top] || 0) + 1;
       }
+      if (memberRegions.length === 1) {
+        const rg = memberRegions[0];
+        regionTiersPure[rg][top] = (regionTiersPure[rg][top] || 0) + 1;
+      }
       members.push({
         userId: m.user.id,
         username: m.user.username,
@@ -146,7 +151,7 @@ async function fetchAllMembers(rolesMap) {
     after = batch[batch.length - 1].user.id;
     if (batch.length < 1000) break;
   }
-  return { members, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers } };
+  return { members, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 
 function readJSON(file, fallback) {
@@ -240,12 +245,29 @@ async function main() {
     .filter(r => r.count > 0 || r.any > 0)
     .sort((a, b) => b.count - a.count);
 
-  // Region × Role: per region, contributor breakdown by top tier (pure-region members)
+  // Region × Role: per region, contributor breakdown by top tier (any-region members)
   const regionRoles = Object.keys(insights.regionTiers)
     .map(region => {
       const tiers = insights.regionTiers[region];
       const contributors = Object.values(tiers).reduce((s, n) => s + n, 0);
       const members = insights.regional[region] || 0; // any-region members (matches crosstab)
+      return {
+        region,
+        members,                                   // any-region members
+        contributors,                              // of those, how many hold a tracked role
+        rate: members ? +((contributors / members) * 100).toFixed(2) : 0,
+        tiers,                                     // { role: count }
+      };
+    })
+    .filter(r => r.contributors > 0)
+    .sort((a, b) => b.contributors - a.contributors);
+
+  // Region × Role (Pure): per region, contributor breakdown by top tier (pure single-region members)
+  const regionRolesPure = Object.keys(insights.regionTiersPure)
+    .map(region => {
+      const tiers = insights.regionTiersPure[region];
+      const contributors = Object.values(tiers).reduce((s, n) => s + n, 0);
+      const members = insights.regionalPure[region] || 0; // pure single-region members
       return {
         region,
         members,                                   // pure single-region members
@@ -264,6 +286,7 @@ async function main() {
     growth,
     regional, // count = pure (single-region), any = holds-this-region
     regionRoles,
+    regionRolesPure,
   });
 
   const isFirstRun = Object.keys(prevSnapshot).length === 0;

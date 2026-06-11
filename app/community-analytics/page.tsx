@@ -298,6 +298,7 @@ export default function CommunityPage() {
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [rrSortMode, setRrSortMode] = useState<'count' | 'rate'>('count');
+  const [regionRoleMode, setRegionRoleMode] = useState<'pure' | 'all'>('pure');
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
@@ -328,7 +329,9 @@ export default function CommunityPage() {
   const regionSum = regional.reduce((s, r) => s + r.value, 0);
   const regionMax = Math.max(1, ...regional.map(r => r.value));
 
-  const regionRoles: RegionRoleRow[] = data?.insights?.regionRoles ?? [];
+  const regionRoles: RegionRoleRow[] = regionRoleMode === 'pure'
+    ? (data?.insights?.regionRolesPure ?? data?.insights?.regionRoles ?? [])
+    : (data?.insights?.regionRoles ?? []);
   const TIER_ORDER = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty'];
   const rrSorted = [...regionRoles].sort((a, b) => {
     if (tierFilter === 'all' && rrSortMode === 'rate') {
@@ -685,7 +688,7 @@ export default function CommunityPage() {
                         <div className="rounded-2xl border border-white/5 p-6 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden group">
                           <div className="absolute -right-20 -top-20 w-48 h-48 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
                           <div className="flex flex-col xl:flex-row xl:items-start justify-between mb-8 gap-5 border-b border-white/[0.03] pb-6">
-                            <div className="space-y-3">
+                             <div className="space-y-3">
                               <div>
                                 <h2 className="font-display text-xl uppercase tracking-wider text-white/95">Region × Role Distribution</h2>
                                 <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
@@ -694,24 +697,44 @@ export default function CommunityPage() {
                                     : `Regions producing the most ${tierFilter} tier contributors`}
                                 </p>
                               </div>
-                              {/* sort toggle */}
-                              {tierFilter === 'all' && (
+                              {/* toggles */}
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {/* sort toggle */}
+                                {tierFilter === 'all' && (
+                                  <div className="inline-flex p-0.5 rounded-lg border border-white/5 bg-black/60 shrink-0">
+                                    {(['count', 'rate'] as const).map(mode => (
+                                      <button
+                                        key={mode}
+                                        onClick={() => setRrSortMode(mode)}
+                                        className="px-3 py-1 rounded text-[9px] font-mono font-bold uppercase tracking-wider transition-colors duration-200"
+                                        style={{
+                                          backgroundColor: rrSortMode === mode ? 'var(--color-accent)' : 'transparent',
+                                          color: rrSortMode === mode ? '#000' : '#555',
+                                        }}
+                                      >
+                                        Sort by {mode}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+
+                                {/* region hold toggle */}
                                 <div className="inline-flex p-0.5 rounded-lg border border-white/5 bg-black/60 shrink-0">
-                                  {(['count', 'rate'] as const).map(mode => (
+                                  {([['pure', 'Single-Region'], ['all', 'All-Region']] as const).map(([k, label]) => (
                                     <button
-                                      key={mode}
-                                      onClick={() => setRrSortMode(mode)}
+                                      key={k}
+                                      onClick={() => setRegionRoleMode(k)}
                                       className="px-3 py-1 rounded text-[9px] font-mono font-bold uppercase tracking-wider transition-colors duration-200"
                                       style={{
-                                        backgroundColor: rrSortMode === mode ? 'var(--color-accent)' : 'transparent',
-                                        color: rrSortMode === mode ? '#000' : '#555',
+                                        backgroundColor: regionRoleMode === k ? 'var(--color-accent)' : 'transparent',
+                                        color: regionRoleMode === k ? '#000' : '#555',
                                       }}
                                     >
-                                      Sort by {mode}
+                                      {label}
                                     </button>
                                   ))}
                                 </div>
-                              )}
+                              </div>
                             </div>
                             {/* tier selector */}
                             <div className="flex flex-wrap gap-1.5 max-w-xl self-start">
