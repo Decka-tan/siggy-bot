@@ -33,7 +33,7 @@ const REGION_LABEL: Record<string, string> = {
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
 type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string; daysToPromo?: number | null };
 type GrowthPt = { month: string; count: number; cumulative: number };
-type RegionRow = { region: string; count: number };
+type RegionRow = { region: string; count: number; any?: number };
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
@@ -368,7 +368,8 @@ export default function CommunityPage() {
                       <GrowthChart pts={growth} />
                     </Card>
 
-                    <Card title="Regional Communities" subtitle="Members per regional role">
+                    <Card title="Regional Communities" subtitle="Members by primary region · single-region only">
+
                       <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
                         {regional.map((r, i) => {
                           const c = regionColor(r.region);

@@ -88,8 +88,10 @@ async function fetchAllMembers(rolesMap) {
   // Insights over ALL members (not just ranked)
   let totalGuildMembers = 0;
   const joinByMonth = {};                 // 'YYYY-MM' -> count
-  const regional = {};                    // regionRole -> count
-  for (const r of REGION_ROLES) regional[r] = 0;
+  const regional = {};                    // regionRole -> count (any: member may hold several)
+  const regionalPure = {};                // regionRole -> count (pure: member holds ONLY this region)
+  let multiRegion = 0;                    // members holding >1 region role
+  for (const r of REGION_ROLES) { regional[r] = 0; regionalPure[r] = 0; }
 
   let after = '0';
   for (let page = 0; page < 200; page++) {
@@ -115,8 +117,11 @@ async function fetchAllMembers(rolesMap) {
         joinByMonth[ym] = (joinByMonth[ym] || 0) + 1;
       }
       const roleNames = m.roles.map(id => rolesMap.get(id)).filter(Boolean);
-      // regional: count every region role the member holds
-      for (const rn of roleNames) if (REGION_SET.has(rn)) regional[rn]++;
+      // regional: tally
+      const memberRegions = roleNames.filter(rn => REGION_SET.has(rn));
+      for (const rn of memberRegions) regional[rn]++;        // any
+      if (memberRegions.length === 1) regionalPure[memberRegions[0]]++; // pure (single region)
+      else if (memberRegions.length > 1) multiRegion++;
 
       const tracked = roleNames.filter(r => TRACKED_ROLES.includes(r));
       if (!tracked.length) continue;
@@ -136,7 +141,7 @@ async function fetchAllMembers(rolesMap) {
     after = batch[batch.length - 1].user.id;
     if (batch.length < 1000) break;
   }
-  return { members, insights: { totalGuildMembers, joinByMonth, regional } };
+  return { members, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion } };
 }
 
 function readJSON(file, fallback) {
@@ -225,16 +230,17 @@ async function main() {
   // running cumulative total
   let cum = 0;
   for (const g of growth) { cum += g.count; g.cumulative = cum; }
-  const regional = Object.entries(insights.regional)
-    .map(([region, count]) => ({ region, count }))
-    .filter(r => r.count > 0)
+  const regional = Object.keys(insights.regional)
+    .map(region => ({ region, count: insights.regionalPure[region], any: insights.regional[region] }))
+    .filter(r => r.count > 0 || r.any > 0)
     .sort((a, b) => b.count - a.count);
 
   await uploadR2('community/insights.json', {
     updatedAt: now,
     totalGuildMembers: insights.totalGuildMembers,
+    multiRegion: insights.multiRegion,
     growth,
-    regional,
+    regional, // count = pure (single-region), any = holds-this-region
   });
 
   const isFirstRun = Object.keys(prevSnapshot).length === 0;
