@@ -525,13 +525,13 @@ export default function CommunityPage() {
                 setShowAutocomplete(false);
                 setIsModalOpen(true);
               }}
-              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] flex items-center gap-2"
+              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] flex items-center gap-2 max-w-[240px] truncate"
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              Connect your Discord
+              {memberProfile ? `Discord: ${memberProfile.displayName}` : 'Connect your Discord'}
             </button>
           </div>
         </div>
