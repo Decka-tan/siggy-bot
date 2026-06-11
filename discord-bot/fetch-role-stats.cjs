@@ -129,9 +129,8 @@ async function fetchAllMembers(rolesMap) {
       // top role = highest rank among tracked
       let top = tracked[0];
       for (const r of tracked) if (ROLE_RANK[r] > ROLE_RANK[top]) top = r;
-      // region × role: attribute pure-region contributors to their region by top role
-      if (memberRegions.length === 1) {
-        const rg = memberRegions[0];
+      // region × role: attribute contributor to EVERY region role they hold (by top tier)
+      for (const rg of memberRegions) {
         regionTiers[rg][top] = (regionTiers[rg][top] || 0) + 1;
       }
       members.push({
@@ -246,7 +245,7 @@ async function main() {
     .map(region => {
       const tiers = insights.regionTiers[region];
       const contributors = Object.values(tiers).reduce((s, n) => s + n, 0);
-      const members = insights.regionalPure[region] || 0;
+      const members = insights.regional[region] || 0; // any-region members (matches crosstab)
       return {
         region,
         members,                                   // pure single-region members
