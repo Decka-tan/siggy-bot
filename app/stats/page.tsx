@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -371,6 +371,53 @@ export default function CommunityPage() {
   const [searching, setSearching] = useState(false);
   const [memberProfile, setMemberProfile] = useState<any | null>(null);
   const [searchError, setSearchError] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isAutocompleting, setIsAutocompleting] = useState(false);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchAutocomplete = async (q: string) => {
+    if (!q.trim()) { setSearchResults([]); return; }
+    setIsAutocompleting(true);
+    try {
+      const res = await fetch(`/api/member?username=${encodeURIComponent(q)}&autocomplete=true`);
+      const payload = await res.json();
+      setSearchResults(payload.members || []);
+      setShowAutocomplete(true);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setIsAutocompleting(false);
+    }
+  };
+
+  const handleInput = (val: string) => {
+    setSearchQuery(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => fetchAutocomplete(val), 300);
+  };
+
+  const selectMember = async (userId: string) => {
+    setSearching(true);
+    setSearchError('');
+    setShowAutocomplete(false);
+    try {
+      const res = await fetch(`/api/member?userId=${userId}`);
+      const payload = await res.json();
+      if (payload.success && payload.member) {
+        setMemberProfile(payload.member);
+        setIsModalOpen(false);
+      } else {
+        setSearchError(payload.error || 'Member not found');
+      }
+    } catch {
+      setSearchError('Search engine failed to resolve member');
+    } finally {
+      setSearching(false);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
@@ -387,6 +434,7 @@ export default function CommunityPage() {
       const payload = await res.json();
       if (payload.success && payload.member) {
         setMemberProfile(payload.member);
+        setIsModalOpen(false);
       } else {
         setSearchError(payload.error || 'Member not found');
         setMemberProfile(null);
@@ -470,9 +518,21 @@ export default function CommunityPage() {
           </div>
 
           <div className="shrink-0 flex items-center gap-3">
-            <Link href="/" className="px-4 py-2 rounded-xl text-xs font-mono font-semibold border border-white/5 hover:border-white/20 bg-white/5 hover:bg-white/10 transition-all">
-              ← Back to Chat
-            </Link>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSearchResults([]);
+                setShowAutocomplete(false);
+                setIsModalOpen(true);
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="shrink-0">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Connect your Discord
+            </button>
           </div>
         </div>
 
@@ -633,29 +693,20 @@ export default function CommunityPage() {
 
                       <h2 className="font-display text-2xl uppercase tracking-wider text-white mb-2">Activate Your Dashboard</h2>
                       <p className="text-xs text-[#555] font-mono uppercase tracking-wide max-w-md mx-auto mb-8 leading-relaxed">
-                        Input your Discord username to load your personal statistics, roles list, and real-time server activity breakdown
+                        Connect your Discord account to load your personal statistics, roles hierarchy, and real-time server activity breakdown
                       </p>
 
-                      <form onSubmit={handleSearchMember} className="flex gap-2 max-w-md mx-auto w-full relative z-10">
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Enter Discord username (e.g. kanzwafir)..."
-                          className="flex-1 bg-black/60 border border-white/5 rounded-xl px-4 py-3 text-xs font-mono text-white placeholder-[#444] focus:outline-none focus:border-amber-400/30 transition-all"
-                        />
-                        <button
-                          type="submit"
-                          disabled={searching}
-                          className="px-6 py-3 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 disabled:opacity-50 transition-all shrink-0 uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)]"
-                        >
-                          {searching ? 'Loading...' : 'Connect'}
-                        </button>
-                      </form>
-
-                      {searchError && (
-                        <p className="text-red-400 text-xs font-mono mt-4 animate-pulse">{searchError}</p>
-                      )}
+                      <button
+                        onClick={() => {
+                          setSearchQuery('');
+                          setSearchResults([]);
+                          setShowAutocomplete(false);
+                          setIsModalOpen(true);
+                        }}
+                        className="px-6 py-3 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] mx-auto"
+                      >
+                        Connect Discord
+                      </button>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -1102,6 +1153,118 @@ export default function CommunityPage() {
             )}
           </div>
         )}
+      {/* Floating Connect Modal */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            {/* Modal Box */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#0b0b0b]/90 p-8 shadow-2xl backdrop-blur-2xl z-10"
+            >
+              {/* Orb Glow Ornament */}
+              <div className="absolute -right-24 -top-24 w-48 h-48 rounded-full bg-amber-400/[0.04] blur-3xl pointer-events-none" />
+              
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="font-display text-xl uppercase tracking-wider text-white">Connect Discord</h3>
+                  <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-1">Search & resolve your contributor profile</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="p-1.5 rounded-lg border border-white/5 bg-white/5 text-white/50 hover:text-white hover:border-white/10 transition-all"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Form with Autocomplete Resolver */}
+              <div className="space-y-4 relative">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleInput(e.target.value)}
+                    placeholder="Search by username (e.g. kanzwafir)..."
+                    className="w-full bg-black/85 border border-white/10 rounded-xl px-4 py-3.5 text-xs font-mono text-white placeholder-[#555] focus:outline-none focus:border-amber-400/40 transition-all"
+                  />
+                  {isAutocompleting && (
+                    <div className="absolute right-4 top-3.5 flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-amber-400/20 border-t-amber-400 rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Autocomplete Dropdown list (Username Resolver) */}
+                {showAutocomplete && searchResults.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-2 max-h-56 overflow-y-auto rounded-xl border border-white/10 bg-[#0d0d0d] shadow-2xl z-25 divide-y divide-white/[0.03]">
+                    {searchResults.map((m) => (
+                      <button
+                        key={m.userId}
+                        type="button"
+                        onClick={() => selectMember(m.userId)}
+                        className="w-full flex items-center justify-between p-3 text-left hover:bg-white/[0.02] transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={m.avatarUrl}
+                            alt=""
+                            className="w-7 h-7 rounded-full bg-[#141414] object-cover border border-white/10"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                          <div>
+                            <span className="text-xs font-bold text-white block">{m.displayName}</span>
+                            <span className="text-[9px] font-mono text-[#555]">@{m.username}</span>
+                          </div>
+                        </div>
+                        {m.contributorRole && (
+                          <span 
+                            className="text-[9px] font-mono px-2 py-0.5 rounded border border-transparent font-semibold uppercase tracking-wider"
+                            style={{ 
+                              color: ROLE_COLOR[m.contributorRole] || '#888',
+                              backgroundColor: `${ROLE_COLOR[m.contributorRole] || '#888'}12` 
+                            }}
+                          >
+                            {m.contributorRole}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSearchMember}
+                  disabled={searching || !searchQuery.trim()}
+                  className="w-full py-3.5 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 disabled:opacity-50 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] flex items-center justify-center gap-2"
+                >
+                  {searching ? 'Loading...' : 'Connect Account'}
+                </button>
+              </div>
+
+              {searchError && (
+                <p className="text-red-400 text-xs font-mono mt-4 text-center animate-pulse">{searchError}</p>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       </div>
     </div>
   );
