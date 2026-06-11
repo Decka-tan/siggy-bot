@@ -213,6 +213,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
+  const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
@@ -233,10 +234,16 @@ export default function CommunityPage() {
   });
 
   const growth: GrowthPt[] = data?.insights?.growth ?? [];
-  const regional: RegionRow[] = data?.insights?.regional ?? [];
+  const rawRegional: RegionRow[] = data?.insights?.insightsRegional ?? data?.insights?.regional ?? [];
   const totalGuild = data?.insights?.totalGuildMembers ?? 0;
-  const regionSum = regional.reduce((s, r) => s + r.count, 0);
-  const regionMax = Math.max(1, ...regional.map(r => r.count));
+  const multiRegion = data?.insights?.multiRegion ?? 0;
+  // value per mode: pure = single-region (count), all = holds-this-region (any)
+  const regional = rawRegional
+    .map(r => ({ region: r.region, value: regionMode === 'all' ? (r.any ?? r.count) : r.count }))
+    .filter(r => r.value > 0)
+    .sort((a, b) => b.value - a.value);
+  const regionSum = regional.reduce((s, r) => s + r.value, 0);
+  const regionMax = Math.max(1, ...regional.map(r => r.value));
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -368,26 +375,46 @@ export default function CommunityPage() {
                       <GrowthChart pts={growth} />
                     </Card>
 
-                    <Card title="Regional Communities" subtitle="Members by primary region · single-region only">
+                    <div className="rounded-2xl border p-6" style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+                      <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
+                        <div>
+                          <h2 className="font-display text-xl uppercase tracking-wide">Regional Communities</h2>
+                          <p className="text-xs font-mono text-[#555]">
+                            {regionMode === 'pure'
+                              ? 'Single-region members only'
+                              : `Holds the region role · ${multiRegion.toLocaleString()} in multiple regions`}
+                          </p>
+                        </div>
+                        {/* mode toggle */}
+                        <div className="inline-flex p-1 rounded-full border shrink-0" style={{ borderColor: '#1a1a1a', backgroundColor: '#070707' }}>
+                          {([['pure', 'Single'], ['all', 'All']] as const).map(([k, label]) => (
+                            <button key={k} onClick={() => setRegionMode(k)}
+                              className="px-4 py-1 rounded-full text-xs font-mono transition-all"
+                              style={{ backgroundColor: regionMode === k ? 'var(--color-accent)' : 'transparent', color: regionMode === k ? '#000' : '#666' }}>
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
 
                       <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
                         {regional.map((r, i) => {
                           const c = regionColor(r.region);
-                          const pct = regionSum ? ((r.count / regionSum) * 100).toFixed(1) : '0';
+                          const pct = regionSum ? ((r.value / regionSum) * 100).toFixed(1) : '0';
                           return (
                             <div key={r.region} className="flex items-center gap-3 py-1.5">
                               <span className="text-sm w-32 truncate shrink-0 text-[#ccc]">{REGION_LABEL[r.region] || r.region}</span>
                               <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
-                                <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${(r.count / regionMax) * 100}%` }}
+                                <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${(r.value / regionMax) * 100}%` }}
                                   transition={{ delay: i * 0.04 + 0.1, duration: 0.6 }} style={{ backgroundColor: c }} />
                               </div>
-                              <span className="font-mono text-sm text-white w-14 text-right shrink-0">{r.count.toLocaleString()}</span>
+                              <span className="font-mono text-sm text-white w-14 text-right shrink-0">{r.value.toLocaleString()}</span>
                               <span className="font-mono text-xs text-[#555] w-10 text-right shrink-0">{pct}%</span>
                             </div>
                           );
                         })}
                       </div>
-                    </Card>
+                    </div>
                   </>
                 )}
               </>
