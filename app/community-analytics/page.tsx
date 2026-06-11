@@ -34,6 +34,7 @@ type DistRow = { role: string; count: number; percent: number; contributor: bool
 type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string; daysToPromo?: number | null };
 type GrowthPt = { month: string; count: number; cumulative: number };
 type RegionRow = { region: string; count: number; any?: number };
+type RegionRoleRow = { region: string; members: number; contributors: number; rate: number; tiers: Record<string, number> };
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
@@ -214,6 +215,7 @@ export default function CommunityPage() {
   const [error, setError] = useState(false);
   const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
+  const [tierFilter, setTierFilter] = useState<string>('all');
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
@@ -244,6 +246,17 @@ export default function CommunityPage() {
     .sort((a, b) => b.value - a.value);
   const regionSum = regional.reduce((s, r) => s + r.value, 0);
   const regionMax = Math.max(1, ...regional.map(r => r.value));
+
+  const regionRoles: RegionRoleRow[] = data?.insights?.regionRoles ?? [];
+  const TIER_ORDER = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty'];
+  // sort regions: by selected tier count, or by total contributors
+  const rrSorted = [...regionRoles].sort((a, b) =>
+    tierFilter === 'all'
+      ? b.contributors - a.contributors
+      : (b.tiers[tierFilter] || 0) - (a.tiers[tierFilter] || 0)
+  ).filter(r => tierFilter === 'all' || (r.tiers[tierFilter] || 0) > 0);
+  const rrMax = Math.max(1, ...rrSorted.map(r =>
+    tierFilter === 'all' ? r.contributors : (r.tiers[tierFilter] || 0)));
 
   return (
     <div className="min-h-screen bg-[#050505] text-white">
@@ -419,6 +432,71 @@ export default function CommunityPage() {
                         })}
                       </div>
                     </div>
+
+                    {/* Region × Role */}
+                    {regionRoles.length > 0 && (
+                      <div className="rounded-2xl border p-6" style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a' }}>
+                        <div className="flex items-start justify-between mb-5 gap-4 flex-wrap">
+                          <div>
+                            <h2 className="font-display text-xl uppercase tracking-wide">Region × Role</h2>
+                            <p className="text-xs font-mono text-[#555]">
+                              {tierFilter === 'all'
+                                ? 'Contributors per region · tier composition'
+                                : `Regions producing the most ${tierFilter}`}
+                            </p>
+                          </div>
+                          {/* tier selector */}
+                          <div className="flex flex-wrap gap-1.5">
+                            {(['all', ...TIER_ORDER] as const).map(t => {
+                              const active = tierFilter === t;
+                              const c = t === 'all' ? '#888' : color(t);
+                              return (
+                                <button key={t} onClick={() => setTierFilter(t)}
+                                  className="px-2.5 py-1 rounded-full text-[11px] font-mono border transition-all"
+                                  style={{
+                                    borderColor: active ? c : '#1a1a1a',
+                                    backgroundColor: active ? c : 'transparent',
+                                    color: active ? '#000' : '#666',
+                                  }}>
+                                  {t === 'all' ? 'All' : t}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2.5">
+                          {rrSorted.map((r, i) => {
+                            const val = tierFilter === 'all' ? r.contributors : (r.tiers[tierFilter] || 0);
+                            return (
+                              <div key={r.region} className="flex items-center gap-3">
+                                <span className="font-mono text-xs w-5 text-center shrink-0" style={{ color: '#444' }}>{i + 1}</span>
+                                <span className="text-sm w-32 truncate shrink-0 text-[#ccc]">{REGION_LABEL[r.region] || r.region}</span>
+                                {/* stacked tier bar (all) or single tier bar */}
+                                <div className="flex-1 h-3 rounded-full overflow-hidden flex" style={{ backgroundColor: '#161616' }}>
+                                  {tierFilter === 'all'
+                                    ? TIER_ORDER.map(tier => {
+                                        const tv = r.tiers[tier] || 0;
+                                        if (!tv) return null;
+                                        return <motion.div key={tier} initial={{ width: 0 }} animate={{ width: `${(tv / rrMax) * 100}%` }}
+                                          transition={{ duration: 0.6, delay: i * 0.03 }} style={{ backgroundColor: color(tier) }} title={`${tier}: ${tv}`} />;
+                                      })
+                                    : <motion.div initial={{ width: 0 }} animate={{ width: `${(val / rrMax) * 100}%` }}
+                                        transition={{ duration: 0.6, delay: i * 0.03 }} className="rounded-full" style={{ backgroundColor: color(tierFilter) }} />}
+                                </div>
+                                <span className="font-mono text-sm text-white w-12 text-right shrink-0">{val.toLocaleString()}</span>
+                                {tierFilter === 'all' && (
+                                  <span className="font-mono text-xs w-12 text-right shrink-0" style={{ color: '#555' }}>{r.rate}%</span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {tierFilter === 'all' && (
+                          <p className="text-[10px] font-mono text-[#444] mt-4">Bar = tier composition · % = contributor rate (contributors ÷ region members)</p>
+                        )}
+                      </div>
+                    )}
                   </>
                 )}
               </>
