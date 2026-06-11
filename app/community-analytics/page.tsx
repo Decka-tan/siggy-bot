@@ -87,6 +87,35 @@ function Donut({ rows, sum, centerValue }: { rows: DistRow[]; sum: number; cente
   );
 }
 
+/* ── Generic donut (label/value/color) ─────────────── */
+function DonutG({ items, centerValue, centerLabel }: { items: { value: number; color: string }[]; centerValue: number; centerLabel: string }) {
+  const size = 220, stroke = 26, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
+  const sum = items.reduce((s, it) => s + it.value, 0) || 1;
+  let offset = 0;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#161616" strokeWidth={stroke} />
+        {items.map((it, i) => {
+          const len = (it.value / sum) * circ;
+          const seg = (
+            <motion.circle key={i} cx={size / 2} cy={size / 2} r={r} fill="none"
+              stroke={it.color} strokeWidth={stroke} strokeDasharray={`${len} ${circ - len}`}
+              initial={{ strokeDashoffset: circ }} animate={{ strokeDashoffset: -offset }}
+              transition={{ duration: 0.8, ease: 'easeOut' }} />
+          );
+          offset += len;
+          return seg;
+        })}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-display text-3xl">{centerValue.toLocaleString()}</span>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-[#555]">{centerLabel}</span>
+      </div>
+    </div>
+  );
+}
+
 /* ── Vertical bar chart with gridlines ─────────────── */
 function VBars({ rows, max }: { rows: DistRow[]; max: number }) {
   // round max up to a nice gridline value
@@ -414,22 +443,33 @@ export default function CommunityPage() {
                         </div>
                       </div>
 
-                      <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
-                        {regional.map((r, i) => {
-                          const c = regionColor(r.region);
-                          const pct = regionSum ? ((r.value / regionSum) * 100).toFixed(1) : '0';
-                          return (
-                            <div key={r.region} className="flex items-center gap-3 py-1.5">
-                              <span className="text-sm w-32 truncate shrink-0 text-[#ccc]">{REGION_LABEL[r.region] || r.region}</span>
-                              <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
-                                <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${(r.value / regionMax) * 100}%` }}
-                                  transition={{ delay: i * 0.04 + 0.1, duration: 0.6 }} style={{ backgroundColor: c }} />
+                      <div className="flex flex-col lg:flex-row items-center gap-8">
+                        <DonutG
+                          items={regional.map(r => ({ value: r.value, color: regionColor(r.region) }))}
+                          centerValue={regionSum}
+                          centerLabel={regionMode === 'pure' ? 'single-region' : 'members'}
+                        />
+                        <div className="flex-1 w-full space-y-2.5">
+                          {regional.map((r, i) => {
+                            const c = regionColor(r.region);
+                            const pct = regionSum ? ((r.value / regionSum) * 100).toFixed(1) : '0';
+                            return (
+                              <div key={r.region} className="flex items-center gap-3">
+                                <span className="font-mono text-xs w-5 text-center shrink-0" style={{ color: '#444' }}>{i + 1}</span>
+                                <span className="text-sm w-32 truncate shrink-0 text-[#ddd] flex items-center gap-1.5">
+                                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: c }} />
+                                  {REGION_LABEL[r.region] || r.region}
+                                </span>
+                                <div className="flex-1 h-3 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
+                                  <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${(r.value / regionMax) * 100}%` }}
+                                    transition={{ delay: i * 0.04 + 0.1, duration: 0.6 }} style={{ backgroundColor: c }} />
+                                </div>
+                                <span className="font-mono text-sm text-white w-16 text-right shrink-0">{r.value.toLocaleString()}</span>
+                                <span className="font-mono text-xs text-[#555] w-11 text-right shrink-0">{pct}%</span>
                               </div>
-                              <span className="font-mono text-sm text-white w-14 text-right shrink-0">{r.value.toLocaleString()}</span>
-                              <span className="font-mono text-xs text-[#555] w-10 text-right shrink-0">{pct}%</span>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
 
