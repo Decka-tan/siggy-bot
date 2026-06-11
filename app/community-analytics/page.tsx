@@ -14,8 +14,26 @@ const ROLE_COLOR: Record<string, string> = {
   'bitty': '#3498db',
 };
 
+const REGION_COLOR: Record<string, string> = {
+  'Komunitas Indonesia': '#ef4444', 'Viet Community': '#eab308', 'Chinese Community': '#f97316',
+  'Korean Community': '#3b82f6', 'Japanese Community': '#ec4899', 'Thai Community': '#14b8a6',
+  'Indian Community': '#f59e0b', 'Arabic Comunity': '#22c55e', 'Russian Community': '#06b6d4',
+  'Ukraine Community': '#0ea5e9', 'Türkiye Topluluğu': '#dc2626', 'Naija Community': '#16a34a',
+  'Filipinas': '#a855f7', 'português': '#84cc16',
+};
+const regionColor = (r: string) => REGION_COLOR[r] || '#888';
+const REGION_LABEL: Record<string, string> = {
+  'Komunitas Indonesia': '🇮🇩 Indonesia', 'Viet Community': '🇻🇳 Vietnam', 'Chinese Community': '🇨🇳 China',
+  'Korean Community': '🇰🇷 Korea', 'Japanese Community': '🇯🇵 Japan', 'Thai Community': '🇹🇭 Thailand',
+  'Indian Community': '🇮🇳 India', 'Arabic Comunity': '🌙 Arabic', 'Russian Community': '🇷🇺 Russia',
+  'Ukraine Community': '🇺🇦 Ukraine', 'Türkiye Topluluğu': '🇹🇷 Türkiye', 'Naija Community': '🇳🇬 Nigeria',
+  'Filipinas': '🇵🇭 Philippines', 'português': '🇵🇹 Portuguese',
+};
+
 type DistRow = { role: string; count: number; percent: number; contributor: boolean };
 type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string; daysToPromo?: number | null };
+type GrowthPt = { month: string; count: number; cumulative: number };
+type RegionRow = { region: string; count: number };
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
@@ -110,6 +128,49 @@ function VBars({ rows, max }: { rows: DistRow[]; max: number }) {
   );
 }
 
+/* ── Growth line/area chart (cumulative members over months) ── */
+function GrowthChart({ pts }: { pts: GrowthPt[] }) {
+  const W = 800, H = 280, padL = 48, padB = 28, padT = 12, padR = 12;
+  if (pts.length < 2) return <p className="text-[#555] text-sm font-mono">Not enough data.</p>;
+  const maxCum = Math.max(...pts.map(p => p.cumulative));
+  const niceMax = Math.ceil(maxCum / 20000) * 20000 || maxCum;
+  const x = (i: number) => padL + (i / (pts.length - 1)) * (W - padL - padR);
+  const y = (v: number) => padT + (1 - v / niceMax) * (H - padT - padB);
+  const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(p.cumulative)}`).join(' ');
+  const area = `${line} L ${x(pts.length - 1)} ${H - padB} L ${x(0)} ${H - padB} Z`;
+  const grid = 4;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 280 }}>
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {Array.from({ length: grid + 1 }).map((_, i) => {
+        const v = (niceMax / grid) * (grid - i);
+        const yy = y(v);
+        return (
+          <g key={i}>
+            <line x1={padL} y1={yy} x2={W - padR} y2={yy} stroke="#141414" />
+            <text x={padL - 6} y={yy + 3} textAnchor="end" fontSize="9" fill="#444" fontFamily="monospace">
+              {v >= 1000 ? `${Math.round(v / 1000)}k` : v}
+            </text>
+          </g>
+        );
+      })}
+      <motion.path d={area} fill="url(#grad)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }} />
+      <motion.path d={line} fill="none" stroke="var(--color-accent)" strokeWidth="2"
+        initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, ease: 'easeOut' }} />
+      {pts.map((p, i) => (i % Math.ceil(pts.length / 8) === 0 || i === pts.length - 1) && (
+        <text key={p.month} x={x(i)} y={H - padB + 16} textAnchor="middle" fontSize="9" fill="#555" fontFamily="monospace">
+          {p.month.slice(2)}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
 function UpgradeCard({ u }: { u: Upgrade }) {
   const [err, setErr] = useState(false);
   const c = color(u.toRole);
@@ -148,10 +209,10 @@ function Card({ title, subtitle, children, className = '' }: any) {
 }
 
 export default function CommunityPage() {
-  const [data, setData] = useState<{ stats: any; upgrades: any } | null>(null);
+  const [data, setData] = useState<{ stats: any; upgrades: any; insights: any } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [view, setView] = useState<'overview' | 'analytics'>('overview');
+  const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
 
   useEffect(() => {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
@@ -171,6 +232,12 @@ export default function CommunityPage() {
     return (a.daysToPromo ?? 1e9) - (b.daysToPromo ?? 1e9);
   });
 
+  const growth: GrowthPt[] = data?.insights?.growth ?? [];
+  const regional: RegionRow[] = data?.insights?.regional ?? [];
+  const totalGuild = data?.insights?.totalGuildMembers ?? 0;
+  const regionSum = regional.reduce((s, r) => s + r.count, 0);
+  const regionMax = Math.max(1, ...regional.map(r => r.count));
+
   return (
     <div className="min-h-screen bg-[#050505] text-white">
       <div className="max-w-6xl mx-auto px-4 py-20">
@@ -189,7 +256,7 @@ export default function CommunityPage() {
 
         {/* Nav switch */}
         <div className="inline-flex p-1 rounded-full border mb-8" style={{ borderColor: '#1a1a1a', backgroundColor: '#0a0a0a' }}>
-          {(['overview', 'analytics'] as const).map(v => (
+          {(['overview', 'analytics', 'insights'] as const).map(v => (
             <button key={v} onClick={() => setView(v)}
               className="px-6 py-2 rounded-full text-sm font-mono capitalize transition-all"
               style={{ backgroundColor: view === v ? 'var(--color-accent)' : 'transparent', color: view === v ? '#000' : '#666' }}>
@@ -287,6 +354,41 @@ export default function CommunityPage() {
                 <Card title="Distribution" subtitle="Members per role">
                   <VBars rows={rows} max={maxCount} />
                 </Card>
+              </>
+            )}
+
+            {/* ── INSIGHTS ── */}
+            {view === 'insights' && (
+              <>
+                {!data.insights ? (
+                  <Card><p className="text-[#555] text-sm font-mono">Insights not generated yet. Wait for the next hourly run.</p></Card>
+                ) : (
+                  <>
+                    <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} members joined since launch · cumulative`}>
+                      <GrowthChart pts={growth} />
+                    </Card>
+
+                    <Card title="Regional Communities" subtitle="Members per regional role">
+                      <div className="grid sm:grid-cols-2 gap-x-8 gap-y-2">
+                        {regional.map((r, i) => {
+                          const c = regionColor(r.region);
+                          const pct = regionSum ? ((r.count / regionSum) * 100).toFixed(1) : '0';
+                          return (
+                            <div key={r.region} className="flex items-center gap-3 py-1.5">
+                              <span className="text-sm w-32 truncate shrink-0 text-[#ccc]">{REGION_LABEL[r.region] || r.region}</span>
+                              <div className="flex-1 h-2.5 rounded-full overflow-hidden" style={{ backgroundColor: '#161616' }}>
+                                <motion.div className="h-full rounded-full" initial={{ width: 0 }} animate={{ width: `${(r.count / regionMax) * 100}%` }}
+                                  transition={{ delay: i * 0.04 + 0.1, duration: 0.6 }} style={{ backgroundColor: c }} />
+                              </div>
+                              <span className="font-mono text-sm text-white w-14 text-right shrink-0">{r.count.toLocaleString()}</span>
+                              <span className="font-mono text-xs text-[#555] w-10 text-right shrink-0">{pct}%</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
+                  </>
+                )}
               </>
             )}
 

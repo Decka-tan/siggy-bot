@@ -42,6 +42,15 @@ const TRACKED_ROLES = Object.keys(ROLE_RANK);
 // Roles that count as the "contributor ladder" (used for the page's contributor-only filter)
 const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Radiant Ritualist']);
 
+// Regional community roles (for the Insights tab) — counted over ALL members
+const REGION_ROLES = [
+  'Komunitas Indonesia', 'Viet Community', 'Chinese Community', 'Korean Community',
+  'Japanese Community', 'Thai Community', 'Indian Community', 'Arabic Comunity',
+  'Russian Community', 'Ukraine Community', 'Türkiye Topluluğu', 'Naija Community',
+  'Filipinas', 'português',
+];
+const REGION_SET = new Set(REGION_ROLES);
+
 const s3 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -76,6 +85,12 @@ async function fetchAllMembers(rolesMap) {
   );
 
   const members = [];
+  // Insights over ALL members (not just ranked)
+  let totalGuildMembers = 0;
+  const joinByMonth = {};                 // 'YYYY-MM' -> count
+  const regional = {};                    // regionRole -> count
+  for (const r of REGION_ROLES) regional[r] = 0;
+
   let after = '0';
   for (let page = 0; page < 200; page++) {
     let res;
@@ -92,7 +107,17 @@ async function fetchAllMembers(rolesMap) {
     if (!batch.length) break;
 
     for (const m of batch) {
+      if (m.user.bot) continue;
+      totalGuildMembers++;
+      // growth: bucket by join month
+      if (m.joined_at) {
+        const ym = m.joined_at.slice(0, 7); // YYYY-MM
+        joinByMonth[ym] = (joinByMonth[ym] || 0) + 1;
+      }
       const roleNames = m.roles.map(id => rolesMap.get(id)).filter(Boolean);
+      // regional: count every region role the member holds
+      for (const rn of roleNames) if (REGION_SET.has(rn)) regional[rn]++;
+
       const tracked = roleNames.filter(r => TRACKED_ROLES.includes(r));
       if (!tracked.length) continue;
       // top role = highest rank among tracked
@@ -111,7 +136,7 @@ async function fetchAllMembers(rolesMap) {
     after = batch[batch.length - 1].user.id;
     if (batch.length < 1000) break;
   }
-  return members;
+  return { members, insights: { totalGuildMembers, joinByMonth, regional } };
 }
 
 function readJSON(file, fallback) {
@@ -133,8 +158,8 @@ async function main() {
   console.log(`[${new Date().toISOString()}] Fetching role stats...`);
 
   const rolesMap = await getRolesMap();
-  const members = await fetchAllMembers(rolesMap);
-  console.log(`  ${members.length} members with tracked roles`);
+  const { members, insights } = await fetchAllMembers(rolesMap);
+  console.log(`  ${members.length} ranked / ${insights.totalGuildMembers} total members`);
 
   // 1. Distribution — each member counted in EVERY tracked role they hold
   //    (someone with Mage + Ritualist counts in both)
@@ -191,6 +216,25 @@ async function main() {
     updatedAt: now,
     windowDays: 14,
     upgrades: log.slice().sort((a, b) => b.at - a.at), // newest first
+  });
+
+  // 5. Insights — growth history + regional breakdown (over ALL members)
+  const growth = Object.entries(insights.joinByMonth)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([month, count]) => ({ month, count }));
+  // running cumulative total
+  let cum = 0;
+  for (const g of growth) { cum += g.count; g.cumulative = cum; }
+  const regional = Object.entries(insights.regional)
+    .map(([region, count]) => ({ region, count }))
+    .filter(r => r.count > 0)
+    .sort((a, b) => b.count - a.count);
+
+  await uploadR2('community/insights.json', {
+    updatedAt: now,
+    totalGuildMembers: insights.totalGuildMembers,
+    growth,
+    regional,
   });
 
   const isFirstRun = Object.keys(prevSnapshot).length === 0;

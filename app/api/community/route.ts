@@ -64,9 +64,10 @@ async function getObject(key: string): Promise<any | null> {
 
 export async function GET() {
   try {
-    const [stats, upgrades] = await Promise.all([
+    const [stats, upgrades, insights] = await Promise.all([
       getObject('community/role-stats.json'),
       getObject('community/recent-upgrades.json'),
+      getObject('community/insights.json'),
     ]);
 
     if (!stats) {
@@ -76,6 +77,7 @@ export async function GET() {
     return NextResponse.json({
       stats,
       upgrades: upgrades ?? { upgrades: [], windowDays: 14, updatedAt: stats.updatedAt },
+      insights: insights ?? null,
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
