@@ -298,18 +298,35 @@ export async function GET(req: NextRequest) {
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
     const cardData = buildCardData(member, roleNames, memberCount);
 
-    // Enrich with community user checker stats (global messages, contributions, events)
+    // Fetch real-time metrics using direct Discord REST endpoints to avoid discord.js webpack errors
     try {
-      const { getUserChecker } = require('@/lib/user-checker');
-      const checker = getUserChecker();
-      const enriched = checker.findUser(cardData.userId) || checker.findUser(cardData.username);
-      if (enriched) {
-        cardData.globalMessages = enriched.globalMessages || 0;
-        cardData.contributionsCount = enriched.contributionsCount || 0;
-        cardData.eventsCount = enriched.eventsCount || 0;
-      }
+      const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
+      const EVENTS_CHANNEL_ID = '1389298240762937414';
+
+      const fetchCount = async (channelId?: string) => {
+        const url = channelId 
+          ? `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${cardData.userId}&channel_id=${channelId}`
+          : `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${cardData.userId}`;
+        
+        const res = await fetch(url, {
+          headers: { Authorization: `Bot ${BOT_TOKEN}` }
+        });
+        if (!res.ok) return 0;
+        const body = await res.json();
+        return body.total_results || 0;
+      };
+
+      const [globalCount, contribCount, eventCount] = await Promise.all([
+        fetchCount(),
+        fetchCount(CONTRIBUTIONS_CHANNEL_ID),
+        fetchCount(EVENTS_CHANNEL_ID)
+      ]);
+
+      cardData.globalMessages = globalCount;
+      cardData.contributionsCount = contribCount;
+      cardData.eventsCount = eventCount;
     } catch (err) {
-      console.error('[Member API Enrichment Error]', err);
+      console.error('[Real-time Discord REST Search Error]', err);
     }
 
     // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
