@@ -675,49 +675,35 @@ export default function CommunityPage() {
                   className="space-y-6"
                 >
                   {/* Member Dashboard Profile Section */}
-                  {!memberProfile ? (
-                    <motion.div
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="rounded-2xl border border-white/5 bg-black/45 backdrop-blur-xl p-8 text-center relative overflow-hidden group max-w-2xl mx-auto shadow-2xl"
-                    >
-                      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/20 to-transparent" />
-                      <div className="absolute -right-24 -top-24 w-48 h-48 rounded-full bg-amber-400/[0.02] blur-3xl pointer-events-none" />
-                      
-                      <div className="w-16 h-16 rounded-full bg-amber-400/10 border border-amber-400/20 flex items-center justify-center mx-auto mb-6">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-amber-400">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                      </div>
-
-                      <h2 className="font-display text-2xl uppercase tracking-wider text-white mb-2">Activate Your Dashboard</h2>
-                      <p className="text-xs text-[#555] font-mono uppercase tracking-wide max-w-md mx-auto mb-8 leading-relaxed">
-                        Connect your Discord account to load your personal statistics, roles hierarchy, and real-time server activity breakdown
-                      </p>
-
-                      <button
-                        onClick={() => {
-                          setSearchQuery('');
-                          setSearchResults([]);
-                          setShowAutocomplete(false);
-                          setIsModalOpen(true);
-                        }}
-                        className="px-6 py-3 rounded-xl text-xs font-mono font-bold bg-amber-400 text-black hover:opacity-90 transition-all uppercase tracking-wider shadow-[0_0_15px_rgba(251,191,36,0.15)] mx-auto"
-                      >
-                        Connect Discord
-                      </button>
-                    </motion.div>
-                  ) : (
+                  {!memberProfile ? null : (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-2xl border border-white/5 bg-black/45 backdrop-blur-xl p-8 relative overflow-hidden group shadow-2xl"
+                      className="rounded-2xl border border-white/10 p-8 relative overflow-hidden group shadow-2xl"
+                      style={{
+                        backgroundImage: 'url(/vn-bg-stars.jpg)',
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                      }}
                     >
-                      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
-                      <div className="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
+                      {/* Dark overlay & blur for readability */}
+                      <div className="absolute inset-0 bg-black/75 backdrop-blur-md z-0" />
+                      
+                      {/* Top border highlight */}
+                      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/30 to-transparent z-10" />
 
-                      <div className="flex flex-col md:flex-row justify-between items-start gap-6 pb-6 border-b border-white/[0.03]">
+                      {/* Floating Siggy Sprite in Background */}
+                      <div className="absolute right-0 bottom-0 w-80 h-80 opacity-[0.11] pointer-events-none z-0 select-none translate-x-12 translate-y-12 group-hover:scale-105 group-hover:opacity-[0.15] transition-all duration-700">
+                        <Image
+                          src="/siggy-transparent.png"
+                          alt=""
+                          fill
+                          className="object-contain object-bottom-right"
+                          unoptimized
+                        />
+                      </div>
+
+                      <div className="flex flex-col md:flex-row justify-between items-start gap-6 pb-6 border-b border-white/[0.03] relative z-10">
                         {/* Profile Info */}
                         <div className="flex items-center gap-5">
                           <div className="relative w-20 h-20 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-2 ring-white/10 ring-offset-4 ring-offset-black">
@@ -753,7 +739,7 @@ export default function CommunityPage() {
                       </div>
 
                       {/* Stats & Roles Content */}
-                      <div className="mt-8 grid lg:grid-cols-5 gap-8">
+                      <div className="mt-8 grid lg:grid-cols-5 gap-8 relative z-10">
                         {/* Discord Activity Stats (Left 3 Columns) */}
                         <div className="lg:col-span-3 space-y-6">
                           <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Activity Metrics</h4>
