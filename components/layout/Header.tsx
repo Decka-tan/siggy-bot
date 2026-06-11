@@ -51,7 +51,7 @@ export function Header() {
   };
 
   // Standalone pages render without the global header
-  if (pathname?.startsWith('/community-analytics')) return null;
+  if (pathname?.startsWith('/stats')) return null;
 
   const toggleVNMode = () => {
     playHeavyClick();
