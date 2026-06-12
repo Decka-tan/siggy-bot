@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as htmlToImage from 'html-to-image';
 
 const ROLE_COLOR: Record<string, string> = {
   'Radiant Ritualist': '#c58d04',
@@ -55,6 +56,28 @@ function pickProfileBg(seed: string): string {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   return PROFILE_BGS[h % PROFILE_BGS.length];
+}
+
+/* ── Dominant colour of an avatar (for card border/accent) ── */
+function dominantColor(img: HTMLImageElement): string | null {
+  const c = document.createElement('canvas');
+  const w = 24, h = 24; c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  if (!ctx) return null;
+  ctx.drawImage(img, 0, 0, w, h);
+  let data: Uint8ClampedArray;
+  try { data = ctx.getImageData(0, 0, w, h).data; } catch { return null; }
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 128) continue;
+    r += data[i]; g += data[i + 1]; b += data[i + 2]; n++;
+  }
+  if (!n) return null;
+  r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+  // lift very dark/muted averages so the accent reads as a colour
+  const max = Math.max(r, g, b);
+  if (max < 80) { const k = 80 / (max || 1); r = Math.min(255, r * k); g = Math.min(255, g * k); b = Math.min(255, b * k); }
+  return `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`;
 }
 
 function relativeTime(ts: number) {
@@ -391,6 +414,9 @@ export default function CommunityPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [memberProfile, setMemberProfile] = useState<any | null>(null);
+  const [cardAccent, setCardAccent] = useState<string | null>(null);
+  const [savingCard, setSavingCard] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [searchError, setSearchError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -444,6 +470,46 @@ export default function CommunityPage() {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
       .then(setData).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
+
+  // Extract dominant colour from the looked-up member's avatar (same-origin
+  // proxy → canvas isn't tainted) for the card border/accent.
+  useEffect(() => {
+    setCardAccent(null);
+    const url = memberProfile?.pfpUrl;
+    if (!url) return;
+    const img = new window.Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { try { const c = dominantColor(img); if (c) setCardAccent(c); } catch {} };
+    img.src = url;
+  }, [memberProfile?.pfpUrl]);
+
+  const exportCard = async (share: boolean) => {
+    if (!cardRef.current || savingCard) return;
+    setSavingCard(true);
+    try {
+      const opts = {
+        pixelRatio: 2,
+        cacheBust: true,
+        filter: (node: any) => !(node instanceof HTMLElement && node.classList?.contains('no-export')),
+      };
+      const fname = `${memberProfile.username || 'ritual'}-card.png`;
+      if (share && typeof navigator !== 'undefined' && navigator.share) {
+        const blob = await htmlToImage.toBlob(cardRef.current, opts);
+        const file = blob && new File([blob], fname, { type: 'image/png' });
+        if (file && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: `${memberProfile.displayName} · Ritual` });
+          return;
+        }
+      }
+      const dataUrl = await htmlToImage.toPng(cardRef.current, opts);
+      const a = document.createElement('a');
+      a.href = dataUrl; a.download = fname; a.click();
+    } catch (e) {
+      console.error('[card export]', e);
+    } finally {
+      setSavingCard(false);
+    }
+  };
 
   const handleSearchMember = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -703,20 +769,24 @@ export default function CommunityPage() {
                   {/* Member Dashboard Profile Section */}
                   {!memberProfile ? null : (
                     <motion.div
+                      ref={cardRef}
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-2xl border border-white/10 p-8 relative overflow-hidden group shadow-2xl"
+                      className="rounded-2xl border p-8 relative overflow-hidden group shadow-2xl bg-[#0a0a0a]"
                       style={{
-                        backgroundImage: `url(${pickProfileBg(memberProfile.userId || memberProfile.username || '')})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
+                        borderColor: cardAccent ? `${cardAccent}` : 'rgba(255,255,255,0.1)',
+                        boxShadow: cardAccent ? `0 0 40px -12px ${cardAccent}` : undefined,
                       }}
                     >
-                      {/* Dark overlay & blur for readability */}
-                      <div className="absolute inset-0 bg-black/75 backdrop-blur-md z-0" />
-                      
-                      {/* Top border highlight */}
-                      <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/30 to-transparent z-10" />
+                      {/* Blurred avatar → one ambient tone background */}
+                      <div className="absolute inset-0 z-0 overflow-hidden">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={memberProfile.pfpUrl} alt="" className="w-full h-full object-cover scale-[1.6] blur-[60px] opacity-50 select-none" />
+                      </div>
+                      <div className="absolute inset-0 bg-black/80 z-0" />
+
+                      {/* Top border highlight (accent) */}
+                      <div className="absolute top-0 inset-x-0 h-[2px] z-10" style={{ background: cardAccent ? `linear-gradient(to right, transparent, ${cardAccent}, transparent)` : 'linear-gradient(to right, transparent, rgba(251,191,36,0.3), transparent)' }} />
 
                       {/* Floating Siggy Sprite in Background */}
                       <div className="absolute right-0 bottom-0 w-80 h-80 opacity-[0.11] pointer-events-none z-0 select-none translate-x-12 translate-y-12 group-hover:scale-105 group-hover:opacity-[0.15] transition-all duration-700">
@@ -732,14 +802,9 @@ export default function CommunityPage() {
                       <div className="flex flex-col md:flex-row justify-between items-start gap-6 pb-6 border-b border-white/[0.03] relative z-10">
                         {/* Profile Info */}
                         <div className="flex items-center gap-5">
-                          <div className="relative w-20 h-20 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-2 ring-white/10 ring-offset-4 ring-offset-black">
-                            <Image
-                              src={memberProfile.avatarUrl}
-                              alt={memberProfile.displayName}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                            />
+                          <div className="relative w-20 h-20 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-2 ring-offset-4 ring-offset-black" style={{ boxShadow: cardAccent ? `0 0 0 2px ${cardAccent}` : undefined }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={memberProfile.pfpUrl} alt={memberProfile.displayName} className="w-full h-full object-cover" />
                           </div>
                           <div className="min-w-0">
                             <h3 className="text-2xl font-black text-white tracking-tight">{memberProfile.displayName}</h3>
@@ -751,17 +816,33 @@ export default function CommunityPage() {
                           </div>
                         </div>
 
-                        {/* Reset / Change button */}
-                        <button
-                          onClick={() => {
-                            setMemberProfile(null);
-                            setSearchQuery('');
-                            setSearchError('');
-                          }}
-                          className="px-4 py-2 rounded-xl text-[10px] font-mono font-bold border border-white/5 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white transition-all uppercase tracking-wider"
-                        >
-                          Change User
-                        </button>
+                        {/* Actions (excluded from the exported image) */}
+                        <div className="no-export flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => exportCard(true)}
+                            disabled={savingCard}
+                            title="Share card"
+                            className="px-3 py-2 rounded-xl text-[10px] font-mono font-bold border border-white/5 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white transition-all uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5 8.6 10.5"/></svg>
+                            Share
+                          </button>
+                          <button
+                            onClick={() => exportCard(false)}
+                            disabled={savingCard}
+                            title="Save card as image"
+                            className="px-3 py-2 rounded-xl text-[10px] font-mono font-bold border border-white/5 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white transition-all uppercase tracking-wider flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+                            {savingCard ? '…' : 'Save'}
+                          </button>
+                          <button
+                            onClick={() => { setMemberProfile(null); setSearchQuery(''); setSearchError(''); }}
+                            className="px-4 py-2 rounded-xl text-[10px] font-mono font-bold border border-white/5 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white transition-all uppercase tracking-wider"
+                          >
+                            Change
+                          </button>
+                        </div>
                       </div>
 
                       {/* Stats & Roles Content */}
