@@ -1200,38 +1200,69 @@ export default function CommunityPage() {
                         </div>
                       </div>
 
-                      <div className="space-y-1">
-                        {((data.activity[lbMode] as any[]) || []).map((u, i) => {
-                          const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : '#38bdf8';
-                          const medal = i === 0 ? '#fbbf24' : i === 1 ? '#cbd5e1' : i === 2 ? '#d97706' : null;
-                          return (
-                            <div
-                              key={u.userId}
-                              className="flex items-center gap-2 sm:gap-4 py-2.5 px-2 sm:px-3 rounded-xl border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-all"
-                            >
-                              <span
-                                className="font-mono text-xs sm:text-sm w-6 sm:w-8 text-center shrink-0 font-black"
-                                style={{ color: medal || '#444' }}
-                              >
-                                {i + 1}
-                              </span>
-                              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-1 ring-white/10">
-                                <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" unoptimized />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="text-xs sm:text-sm text-white/90 font-bold truncate">{u.displayName}</p>
-                                <p className="text-[9px] sm:text-[10px] text-[#555] font-mono truncate">@{u.username}</p>
-                              </div>
-                              <span className="font-mono text-sm sm:text-base font-black w-12 sm:w-16 text-right shrink-0" style={{ color: accent }}>
-                                {u.count.toLocaleString()}
-                              </span>
+                      {(() => {
+                        const list = (data.activity[lbMode] as any[]) || [];
+                        const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : '#38bdf8';
+                        if (list.length === 0) {
+                          return <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No data yet</p>;
+                        }
+                        const MEDAL = ['#fbbf24', '#cbd5e1', '#d97706'];
+                        const top3 = list.slice(0, 3);
+                        const rest = list.slice(3);
+                        // podium visual order: 2nd, 1st, 3rd
+                        const order = [1, 0, 2].filter(i => top3[i]);
+                        return (
+                          <>
+                            {/* Podium */}
+                            <div className="flex items-end justify-center gap-3 sm:gap-6 mb-8 pt-2">
+                              {order.map(rank => {
+                                const u = top3[rank];
+                                const c = MEDAL[rank];
+                                const isFirst = rank === 0;
+                                const size = isFirst ? 'w-20 h-20 sm:w-24 sm:h-24' : 'w-14 h-14 sm:w-16 sm:h-16';
+                                return (
+                                  <div key={u.userId} className="flex flex-col items-center min-w-0" style={{ width: isFirst ? 120 : 96 }}>
+                                    {isFirst && <div className="text-lg sm:text-xl mb-1 leading-none">👑</div>}
+                                    <div className={`relative ${size} rounded-full overflow-hidden shrink-0 bg-[#141414]`} style={{ boxShadow: `0 0 0 3px ${c}, 0 0 22px ${c}55` }}>
+                                      <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" unoptimized />
+                                    </div>
+                                    <div
+                                      className="mt-2 w-6 h-6 rounded-full flex items-center justify-center font-mono text-xs font-black shrink-0"
+                                      style={{ backgroundColor: c, color: '#000' }}
+                                    >
+                                      {rank + 1}
+                                    </div>
+                                    <p className="mt-1.5 text-[11px] sm:text-sm text-white font-bold truncate max-w-full text-center px-1">{u.displayName}</p>
+                                    <p className="font-mono font-black text-sm sm:text-lg" style={{ color: accent }}>{u.count.toLocaleString()}</p>
+                                  </div>
+                                );
+                              })}
                             </div>
-                          );
-                        })}
-                        {((data.activity[lbMode] as any[]) || []).length === 0 && (
-                          <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No data yet</p>
-                        )}
-                      </div>
+
+                            {/* Rank 4+ */}
+                            <div className="space-y-1">
+                              {rest.map((u, i) => (
+                                <div
+                                  key={u.userId}
+                                  className="flex items-center gap-2 sm:gap-4 py-2.5 px-2 sm:px-3 rounded-xl border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-all"
+                                >
+                                  <span className="font-mono text-xs sm:text-sm w-6 sm:w-8 text-center shrink-0 font-black text-[#444]">{i + 4}</span>
+                                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-1 ring-white/10">
+                                    <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" unoptimized />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="text-xs sm:text-sm text-white/90 font-bold truncate">{u.displayName}</p>
+                                    <p className="text-[9px] sm:text-[10px] text-[#555] font-mono truncate">@{u.username}</p>
+                                  </div>
+                                  <span className="font-mono text-sm sm:text-base font-black w-12 sm:w-16 text-right shrink-0" style={{ color: accent }}>
+                                    {u.count.toLocaleString()}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        );
+                      })()}
                       {data.activity.updatedAt && (
                         <p className="text-[9px] font-mono text-[#444] mt-5 uppercase tracking-wider font-semibold">
                           Updated {relativeTime(data.activity.updatedAt)} · refreshed daily
