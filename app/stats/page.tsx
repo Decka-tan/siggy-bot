@@ -955,8 +955,8 @@ export default function CommunityPage() {
                         ['Event Host', memberProfile.hostedRank, memberProfile.rankTotals?.eventsHosted],
                       ] as const;
                       return (
-                        <div ref={shareRef} style={{ position: 'absolute', left: -99999, top: 0, width: 900, fontFamily: 'ui-monospace, monospace' }}>
-                          <div style={{ position: 'relative', width: 900, padding: 48, background: `radial-gradient(circle at 75% 15%, ${acc}22, transparent 55%), #0a0a0a`, border: `2px solid ${acc}`, borderRadius: 24, overflow: 'hidden', boxSizing: 'border-box' }}>
+                        <div style={{ position: 'absolute', left: -99999, top: 0, width: 900, fontFamily: 'ui-monospace, monospace' }}>
+                          <div ref={shareRef} style={{ position: 'relative', width: 900, padding: 48, background: `radial-gradient(circle at 75% 15%, ${acc}22, transparent 55%), #0a0a0a`, border: `2px solid ${acc}`, borderRadius: 24, overflow: 'hidden', boxSizing: 'border-box' }}>
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, transparent, ${acc}, transparent)` }} />
 
                             <div style={{ position: 'relative' }}>
