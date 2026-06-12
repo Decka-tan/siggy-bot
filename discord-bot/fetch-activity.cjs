@@ -78,18 +78,32 @@ async function scanChannel(channelId, afterId, onMessage) {
   let newest = afterId || '0';
   let scanned = 0;
 
-  for (let page = 0; page < 5000; page++) {
+  for (let page = 0; page < 50000; page++) {
     let res;
-    for (let attempt = 0; attempt < 4; attempt++) {
-      res = await fetch(`${DISCORD_API}/channels/${channelId}/messages?after=${after}&limit=100`, {
-        headers: { Authorization: `Bot ${BOT_TOKEN}` },
-      });
-      if (res.status !== 429) break;
-      const wait = parseFloat(res.headers.get('Retry-After') || '1');
-      await sleep(wait * 1000 + 200);
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        res = await fetch(`${DISCORD_API}/channels/${channelId}/messages?after=${after}&limit=100`, {
+          headers: { Authorization: `Bot ${BOT_TOKEN}` },
+        });
+      } catch (e) {
+        await sleep(1000 * (attempt + 1));
+        continue;
+      }
+      if (res.ok) break;
+      // retry on rate limit (429) and transient server errors (5xx)
+      if (res.status === 429) {
+        const wait = parseFloat(res.headers.get('Retry-After') || '1');
+        await sleep(wait * 1000 + 200);
+        continue;
+      }
+      if (res.status >= 500) {
+        await sleep(1000 * (attempt + 1)); // backoff: 1s,2s,3s...
+        continue;
+      }
+      break; // 4xx other than 429 — not retryable
     }
     if (!res || !res.ok) {
-      console.error(`  ! channel ${channelId} fetch failed: ${res && res.status}`);
+      console.error(`  ! channel ${channelId} fetch failed after retries: ${res && res.status} (stopping; will resume next run)`);
       break;
     }
     const batch = await res.json();
