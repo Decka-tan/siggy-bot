@@ -37,6 +37,12 @@ const EVENTS_CHANNEL_ID        = '1389298240762937414';
 const STATE_FILE = path.join(DATA_DIR, 'activity-state.json');
 const TOP_N      = 100; // leaderboard size
 
+// User ids excluded from ALL leaderboards (staff/mods who post in these
+// channels as part of their role, not as community contributors).
+const EXCLUDED_IDS = new Set([
+  // 'jez user id here',
+]);
+
 const s3 = new S3Client({
   region: 'auto',
   endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -110,10 +116,15 @@ function bump(counts, uid) { counts[uid] = (counts[uid] || 0) + 1; }
 // Current member-id set, produced by fetch-role-stats.cjs (data/member-ids.json).
 // Used to exclude users who left/were kicked — no per-user API calls needed.
 const MEMBER_IDS_FILE = path.join(DATA_DIR, 'member-ids.json');
+const STAFF_IDS_FILE  = path.join(DATA_DIR, 'staff-ids.json');
 function loadMemberSet() {
   const ids = readJSON(MEMBER_IDS_FILE, null);
   if (!Array.isArray(ids) || ids.length === 0) return null; // not generated yet → don't filter
   return new Set(ids);
+}
+function loadStaffSet() {
+  const ids = readJSON(STAFF_IDS_FILE, null);
+  return new Set(Array.isArray(ids) ? ids : []);
 }
 
 async function main() {
@@ -182,13 +193,16 @@ async function main() {
   // Build leaderboard skipping users who left/were kicked. Their historical
   // messages still count by author_id, so filter against the current member set.
   const memberSet = loadMemberSet();
+  const staffSet = loadStaffSet();
   if (!memberSet) console.warn('  ! member-ids.json missing — run fetch-role-stats first; not filtering kicked users this run');
+  console.log(`  excluding ${staffSet.size} staff + ${EXCLUDED_IDS.size} manual from boards`);
   const board = (counts) => {
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const out = [];
     let dropped = 0;
     for (const [uid, n] of sorted) {
       if (out.length >= TOP_N) break;
+      if (EXCLUDED_IDS.has(uid) || staffSet.has(uid)) { dropped++; continue; }
       if (memberSet && !memberSet.has(uid)) { dropped++; continue; }
       out.push(enrich(uid, n));
     }
