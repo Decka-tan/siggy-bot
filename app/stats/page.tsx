@@ -818,8 +818,10 @@ export default function CommunityPage() {
 
                         {/* Roles Held (Right 2 Columns) */}
                         <div className="lg:col-span-2 space-y-4">
-                          <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Roles Held</h4>
-                          <div className="flex flex-wrap gap-2 max-h-[170px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                          <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">
+                            Roles Held <span className="text-[#444]">({memberProfile.roles.length})</span>
+                          </h4>
+                          <div className="flex flex-wrap gap-2 content-start">
                             {memberProfile.roles.map((r: string) => (
                               <RoleBadge key={r} role={r} />
                             ))}
