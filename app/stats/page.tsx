@@ -869,7 +869,7 @@ export default function CommunityPage() {
                       <div className="absolute top-0 inset-x-0 h-[2px] z-10" style={{ background: cardAccent ? `linear-gradient(to right, transparent, ${cardAccent}, transparent)` : 'linear-gradient(to right, transparent, rgba(251,191,36,0.3), transparent)' }} />
 
                       {/* Floating Siggy Sprite in Background */}
-                      <div className="absolute right-0 bottom-0 w-80 h-80 opacity-[0.11] pointer-events-none z-0 select-none translate-x-12 translate-y-12 group-hover:scale-105 group-hover:opacity-[0.15] transition-all duration-700">
+                      <div className="absolute right-0 bottom-0 w-[28rem] h-[28rem] opacity-[0.13] pointer-events-none z-0 select-none translate-x-10 translate-y-10 group-hover:scale-105 group-hover:opacity-[0.17] transition-all duration-700">
                         <Image
                           src="/siggy-transparent.png"
                           alt=""
