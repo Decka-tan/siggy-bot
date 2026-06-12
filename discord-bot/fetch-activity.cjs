@@ -99,6 +99,28 @@ async function scanChannel(channelId, afterId, onMessage) {
 
 function bump(counts, uid) { counts[uid] = (counts[uid] || 0) + 1; }
 
+// Membership check (cached per run). 200 = still in guild, 404 = left/kicked.
+// Don't use fetchWithRetry here: it throws on 404, which is an expected answer.
+const memberCache = new Map();
+async function isMember(uid) {
+  if (memberCache.has(uid)) return memberCache.get(uid);
+  let ok = false;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let res;
+    try {
+      res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${uid}`, {
+        headers: { Authorization: `Bot ${BOT_TOKEN}` },
+      });
+    } catch { await sleep(1000 * (attempt + 1)); continue; }
+    if (res.status === 429) { await sleep((parseFloat(res.headers.get('Retry-After') || '1')) * 1000 + 200); continue; }
+    if (res.status >= 500) { await sleep(1000 * (attempt + 1)); continue; }
+    ok = res.ok;             // 200 member, 404 not member
+    break;
+  }
+  memberCache.set(uid, ok);
+  return ok;
+}
+
 async function main() {
   const now = Date.now();
   console.log(`[${new Date().toISOString()}] Tallying activity...`);
@@ -156,10 +178,19 @@ async function main() {
       count,
     };
   };
-  const board = (counts) => Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, TOP_N)
-    .map(([uid, n]) => enrich(uid, n));
+  // Build leaderboard skipping users who left/were kicked (their historical
+  // messages still count by author_id, but they shouldn't appear on the board).
+  const board = async (counts) => {
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const out = [];
+    let dropped = 0;
+    for (const [uid, n] of sorted) {
+      if (out.length >= TOP_N) break;
+      if (!(await isMember(uid))) { dropped++; continue; }
+      out.push(enrich(uid, n));
+    }
+    return { out, dropped };
+  };
 
   const byUser = {};
   for (const uid of new Set([...Object.keys(state.contributions.counts), ...Object.keys(state.events.counts)])) {
@@ -169,10 +200,15 @@ async function main() {
     };
   }
 
+  const contribBoard = await board(state.contributions.counts);
+  const eventBoard   = await board(state.events.counts);
+  console.log(`  contributions board: ${contribBoard.out.length} shown, ${contribBoard.dropped} left-guild skipped`);
+  console.log(`  events board: ${eventBoard.out.length} shown, ${eventBoard.dropped} left-guild skipped`);
+
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
-    contributions: board(state.contributions.counts),
-    events: board(state.events.counts),
+    contributions: contribBoard.out,
+    events: eventBoard.out,
     byUser,
   });
 
