@@ -767,7 +767,7 @@ export default function CommunityPage() {
                               <span className="text-2xl font-mono font-black text-amber-400 truncate">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
                             </div>
                             <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Events Joined</span>
+                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Events Won / Hosted</span>
                               <span className="text-2xl font-mono font-black text-violet-400 truncate">{(memberProfile.eventsCount || 0).toLocaleString()}</span>
                             </div>
                           </div>
@@ -1139,16 +1139,16 @@ export default function CommunityPage() {
                       <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4 border-b border-white/[0.03] pb-6">
                         <div>
                           <h2 className="font-display text-xl uppercase tracking-wider text-white/95">
-                            {lbMode === 'contributions' ? 'Top Contributors' : 'Top Event Participants'}
+                            {lbMode === 'contributions' ? 'Top Contributors' : 'Top Event Winners & Hosts'}
                           </h2>
                           <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
                             {lbMode === 'contributions'
                               ? 'Ranked by contribution posts'
-                              : 'Ranked by event participations'}
+                              : 'Ranked by events won or hosted'}
                           </p>
                         </div>
                         <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60 shrink-0 self-start md:self-center">
-                          {([['contributions', 'Contributions'], ['events', 'Events']] as const).map(([k, label]) => (
+                          {([['contributions', 'Contributions'], ['events', 'Events Won']] as const).map(([k, label]) => (
                             <button
                               key={k}
                               onClick={() => setLbMode(k)}
