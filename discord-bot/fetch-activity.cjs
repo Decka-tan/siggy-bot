@@ -70,9 +70,12 @@ async function uploadR2(key, obj) {
 
 /**
  * Walk a channel forward from `afterId` (exclusive), oldest→newest, 100 at a time.
- * Calls onMessage for each message. Returns the newest message id seen.
+ * Calls onMessage for each message. onProgress(newestId) is called every
+ * CHECKPOINT_PAGES pages so the caller can persist progress mid-scan (a kill
+ * then resumes from the last checkpoint instead of restarting).
  */
-async function scanChannel(channelId, afterId, onMessage) {
+const CHECKPOINT_PAGES = 20; // ~2000 messages between saves
+async function scanChannel(channelId, afterId, onMessage, onProgress) {
   let after = afterId || '0';
   let newest = afterId || '0';
   let scanned = 0;
@@ -92,6 +95,10 @@ async function scanChannel(channelId, afterId, onMessage) {
     }
     scanned += batch.length;
     after = newest; // advance past the newest we've seen
+    if (page > 0 && page % CHECKPOINT_PAGES === 0 && onProgress) {
+      onProgress(newest);
+      console.log(`    …checkpoint: ${scanned} scanned`);
+    }
     if (batch.length < 100) break;
     await sleep(250); // gentle on rate limits
   }
@@ -132,13 +139,17 @@ async function main() {
     };
   };
 
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const writeState = () => fs.writeFileSync(STATE_FILE, JSON.stringify(state));
+
   // 1. Contributions — one tally per message author
   const c = await scanChannel(CONTRIBUTIONS_CHANNEL_ID, state.contributions.lastId, (msg) => {
     if (!msg.author || msg.author.bot) return;
     bump(state.contributions.counts, msg.author.id);
     noteUser(msg.author, msg.member);
-  });
+  }, (newest) => { state.contributions.lastId = newest; writeState(); });
   state.contributions.lastId = c.newest;
+  writeState();
   console.log(`  contributions: +${c.scanned} new messages`);
 
   // 2. Events — mentions in a message WITH a link = hosted; otherwise = won
@@ -152,13 +163,10 @@ async function main() {
       bump(target, u.id);
       noteUser(u, null);
     }
-  });
+  }, (newest) => { state.events.lastId = newest; writeState(); });
   state.events.lastId = e.newest;
+  writeState();
   console.log(`  events: +${e.scanned} new messages`);
-
-  // Persist state
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(STATE_FILE, JSON.stringify(state));
 
   // 3. Build leaderboards + per-user map
   const enrich = (uid, count) => {
