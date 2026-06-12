@@ -377,8 +377,9 @@ export default function CommunityPage() {
   const [data, setData] = useState<{ stats: any; upgrades: any; insights: any; activity: any } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [view, setView] = useState<'overview' | 'analytics' | 'insights' | 'leaderboard'>('overview');
+  const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
   const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted'>('contributions');
+  const [lbSearch, setLbSearch] = useState('');
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -563,7 +564,7 @@ export default function CommunityPage() {
         {/* Nav Switch */}
         <div className="mb-10 flex justify-center md:justify-start">
           <div className="relative inline-flex p-1 rounded-full border border-white/5 bg-black/60 backdrop-blur-xl">
-            {(['overview', 'analytics', 'insights', 'leaderboard'] as const).map(v => {
+            {(['overview', 'analytics', 'insights'] as const).map(v => {
               const active = view === v;
               return (
                 <button
@@ -786,6 +787,32 @@ export default function CommunityPage() {
                             <span>Active Membership Duration</span>
                             <span className="text-white font-bold">{memberProfile.days} days</span>
                           </div>
+
+                          {/* Your Rank */}
+                          {(memberProfile.contribRank || memberProfile.wonRank || memberProfile.hostedRank) && (
+                            <div className="space-y-2">
+                              <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Your Rank</h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                {([
+                                  ['Contributor', memberProfile.contribRank, memberProfile.rankTotals?.contributions, '#fbbf24'],
+                                  ['Event Winner', memberProfile.wonRank, memberProfile.rankTotals?.eventsWon, '#a78bfa'],
+                                  ['Event Host', memberProfile.hostedRank, memberProfile.rankTotals?.eventsHosted, '#38bdf8'],
+                                ] as const).map(([label, rank, total, c]) => (
+                                  <div key={label} className="bg-white/[0.02] rounded-xl p-3 border border-white/[0.02] flex flex-col justify-center">
+                                    <span className="text-[9px] font-mono text-[#555] uppercase font-bold tracking-wider truncate">{label}</span>
+                                    {rank ? (
+                                      <>
+                                        <span className="text-lg font-mono font-black" style={{ color: c }}>#{rank.toLocaleString()}</span>
+                                        {total ? <span className="text-[9px] font-mono text-[#555]">top {Math.max(1, Math.round((rank / total) * 100))}% of {total.toLocaleString()}</span> : null}
+                                      </>
+                                    ) : (
+                                      <span className="text-sm font-mono font-bold text-[#444]">—</span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                         {/* Roles Held (Right 2 Columns) */}
@@ -1183,8 +1210,8 @@ export default function CommunityPage() {
                 </motion.div>
               )}
 
-              {/* ── LEADERBOARD ── */}
-              {view === 'leaderboard' && (
+              {/* ── LEADERBOARD (inside Insights) ── */}
+              {view === 'insights' && (
                 <motion.div
                   key="leaderboard"
                   initial={{ opacity: 0 }}
@@ -1227,17 +1254,70 @@ export default function CommunityPage() {
                         </div>
                       </div>
 
+                      {/* Search */}
+                      <div className="relative mb-5">
+                        <input
+                          value={lbSearch}
+                          onChange={e => setLbSearch(e.target.value)}
+                          placeholder="Search name in top 100…"
+                          className="w-full bg-black/40 border border-white/5 rounded-xl pl-9 pr-3 py-2.5 text-xs font-mono text-white placeholder:text-[#555] focus:outline-none focus:border-white/20 transition-colors"
+                        />
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="2.5" className="absolute left-3 top-1/2 -translate-y-1/2">
+                          <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+                        </svg>
+                      </div>
+
                       {(() => {
-                        const list = (data.activity[lbMode] as any[]) || [];
+                        const listFull = (data.activity[lbMode] as any[]) || [];
                         const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : '#38bdf8';
-                        if (list.length === 0) {
+                        if (listFull.length === 0) {
                           return <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No data yet</p>;
                         }
+                        const q = lbSearch.trim().toLowerCase();
+                        const filtering = q.length > 0;
+                        const list = filtering
+                          ? listFull.filter(u => (u.displayName || '').toLowerCase().includes(q) || (u.username || '').toLowerCase().includes(q))
+                          : listFull;
+
+                        // movement indicator vs previous daily run
+                        const Move = (delta: number | null | undefined) => {
+                          if (delta == null) return <span className="text-[8px] font-mono font-bold text-sky-400/80 px-1 py-0.5 rounded bg-sky-400/10">NEW</span>;
+                          if (delta > 0) return <span className="text-[9px] font-mono font-bold text-emerald-400">▲{delta}</span>;
+                          if (delta < 0) return <span className="text-[9px] font-mono font-bold text-rose-400">▼{-delta}</span>;
+                          return <span className="text-[9px] font-mono font-bold text-[#444]">–</span>;
+                        };
+
+                        const Row = (u: any) => (
+                          <div
+                            key={u.userId}
+                            className="flex items-center gap-2 sm:gap-4 py-2.5 px-2 sm:px-3 rounded-xl border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-all"
+                          >
+                            <span className="font-mono text-xs sm:text-sm w-6 sm:w-8 text-center shrink-0 font-black text-[#444]">{u.rank}</span>
+                            <span className="w-7 text-center shrink-0">{Move(u.delta)}</span>
+                            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-1 ring-white/10">
+                              <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" unoptimized />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs sm:text-sm text-white/90 font-bold truncate">{u.displayName}</p>
+                              <p className="text-[9px] sm:text-[10px] text-[#555] font-mono truncate">@{u.username}</p>
+                            </div>
+                            <span className="font-mono text-sm sm:text-base font-black w-12 sm:w-16 text-right shrink-0" style={{ color: accent }}>
+                              {u.count.toLocaleString()}
+                            </span>
+                          </div>
+                        );
+
+                        // While searching: flat ranked list of matches (no podium)
+                        if (filtering) {
+                          return list.length === 0
+                            ? <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No match in top 100</p>
+                            : <div className="space-y-1">{list.map(Row)}</div>;
+                        }
+
                         const MEDAL = ['#fbbf24', '#cbd5e1', '#d97706'];
                         const top3 = list.slice(0, 3);
                         const rest = list.slice(3);
-                        // podium visual order: 2nd, 1st, 3rd
-                        const order = [1, 0, 2].filter(i => top3[i]);
+                        const order = [1, 0, 2].filter(i => top3[i]); // podium order: 2nd, 1st, 3rd
                         return (
                           <>
                             {/* Podium */}
@@ -1259,7 +1339,8 @@ export default function CommunityPage() {
                                     >
                                       {rank + 1}
                                     </div>
-                                    <p className="mt-1.5 text-[11px] sm:text-sm text-white font-bold truncate max-w-full text-center px-1">{u.displayName}</p>
+                                    <div className="mt-1 h-3 flex items-center">{Move(u.delta)}</div>
+                                    <p className="mt-0.5 text-[11px] sm:text-sm text-white font-bold truncate max-w-full text-center px-1">{u.displayName}</p>
                                     <p className="font-mono font-black text-sm sm:text-lg" style={{ color: accent }}>{u.count.toLocaleString()}</p>
                                   </div>
                                 );
@@ -1267,26 +1348,7 @@ export default function CommunityPage() {
                             </div>
 
                             {/* Rank 4+ */}
-                            <div className="space-y-1">
-                              {rest.map((u, i) => (
-                                <div
-                                  key={u.userId}
-                                  className="flex items-center gap-2 sm:gap-4 py-2.5 px-2 sm:px-3 rounded-xl border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-all"
-                                >
-                                  <span className="font-mono text-xs sm:text-sm w-6 sm:w-8 text-center shrink-0 font-black text-[#444]">{i + 4}</span>
-                                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-1 ring-white/10">
-                                    <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" unoptimized />
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-xs sm:text-sm text-white/90 font-bold truncate">{u.displayName}</p>
-                                    <p className="text-[9px] sm:text-[10px] text-[#555] font-mono truncate">@{u.username}</p>
-                                  </div>
-                                  <span className="font-mono text-sm sm:text-base font-black w-12 sm:w-16 text-right shrink-0" style={{ color: accent }}>
-                                    {u.count.toLocaleString()}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
+                            <div className="space-y-1">{rest.map(Row)}</div>
                           </>
                         );
                       })()}

@@ -179,7 +179,7 @@ async function main() {
   writeState();
   console.log(`  events: +${e.scanned} new messages`);
 
-  // 3. Build leaderboards + per-user map
+  // 3. Build leaderboards, full rankings, and per-user map.
   const enrich = (uid, count) => {
     const u = state.users[uid] || {};
     return {
@@ -190,25 +190,41 @@ async function main() {
       count,
     };
   };
-  // Build leaderboard skipping users who left/were kicked. Their historical
-  // messages still count by author_id, so filter against the current member set.
+  // Eligible = current member, not staff, not manually excluded. Their
+  // historical messages count by author_id, so kicked/staff are filtered out.
   const memberSet = loadMemberSet();
   const staffSet = loadStaffSet();
   if (!memberSet) console.warn('  ! member-ids.json missing — run fetch-role-stats first; not filtering kicked users this run');
   console.log(`  excluding ${staffSet.size} staff + ${EXCLUDED_IDS.size} manual from boards`);
-  const board = (counts) => {
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  const eligible = (uid) => !EXCLUDED_IDS.has(uid) && !staffSet.has(uid) && (!memberSet || memberSet.has(uid));
+
+  const prevRanks = state.prevRanks || {}; // { contributions:{uid:rank}, eventsWon, eventsHosted }
+
+  // Full ranking over eligible users with count > 0 → top-N board (with rank +
+  // movement vs last run) plus a uid→rank map for "your rank" / search.
+  const buildBoard = (counts, prevMap) => {
+    const ranked = Object.entries(counts)
+      .filter(([uid, n]) => n > 0 && eligible(uid))
+      .sort((a, b) => b[1] - a[1]);
+    const rankOf = {};
     const out = [];
-    let dropped = 0;
-    for (const [uid, n] of sorted) {
-      if (out.length >= TOP_N) break;
-      if (EXCLUDED_IDS.has(uid) || staffSet.has(uid)) { dropped++; continue; }
-      if (memberSet && !memberSet.has(uid)) { dropped++; continue; }
-      out.push(enrich(uid, n));
-    }
-    return { out, dropped };
+    ranked.forEach(([uid, n], i) => {
+      const rank = i + 1;
+      rankOf[uid] = rank;
+      if (out.length < TOP_N) {
+        const prev = prevMap[uid];
+        const delta = (prev == null) ? null : (prev - rank); // + up, - down, 0 same
+        out.push({ ...enrich(uid, n), rank, delta });
+      }
+    });
+    return { out, rankOf, total: ranked.length };
   };
 
+  const contrib = buildBoard(state.contributions.counts, prevRanks.contributions || {});
+  const won     = buildBoard(state.events.won,           prevRanks.eventsWon || {});
+  const hosted  = buildBoard(state.events.hosted,        prevRanks.eventsHosted || {});
+
+  // Per-user map: counts + each metric's rank (null if 0 or ineligible).
   const byUser = {};
   const allUids = new Set([
     ...Object.keys(state.contributions.counts),
@@ -218,23 +234,26 @@ async function main() {
   for (const uid of allUids) {
     byUser[uid] = {
       contributions: state.contributions.counts[uid] || 0,
+      contribRank: contrib.rankOf[uid] || null,
       eventsWon: state.events.won[uid] || 0,
+      wonRank: won.rankOf[uid] || null,
       eventsHosted: state.events.hosted[uid] || 0,
+      hostedRank: hosted.rankOf[uid] || null,
     };
   }
 
-  const contribBoard = board(state.contributions.counts);
-  const wonBoard     = board(state.events.won);
-  const hostedBoard  = board(state.events.hosted);
-  console.log(`  contributions board: ${contribBoard.out.length} shown, ${contribBoard.dropped} left-guild skipped`);
-  console.log(`  events won board: ${wonBoard.out.length} shown, ${wonBoard.dropped} left-guild skipped`);
-  console.log(`  events hosted board: ${hostedBoard.out.length} shown, ${hostedBoard.dropped} left-guild skipped`);
+  // Persist this run's rankings so next run can compute movement.
+  state.prevRanks = { contributions: contrib.rankOf, eventsWon: won.rankOf, eventsHosted: hosted.rankOf };
+  writeState();
+
+  console.log(`  boards: ${contrib.out.length}/${contrib.total} contrib · ${won.out.length}/${won.total} won · ${hosted.out.length}/${hosted.total} hosted (shown/ranked)`);
 
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
-    contributions: contribBoard.out,
-    eventsWon: wonBoard.out,
-    eventsHosted: hostedBoard.out,
+    contributions: contrib.out,
+    eventsWon: won.out,
+    eventsHosted: hosted.out,
+    totals: { contributions: contrib.total, eventsWon: won.total, eventsHosted: hosted.total },
     byUser,
   });
 

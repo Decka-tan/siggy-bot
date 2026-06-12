@@ -96,7 +96,8 @@ let memberCountCache = 0;
 let memberCountExpiry = 0;
 
 // member-activity.json (cron-generated tallies) cached 5 min
-type ActivityDoc = { byUser?: Record<string, { contributions: number; eventsWon: number; eventsHosted: number }> };
+type ActivityUser = { contributions: number; contribRank?: number | null; eventsWon: number; wonRank?: number | null; eventsHosted: number; hostedRank?: number | null };
+type ActivityDoc = { byUser?: Record<string, ActivityUser>; totals?: { contributions: number; eventsWon: number; eventsHosted: number } };
 let activityCache: ActivityDoc | null = null;
 let activityCacheExpiry = 0;
 async function getActivity(): Promise<ActivityDoc> {
@@ -231,6 +232,10 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
     contributionsCount: 0,
     eventsWonCount: 0,
     eventsHostedCount: 0,
+    contribRank: null as number | null,
+    wonRank: null as number | null,
+    hostedRank: null as number | null,
+    rankTotals: null as { contributions: number; eventsWon: number; eventsHosted: number } | null,
     globalMessages: 0,
     // card fields (live data only — no static stats on card)
     name: displayName,
@@ -362,6 +367,10 @@ export async function GET(req: NextRequest) {
       cardData.contributionsCount = a?.contributions || 0;
       cardData.eventsWonCount = a?.eventsWon || 0;
       cardData.eventsHostedCount = a?.eventsHosted || 0;
+      cardData.contribRank = a?.contribRank ?? null;
+      cardData.wonRank = a?.wonRank ?? null;
+      cardData.hostedRank = a?.hostedRank ?? null;
+      cardData.rankTotals = activity.totals ?? null;
     } catch (err) {
       console.error('[Activity lookup error]', err);
     }
