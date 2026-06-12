@@ -15,6 +15,10 @@ const ROLE_COLOR: Record<string, string> = {
   'bitty': '#3498db',
   'Siggy Soulsmith': '#f59e0b',
   'Siggy Architect': '#f59e0b',
+  'Foundation Team': '#fbbf24',
+  'Mods': '#43b581',
+  'Event Manager': '#5865f2',
+  'admin': '#ed4245',
 };
 
 const REGION_COLOR: Record<string, string> = {

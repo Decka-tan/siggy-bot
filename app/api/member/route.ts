@@ -254,8 +254,9 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
     roles: (() => {
       const clean = roleNames.filter((r) => !/^\d+$/.test(r) && r !== '@everyone');
       const ladder = [
-        'Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty', 
-        'Siggy Soulsmith', 'Siggy Architect'
+        'Foundation Team', 'Mods', 'Event Manager',
+        'Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage',
+        'Siggy Soulsmith', 'Siggy Architect', 'ritty', 'bitty'
       ];
       const contributors = clean
         .filter(r => ladder.includes(r))
