@@ -44,6 +44,11 @@ const color = (r: string) => ROLE_COLOR[r] || '#888';
 /* ── Card stat definitions (toggleable) ── */
 const STAT_KEYS = ['contributions', 'eventsWon', 'eventsHosted', 'globalMessages'] as const;
 type StatKey = typeof STAT_KEYS[number];
+function fmtStat(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1).replace(/\.0$/, '') + 'M';
+  if (n >= 100_000)   return (n / 1000).toFixed(0) + 'K';
+  return n.toLocaleString();
+}
 function statDef(key: StatKey, m: any): { label: string; value: number; color: string } {
   switch (key) {
     case 'contributions':  return { label: 'Contributions', value: m?.contributionsCount || 0, color: '#fbbf24' };
@@ -907,7 +912,7 @@ export default function CommunityPage() {
                               return (
                                 <div key={k} className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
                                   <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">{d.label}</span>
-                                  <span className="text-2xl font-mono font-black truncate" style={{ color: d.color }}>{d.value.toLocaleString()}</span>
+                                  <span className="text-2xl font-mono font-black truncate" style={{ color: d.color }}>{fmtStat(d.value)}</span>
                                 </div>
                               );
                             })}
@@ -964,7 +969,7 @@ export default function CommunityPage() {
                     </motion.div>
 
                     {/* Stat toggle — choose which metrics show on the card */}
-                    <div className="flex items-center gap-2 flex-wrap -mt-2">
+                    <div className="flex items-center gap-2 flex-wrap p-4 rounded-2xl border border-white/5 bg-black/40 backdrop-blur-md">
                       <span className="text-[10px] font-mono text-[#555] uppercase tracking-wider font-bold mr-1">Show on card:</span>
                       {STAT_KEYS.map((k) => {
                         const active = shownStats.includes(k);
@@ -1019,7 +1024,7 @@ export default function CommunityPage() {
                                 {stats.map(([label, val, c]) => (
                                   <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 16, padding: 20 }}>
                                     <div style={{ fontSize: 11, color: '#777', fontFamily: 'monospace', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em' }}>{label}</div>
-                                    <div style={{ fontSize: 34, fontWeight: 900, fontFamily: 'monospace', color: c, marginTop: 8 }}>{val.toLocaleString()}</div>
+                                    <div style={{ fontSize: 34, fontWeight: 900, fontFamily: 'monospace', color: c, marginTop: 8 }}>{fmtStat(val)}</div>
                                   </div>
                                 ))}
                               </div>
