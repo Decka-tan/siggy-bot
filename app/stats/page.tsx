@@ -485,66 +485,44 @@ export default function CommunityPage() {
   }, [memberProfile?.pfpUrl]);
 
   const exportCard = async (share: boolean) => {
-    const node = cardRef.current;
+    const node = shareRef.current;
     if (!node || savingCard) return;
     setSavingCard(true);
-
     try {
-      // Create an off-screen clone with absolute fixed dimensions for desktop-quality capture
-      const clone = node.cloneNode(true) as HTMLDivElement;
-      
-      // Force fixed dimensions and styling optimized for export on the clone
-      clone.style.width = '960px';
-      clone.style.position = 'fixed';
-      clone.style.top = '-9999px';
-      clone.style.left = '-9999px';
-      clone.style.transform = 'none';
-      clone.style.transition = 'none';
-      
-      // Ensure layout is desktop-oriented by forcing layout columns and paddings
-      const grid = clone.querySelector('.grid');
-      if (grid) {
-        grid.className = grid.className.replace(/grid-cols-\d+|sm:grid-cols-\d+|lg:grid-cols-\d+/g, '').trim() + ' grid-cols-5';
-      }
-      
-      const metricsGrid = clone.querySelector('.grid-cols-1');
-      if (metricsGrid) {
-        metricsGrid.className = metricsGrid.className.replace(/grid-cols-\d+|sm:grid-cols-\d+|lg:grid-cols-\d+/g, '').trim() + ' grid-cols-3';
-      }
+      // Make sure every image inside the export card is fully decoded first —
+      // otherwise html-to-image captures before they paint and the result is black.
+      await Promise.all(
+        Array.from(node.querySelectorAll('img')).map((img) =>
+          (img.complete && img.naturalWidth > 0)
+            ? Promise.resolve()
+            : new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); })
+        )
+      );
 
-      const ranksGrid = clone.querySelector('.grid-cols-1.sm\\:grid-cols-3');
-      if (ranksGrid) {
-        ranksGrid.className = ranksGrid.className.replace(/grid-cols-\d+|sm:grid-cols-\d+|lg:grid-cols-\d+/g, '').trim() + ' grid-cols-3';
-      }
-      
-      document.body.appendChild(clone);
-
-      const opts = { 
-        pixelRatio: 2, 
-        cacheBust: true, 
-        width: 960, 
-        height: clone.offsetHeight,
-        style: {
-          transform: 'none',
-          borderRadius: '16px'
-        }
+      const opts = {
+        pixelRatio: 2,
+        cacheBust: true,
+        backgroundColor: '#0a0a0a',
+        skipFonts: true, // avoid cross-origin font embedding failures (a common cause of blank output)
+        width: 900,
+        height: node.offsetHeight,
       };
-      
+
+      // First render warms up the clone/image cache; the second is reliable.
+      await htmlToImage.toPng(node, opts);
+
       const fname = `${memberProfile.username || 'ritual'}-card.png`;
       if (share && typeof navigator !== 'undefined' && navigator.share) {
-        const blob = await htmlToImage.toBlob(clone, opts);
-        document.body.removeChild(clone);
+        const blob = await htmlToImage.toBlob(node, opts);
         const file = blob && new File([blob], fname, { type: 'image/png' });
         if (file && navigator.canShare?.({ files: [file] })) {
           await navigator.share({ files: [file], title: `${memberProfile.displayName} · Ritual` });
           return;
         }
-      } else {
-        const dataUrl = await htmlToImage.toPng(clone, opts);
-        document.body.removeChild(clone);
-        const a = document.createElement('a');
-        a.href = dataUrl; a.download = fname; a.click();
       }
+      const dataUrl = await htmlToImage.toPng(node, opts);
+      const a = document.createElement('a');
+      a.href = dataUrl; a.download = fname; a.click();
     } catch (e) {
       console.error('[card export]', e);
     } finally {
