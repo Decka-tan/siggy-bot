@@ -117,10 +117,8 @@ function bump(counts, uid) { counts[uid] = (counts[uid] || 0) + 1; }
 // `after` cursor for the "this month" pass — only reads this month's (recent)
 // messages, so no history re-scan and it self-corrects at month rollover.
 const DISCORD_EPOCH = 1420070400000n;
-function monthStartSnowflake() {
-  const d = new Date();
-  const ms = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
-  return String((BigInt(ms) - DISCORD_EPOCH) << 22n);
+function snowflakeForMs(ms) {
+  return String((BigInt(Math.floor(ms)) - DISCORD_EPOCH) << 22n);
 }
 function eventHasLink(msg) {
   return /https?:\/\//i.test(msg.content || '')
@@ -207,19 +205,26 @@ async function main() {
   writeState();
   console.log(`  events: +${e.scanned} new messages`);
 
-  // 2b. "This month" pass — fresh tally from the start of the current UTC month
+  // 2b. Rolling windows: scan once from the 30-day cutoff and split out 7-day
   // (recent messages only, recomputed each run; not persisted).
-  const monthAfter = monthStartSnowflake();
-  const monthContrib = {}, monthWon = {}, monthHosted = {};
-  await scanChannel(CONTRIBUTIONS_CHANNEL_ID, monthAfter, (msg) => {
+  const sf30 = snowflakeForMs(now - 30 * 86400000);
+  const sf7  = BigInt(snowflakeForMs(now - 7 * 86400000));
+  const c7 = {}, c30 = {}, w7 = {}, w30 = {}, h7 = {}, h30 = {};
+  await scanChannel(CONTRIBUTIONS_CHANNEL_ID, sf30, (msg) => {
     if (!msg.author || msg.author.bot || !isXSubmission(msg)) return;
-    bump(monthContrib, msg.author.id);
+    bump(c30, msg.author.id);
+    if (BigInt(msg.id) >= sf7) bump(c7, msg.author.id);
   });
-  await scanChannel(EVENTS_CHANNEL_ID, monthAfter, (msg) => {
-    const target = eventHasLink(msg) ? monthHosted : monthWon;
-    for (const u of (msg.mentions || [])) { if (!u.bot) bump(target, u.id); }
+  await scanChannel(EVENTS_CHANNEL_ID, sf30, (msg) => {
+    const link = eventHasLink(msg);
+    const within7 = BigInt(msg.id) >= sf7;
+    for (const u of (msg.mentions || [])) {
+      if (u.bot) continue;
+      bump(link ? h30 : w30, u.id);
+      if (within7) bump(link ? h7 : w7, u.id);
+    }
   });
-  console.log(`  this-month: ${Object.keys(monthContrib).length} contrib / ${Object.keys(monthWon).length} won / ${Object.keys(monthHosted).length} host users`);
+  console.log(`  windows: 30d ${Object.keys(c30).length} contrib · 7d ${Object.keys(c7).length} contrib`);
 
   // 3. Build leaderboards, full rankings, and per-user map.
   const enrich = (uid, count) => {
@@ -268,10 +273,10 @@ async function main() {
   const won     = buildBoard(state.events.won,           prevRanks.eventsWon || {});
   const hosted  = buildBoard(state.events.hosted,        prevRanks.eventsHosted || {});
 
-  // This-month boards (no movement indicator)
-  const contribMonth = buildBoard(monthContrib, null);
-  const wonMonth     = buildBoard(monthWon, null);
-  const hostedMonth  = buildBoard(monthHosted, null);
+  // Rolling-window boards (no movement indicator)
+  const contrib7d = buildBoard(c7, null), contrib30d = buildBoard(c30, null);
+  const won7d = buildBoard(w7, null),     won30d = buildBoard(w30, null);
+  const hosted7d = buildBoard(h7, null),  hosted30d = buildBoard(h30, null);
 
   // Per-user map: counts + each metric's rank (null if 0 or ineligible).
   const byUser = {};
@@ -299,13 +304,12 @@ async function main() {
 
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
-    monthLabel: new Date().toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }),
     contributions: contrib.out,
     eventsWon: won.out,
     eventsHosted: hosted.out,
-    contributionsMonth: contribMonth.out,
-    eventsWonMonth: wonMonth.out,
-    eventsHostedMonth: hostedMonth.out,
+    contributions7d: contrib7d.out,   contributions30d: contrib30d.out,
+    eventsWon7d: won7d.out,           eventsWon30d: won30d.out,
+    eventsHosted7d: hosted7d.out,     eventsHosted30d: hosted30d.out,
     totals: { contributions: contrib.total, eventsWon: won.total, eventsHosted: hosted.total },
     byUser,
   });

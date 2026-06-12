@@ -403,7 +403,7 @@ export default function CommunityPage() {
   const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
   const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted'>('contributions');
   const [lbSearch, setLbSearch] = useState('');
-  const [lbWindow, setLbWindow] = useState<'all' | 'month'>('all');
+  const [lbWindow, setLbWindow] = useState<'all' | '30d' | '7d'>('all');
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -1432,7 +1432,7 @@ export default function CommunityPage() {
                             {lbMode === 'contributions' ? 'Top Contributors' : lbMode === 'eventsWon' ? 'Top Event Winners' : 'Top Event Hosts'}
                           </h2>
                           <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
-                            {(lbWindow === 'month' ? `${data.activity.monthLabel || 'This month'} · ` : 'All time · ')}
+                            {(lbWindow === '7d' ? 'Last 7 days · ' : lbWindow === '30d' ? 'Last 30 days · ' : 'All time · ')}
                             {lbMode === 'contributions'
                               ? 'ranked by contribution posts'
                               : lbMode === 'eventsWon'
@@ -1442,7 +1442,7 @@ export default function CommunityPage() {
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 shrink-0 self-start md:self-center">
                           <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60">
-                            {([['all', 'All Time'], ['month', 'This Month']] as const).map(([k, label]) => (
+                            {([['all', 'All Time'], ['30d', '30D'], ['7d', '7D']] as const).map(([k, label]) => (
                               <button
                                 key={k}
                                 onClick={() => setLbWindow(k)}
@@ -1482,7 +1482,7 @@ export default function CommunityPage() {
                       </div>
 
                       {(() => {
-                        const key = lbWindow === 'month' ? `${lbMode}Month` : lbMode;
+                        const key = lbWindow === 'all' ? lbMode : `${lbMode}${lbWindow}`;
                         const listFull = (data.activity[key] as any[]) || [];
                         const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : '#38bdf8';
                         if (listFull.length === 0) {
