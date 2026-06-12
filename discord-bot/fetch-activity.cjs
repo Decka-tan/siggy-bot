@@ -99,26 +99,13 @@ async function scanChannel(channelId, afterId, onMessage) {
 
 function bump(counts, uid) { counts[uid] = (counts[uid] || 0) + 1; }
 
-// Membership check (cached per run). 200 = still in guild, 404 = left/kicked.
-// Don't use fetchWithRetry here: it throws on 404, which is an expected answer.
-const memberCache = new Map();
-async function isMember(uid) {
-  if (memberCache.has(uid)) return memberCache.get(uid);
-  let ok = false;
-  for (let attempt = 0; attempt < 6; attempt++) {
-    let res;
-    try {
-      res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${uid}`, {
-        headers: { Authorization: `Bot ${BOT_TOKEN}` },
-      });
-    } catch { await sleep(1000 * (attempt + 1)); continue; }
-    if (res.status === 429) { await sleep((parseFloat(res.headers.get('Retry-After') || '1')) * 1000 + 200); continue; }
-    if (res.status >= 500) { await sleep(1000 * (attempt + 1)); continue; }
-    ok = res.ok;             // 200 member, 404 not member
-    break;
-  }
-  memberCache.set(uid, ok);
-  return ok;
+// Current member-id set, produced by fetch-role-stats.cjs (data/member-ids.json).
+// Used to exclude users who left/were kicked — no per-user API calls needed.
+const MEMBER_IDS_FILE = path.join(DATA_DIR, 'member-ids.json');
+function loadMemberSet() {
+  const ids = readJSON(MEMBER_IDS_FILE, null);
+  if (!Array.isArray(ids) || ids.length === 0) return null; // not generated yet → don't filter
+  return new Set(ids);
 }
 
 async function main() {
@@ -178,15 +165,17 @@ async function main() {
       count,
     };
   };
-  // Build leaderboard skipping users who left/were kicked (their historical
-  // messages still count by author_id, but they shouldn't appear on the board).
-  const board = async (counts) => {
+  // Build leaderboard skipping users who left/were kicked. Their historical
+  // messages still count by author_id, so filter against the current member set.
+  const memberSet = loadMemberSet();
+  if (!memberSet) console.warn('  ! member-ids.json missing — run fetch-role-stats first; not filtering kicked users this run');
+  const board = (counts) => {
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const out = [];
     let dropped = 0;
     for (const [uid, n] of sorted) {
       if (out.length >= TOP_N) break;
-      if (!(await isMember(uid))) { dropped++; continue; }
+      if (memberSet && !memberSet.has(uid)) { dropped++; continue; }
       out.push(enrich(uid, n));
     }
     return { out, dropped };
@@ -200,8 +189,8 @@ async function main() {
     };
   }
 
-  const contribBoard = await board(state.contributions.counts);
-  const eventBoard   = await board(state.events.counts);
+  const contribBoard = board(state.contributions.counts);
+  const eventBoard   = board(state.events.counts);
   console.log(`  contributions board: ${contribBoard.out.length} shown, ${contribBoard.dropped} left-guild skipped`);
   console.log(`  events board: ${eventBoard.out.length} shown, ${eventBoard.dropped} left-guild skipped`);
 

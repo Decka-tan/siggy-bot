@@ -81,6 +81,7 @@ async function fetchAllMembers(rolesMap) {
   );
 
   const members = [];
+  const allMemberIds = [];                 // every current (non-bot) member id — used to filter activity
   // Insights over ALL members (not just ranked)
   let totalGuildMembers = 0;
   const joinByMonth = {};                 // 'YYYY-MM' -> count
@@ -102,6 +103,7 @@ async function fetchAllMembers(rolesMap) {
       for (const m of batch) {
         if (m.user.bot) continue;
         totalGuildMembers++;
+        allMemberIds.push(m.user.id);
         // growth: bucket by join month
         if (m.joined_at) {
           const ym = m.joined_at.slice(0, 7); // YYYY-MM
@@ -139,7 +141,7 @@ async function fetchAllMembers(rolesMap) {
       }
     },
   });
-  return { members, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
+  return { members, allMemberIds, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 
 function readJSON(file, fallback) {
@@ -161,8 +163,13 @@ async function main() {
   console.log(`[${new Date().toISOString()}] Fetching role stats...`);
 
   const rolesMap = await getRolesMap();
-  const { members, insights } = await fetchAllMembers(rolesMap);
+  const { members, allMemberIds, insights } = await fetchAllMembers(rolesMap);
   console.log(`  ${members.length} ranked / ${insights.totalGuildMembers} total members`);
+
+  // Dump current member-id set so fetch-activity can exclude kicked/left users
+  // (their historical messages otherwise still count by author_id).
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.writeFileSync(path.join(DATA_DIR, 'member-ids.json'), JSON.stringify(allMemberIds));
 
   // 1. Distribution — each member counted in EVERY tracked role they hold
   //    (someone with Mage + Ritualist counts in both)
