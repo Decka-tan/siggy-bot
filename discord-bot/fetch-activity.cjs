@@ -126,26 +126,36 @@ function eventHasLink(msg) {
     || (msg.attachments && msg.attachments.length > 0);
 }
 
-// Classify event-message mentions into hosts vs winners by the KEYWORDS on the
-// line each mention sits on (link presence alone is unreliable — host
-// announcements don't always include a link). Mentions on neutral lines
-// (e.g. "handcrafted by @artist") are ignored. Returns id sets.
-const HOST_RE = /host|🎙|\bmc\b|moderator/i;
-const WIN_RE  = /winner|\bwon\b|champion|congrat|🏆|🥇|🎉|grats|\bgz\b/i;
-function classifyEventMentions(msg) {
+// Regional community roles — a message that pings one of these (or @events)
+// is a HOST event announcement (vs a winner-announcement chat).
+const REGION_ROLES = new Set([
+  'Komunitas Indonesia', 'Viet Community', 'Chinese Community', 'Korean Community',
+  'Japanese Community', 'Thai Community', 'Indian Community', 'Arabic Comunity',
+  'Russian Community', 'Ukraine Community', 'Türkiye Topluluğu', 'Naija Community',
+  'Filipinas', 'português',
+]);
+
+// Classify event-message mentions into hosts vs winners.
+//   - Message pings @events / a regional role  → it's a HOST announcement:
+//     only mentions on a "Host" line count as hosts (prize/artisan lines ignored).
+//   - Otherwise → a winner-announcement: mentions on winner-keyword lines = won
+//     (with a Host-line / link fallback for older host posts).
+const HOST_RE = /host|🎙|\bmc\b|moderator|pembawa acara/i;
+const WIN_RE  = /winner|\bwon\b|champion|congrat|🏆|🥇|🎉|grats|\bgz\b|pemenang|juara/i;
+function classifyEventMentions(msg, hostSignalRoleIds) {
   const hosts = new Set(), winners = new Set();
   const content = msg.content || '';
+  const isHostMsg = (msg.mention_roles || []).some((id) => hostSignalRoleIds.has(id));
   const hasLink = eventHasLink(msg);
   for (const line of content.split('\n')) {
     const ids = [...line.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]); // user mentions only (not <@&role>)
     if (!ids.length) continue;
-    const isHost = HOST_RE.test(line);
-    const isWin = WIN_RE.test(line);
-    for (const id of ids) {
-      if (isHost) hosts.add(id);
-      else if (isWin) winners.add(id);
-      else if (hasLink) hosts.add(id); // fallback: link-style host posts
-      // else: neutral line (artisans etc) → ignore
+    if (isHostMsg) {
+      if (HOST_RE.test(line)) ids.forEach((id) => hosts.add(id)); // ignore prize/artisan lines
+    } else {
+      if (WIN_RE.test(line)) ids.forEach((id) => winners.add(id));
+      else if (HOST_RE.test(line)) ids.forEach((id) => hosts.add(id));
+      else if (hasLink) ids.forEach((id) => hosts.add(id)); // older link-style host post
     }
   }
   return { hosts, winners };
@@ -162,7 +172,21 @@ function isSubmission(msg) {
 // Bump when this changes to force a contributions re-scan (old counts stale).
 const CONTRIB_VERSION = 3;
 // Bump when the event won/host classification changes (forces an events re-scan).
-const EVENTS_VERSION = 2;
+const EVENTS_VERSION = 3;
+
+// Role ids whose mention marks a message as a HOST event announcement
+// (regional community roles + any "events" role).
+async function getHostSignalRoleIds() {
+  try {
+    const res = await fetchWithRetry(`${DISCORD_API}/guilds/${GUILD_ID}/roles`, { token: BOT_TOKEN });
+    const roles = await res.json();
+    const ids = new Set();
+    for (const r of roles) {
+      if (REGION_ROLES.has(r.name) || /^events?$/i.test(r.name)) ids.add(r.id);
+    }
+    return ids;
+  } catch { return new Set(); }
+}
 
 // Current member-id set, produced by fetch-role-stats.cjs (data/member-ids.json).
 // Used to exclude users who left/were kicked — no per-user API calls needed.
@@ -200,6 +224,9 @@ async function main() {
     state.eventsVersion = EVENTS_VERSION;
   }
 
+  const hostSignalRoleIds = await getHostSignalRoleIds();
+  console.log(`  host-signal roles: ${hostSignalRoleIds.size}`);
+
   const noteUser = (user, member) => {
     if (!user || user.bot) return;
     state.users[user.id] = {
@@ -224,7 +251,7 @@ async function main() {
 
   // 2. Events — per-line keyword classification of mentions into host vs won
   const e = await scanChannel(EVENTS_CHANNEL_ID, state.events.lastId, (msg) => {
-    const { hosts, winners } = classifyEventMentions(msg);
+    const { hosts, winners } = classifyEventMentions(msg, hostSignalRoleIds);
     const byId = new Map((msg.mentions || []).map((u) => [u.id, u]));
     for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(state.events.hosted, id); noteUser(u, null); } }
     for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(state.events.won, id);    noteUser(u, null); } }
@@ -244,7 +271,7 @@ async function main() {
     if (BigInt(msg.id) >= sf7) bump(c7, msg.author.id);
   });
   await scanChannel(EVENTS_CHANNEL_ID, sf30, (msg) => {
-    const { hosts, winners } = classifyEventMentions(msg);
+    const { hosts, winners } = classifyEventMentions(msg, hostSignalRoleIds);
     const byId = new Map((msg.mentions || []).map((u) => [u.id, u]));
     const within7 = BigInt(msg.id) >= sf7;
     for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(h30, id); if (within7) bump(h7, id); } }
