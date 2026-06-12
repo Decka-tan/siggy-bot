@@ -804,6 +804,33 @@ export default function CommunityPage() {
                     </motion.div>
                   )}
 
+                  {/* Role distribution header + All vs Pure toggle */}
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                      <h2 className="font-display text-lg uppercase tracking-wider text-white/95">Role Distribution</h2>
+                      <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
+                        {distMode === 'pure'
+                          ? 'Pure — each member counted once at their highest tier'
+                          : 'All — each member counted in every role they hold'}
+                      </p>
+                    </div>
+                    <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60 shrink-0">
+                      {([['all', 'All Roles'], ['pure', 'Pure Tier']] as const).map(([k, label]) => (
+                        <button
+                          key={k}
+                          onClick={() => setDistMode(k)}
+                          className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
+                          style={{
+                            backgroundColor: distMode === k ? 'var(--color-accent)' : 'transparent',
+                            color: distMode === k ? '#000' : '#555',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Overview Roles list cards */}
                   <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
                     {rows.map((d, i) => {
