@@ -809,6 +809,7 @@ export default function CommunityPage() {
                 >
                   {/* Member Dashboard Profile Section */}
                   {!memberProfile ? null : (
+                    <>
                     <motion.div
                       ref={cardRef}
                       initial={{ opacity: 0, scale: 0.98 }}
@@ -955,6 +956,81 @@ export default function CommunityPage() {
                         <span className="text-white font-bold">{memberProfile.days} days</span>
                       </div>
                     </motion.div>
+
+                    {/* ── Off-screen fixed-size export card (consistent on any device) ── */}
+                    {(() => {
+                      const acc = cardAccent || '#fbbf24';
+                      const stats = [
+                        ['Contributions', memberProfile.contributionsCount || 0, '#fbbf24'],
+                        ['Events Won', memberProfile.eventsWonCount || 0, '#a78bfa'],
+                        ['Events Hosted', memberProfile.eventsHostedCount || 0, '#38bdf8'],
+                      ] as const;
+                      const ranks = [
+                        ['Contributor', memberProfile.contribRank, memberProfile.rankTotals?.contributions],
+                        ['Event Winner', memberProfile.wonRank, memberProfile.rankTotals?.eventsWon],
+                        ['Event Host', memberProfile.hostedRank, memberProfile.rankTotals?.eventsHosted],
+                      ] as const;
+                      return (
+                        <div ref={shareRef} style={{ position: 'absolute', left: -99999, top: 0, width: 900, fontFamily: 'inherit' }}>
+                          <div style={{ position: 'relative', width: 900, padding: 48, background: '#0a0a0a', border: `2px solid ${acc}`, borderRadius: 24, overflow: 'hidden', boxSizing: 'border-box' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={memberProfile.pfpUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.6)', filter: 'blur(70px)', opacity: 0.5 }} />
+                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.82)' }} />
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, transparent, ${acc}, transparent)` }} />
+
+                            <div style={{ position: 'relative' }}>
+                              {/* header */}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 24, paddingBottom: 28, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={memberProfile.pfpUrl} alt="" style={{ width: 110, height: 110, borderRadius: '50%', objectFit: 'cover', boxShadow: `0 0 0 3px ${acc}` }} />
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>{memberProfile.displayName}</div>
+                                  <div style={{ fontSize: 15, color: '#777', fontFamily: 'monospace', marginTop: 4 }}>@{memberProfile.username}</div>
+                                  <div style={{ fontSize: 12, color: acc, fontFamily: 'monospace', marginTop: 8, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.15em' }}>Joined {memberProfile.joinDate} · {memberProfile.days} days</div>
+                                </div>
+                              </div>
+
+                              {/* stats */}
+                              <div style={{ display: 'flex', gap: 16, marginTop: 28 }}>
+                                {stats.map(([label, val, c]) => (
+                                  <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 16, padding: 20 }}>
+                                    <div style={{ fontSize: 11, color: '#777', fontFamily: 'monospace', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em' }}>{label}</div>
+                                    <div style={{ fontSize: 34, fontWeight: 900, fontFamily: 'monospace', color: c, marginTop: 8 }}>{val.toLocaleString()}</div>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* ranks */}
+                              {(memberProfile.contribRank || memberProfile.wonRank || memberProfile.hostedRank) ? (
+                                <div style={{ display: 'flex', gap: 16, marginTop: 16 }}>
+                                  {ranks.map(([label, rank, total]) => (
+                                    <div key={label} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 16, padding: 16 }}>
+                                      <div style={{ fontSize: 10, color: '#777', fontFamily: 'monospace', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.1em' }}>{label} Rank</div>
+                                      <div style={{ fontSize: 24, fontWeight: 900, fontFamily: 'monospace', color: '#fff', marginTop: 6 }}>{rank ? `#${rank.toLocaleString()}` : '—'}</div>
+                                      {rank && total ? <div style={{ fontSize: 10, color: '#777', fontFamily: 'monospace' }}>top {Math.max(1, Math.round((rank / total) * 100))}%</div> : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+
+                              {/* roles */}
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 24 }}>
+                                {(memberProfile.roles || []).slice(0, 18).map((r: string) => {
+                                  const rc = color(r);
+                                  return <span key={r} style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 600, padding: '4px 10px', borderRadius: 999, color: rc, background: `${rc}16` }}>{r}</span>;
+                                })}
+                              </div>
+
+                              <div style={{ marginTop: 28, paddingTop: 18, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', fontSize: 11, fontFamily: 'monospace', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                <span>Ritual Community</span>
+                                <span style={{ color: acc }}>siggy.decka.my.id/stats</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    </>
                   )}
 
                   {/* Role distribution header + All vs Pure toggle */}
