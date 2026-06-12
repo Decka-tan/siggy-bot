@@ -48,6 +48,25 @@ const color = (r: string) => ROLE_COLOR[r] || '#888';
 /* ── Card stat definitions (toggleable) ── */
 const STAT_KEYS = ['contributions', 'eventsWon', 'eventsHosted', 'globalMessages'] as const;
 type StatKey = typeof STAT_KEYS[number];
+// Pick the member's most impressive rank (lowest percentile) for a hero badge.
+function topAchievement(m: any): { label: string; rank: number; pct: number; color: string; medal: string | null } | null {
+  const cands = [
+    { label: 'Contributor', rank: m?.contribRank, total: m?.rankTotals?.contributions, color: '#fbbf24' },
+    { label: 'Event Winner', rank: m?.wonRank, total: m?.rankTotals?.eventsWon, color: '#a78bfa' },
+    { label: 'Event Host', rank: m?.hostedRank, total: m?.rankTotals?.eventsHosted, color: '#38bdf8' },
+  ].filter((c) => c.rank && c.total) as { label: string; rank: number; total: number; color: string }[];
+  if (!cands.length) return null;
+  cands.sort((a, b) => a.rank / a.total - b.rank / b.total);
+  const b = cands[0];
+  const MEDAL = ['#fbbf24', '#cbd5e1', '#d97706'];
+  return {
+    label: b.label,
+    rank: b.rank,
+    pct: Math.max(1, Math.round((b.rank / b.total) * 100)),
+    color: b.rank <= 3 ? MEDAL[b.rank - 1] : b.color,
+    medal: b.rank <= 3 ? ['1st', '2nd', '3rd'][b.rank - 1] : null,
+  };
+}
 function fmtStat(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
   if (n >= 100_000)   return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
@@ -870,6 +889,19 @@ export default function CommunityPage() {
                           <div className="min-w-0">
                             <h3 className="text-2xl font-black text-white tracking-tight">{memberProfile.displayName}</h3>
                             <p className="text-xs text-[#555] font-mono mt-0.5">@{memberProfile.username}</p>
+                            {(() => {
+                              const a = topAchievement(memberProfile);
+                              if (!a) return null;
+                              return (
+                                <span
+                                  className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[10px] font-mono font-black uppercase tracking-wider"
+                                  style={{ color: a.color, backgroundColor: `${a.color}1f`, border: `1px solid ${a.color}55` }}
+                                >
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM5 9a3 3 0 0 0 2 0M19 9a3 3 0 0 1-2 0"/></svg>
+                                  {a.medal ? `${a.medal} place · ${a.label}` : `Top ${a.pct}% · ${a.label}`}
+                                </span>
+                              );
+                            })()}
                             <p className="text-[10px] font-mono text-amber-400/80 mt-2 uppercase font-bold tracking-widest flex items-center gap-1.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                               Joined {memberProfile.joinDate}
@@ -1020,7 +1052,16 @@ export default function CommunityPage() {
                                 <div style={{ minWidth: 0 }}>
                                   <div style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>{memberProfile.displayName}</div>
                                   <div style={{ fontSize: 15, color: '#777', fontFamily: 'monospace', marginTop: 4 }}>@{memberProfile.username}</div>
-                                  <div style={{ fontSize: 12, color: acc, fontFamily: 'monospace', marginTop: 8, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.15em' }}>Joined {memberProfile.joinDate} · {memberProfile.days} days</div>
+                                  {(() => {
+                                    const a = topAchievement(memberProfile);
+                                    if (!a) return null;
+                                    return (
+                                      <div style={{ display: 'inline-block', marginTop: 10, padding: '5px 12px', borderRadius: 999, fontSize: 13, fontFamily: 'monospace', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: a.color, background: `${a.color}22`, border: `1px solid ${a.color}66` }}>
+                                        {a.medal ? `${a.medal} place · ${a.label}` : `Top ${a.pct}% · ${a.label}`}
+                                      </div>
+                                    );
+                                  })()}
+                                  <div style={{ fontSize: 12, color: acc, fontFamily: 'monospace', marginTop: 10, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.15em' }}>Joined {memberProfile.joinDate} · {memberProfile.days} days</div>
                                 </div>
                               </div>
 
