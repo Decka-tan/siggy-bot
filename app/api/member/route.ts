@@ -272,6 +272,7 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
     hostedRank: null as number | null,
     rankTotals: null as { contributions: number; eventsWon: number; eventsHosted: number } | null,
     globalMessages: 0,
+    globalMessagesAvailable: false, // true only if the search actually succeeded
     // card fields (live data only — no static stats on card)
     name: displayName,
     pfpUrl: `/api/proxy-avatar?url=${encodeURIComponent(getAvatarUrl(member))}`,
@@ -418,6 +419,7 @@ export async function GET(req: NextRequest) {
       if (res.ok) {
         const body = await res.json();
         cardData.globalMessages = body.total_results || 0;
+        cardData.globalMessagesAvailable = true;
         // persist to R2 so the count is reusable (e.g. chat leaderboard)
         await persistGlobalMessages({
           userId: cardData.userId,

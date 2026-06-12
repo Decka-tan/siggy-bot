@@ -49,8 +49,8 @@ const color = (r: string) => ROLE_COLOR[r] || '#888';
 const STAT_KEYS = ['contributions', 'eventsWon', 'eventsHosted', 'globalMessages'] as const;
 type StatKey = typeof STAT_KEYS[number];
 function fmtStat(n: number): string {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1).replace(/\.0$/, '') + 'M';
-  if (n >= 100_000)   return (n / 1000).toFixed(0) + 'K';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 100_000)   return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return n.toLocaleString();
 }
 function statDef(key: StatKey, m: any): { label: string; value: number; color: string } {
@@ -500,9 +500,10 @@ export default function CommunityPage() {
     if (!memberProfile) return;
     const hasWon = (memberProfile.eventsWonCount || 0) > 0;
     const hasHosted = (memberProfile.eventsHostedCount || 0) > 0;
+    const gm = !!memberProfile.globalMessagesAvailable; // only use GM if token worked
     let out: StatKey[] = ['contributions', 'eventsWon', 'eventsHosted'];
-    if (!hasHosted) out = ['contributions', 'eventsWon', 'globalMessages'];
-    else if (!hasWon) out = ['contributions', 'globalMessages', 'eventsHosted'];
+    if (gm && !hasHosted) out = ['contributions', 'eventsWon', 'globalMessages'];
+    else if (gm && !hasWon) out = ['contributions', 'globalMessages', 'eventsHosted'];
     setShownStats(out);
   }, [memberProfile?.userId]);
 
@@ -975,13 +976,13 @@ export default function CommunityPage() {
                     {/* Stat toggle — choose which metrics show on the card */}
                     <div className="flex items-center gap-2 flex-wrap p-4 rounded-2xl border border-white/5 bg-black/40 backdrop-blur-md">
                       <span className="text-[10px] font-mono text-[#555] uppercase tracking-wider font-bold mr-1">Show on card:</span>
-                      {STAT_KEYS.map((k) => {
+                      {STAT_KEYS.filter((k) => k !== 'globalMessages' || memberProfile.globalMessagesAvailable).map((k) => {
                         const active = shownStats.includes(k);
                         const d = statDef(k, memberProfile);
                         return (
                           <button
                             key={k}
-                            onClick={() => setShownStats((prev) => active ? prev.filter((s) => s !== k) : [...prev, k])}
+                            onClick={() => setShownStats((prev) => active ? (prev.length > 1 ? prev.filter((s) => s !== k) : prev) : [...prev, k])}
                             className="px-3 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider border transition-colors"
                             style={{
                               color: active ? '#000' : '#777',
