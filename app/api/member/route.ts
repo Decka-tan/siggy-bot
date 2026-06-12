@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDeepSeekClient } from '@/lib/deepseek-client';
 import { computeStats } from '@/lib/card-stats';
+import { r2GetObject } from '@/lib/r2-get';
 import fs from 'fs';
 import path from 'path';
 
@@ -93,6 +94,18 @@ let rolesCacheExpiry = 0;
 
 let memberCountCache = 0;
 let memberCountExpiry = 0;
+
+// member-activity.json (cron-generated tallies) cached 5 min
+type ActivityDoc = { byUser?: Record<string, { contributions: number; events: number }> };
+let activityCache: ActivityDoc | null = null;
+let activityCacheExpiry = 0;
+async function getActivity(): Promise<ActivityDoc> {
+  if (activityCache && Date.now() < activityCacheExpiry) return activityCache;
+  const doc = await r2GetObject<ActivityDoc>('community/member-activity.json');
+  activityCache = doc || { byUser: {} };
+  activityCacheExpiry = Date.now() + 5 * 60 * 1000;
+  return activityCache;
+}
 
 async function getGuildMemberCount(): Promise<number> {
   if (memberCountCache && Date.now() < memberCountExpiry) return memberCountCache;
@@ -340,52 +353,15 @@ export async function GET(req: NextRequest) {
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
     const cardData = buildCardData(member, roleNames, memberCount);
 
-    // Fetch real-time metrics using direct Discord REST endpoints to avoid discord.js webpack errors
+    // Activity metrics from cron-generated tallies (community/member-activity.json).
+    // Accurate per-user counts without 100k+ per-member searches.
     try {
-      const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
-      const EVENTS_CHANNEL_ID = '1389298240762937414';
-
-      const fetchCount = async (options: { channelId?: string; authorId?: string; mentions?: string }) => {
-        const params: string[] = [];
-        if (options.authorId) params.push(`author_id=${options.authorId}`);
-        if (options.mentions) params.push(`mentions=${options.mentions}`);
-        if (options.channelId) params.push(`channel_id=${options.channelId}`);
-        
-        const url = `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?${params.join('&')}`;
-        
-        if (USER_TOKEN) {
-          try {
-            const res = await fetch(url, {
-              headers: { Authorization: USER_TOKEN }
-            });
-            if (res.ok) {
-              const body = await res.json();
-              return body.total_results || 0;
-            }
-          } catch (e) {
-            console.error('[User search fallback error]', e);
-          }
-        }
-        
-        const res = await fetch(url, {
-          headers: { Authorization: `Bot ${BOT_TOKEN}` }
-        });
-        if (!res.ok) return 0;
-        const body = await res.json();
-        return body.total_results || 0;
-      };
-
-      const [globalCount, contribCount, eventCount] = await Promise.all([
-        fetchCount({ authorId: cardData.userId }),
-        fetchCount({ authorId: cardData.userId, channelId: CONTRIBUTIONS_CHANNEL_ID }),
-        fetchCount({ mentions: cardData.userId, channelId: EVENTS_CHANNEL_ID })
-      ]);
-
-      cardData.globalMessages = globalCount;
-      cardData.contributionsCount = contribCount;
-      cardData.eventsCount = eventCount;
+      const activity = await getActivity();
+      const a = activity.byUser?.[cardData.userId];
+      cardData.contributionsCount = a?.contributions || 0;
+      cardData.eventsCount = a?.events || 0;
     } catch (err) {
-      console.error('[Real-time Discord REST Search Error]', err);
+      console.error('[Activity lookup error]', err);
     }
 
     // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)

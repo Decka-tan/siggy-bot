@@ -1,15 +1,10 @@
-import { NextResponse } from 'next/server';
-
-export const runtime = 'nodejs';
-export const revalidate = 600; // 10 min
-
+// AWS Sig v4 GET for a (private) Cloudflare R2 object. Returns parsed JSON or null.
 const R2_ACCOUNT_ID    = process.env.R2_ACCOUNT_ID!;
 const R2_ACCESS_KEY_ID = process.env.R2_ACCESS_KEY_ID!;
 const R2_SECRET        = process.env.R2_SECRET_ACCESS_KEY!;
 const R2_BUCKET        = process.env.R2_BUCKET_NAME ?? 'ritual-tcg';
 const R2_ENDPOINT      = `https://${R2_ACCOUNT_ID}.r2.cloudflarestorage.com`;
 
-// ── AWS Sig v4 helpers (GET object) ──────────────────────────────────────────
 function toBuffer(key: ArrayBuffer | Uint8Array): ArrayBuffer {
   if (key instanceof Uint8Array)
     return key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer;
@@ -28,7 +23,7 @@ function toHex(buf: Uint8Array) {
   return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function getObject(key: string): Promise<any | null> {
+export async function r2GetObject<T = any>(key: string): Promise<T | null> {
   const now       = new Date();
   const dateStamp = now.toISOString().slice(0, 10).replace(/-/g, '');
   const amzDate   = now.toISOString().replace(/[:-]/g, '').slice(0, 15) + 'Z';
@@ -60,28 +55,4 @@ async function getObject(key: string): Promise<any | null> {
   });
   if (!res.ok) return null;
   return res.json();
-}
-
-export async function GET() {
-  try {
-    const [stats, upgrades, insights, activity] = await Promise.all([
-      getObject('community/role-stats.json'),
-      getObject('community/recent-upgrades.json'),
-      getObject('community/insights.json'),
-      getObject('community/member-activity.json'),
-    ]);
-
-    if (!stats) {
-      return NextResponse.json({ error: 'Stats not generated yet' }, { status: 503 });
-    }
-
-    return NextResponse.json({
-      stats,
-      upgrades: upgrades ?? { upgrades: [], windowDays: 14, updatedAt: stats.updatedAt },
-      insights: insights ?? null,
-      activity: activity ?? null,
-    });
-  } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
-  }
 }

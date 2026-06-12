@@ -40,6 +40,23 @@ type RegionRoleRow = { region: string; members: number; contributors: number; ra
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
+/* ── Profile card backgrounds (deterministic per user) ── */
+const PROFILE_BGS = [
+  '/vn-bg-stars.jpg',
+  '/vn-bg-lake.jpg',
+  '/vn-bg-sunset.jpg',
+  '/bg-night-sky.jpg',
+  '/vn-bg/1.jpg',
+  '/vn-bg/2.jpg',
+  '/vn-bg/3.jpg',
+  '/vn-bg/4.jpg',
+];
+function pickProfileBg(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return PROFILE_BGS[h % PROFILE_BGS.length];
+}
+
 function relativeTime(ts: number) {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return 'just now';
@@ -357,10 +374,11 @@ function Card({ title, subtitle, children, className = '' }: any) {
 }
 
 export default function CommunityPage() {
-  const [data, setData] = useState<{ stats: any; upgrades: any; insights: any } | null>(null);
+  const [data, setData] = useState<{ stats: any; upgrades: any; insights: any; activity: any } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
+  const [view, setView] = useState<'overview' | 'analytics' | 'insights' | 'leaderboard'>('overview');
+  const [lbMode, setLbMode] = useState<'contributions' | 'events'>('contributions');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [rrSortMode, setRrSortMode] = useState<'count' | 'rate'>('count');
@@ -531,7 +549,7 @@ export default function CommunityPage() {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-              {memberProfile ? `Discord: ${memberProfile.displayName}` : 'Connect your Discord'}
+              {memberProfile ? memberProfile.displayName : 'Connect your Discord'}
             </button>
           </div>
         </div>
@@ -539,7 +557,7 @@ export default function CommunityPage() {
         {/* Nav Switch */}
         <div className="mb-10 flex justify-center md:justify-start">
           <div className="relative inline-flex p-1 rounded-full border border-white/5 bg-black/60 backdrop-blur-xl">
-            {(['overview', 'analytics', 'insights'] as const).map(v => {
+            {(['overview', 'analytics', 'insights', 'leaderboard'] as const).map(v => {
               const active = view === v;
               return (
                 <button
@@ -681,7 +699,7 @@ export default function CommunityPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="rounded-2xl border border-white/10 p-8 relative overflow-hidden group shadow-2xl"
                       style={{
-                        backgroundImage: 'url(/vn-bg-stars.jpg)',
+                        backgroundImage: `url(${pickProfileBg(memberProfile.userId || memberProfile.username || '')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
                       }}
@@ -743,14 +761,7 @@ export default function CommunityPage() {
                         {/* Discord Activity Stats (Left 3 Columns) */}
                         <div className="lg:col-span-3 space-y-6 w-full">
                           <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Activity Metrics</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0 relative group/info">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate flex items-center gap-1">
-                                Total Messages
-                                <span className="text-gray-500 cursor-help hover:text-white transition-colors" title="Excludes #ritual and private channels">ⓘ</span>
-                              </span>
-                              <span className="text-2xl font-mono font-black text-white truncate">{(memberProfile.globalMessages || 0).toLocaleString()}</span>
-                            </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
                               <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Contributions</span>
                               <span className="text-2xl font-mono font-black text-amber-400 truncate">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
@@ -849,20 +860,20 @@ export default function CommunityPage() {
                         {rows.map((d, i) => {
                           const c = color(d.role);
                           return (
-                            <div key={d.role} className="flex items-center gap-4 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.01] px-2 rounded-lg transition-all">
+                            <div key={d.role} className="flex items-center gap-2 sm:gap-4 py-3 border-b border-white/[0.03] last:border-0 hover:bg-white/[0.01] px-2 rounded-lg transition-all">
                               <span className="font-mono text-xs w-4 text-center shrink-0 font-bold text-[#444]">{i + 1}</span>
-                              <span className="text-xs text-white/80 font-bold w-32 truncate shrink-0">{d.role}</span>
-                              <div className="flex-1 h-2 rounded-full bg-[#121212] overflow-hidden border border-white/5">
-                                <motion.div 
-                                  className="h-full rounded-full" 
-                                  initial={{ width: 0 }} 
+                              <span className="text-xs text-white/80 font-bold w-16 sm:w-32 truncate shrink-0">{d.role}</span>
+                              <div className="flex-1 min-w-[40px] h-2 rounded-full bg-[#121212] overflow-hidden border border-white/5">
+                                <motion.div
+                                  className="h-full rounded-full"
+                                  initial={{ width: 0 }}
                                   animate={{ width: `${(d.count / maxCount) * 100}%` }}
-                                  transition={{ delay: i * 0.05 + 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} 
-                                  style={{ backgroundColor: c, boxShadow: `0 0 10px ${c}55` }} 
+                                  transition={{ delay: i * 0.05 + 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                  style={{ backgroundColor: c, boxShadow: `0 0 10px ${c}55` }}
                                 />
                               </div>
-                              <span className="font-mono text-xs text-white font-bold w-16 text-right shrink-0">{d.count.toLocaleString()}</span>
-                              <span className="font-mono text-[10px] text-[#555] font-bold w-12 text-right shrink-0">{d.percent}%</span>
+                              <span className="font-mono text-[10px] sm:text-xs text-white font-bold w-12 sm:w-16 text-right shrink-0">{d.count.toLocaleString()}</span>
+                              <span className="font-mono text-[10px] text-[#555] font-bold w-8 sm:w-12 text-right shrink-0">{d.percent}%</span>
                             </div>
                           );
                         })}
@@ -1107,6 +1118,90 @@ export default function CommunityPage() {
                         </div>
                       )}
                     </>
+                  )}
+                </motion.div>
+              )}
+
+              {/* ── LEADERBOARD ── */}
+              {view === 'leaderboard' && (
+                <motion.div
+                  key="leaderboard"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-6"
+                >
+                  {!data.activity ? (
+                    <Card><p className="text-[#555] text-xs font-mono uppercase tracking-widest text-center py-6">Leaderboard compiling under pipeline...</p></Card>
+                  ) : (
+                    <div className="rounded-2xl border border-white/5 p-6 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden">
+                      <div className="absolute -right-20 -top-20 w-48 h-48 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
+                      <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4 border-b border-white/[0.03] pb-6">
+                        <div>
+                          <h2 className="font-display text-xl uppercase tracking-wider text-white/95">
+                            {lbMode === 'contributions' ? 'Top Contributors' : 'Top Event Participants'}
+                          </h2>
+                          <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
+                            {lbMode === 'contributions'
+                              ? 'Ranked by contribution posts'
+                              : 'Ranked by event participations'}
+                          </p>
+                        </div>
+                        <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60 shrink-0 self-start md:self-center">
+                          {([['contributions', 'Contributions'], ['events', 'Events']] as const).map(([k, label]) => (
+                            <button
+                              key={k}
+                              onClick={() => setLbMode(k)}
+                              className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
+                              style={{
+                                backgroundColor: lbMode === k ? 'var(--color-accent)' : 'transparent',
+                                color: lbMode === k ? '#000' : '#555',
+                              }}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        {((data.activity[lbMode] as any[]) || []).map((u, i) => {
+                          const accent = lbMode === 'contributions' ? '#fbbf24' : '#a78bfa';
+                          const medal = i === 0 ? '#fbbf24' : i === 1 ? '#cbd5e1' : i === 2 ? '#d97706' : null;
+                          return (
+                            <div
+                              key={u.userId}
+                              className="flex items-center gap-2 sm:gap-4 py-2.5 px-2 sm:px-3 rounded-xl border-b border-white/[0.03] last:border-0 hover:bg-white/[0.02] transition-all"
+                            >
+                              <span
+                                className="font-mono text-xs sm:text-sm w-6 sm:w-8 text-center shrink-0 font-black"
+                                style={{ color: medal || '#444' }}
+                              >
+                                {i + 1}
+                              </span>
+                              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden shrink-0 bg-[#141414] ring-1 ring-white/10">
+                                <Image src={u.avatarUrl} alt={u.displayName} fill className="object-cover" unoptimized />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs sm:text-sm text-white/90 font-bold truncate">{u.displayName}</p>
+                                <p className="text-[9px] sm:text-[10px] text-[#555] font-mono truncate">@{u.username}</p>
+                              </div>
+                              <span className="font-mono text-sm sm:text-base font-black w-12 sm:w-16 text-right shrink-0" style={{ color: accent }}>
+                                {u.count.toLocaleString()}
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {((data.activity[lbMode] as any[]) || []).length === 0 && (
+                          <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No data yet</p>
+                        )}
+                      </div>
+                      {data.activity.updatedAt && (
+                        <p className="text-[9px] font-mono text-[#444] mt-5 uppercase tracking-wider font-semibold">
+                          Updated {relativeTime(data.activity.updatedAt)} · refreshed daily
+                        </p>
+                      )}
+                    </div>
                   )}
                 </motion.div>
               )}
