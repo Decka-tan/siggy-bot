@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDeepSeekClient } from '@/lib/deepseek-client';
 import { computeStats } from '@/lib/card-stats';
 import { r2GetObject } from '@/lib/r2-get';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs';
 import path from 'path';
 
@@ -94,6 +95,39 @@ let rolesCacheExpiry = 0;
 
 let memberCountCache = 0;
 let memberCountExpiry = 0;
+
+// R2 client for persisting looked-up global message counts (accumulates a
+// chat-count dataset over time — usable for a future chat leaderboard).
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+  },
+});
+const GLOBAL_MSG_KEY = 'community/global-messages.json';
+async function persistGlobalMessages(m: { userId: string; username: string; displayName: string; avatarUrl: string; globalMessages: number }) {
+  try {
+    const doc = (await r2GetObject<{ users?: Record<string, any> }>(GLOBAL_MSG_KEY)) || {};
+    const users = doc.users || {};
+    users[m.userId] = {
+      username: m.username,
+      displayName: m.displayName,
+      avatarUrl: m.avatarUrl,
+      globalMessages: m.globalMessages,
+      updatedAt: Date.now(),
+    };
+    await r2.send(new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: GLOBAL_MSG_KEY,
+      Body: JSON.stringify({ updatedAt: Date.now(), users }),
+      ContentType: 'application/json',
+    }));
+  } catch (err) {
+    console.error('[persist global messages]', err);
+  }
+}
 
 // member-activity.json (cron-generated tallies) cached 5 min
 type ActivityUser = { contributions: number; contribRank?: number | null; eventsWon: number; wonRank?: number | null; eventsHosted: number; hostedRank?: number | null };
@@ -380,7 +414,18 @@ export async function GET(req: NextRequest) {
     try {
       const url = `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${cardData.userId}`;
       const res = await fetch(url, { headers: { Authorization: USER_TOKEN || `Bot ${BOT_TOKEN}` } });
-      if (res.ok) { const body = await res.json(); cardData.globalMessages = body.total_results || 0; }
+      if (res.ok) {
+        const body = await res.json();
+        cardData.globalMessages = body.total_results || 0;
+        // persist to R2 so the count is reusable (e.g. chat leaderboard)
+        await persistGlobalMessages({
+          userId: cardData.userId,
+          username: cardData.username,
+          displayName: cardData.displayName,
+          avatarUrl: cardData.pfpUrl,
+          globalMessages: cardData.globalMessages,
+        });
+      }
     } catch (err) {
       console.error('[Global message search error]', err);
     }
