@@ -17,7 +17,7 @@
  * Output (R2): community/member-activity.json
  *     { updatedAt, contributions:[...top], events:[...top], byUser:{uid:{contributions,events}} }
  *
- * Cron:  15 * * * * cd /opt/siggy-bot && node discord-bot/fetch-activity.cjs >> /home/ubuntu/activity.log 2>&1
+ * Cron:  30 4 * * * cd /opt/siggy-bot && node discord-bot/fetch-activity.cjs >> /home/ubuntu/activity.log 2>&1
  */
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
