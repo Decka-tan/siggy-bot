@@ -125,15 +125,17 @@ function eventHasLink(msg) {
     || (msg.embeds && msg.embeds.length > 0)
     || (msg.attachments && msg.attachments.length > 0);
 }
-// The contributions channel is for submitting X/Twitter post links only.
-// Count a message only if it actually contains one — filters out chat spam.
-const X_LINK_RE = /https?:\/\/(?:www\.)?(?:twitter\.com|x\.com|fxtwitter\.com|vxtwitter\.com|fixupx\.com)\/[A-Za-z0-9_]+\/status\/\d+/i;
-function isXSubmission(msg) {
-  return X_LINK_RE.test(msg.content || '')
-    || (msg.embeds || []).some(e => /(?:twitter\.com|x\.com)\//i.test(e.url || ''));
+// The contributions channel is for submitting post links (X, Cura, etc).
+// Count a message only if it contains a link — filters out chat spam,
+// without locking to a specific platform.
+const ANY_LINK_RE = /https?:\/\/\S+/i;
+function isSubmission(msg) {
+  return ANY_LINK_RE.test(msg.content || '')
+    || (msg.embeds && msg.embeds.length > 0)
+    || (msg.attachments && msg.attachments.length > 0);
 }
-// Bump when this changes to force a contributions re-scan (old counts include spam).
-const CONTRIB_VERSION = 2;
+// Bump when this changes to force a contributions re-scan (old counts stale).
+const CONTRIB_VERSION = 3;
 
 // Current member-id set, produced by fetch-role-stats.cjs (data/member-ids.json).
 // Used to exclude users who left/were kicked — no per-user API calls needed.
@@ -184,7 +186,7 @@ async function main() {
 
   // 1. Contributions — one tally per X-link submission (ignores chat spam)
   const c = await scanChannel(CONTRIBUTIONS_CHANNEL_ID, state.contributions.lastId, (msg) => {
-    if (!msg.author || msg.author.bot || !isXSubmission(msg)) return;
+    if (!msg.author || msg.author.bot || !isSubmission(msg)) return;
     bump(state.contributions.counts, msg.author.id);
     noteUser(msg.author, msg.member);
   }, (newest) => { state.contributions.lastId = newest; writeState(); });
@@ -211,7 +213,7 @@ async function main() {
   const sf7  = BigInt(snowflakeForMs(now - 7 * 86400000));
   const c7 = {}, c30 = {}, w7 = {}, w30 = {}, h7 = {}, h30 = {};
   await scanChannel(CONTRIBUTIONS_CHANNEL_ID, sf30, (msg) => {
-    if (!msg.author || msg.author.bot || !isXSubmission(msg)) return;
+    if (!msg.author || msg.author.bot || !isSubmission(msg)) return;
     bump(c30, msg.author.id);
     if (BigInt(msg.id) >= sf7) bump(c7, msg.author.id);
   });
