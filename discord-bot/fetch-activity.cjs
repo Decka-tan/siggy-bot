@@ -5,7 +5,7 @@
  * (NOT per-member search — that would be 100k+ requests). Each run only
  * fetches messages newer than the last seen id, so steady-state is cheap.
  *
- *   Total Contributions = messages authored in the contributions channel
+ *   Total Contributions = messages with a link in the contributions channel
  *   Events Won    = mentions in an events message WITHOUT a link
  *   Events Hosted = mentions in an events message WITH a link (host's announcement)
  *
@@ -159,7 +159,7 @@ async function main() {
   state.contributions = state.contributions || { lastId: '0', counts: {} };
   state.users         = state.users         || {};
   // Re-scan contributions from scratch when the counting rule changes
-  // (now: X-link submissions only — old counts included chat spam).
+  // (now: any link submission — old counts included chat spam).
   if (state.contribVersion !== CONTRIB_VERSION) {
     console.log(`  contributions rule changed (v${state.contribVersion || 1} → v${CONTRIB_VERSION}) — re-scanning from 0`);
     state.contributions = { lastId: '0', counts: {} };
@@ -184,7 +184,7 @@ async function main() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   const writeState = () => fs.writeFileSync(STATE_FILE, JSON.stringify(state));
 
-  // 1. Contributions — one tally per X-link submission (ignores chat spam)
+  // 1. Contributions — one tally per link submission (ignores chat spam)
   const c = await scanChannel(CONTRIBUTIONS_CHANNEL_ID, state.contributions.lastId, (msg) => {
     if (!msg.author || msg.author.bot || !isSubmission(msg)) return;
     bump(state.contributions.counts, msg.author.id);
