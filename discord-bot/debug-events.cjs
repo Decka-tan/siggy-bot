@@ -27,15 +27,15 @@ function eventHasLink(msg) {
 function classify(msg, hostSignalRoleIds) {
   const hosts = new Set(), winners = new Set();
   const content = msg.content || '';
-  if (!content) return { hosts, winners, isHostMsg: false };
   const rolePing = (msg.mention_roles || []).some((id) => hostSignalRoleIds.has(id));
   const isHostMsg = rolePing || HOST_LABEL.test(content) || eventHasLink(msg);
-  for (const line of content.split('\n')) {
-    const ids = userMentions(line);
-    if (!ids.length) continue;
-    if (isHostMsg) { if (!NON_HOST.test(line)) ids.forEach((id) => hosts.add(id)); }
-    else if (WIN_LABEL.test(line) && !/host|cast|craft|by\b/i.test(line)) ids.forEach((id) => winners.add(id));
+  if (isHostMsg && content) {
+    for (const line of content.split('\n')) {
+      const ids = userMentions(line);
+      if (ids.length && !NON_HOST.test(line)) ids.forEach((id) => hosts.add(id));
+    }
   }
+  for (const u of (msg.mentions || [])) if (!u.bot && !hosts.has(u.id)) winners.add(u.id);
   return { hosts, winners, isHostMsg };
 }
 
