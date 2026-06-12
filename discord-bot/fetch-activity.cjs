@@ -125,6 +125,31 @@ function eventHasLink(msg) {
     || (msg.embeds && msg.embeds.length > 0)
     || (msg.attachments && msg.attachments.length > 0);
 }
+
+// Classify event-message mentions into hosts vs winners by the KEYWORDS on the
+// line each mention sits on (link presence alone is unreliable — host
+// announcements don't always include a link). Mentions on neutral lines
+// (e.g. "handcrafted by @artist") are ignored. Returns id sets.
+const HOST_RE = /host|🎙|\bmc\b|moderator/i;
+const WIN_RE  = /winner|\bwon\b|champion|congrat|🏆|🥇|🎉|grats|\bgz\b/i;
+function classifyEventMentions(msg) {
+  const hosts = new Set(), winners = new Set();
+  const content = msg.content || '';
+  const hasLink = eventHasLink(msg);
+  for (const line of content.split('\n')) {
+    const ids = [...line.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]); // user mentions only (not <@&role>)
+    if (!ids.length) continue;
+    const isHost = HOST_RE.test(line);
+    const isWin = WIN_RE.test(line);
+    for (const id of ids) {
+      if (isHost) hosts.add(id);
+      else if (isWin) winners.add(id);
+      else if (hasLink) hosts.add(id); // fallback: link-style host posts
+      // else: neutral line (artisans etc) → ignore
+    }
+  }
+  return { hosts, winners };
+}
 // The contributions channel is for submitting post links (X, Cura, etc).
 // Count a message only if it contains a link — filters out chat spam,
 // without locking to a specific platform.
@@ -136,6 +161,8 @@ function isSubmission(msg) {
 }
 // Bump when this changes to force a contributions re-scan (old counts stale).
 const CONTRIB_VERSION = 3;
+// Bump when the event won/host classification changes (forces an events re-scan).
+const EVENTS_VERSION = 2;
 
 // Current member-id set, produced by fetch-role-stats.cjs (data/member-ids.json).
 // Used to exclude users who left/were kicked — no per-user API calls needed.
@@ -165,11 +192,12 @@ async function main() {
     state.contributions = { lastId: '0', counts: {} };
     state.contribVersion = CONTRIB_VERSION;
   }
-  // Events split into won (mention, no link) vs hosted (mention in a message
-  // with a link). Old state stored a single `counts` — can't be split, so
-  // reset and re-scan the (small) events channel from scratch.
-  if (!state.events || state.events.counts || !state.events.won || !state.events.hosted) {
+  // Events split into won vs hosted via per-line keyword classification.
+  // Reset & re-scan when the schema or rule version changes (channel is small).
+  if (!state.events || state.events.counts || !state.events.won || !state.events.hosted || state.eventsVersion !== EVENTS_VERSION) {
+    if (state.events) console.log(`  events rule changed (v${state.eventsVersion || 1} → v${EVENTS_VERSION}) — re-scanning events from 0`);
     state.events = { lastId: '0', won: {}, hosted: {} };
+    state.eventsVersion = EVENTS_VERSION;
   }
 
   const noteUser = (user, member) => {
@@ -194,14 +222,12 @@ async function main() {
   writeState();
   console.log(`  contributions: +${c.scanned} new messages`);
 
-  // 2. Events — mentions in a message WITH a link = hosted; otherwise = won
+  // 2. Events — per-line keyword classification of mentions into host vs won
   const e = await scanChannel(EVENTS_CHANNEL_ID, state.events.lastId, (msg) => {
-    const target = eventHasLink(msg) ? state.events.hosted : state.events.won;
-    for (const u of (msg.mentions || [])) {
-      if (u.bot) continue;
-      bump(target, u.id);
-      noteUser(u, null);
-    }
+    const { hosts, winners } = classifyEventMentions(msg);
+    const byId = new Map((msg.mentions || []).map((u) => [u.id, u]));
+    for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(state.events.hosted, id); noteUser(u, null); } }
+    for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(state.events.won, id);    noteUser(u, null); } }
   }, (newest) => { state.events.lastId = newest; writeState(); });
   state.events.lastId = e.newest;
   writeState();
@@ -218,13 +244,11 @@ async function main() {
     if (BigInt(msg.id) >= sf7) bump(c7, msg.author.id);
   });
   await scanChannel(EVENTS_CHANNEL_ID, sf30, (msg) => {
-    const link = eventHasLink(msg);
+    const { hosts, winners } = classifyEventMentions(msg);
+    const byId = new Map((msg.mentions || []).map((u) => [u.id, u]));
     const within7 = BigInt(msg.id) >= sf7;
-    for (const u of (msg.mentions || [])) {
-      if (u.bot) continue;
-      bump(link ? h30 : w30, u.id);
-      if (within7) bump(link ? h7 : w7, u.id);
-    }
+    for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(h30, id); if (within7) bump(h7, id); } }
+    for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(w30, id); if (within7) bump(w7, id); } }
   });
   console.log(`  windows: 30d ${Object.keys(c30).length} contrib · 7d ${Object.keys(c7).length} contrib`);
 
