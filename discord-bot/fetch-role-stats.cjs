@@ -17,10 +17,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const fs = require('fs');
 const path = require('path');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { DISCORD_API, fetchWithRetry, paginate } = require('./lib/discord-fetch.cjs');
 
 const BOT_TOKEN  = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID   = '1210468736205852672';
-const DISCORD_API = 'https://discord.com/api/v10';
 const DATA_DIR   = process.env.DATA_DIR || path.join(__dirname, 'data');
 
 const SNAPSHOT_FILE = path.join(DATA_DIR, 'role-snapshot.json');
@@ -60,8 +60,6 @@ const s3 = new S3Client({
   },
 });
 
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-
 function avatarProxy(m) {
   const uid = m.user.id;
   let cdn;
@@ -72,9 +70,7 @@ function avatarProxy(m) {
 }
 
 async function getRolesMap() {
-  const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/roles`, {
-    headers: { Authorization: `Bot ${BOT_TOKEN}` },
-  });
+  const res = await fetchWithRetry(`${DISCORD_API}/guilds/${GUILD_ID}/roles`, { token: BOT_TOKEN });
   const roles = await res.json();
   return new Map(roles.map(r => [r.id, r.name]));
 }
@@ -95,77 +91,54 @@ async function fetchAllMembers(rolesMap) {
   const regionTiersPure = {};             // region -> { role: count } (pure-region contributors, by top role)
   for (const r of REGION_ROLES) { regional[r] = 0; regionalPure[r] = 0; regionTiers[r] = {}; regionTiersPure[r] = {}; }
 
-  let after = '0';
-  let complete = false;
-  for (let page = 0; page < 500; page++) {
-    let res;
-    for (let attempt = 0; attempt < 8; attempt++) {
-      try {
-        res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`, {
-          headers: { Authorization: `Bot ${BOT_TOKEN}` },
+  // paginate() retries 429/5xx/network and throws if it can't reach the end,
+  // so we never publish a partial member scan.
+  await paginate({
+    url: after => `${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`,
+    token: BOT_TOKEN,
+    limit: 1000,
+    maxPages: 500,
+    onBatch: batch => {
+      for (const m of batch) {
+        if (m.user.bot) continue;
+        totalGuildMembers++;
+        // growth: bucket by join month
+        if (m.joined_at) {
+          const ym = m.joined_at.slice(0, 7); // YYYY-MM
+          joinByMonth[ym] = (joinByMonth[ym] || 0) + 1;
+        }
+        const roleNames = m.roles.map(id => rolesMap.get(id)).filter(Boolean);
+        // regional: tally
+        const memberRegions = roleNames.filter(rn => REGION_SET.has(rn));
+        for (const rn of memberRegions) regional[rn]++;        // any
+        if (memberRegions.length === 1) regionalPure[memberRegions[0]]++; // pure (single region)
+        else if (memberRegions.length > 1) multiRegion++;
+
+        const tracked = roleNames.filter(r => TRACKED_ROLES.includes(r));
+        if (!tracked.length) continue;
+        // top role = highest rank among tracked
+        let top = tracked[0];
+        for (const r of tracked) if (ROLE_RANK[r] > ROLE_RANK[top]) top = r;
+        // region × role: attribute contributor to EVERY region role they hold (by top tier)
+        for (const rg of memberRegions) {
+          regionTiers[rg][top] = (regionTiers[rg][top] || 0) + 1;
+        }
+        if (memberRegions.length === 1) {
+          const rg = memberRegions[0];
+          regionTiersPure[rg][top] = (regionTiersPure[rg][top] || 0) + 1;
+        }
+        members.push({
+          userId: m.user.id,
+          username: m.user.username,
+          displayName: m.nick || m.user.global_name || m.user.username,
+          topRole: top,            // for upgrade detection only
+          roles: tracked,          // ALL tracked roles this member has (counted independently)
+          avatarUrl: avatarProxy(m),
+          joinedAt: m.joined_at || null,
         });
-      } catch (e) {
-        await sleep(1000 * (attempt + 1));
-        continue;
       }
-      if (res.ok) break;
-      if (res.status === 429) {
-        const wait = parseFloat(res.headers.get('Retry-After') || '1');
-        await sleep(wait * 1000 + 200);
-        continue;
-      }
-      if (res.status >= 500) { await sleep(1000 * (attempt + 1)); continue; }
-      break; // non-retryable 4xx
-    }
-    // Abort the whole run on failure — do NOT publish a partial scan
-    if (!res || !res.ok) {
-      throw new Error(`member pagination failed at page ${page}: ${res && res.status}`);
-    }
-    const batch = await res.json();
-    if (!batch.length) { complete = true; break; }
-
-    for (const m of batch) {
-      if (m.user.bot) continue;
-      totalGuildMembers++;
-      // growth: bucket by join month
-      if (m.joined_at) {
-        const ym = m.joined_at.slice(0, 7); // YYYY-MM
-        joinByMonth[ym] = (joinByMonth[ym] || 0) + 1;
-      }
-      const roleNames = m.roles.map(id => rolesMap.get(id)).filter(Boolean);
-      // regional: tally
-      const memberRegions = roleNames.filter(rn => REGION_SET.has(rn));
-      for (const rn of memberRegions) regional[rn]++;        // any
-      if (memberRegions.length === 1) regionalPure[memberRegions[0]]++; // pure (single region)
-      else if (memberRegions.length > 1) multiRegion++;
-
-      const tracked = roleNames.filter(r => TRACKED_ROLES.includes(r));
-      if (!tracked.length) continue;
-      // top role = highest rank among tracked
-      let top = tracked[0];
-      for (const r of tracked) if (ROLE_RANK[r] > ROLE_RANK[top]) top = r;
-      // region × role: attribute contributor to EVERY region role they hold (by top tier)
-      for (const rg of memberRegions) {
-        regionTiers[rg][top] = (regionTiers[rg][top] || 0) + 1;
-      }
-      if (memberRegions.length === 1) {
-        const rg = memberRegions[0];
-        regionTiersPure[rg][top] = (regionTiersPure[rg][top] || 0) + 1;
-      }
-      members.push({
-        userId: m.user.id,
-        username: m.user.username,
-        displayName: m.nick || m.user.global_name || m.user.username,
-        topRole: top,            // for upgrade detection only
-        roles: tracked,          // ALL tracked roles this member has (counted independently)
-        avatarUrl: avatarProxy(m),
-        joinedAt: m.joined_at || null,
-      });
-    }
-    after = batch[batch.length - 1].user.id;
-    if (batch.length < 1000) { complete = true; break; }
-  }
-  if (!complete) throw new Error('member pagination did not reach the end (page cap hit)');
+    },
+  });
   return { members, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 

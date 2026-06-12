@@ -24,10 +24,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const fs = require('fs');
 const path = require('path');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { DISCORD_API, sleep, fetchWithRetry } = require('./lib/discord-fetch.cjs');
 
 const BOT_TOKEN   = process.env.DISCORD_BOT_TOKEN;
 const GUILD_ID    = '1210468736205852672';
-const DISCORD_API = 'https://discord.com/api/v10';
 const DATA_DIR    = process.env.DATA_DIR || path.join(__dirname, 'data');
 
 const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
@@ -44,8 +44,6 @@ const s3 = new S3Client({
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
   },
 });
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function avatarProxy(user) {
   const uid = user.id;
@@ -79,33 +77,10 @@ async function scanChannel(channelId, afterId, onMessage) {
   let scanned = 0;
 
   for (let page = 0; page < 50000; page++) {
-    let res;
-    for (let attempt = 0; attempt < 8; attempt++) {
-      try {
-        res = await fetch(`${DISCORD_API}/channels/${channelId}/messages?after=${after}&limit=100`, {
-          headers: { Authorization: `Bot ${BOT_TOKEN}` },
-        });
-      } catch (e) {
-        await sleep(1000 * (attempt + 1));
-        continue;
-      }
-      if (res.ok) break;
-      // retry on rate limit (429) and transient server errors (5xx)
-      if (res.status === 429) {
-        const wait = parseFloat(res.headers.get('Retry-After') || '1');
-        await sleep(wait * 1000 + 200);
-        continue;
-      }
-      if (res.status >= 500) {
-        await sleep(1000 * (attempt + 1)); // backoff: 1s,2s,3s...
-        continue;
-      }
-      break; // 4xx other than 429 — not retryable
-    }
-    if (!res || !res.ok) {
-      console.error(`  ! channel ${channelId} fetch failed after retries: ${res && res.status} (stopping; will resume next run)`);
-      break;
-    }
+    const res = await fetchWithRetry(
+      `${DISCORD_API}/channels/${channelId}/messages?after=${after}&limit=100`,
+      { token: BOT_TOKEN },
+    );
     const batch = await res.json();
     if (!batch.length) break;
 
