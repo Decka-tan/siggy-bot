@@ -155,13 +155,12 @@ function classifyEventMentions(msg, hostSignalRoleIds) {
   const lines = content.split('\n');
 
   if (isHostMsg) {
-    let inHostBlock = false; // true right after a host-label line (handles "Hosted by:\n@x @y")
+    // Loose: every user mention counts as host EXCEPT those on caster/team/
+    // player/prize/craft lines (so players and artisans aren't miscounted).
+    // No "Host" keyword required — host announcements vary too much.
     for (const line of lines) {
       const ids = userMentions(line);
-      const section = NON_HOST.test(line);
-      const hostLabel = HOST_LABEL.test(line) && !section;
-      if (ids.length && (hostLabel || inHostBlock) && !section) ids.forEach((id) => hosts.add(id));
-      if (line.trim()) inHostBlock = hostLabel; // host context carries to the next line only
+      if (ids.length && !NON_HOST.test(line)) ids.forEach((id) => hosts.add(id));
     }
   } else {
     for (const line of lines) {
