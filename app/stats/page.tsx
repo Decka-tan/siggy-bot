@@ -1716,17 +1716,6 @@ export default function CommunityPage() {
                             <span className="text-[9px] font-mono text-[#555]">@{m.username}</span>
                           </div>
                         </div>
-                        {m.contributorRole && (
-                          <span 
-                            className="text-[9px] font-mono px-2 py-0.5 rounded border border-transparent font-semibold uppercase tracking-wider"
-                            style={{ 
-                              color: ROLE_COLOR[m.contributorRole] || '#888',
-                              backgroundColor: `${ROLE_COLOR[m.contributorRole] || '#888'}12` 
-                            }}
-                          >
-                            {m.contributorRole}
-                          </span>
-                        )}
                       </button>
                     ))}
                   </div>
