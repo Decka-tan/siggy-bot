@@ -855,7 +855,6 @@ export default function CommunityPage() {
                       className="rounded-2xl border p-5 sm:p-8 relative overflow-hidden group shadow-2xl bg-[#0a0a0a]"
                       style={{
                         borderColor: cardAccent ? `${cardAccent}` : 'rgba(255,255,255,0.1)',
-                        boxShadow: cardAccent ? `0 0 40px -12px ${cardAccent}` : undefined,
                       }}
                     >
                       {/* Blurred avatar → one ambient tone background */}
