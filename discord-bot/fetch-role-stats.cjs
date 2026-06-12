@@ -171,17 +171,27 @@ async function main() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(path.join(DATA_DIR, 'member-ids.json'), JSON.stringify(allMemberIds));
 
-  // 1. Distribution — each member counted in EVERY tracked role they hold
-  //    (someone with Mage + Ritualist counts in both)
+  // 1. Distribution
+  //    - count    (all):  each member counted in EVERY tracked role they hold
+  //                       (someone with Mage + Ritualist counts in both)
+  //    - pureCount (top): each member counted ONCE at their highest tier
+  //                       (a "pure bitty" = top role is bitty, nothing higher)
   const counts = {};
-  for (const r of TRACKED_ROLES) counts[r] = 0;
-  for (const m of members) for (const r of m.roles) counts[r]++;
+  const pureCounts = {};
+  for (const r of TRACKED_ROLES) { counts[r] = 0; pureCounts[r] = 0; }
+  for (const m of members) {
+    for (const r of m.roles) counts[r]++;
+    pureCounts[m.topRole]++;
+  }
   const total = members.length;                         // unique members with >=1 tracked role
   const sumCounts = TRACKED_ROLES.reduce((s, r) => s + counts[r], 0);
+  const sumPure   = TRACKED_ROLES.reduce((s, r) => s + pureCounts[r], 0); // == total
   const distribution = TRACKED_ROLES.map(role => ({
     role,
     count: counts[role],
     percent: sumCounts ? +((counts[role] / sumCounts) * 100).toFixed(2) : 0, // share of all role holdings
+    pureCount: pureCounts[role],
+    purePercent: sumPure ? +((pureCounts[role] / sumPure) * 100).toFixed(2) : 0, // share of members by top tier
     contributor: CONTRIBUTOR_LADDER.has(role),
   }));
 

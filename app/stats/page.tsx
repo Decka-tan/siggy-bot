@@ -32,7 +32,7 @@ const REGION_LABEL: Record<string, string> = {
   'Filipinas': '🇵🇭 Philippines', 'português': '🇵🇹 Portuguese',
 };
 
-type DistRow = { role: string; count: number; percent: number; contributor: boolean };
+type DistRow = { role: string; count: number; percent: number; pureCount?: number; purePercent?: number; contributor: boolean };
 type Upgrade = { userId: string; username: string; displayName: string; fromRole: string; toRole: string; at: number; avatarUrl?: string; daysToPromo?: number | null };
 type GrowthPt = { month: string; count: number; cumulative: number };
 type RegionRow = { region: string; count: number; any?: number };
@@ -379,6 +379,7 @@ export default function CommunityPage() {
   const [error, setError] = useState(false);
   const [view, setView] = useState<'overview' | 'analytics' | 'insights' | 'leaderboard'>('overview');
   const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted'>('contributions');
+  const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
   const [rrSortMode, setRrSortMode] = useState<'count' | 'rate'>('count');
@@ -466,7 +467,12 @@ export default function CommunityPage() {
   };
 
   const dist: DistRow[] = data?.stats?.distribution ?? [];
-  const rows = dist.filter(d => d.count > 0).sort((a, b) => b.count - a.count); // biggest first
+  const rows = dist
+    .map(d => distMode === 'pure'
+      ? { ...d, count: d.pureCount ?? d.count, percent: d.purePercent ?? d.percent }
+      : d)
+    .filter(d => d.count > 0)
+    .sort((a, b) => b.count - a.count); // biggest first
   const sum = rows.reduce((s, d) => s + d.count, 0);
   const maxCount = Math.max(1, ...rows.map(d => d.count));
   const total = data?.stats?.totalMembers ?? 0;
@@ -842,6 +848,30 @@ export default function CommunityPage() {
                   exit={{ opacity: 0 }}
                   className="space-y-6"
                 >
+                  {/* All vs Pure toggle */}
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider">
+                      {distMode === 'pure'
+                        ? 'Pure — each member counted once at their highest tier'
+                        : 'All — each member counted in every role they hold'}
+                    </p>
+                    <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60 shrink-0">
+                      {([['all', 'All Roles'], ['pure', 'Pure Tier']] as const).map(([k, label]) => (
+                        <button
+                          key={k}
+                          onClick={() => setDistMode(k)}
+                          className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
+                          style={{
+                            backgroundColor: distMode === k ? 'var(--color-accent)' : 'transparent',
+                            color: distMode === k ? '#000' : '#555',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="grid lg:grid-cols-5 gap-6">
                     <Card title="Composition" subtitle="Share by tier distribution (Hover slices for details)" className="lg:col-span-2 flex flex-col items-center">
                       <div className="flex flex-col items-center gap-6 w-full">
