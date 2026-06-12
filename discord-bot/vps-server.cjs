@@ -609,7 +609,7 @@ async function generateAIAnalysis(username, displayName, contributionCount, even
 
 Stats:
 - Contributions: ${contributionCount} posts in #contributions channel
-- Event participations: ${eventCount}
+- Events won/hosted: ${eventCount}
 - Contributor roles: ${filteredRoles.length > 0 ? filteredRoles.join(', ') : 'None yet'}${xContentContext}
 
 Focus on what they actually DO based on their X posts, not just their roles. If they posted about smart contracts, call them a smart contract developer. If they posted art, call them an artist.
@@ -882,7 +882,7 @@ async function handleCheck(interaction) {
   // Build stats block (Search API provides real-time contribs/events)
   const statsBlock = `@${targetUser.username} | ${displayName}${badgesStr}
 📝 Contributions: ${contributionCount} msgs
-🎉 Events: ${eventCount} participations
+🎉 Events Won/Hosted: ${eventCount}
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
