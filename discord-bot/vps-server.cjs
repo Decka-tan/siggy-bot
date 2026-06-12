@@ -21,9 +21,10 @@ function readActivityCounts(uid) {
     const s = JSON.parse(fs.readFileSync(ACTIVITY_STATE_FILE, 'utf8'));
     return {
       contributions: (s.contributions && s.contributions.counts && s.contributions.counts[uid]) || 0,
-      events: (s.events && s.events.counts && s.events.counts[uid]) || 0,
+      eventsWon: (s.events && s.events.won && s.events.won[uid]) || 0,
+      eventsHosted: (s.events && s.events.hosted && s.events.hosted[uid]) || 0,
     };
-  } catch { return { contributions: 0, events: 0 }; }
+  } catch { return { contributions: 0, eventsWon: 0, eventsHosted: 0 }; }
 }
 const { sendAllReminders } = require('./utils/reminder-system.cjs');
 const {
@@ -624,7 +625,7 @@ async function generateAIAnalysis(username, displayName, contributionCount, even
 
 Stats:
 - Contributions: ${contributionCount} posts in #contributions channel
-- Events won/hosted: ${eventCount}
+- Events won: ${eventsWon}, hosted: ${eventsHosted}
 - Contributor roles: ${filteredRoles.length > 0 ? filteredRoles.join(', ') : 'None yet'}${xContentContext}
 
 Focus on what they actually DO based on their X posts, not just their roles. If they posted about smart contracts, call them a smart contract developer. If they posted art, call them an artist.
@@ -765,8 +766,10 @@ async function handleCheck(interaction) {
   // search — accurate counts, kicked users already excluded upstream.
   const activity = readActivityCounts(targetUser.id);
   const contributionCount = activity.contributions;
-  const eventCount = activity.events;
-  console.log(`Activity for ${displayName}: ${contributionCount} contributions / ${eventCount} events`);
+  const eventsWon = activity.eventsWon;
+  const eventsHosted = activity.eventsHosted;
+  const eventCount = eventsWon + eventsHosted;
+  console.log(`Activity for ${displayName}: ${contributionCount} contributions / ${eventsWon} won / ${eventsHosted} hosted`);
 
   // X Content Analysis - check cache first
   let contentAnalysis = getXContentCache(targetUser.id);
@@ -868,7 +871,7 @@ async function handleCheck(interaction) {
   // Build stats block (contribs/events from daily activity tallies)
   const statsBlock = `@${targetUser.username} | ${displayName}${badgesStr}
 📝 Contributions: ${contributionCount} msgs
-🎉 Events Won/Hosted: ${eventCount}
+🏆 Events Won: ${eventsWon}  ·  🎤 Hosted: ${eventsHosted}
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 

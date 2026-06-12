@@ -96,7 +96,7 @@ let memberCountCache = 0;
 let memberCountExpiry = 0;
 
 // member-activity.json (cron-generated tallies) cached 5 min
-type ActivityDoc = { byUser?: Record<string, { contributions: number; events: number }> };
+type ActivityDoc = { byUser?: Record<string, { contributions: number; eventsWon: number; eventsHosted: number }> };
 let activityCache: ActivityDoc | null = null;
 let activityCacheExpiry = 0;
 async function getActivity(): Promise<ActivityDoc> {
@@ -229,7 +229,8 @@ function buildCardData(member: any, roleNames: string[], memberCount: number) {
       return [...contributors, ...others];
     })(),
     contributionsCount: 0,
-    eventsCount: 0,
+    eventsWonCount: 0,
+    eventsHostedCount: 0,
     globalMessages: 0,
     // card fields (live data only — no static stats on card)
     name: displayName,
@@ -359,7 +360,8 @@ export async function GET(req: NextRequest) {
       const activity = await getActivity();
       const a = activity.byUser?.[cardData.userId];
       cardData.contributionsCount = a?.contributions || 0;
-      cardData.eventsCount = a?.events || 0;
+      cardData.eventsWonCount = a?.eventsWon || 0;
+      cardData.eventsHostedCount = a?.eventsHosted || 0;
     } catch (err) {
       console.error('[Activity lookup error]', err);
     }

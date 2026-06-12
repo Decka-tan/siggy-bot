@@ -6,7 +6,8 @@
  * fetches messages newer than the last seen id, so steady-state is cheap.
  *
  *   Total Contributions = messages authored in the contributions channel
- *   Event Participation  = mentions of a user in the events channel
+ *   Events Won    = mentions in an events message WITHOUT a link
+ *   Events Hosted = mentions in an events message WITH a link (host's announcement)
  *
  * State (local, persists across runs, backed up by daily backup cron):
  *   discord-bot/data/activity-state.json
@@ -112,14 +113,15 @@ async function main() {
   const now = Date.now();
   console.log(`[${new Date().toISOString()}] Tallying activity...`);
 
-  const state = readJSON(STATE_FILE, {
-    contributions: { lastId: '0', counts: {} },
-    events:        { lastId: '0', counts: {} },
-    users:         {},
-  });
+  const state = readJSON(STATE_FILE, {});
   state.contributions = state.contributions || { lastId: '0', counts: {} };
-  state.events        = state.events        || { lastId: '0', counts: {} };
   state.users         = state.users         || {};
+  // Events split into won (mention, no link) vs hosted (mention in a message
+  // with a link). Old state stored a single `counts` — can't be split, so
+  // reset and re-scan the (small) events channel from scratch.
+  if (!state.events || state.events.counts || !state.events.won || !state.events.hosted) {
+    state.events = { lastId: '0', won: {}, hosted: {} };
+  }
 
   const noteUser = (user, member) => {
     if (!user || user.bot) return;
@@ -139,11 +141,15 @@ async function main() {
   state.contributions.lastId = c.newest;
   console.log(`  contributions: +${c.scanned} new messages`);
 
-  // 2. Events — one tally per mentioned user
+  // 2. Events — mentions in a message WITH a link = hosted; otherwise = won
   const e = await scanChannel(EVENTS_CHANNEL_ID, state.events.lastId, (msg) => {
+    const hasLink = /https?:\/\//i.test(msg.content || '')
+      || (msg.embeds && msg.embeds.length > 0)
+      || (msg.attachments && msg.attachments.length > 0);
+    const target = hasLink ? state.events.hosted : state.events.won;
     for (const u of (msg.mentions || [])) {
       if (u.bot) continue;
-      bump(state.events.counts, u.id);
+      bump(target, u.id);
       noteUser(u, null);
     }
   });
@@ -182,22 +188,31 @@ async function main() {
   };
 
   const byUser = {};
-  for (const uid of new Set([...Object.keys(state.contributions.counts), ...Object.keys(state.events.counts)])) {
+  const allUids = new Set([
+    ...Object.keys(state.contributions.counts),
+    ...Object.keys(state.events.won),
+    ...Object.keys(state.events.hosted),
+  ]);
+  for (const uid of allUids) {
     byUser[uid] = {
       contributions: state.contributions.counts[uid] || 0,
-      events: state.events.counts[uid] || 0,
+      eventsWon: state.events.won[uid] || 0,
+      eventsHosted: state.events.hosted[uid] || 0,
     };
   }
 
   const contribBoard = board(state.contributions.counts);
-  const eventBoard   = board(state.events.counts);
+  const wonBoard     = board(state.events.won);
+  const hostedBoard  = board(state.events.hosted);
   console.log(`  contributions board: ${contribBoard.out.length} shown, ${contribBoard.dropped} left-guild skipped`);
-  console.log(`  events board: ${eventBoard.out.length} shown, ${eventBoard.dropped} left-guild skipped`);
+  console.log(`  events won board: ${wonBoard.out.length} shown, ${wonBoard.dropped} left-guild skipped`);
+  console.log(`  events hosted board: ${hostedBoard.out.length} shown, ${hostedBoard.dropped} left-guild skipped`);
 
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
     contributions: contribBoard.out,
-    events: eventBoard.out,
+    eventsWon: wonBoard.out,
+    eventsHosted: hostedBoard.out,
     byUser,
   });
 
