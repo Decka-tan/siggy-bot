@@ -380,6 +380,7 @@ export default function CommunityPage() {
   const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
   const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted'>('contributions');
   const [lbSearch, setLbSearch] = useState('');
+  const [lbWindow, setLbWindow] = useState<'all' | 'month'>('all');
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -1230,27 +1231,39 @@ export default function CommunityPage() {
                             {lbMode === 'contributions' ? 'Top Contributors' : lbMode === 'eventsWon' ? 'Top Event Winners' : 'Top Event Hosts'}
                           </h2>
                           <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
+                            {(lbWindow === 'month' ? `${data.activity.monthLabel || 'This month'} · ` : 'All time · ')}
                             {lbMode === 'contributions'
-                              ? 'Ranked by contribution posts'
+                              ? 'ranked by contribution posts'
                               : lbMode === 'eventsWon'
-                              ? 'Ranked by events won'
-                              : 'Ranked by events hosted'}
+                              ? 'ranked by events won'
+                              : 'ranked by events hosted'}
                           </p>
                         </div>
-                        <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60 shrink-0 self-start md:self-center">
-                          {([['contributions', 'Contributions'], ['eventsWon', 'Won'], ['eventsHosted', 'Hosted']] as const).map(([k, label]) => (
-                            <button
-                              key={k}
-                              onClick={() => setLbMode(k)}
-                              className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
-                              style={{
-                                backgroundColor: lbMode === k ? 'var(--color-accent)' : 'transparent',
-                                color: lbMode === k ? '#000' : '#555',
-                              }}
-                            >
-                              {label}
-                            </button>
-                          ))}
+                        <div className="flex flex-col sm:flex-row gap-2 shrink-0 self-start md:self-center">
+                          <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60">
+                            {([['all', 'All Time'], ['month', 'This Month']] as const).map(([k, label]) => (
+                              <button
+                                key={k}
+                                onClick={() => setLbWindow(k)}
+                                className="px-3.5 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
+                                style={{ backgroundColor: lbWindow === k ? 'var(--color-accent)' : 'transparent', color: lbWindow === k ? '#000' : '#555' }}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                          <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60">
+                            {([['contributions', 'Contributions'], ['eventsWon', 'Won'], ['eventsHosted', 'Hosted']] as const).map(([k, label]) => (
+                              <button
+                                key={k}
+                                onClick={() => setLbMode(k)}
+                                className="px-3.5 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
+                                style={{ backgroundColor: lbMode === k ? 'var(--color-accent)' : 'transparent', color: lbMode === k ? '#000' : '#555' }}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
@@ -1268,7 +1281,8 @@ export default function CommunityPage() {
                       </div>
 
                       {(() => {
-                        const listFull = (data.activity[lbMode] as any[]) || [];
+                        const key = lbWindow === 'month' ? `${lbMode}Month` : lbMode;
+                        const listFull = (data.activity[key] as any[]) || [];
                         const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : '#38bdf8';
                         if (listFull.length === 0) {
                           return <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No data yet</p>;

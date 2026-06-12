@@ -113,6 +113,21 @@ async function scanChannel(channelId, afterId, onMessage, onProgress) {
 
 function bump(counts, uid) { counts[uid] = (counts[uid] || 0) + 1; }
 
+// Snowflake whose timestamp == start of the current UTC month. Used as the
+// `after` cursor for the "this month" pass — only reads this month's (recent)
+// messages, so no history re-scan and it self-corrects at month rollover.
+const DISCORD_EPOCH = 1420070400000n;
+function monthStartSnowflake() {
+  const d = new Date();
+  const ms = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+  return String((BigInt(ms) - DISCORD_EPOCH) << 22n);
+}
+function eventHasLink(msg) {
+  return /https?:\/\//i.test(msg.content || '')
+    || (msg.embeds && msg.embeds.length > 0)
+    || (msg.attachments && msg.attachments.length > 0);
+}
+
 // Current member-id set, produced by fetch-role-stats.cjs (data/member-ids.json).
 // Used to exclude users who left/were kicked — no per-user API calls needed.
 const MEMBER_IDS_FILE = path.join(DATA_DIR, 'member-ids.json');
@@ -165,10 +180,7 @@ async function main() {
 
   // 2. Events — mentions in a message WITH a link = hosted; otherwise = won
   const e = await scanChannel(EVENTS_CHANNEL_ID, state.events.lastId, (msg) => {
-    const hasLink = /https?:\/\//i.test(msg.content || '')
-      || (msg.embeds && msg.embeds.length > 0)
-      || (msg.attachments && msg.attachments.length > 0);
-    const target = hasLink ? state.events.hosted : state.events.won;
+    const target = eventHasLink(msg) ? state.events.hosted : state.events.won;
     for (const u of (msg.mentions || [])) {
       if (u.bot) continue;
       bump(target, u.id);
@@ -178,6 +190,20 @@ async function main() {
   state.events.lastId = e.newest;
   writeState();
   console.log(`  events: +${e.scanned} new messages`);
+
+  // 2b. "This month" pass — fresh tally from the start of the current UTC month
+  // (recent messages only, recomputed each run; not persisted).
+  const monthAfter = monthStartSnowflake();
+  const monthContrib = {}, monthWon = {}, monthHosted = {};
+  await scanChannel(CONTRIBUTIONS_CHANNEL_ID, monthAfter, (msg) => {
+    if (!msg.author || msg.author.bot) return;
+    bump(monthContrib, msg.author.id);
+  });
+  await scanChannel(EVENTS_CHANNEL_ID, monthAfter, (msg) => {
+    const target = eventHasLink(msg) ? monthHosted : monthWon;
+    for (const u of (msg.mentions || [])) { if (!u.bot) bump(target, u.id); }
+  });
+  console.log(`  this-month: ${Object.keys(monthContrib).length} contrib / ${Object.keys(monthWon).length} won / ${Object.keys(monthHosted).length} host users`);
 
   // 3. Build leaderboards, full rankings, and per-user map.
   const enrich = (uid, count) => {
@@ -202,6 +228,8 @@ async function main() {
 
   // Full ranking over eligible users with count > 0 → top-N board (with rank +
   // movement vs last run) plus a uid→rank map for "your rank" / search.
+  // prevMap = null → no movement indicator (delta undefined). Otherwise delta
+  // is computed vs the previous run (null = NEW entry).
   const buildBoard = (counts, prevMap) => {
     const ranked = Object.entries(counts)
       .filter(([uid, n]) => n > 0 && eligible(uid))
@@ -212,8 +240,8 @@ async function main() {
       const rank = i + 1;
       rankOf[uid] = rank;
       if (out.length < TOP_N) {
-        const prev = prevMap[uid];
-        const delta = (prev == null) ? null : (prev - rank); // + up, - down, 0 same
+        let delta;
+        if (prevMap) { const prev = prevMap[uid]; delta = (prev == null) ? null : (prev - rank); }
         out.push({ ...enrich(uid, n), rank, delta });
       }
     });
@@ -223,6 +251,11 @@ async function main() {
   const contrib = buildBoard(state.contributions.counts, prevRanks.contributions || {});
   const won     = buildBoard(state.events.won,           prevRanks.eventsWon || {});
   const hosted  = buildBoard(state.events.hosted,        prevRanks.eventsHosted || {});
+
+  // This-month boards (no movement indicator)
+  const contribMonth = buildBoard(monthContrib, null);
+  const wonMonth     = buildBoard(monthWon, null);
+  const hostedMonth  = buildBoard(monthHosted, null);
 
   // Per-user map: counts + each metric's rank (null if 0 or ineligible).
   const byUser = {};
@@ -250,9 +283,13 @@ async function main() {
 
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
+    monthLabel: new Date().toLocaleString('en-US', { month: 'long', timeZone: 'UTC' }),
     contributions: contrib.out,
     eventsWon: won.out,
     eventsHosted: hosted.out,
+    contributionsMonth: contribMonth.out,
+    eventsWonMonth: wonMonth.out,
+    eventsHostedMonth: hostedMonth.out,
     totals: { contributions: contrib.total, eventsWon: won.total, eventsHosted: hosted.total },
     byUser,
   });
