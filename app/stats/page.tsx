@@ -784,11 +784,6 @@ export default function CommunityPage() {
                             </div>
                           </div>
                           
-                          <div className="flex items-center justify-between text-[10px] font-mono text-[#444] uppercase tracking-wider bg-white/[0.01] p-3.5 rounded-xl border border-white/[0.01]">
-                            <span>Active Membership Duration</span>
-                            <span className="text-white font-bold">{memberProfile.days} days</span>
-                          </div>
-
                           {/* Your Rank */}
                           {(memberProfile.contribRank || memberProfile.wonRank || memberProfile.hostedRank) && (
                             <div className="space-y-2">
@@ -830,6 +825,12 @@ export default function CommunityPage() {
                             )}
                           </div>
                         </div>
+                      </div>
+
+                      {/* Active Membership Duration — full width, bottom */}
+                      <div className="mt-8 flex items-center justify-between text-[10px] font-mono text-[#444] uppercase tracking-wider bg-white/[0.01] p-3.5 rounded-xl border border-white/[0.01] relative z-10">
+                        <span>Active Membership Duration</span>
+                        <span className="text-white font-bold">{memberProfile.days} days</span>
                       </div>
                     </motion.div>
                   )}
