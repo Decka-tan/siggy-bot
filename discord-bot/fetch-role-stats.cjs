@@ -96,19 +96,33 @@ async function fetchAllMembers(rolesMap) {
   for (const r of REGION_ROLES) { regional[r] = 0; regionalPure[r] = 0; regionTiers[r] = {}; regionTiersPure[r] = {}; }
 
   let after = '0';
-  for (let page = 0; page < 200; page++) {
+  let complete = false;
+  for (let page = 0; page < 500; page++) {
     let res;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`, {
-        headers: { Authorization: `Bot ${BOT_TOKEN}` },
-      });
-      if (res.status !== 429) break;
-      const wait = parseFloat(res.headers.get('Retry-After') || '1');
-      await sleep(wait * 1000 + 200);
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members?limit=1000&after=${after}`, {
+          headers: { Authorization: `Bot ${BOT_TOKEN}` },
+        });
+      } catch (e) {
+        await sleep(1000 * (attempt + 1));
+        continue;
+      }
+      if (res.ok) break;
+      if (res.status === 429) {
+        const wait = parseFloat(res.headers.get('Retry-After') || '1');
+        await sleep(wait * 1000 + 200);
+        continue;
+      }
+      if (res.status >= 500) { await sleep(1000 * (attempt + 1)); continue; }
+      break; // non-retryable 4xx
     }
-    if (!res || !res.ok) break;
+    // Abort the whole run on failure — do NOT publish a partial scan
+    if (!res || !res.ok) {
+      throw new Error(`member pagination failed at page ${page}: ${res && res.status}`);
+    }
     const batch = await res.json();
-    if (!batch.length) break;
+    if (!batch.length) { complete = true; break; }
 
     for (const m of batch) {
       if (m.user.bot) continue;
@@ -149,8 +163,9 @@ async function fetchAllMembers(rolesMap) {
       });
     }
     after = batch[batch.length - 1].user.id;
-    if (batch.length < 1000) break;
+    if (batch.length < 1000) { complete = true; break; }
   }
+  if (!complete) throw new Error('member pagination did not reach the end (page cap hit)');
   return { members, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 
