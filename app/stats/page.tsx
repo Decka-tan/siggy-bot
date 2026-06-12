@@ -488,16 +488,21 @@ export default function CommunityPage() {
     const node = shareRef.current;
     if (!node || savingCard) return;
     setSavingCard(true);
+    const imgs = Array.from(node.querySelectorAll('img'));
+    const originals = imgs.map((i) => i.src);
     try {
-      // Make sure every image inside the export card is fully decoded first —
-      // otherwise html-to-image captures before they paint and the result is black.
-      await Promise.all(
-        Array.from(node.querySelectorAll('img')).map((img) =>
-          (img.complete && img.naturalWidth > 0)
-            ? Promise.resolve()
-            : new Promise<void>((res) => { img.onload = () => res(); img.onerror = () => res(); })
-        )
-      );
+      // Inline every image as a data URL up-front. html-to-image's own
+      // inlining is flaky (cross-origin/decoding) and was producing all-black
+      // output — fetching + base64-ing here guarantees the pixels are present.
+      await Promise.all(imgs.map(async (img) => {
+        try {
+          const r = await fetch(img.src, { cache: 'force-cache' });
+          const blob = await r.blob();
+          const durl = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
+          img.src = durl;
+          await img.decode().catch(() => {});
+        } catch {}
+      }));
 
       const opts = {
         pixelRatio: 2,
@@ -526,6 +531,7 @@ export default function CommunityPage() {
     } catch (e) {
       console.error('[card export]', e);
     } finally {
+      imgs.forEach((img, i) => { img.src = originals[i]; }); // restore proxied srcs
       setSavingCard(false);
     }
   };
@@ -949,11 +955,8 @@ export default function CommunityPage() {
                         ['Event Host', memberProfile.hostedRank, memberProfile.rankTotals?.eventsHosted],
                       ] as const;
                       return (
-                        <div ref={shareRef} style={{ position: 'absolute', left: -99999, top: 0, width: 900, fontFamily: 'inherit' }}>
-                          <div style={{ position: 'relative', width: 900, padding: 48, background: '#0a0a0a', border: `2px solid ${acc}`, borderRadius: 24, overflow: 'hidden', boxSizing: 'border-box' }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={memberProfile.pfpUrl} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.6)', filter: 'blur(70px)', opacity: 0.5 }} />
-                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.82)' }} />
+                        <div ref={shareRef} style={{ position: 'absolute', left: -99999, top: 0, width: 900, fontFamily: 'ui-monospace, monospace' }}>
+                          <div style={{ position: 'relative', width: 900, padding: 48, background: `radial-gradient(circle at 75% 15%, ${acc}22, transparent 55%), #0a0a0a`, border: `2px solid ${acc}`, borderRadius: 24, overflow: 'hidden', boxSizing: 'border-box' }}>
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(to right, transparent, ${acc}, transparent)` }} />
 
                             <div style={{ position: 'relative' }}>
