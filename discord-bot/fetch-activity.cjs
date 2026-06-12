@@ -136,26 +136,37 @@ const REGION_ROLES = new Set([
 ]);
 
 // Classify event-message mentions into hosts vs winners.
-//   - Message pings @events / a regional role  → it's a HOST announcement:
-//     only mentions on a "Host" line count as hosts (prize/artisan lines ignored).
-//   - Otherwise → a winner-announcement: mentions on winner-keyword lines = won
-//     (with a Host-line / link fallback for older host posts).
-const HOST_RE = /host|🎙|\bmc\b|moderator|pembawa acara/i;
-const WIN_RE  = /winner|\bwon\b|champion|congrat|🏆|🥇|🎉|grats|\bgz\b|pemenang|juara/i;
+//   - Host announcement (pings @events/@regional, or says "host"): collect the
+//     host block. A "Host"/"🎙️" label line starts the block; following mention
+//     lines stay hosts until a different section starts. Caster/team/prize/
+//     craft lines are excluded so artisans/players aren't counted.
+//   - Otherwise → winner-announcement: mentions on winner-keyword lines = won.
+const HOST_LABEL = /host|🎙|pembawa acara/i;          // marks the host section
+const WIN_LABEL  = /winner|\bwon\b|champion|congrat|🏆|🥇|grats|\bgz\b|pemenang|juara/i;
+const NON_HOST   = /cast|\bteam\b|\bvs\b|craft|prize|reward|\bmvp\b|rising|runner|banner|\bpfp\b|schedule|jadwal|\bmatch\b|registr|\bform\b|🥇|🥈|🏆/i;
+const userMentions = (line) => [...line.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]);
+
 function classifyEventMentions(msg, hostSignalRoleIds) {
   const hosts = new Set(), winners = new Set();
   const content = msg.content || '';
-  const isHostMsg = (msg.mention_roles || []).some((id) => hostSignalRoleIds.has(id));
-  const hasLink = eventHasLink(msg);
-  for (const line of content.split('\n')) {
-    const ids = [...line.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]); // user mentions only (not <@&role>)
-    if (!ids.length) continue;
-    if (isHostMsg) {
-      if (HOST_RE.test(line)) ids.forEach((id) => hosts.add(id)); // ignore prize/artisan lines
-    } else {
-      if (WIN_RE.test(line)) ids.forEach((id) => winners.add(id));
-      else if (HOST_RE.test(line)) ids.forEach((id) => hosts.add(id));
-      else if (hasLink) ids.forEach((id) => hosts.add(id)); // older link-style host post
+  if (!content) return { hosts, winners };
+  const rolePing = (msg.mention_roles || []).some((id) => hostSignalRoleIds.has(id));
+  const isHostMsg = rolePing || HOST_LABEL.test(content) || eventHasLink(msg);
+  const lines = content.split('\n');
+
+  if (isHostMsg) {
+    let inHostBlock = false; // true right after a host-label line (handles "Hosted by:\n@x @y")
+    for (const line of lines) {
+      const ids = userMentions(line);
+      const section = NON_HOST.test(line);
+      const hostLabel = HOST_LABEL.test(line) && !section;
+      if (ids.length && (hostLabel || inHostBlock) && !section) ids.forEach((id) => hosts.add(id));
+      if (line.trim()) inHostBlock = hostLabel; // host context carries to the next line only
+    }
+  } else {
+    for (const line of lines) {
+      const ids = userMentions(line);
+      if (ids.length && WIN_LABEL.test(line) && !/host|cast|craft|by\b/i.test(line)) ids.forEach((id) => winners.add(id));
     }
   }
   return { hosts, winners };
@@ -172,7 +183,7 @@ function isSubmission(msg) {
 // Bump when this changes to force a contributions re-scan (old counts stale).
 const CONTRIB_VERSION = 3;
 // Bump when the event won/host classification changes (forces an events re-scan).
-const EVENTS_VERSION = 3;
+const EVENTS_VERSION = 4;
 
 // Role ids whose mention marks a message as a HOST event announcement
 // (regional community roles + any "events" role).
