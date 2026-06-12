@@ -772,7 +772,7 @@ export default function CommunityPage() {
                       ref={cardRef}
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-2xl border p-8 relative overflow-hidden group shadow-2xl bg-[#0a0a0a]"
+                      className="rounded-2xl border p-5 sm:p-8 relative overflow-hidden group shadow-2xl bg-[#0a0a0a]"
                       style={{
                         borderColor: cardAccent ? `${cardAccent}` : 'rgba(255,255,255,0.1)',
                         boxShadow: cardAccent ? `0 0 40px -12px ${cardAccent}` : undefined,
@@ -817,7 +817,7 @@ export default function CommunityPage() {
                         </div>
 
                         {/* Actions (excluded from the exported image) */}
-                        <div className="no-export flex items-center gap-2 shrink-0">
+                        <div className="no-export flex items-center gap-2 w-full md:w-auto shrink-0 [&>button]:flex-1 md:[&>button]:flex-none justify-center">
                           <button
                             onClick={() => exportCard(true)}
                             disabled={savingCard}
@@ -846,7 +846,7 @@ export default function CommunityPage() {
                       </div>
 
                       {/* Stats & Roles Content */}
-                      <div className="mt-8 grid lg:grid-cols-5 gap-8 relative z-10">
+                      <div className="mt-6 sm:mt-8 grid lg:grid-cols-5 gap-6 sm:gap-8 relative z-10">
                         {/* Discord Activity Stats (Left 3 Columns) */}
                         <div className="lg:col-span-3 space-y-6 w-full">
                           <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Activity Metrics</h4>
