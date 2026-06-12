@@ -962,8 +962,10 @@ export default function CommunityPage() {
                             <div style={{ position: 'relative' }}>
                               {/* header */}
                               <div style={{ display: 'flex', alignItems: 'center', gap: 24, paddingBottom: 28, borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={memberProfile.pfpUrl} alt="" style={{ width: 110, height: 110, borderRadius: '50%', objectFit: 'cover', boxShadow: `0 0 0 3px ${acc}` }} />
+                                <div style={{ width: 110, height: 110, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: `0 0 0 3px ${acc}`, background: '#141414' }}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={memberProfile.pfpUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                                </div>
                                 <div style={{ minWidth: 0 }}>
                                   <div style={{ fontSize: 36, fontWeight: 900, color: '#fff', letterSpacing: '-0.02em' }}>{memberProfile.displayName}</div>
                                   <div style={{ fontSize: 15, color: '#777', fontFamily: 'monospace', marginTop: 4 }}>@{memberProfile.username}</div>
