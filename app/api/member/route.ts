@@ -375,6 +375,16 @@ export async function GET(req: NextRequest) {
       console.error('[Activity lookup error]', err);
     }
 
+    // Global message count — single guild-wide search (approximate, used as a
+    // fallback stat on the card when a user has no event activity).
+    try {
+      const url = `${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${cardData.userId}`;
+      const res = await fetch(url, { headers: { Authorization: USER_TOKEN || `Bot ${BOT_TOKEN}` } });
+      if (res.ok) { const body = await res.json(); cardData.globalMessages = body.total_results || 0; }
+    } catch (err) {
+      console.error('[Global message search error]', err);
+    }
+
     // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
     cardData.contributions = await generateContributions(
       cardData.userId,

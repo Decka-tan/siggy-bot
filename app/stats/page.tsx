@@ -41,6 +41,18 @@ type RegionRoleRow = { region: string; members: number; contributors: number; ra
 
 const color = (r: string) => ROLE_COLOR[r] || '#888';
 
+/* ── Card stat definitions (toggleable) ── */
+const STAT_KEYS = ['contributions', 'eventsWon', 'eventsHosted', 'globalMessages'] as const;
+type StatKey = typeof STAT_KEYS[number];
+function statDef(key: StatKey, m: any): { label: string; value: number; color: string } {
+  switch (key) {
+    case 'contributions':  return { label: 'Contributions', value: m?.contributionsCount || 0, color: '#fbbf24' };
+    case 'eventsWon':      return { label: 'Events Won',    value: m?.eventsWonCount || 0,    color: '#a78bfa' };
+    case 'eventsHosted':   return { label: 'Events Hosted', value: m?.eventsHostedCount || 0, color: '#38bdf8' };
+    case 'globalMessages': return { label: 'Global Messages', value: m?.globalMessages || 0,  color: '#34d399' };
+  }
+}
+
 /* ── Profile card backgrounds (deterministic per user) ── */
 const PROFILE_BGS = [
   '/vn-bg-stars.jpg',
@@ -415,6 +427,7 @@ export default function CommunityPage() {
   const [searching, setSearching] = useState(false);
   const [memberProfile, setMemberProfile] = useState<any | null>(null);
   const [cardAccent, setCardAccent] = useState<string | null>(null);
+  const [shownStats, setShownStats] = useState<StatKey[]>(['contributions', 'eventsWon', 'eventsHosted']);
   const [savingCard, setSavingCard] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
@@ -471,6 +484,18 @@ export default function CommunityPage() {
     fetch('/api/community').then(r => r.ok ? r.json() : Promise.reject())
       .then(setData).catch(() => setError(true)).finally(() => setLoading(false));
   }, []);
+
+  // Default stat selection: Contributions / Won / Hosted, swapping an empty
+  // event stat for Global Messages so the card never shows a dead 0.
+  useEffect(() => {
+    if (!memberProfile) return;
+    const hasWon = (memberProfile.eventsWonCount || 0) > 0;
+    const hasHosted = (memberProfile.eventsHostedCount || 0) > 0;
+    let out: StatKey[] = ['contributions', 'eventsWon', 'eventsHosted'];
+    if (!hasHosted) out = ['contributions', 'eventsWon', 'globalMessages'];
+    else if (!hasWon) out = ['contributions', 'globalMessages', 'eventsHosted'];
+    setShownStats(out);
+  }, [memberProfile?.userId]);
 
   // Extract dominant colour from the looked-up member's avatar (same-origin
   // proxy → canvas isn't tainted) for the card border/accent.
@@ -876,19 +901,16 @@ export default function CommunityPage() {
                         {/* Discord Activity Stats (Left 3 Columns) */}
                         <div className="lg:col-span-3 space-y-6 w-full">
                           <h4 className="text-[10px] font-mono text-[#555] uppercase tracking-widest font-bold">Activity Metrics</h4>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Contributions</span>
-                              <span className="text-2xl font-mono font-black text-amber-400 truncate">{(memberProfile.contributionsCount || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Events Won</span>
-                              <span className="text-2xl font-mono font-black text-violet-400 truncate">{(memberProfile.eventsWonCount || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
-                              <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">Events Hosted</span>
-                              <span className="text-2xl font-mono font-black text-sky-400 truncate">{(memberProfile.eventsHostedCount || 0).toLocaleString()}</span>
-                            </div>
+                          <div className={`grid grid-cols-1 gap-4 ${({1:'sm:grid-cols-1',2:'sm:grid-cols-2',3:'sm:grid-cols-3',4:'sm:grid-cols-4'} as Record<number,string>)[shownStats.length] || 'sm:grid-cols-3'}`}>
+                            {shownStats.map((k) => {
+                              const d = statDef(k, memberProfile);
+                              return (
+                                <div key={k} className="bg-white/[0.02] rounded-2xl p-5 border border-white/[0.02] flex flex-col justify-center min-w-0">
+                                  <span className="text-[10px] font-mono text-[#555] block uppercase font-bold tracking-wider mb-2 truncate">{d.label}</span>
+                                  <span className="text-2xl font-mono font-black truncate" style={{ color: d.color }}>{d.value.toLocaleString()}</span>
+                                </div>
+                              );
+                            })}
                           </div>
                           
                           {/* Your Rank */}
@@ -941,14 +963,33 @@ export default function CommunityPage() {
                       </div>
                     </motion.div>
 
+                    {/* Stat toggle — choose which metrics show on the card */}
+                    <div className="flex items-center gap-2 flex-wrap -mt-2">
+                      <span className="text-[10px] font-mono text-[#555] uppercase tracking-wider font-bold mr-1">Show on card:</span>
+                      {STAT_KEYS.map((k) => {
+                        const active = shownStats.includes(k);
+                        const d = statDef(k, memberProfile);
+                        return (
+                          <button
+                            key={k}
+                            onClick={() => setShownStats((prev) => active ? prev.filter((s) => s !== k) : [...prev, k])}
+                            className="px-3 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider border transition-colors"
+                            style={{
+                              color: active ? '#000' : '#777',
+                              backgroundColor: active ? d.color : 'transparent',
+                              borderColor: active ? d.color : 'rgba(255,255,255,0.08)',
+                            }}
+                          >
+                            {d.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
                     {/* ── Off-screen fixed-size export card (consistent on any device) ── */}
                     {(() => {
                       const acc = cardAccent || '#fbbf24';
-                      const stats = [
-                        ['Contributions', memberProfile.contributionsCount || 0, '#fbbf24'],
-                        ['Events Won', memberProfile.eventsWonCount || 0, '#a78bfa'],
-                        ['Events Hosted', memberProfile.eventsHostedCount || 0, '#38bdf8'],
-                      ] as const;
+                      const stats = shownStats.map((k) => { const d = statDef(k, memberProfile); return [d.label, d.value, d.color] as const; });
                       const ranks = [
                         ['Contributor', memberProfile.contribRank, memberProfile.rankTotals?.contributions],
                         ['Event Winner', memberProfile.wonRank, memberProfile.rankTotals?.eventsWon],
