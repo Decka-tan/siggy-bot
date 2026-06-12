@@ -417,6 +417,7 @@ export default function CommunityPage() {
   const [cardAccent, setCardAccent] = useState<string | null>(null);
   const [savingCard, setSavingCard] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const shareRef = useRef<HTMLDivElement>(null);
   const [searchError, setSearchError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -484,26 +485,66 @@ export default function CommunityPage() {
   }, [memberProfile?.pfpUrl]);
 
   const exportCard = async (share: boolean) => {
-    if (!cardRef.current || savingCard) return;
+    const node = cardRef.current;
+    if (!node || savingCard) return;
     setSavingCard(true);
+
     try {
-      const opts = {
-        pixelRatio: 2,
-        cacheBust: true,
-        filter: (node: any) => !(node instanceof HTMLElement && node.classList?.contains('no-export')),
+      // Create an off-screen clone with absolute fixed dimensions for desktop-quality capture
+      const clone = node.cloneNode(true) as HTMLDivElement;
+      
+      // Force fixed dimensions and styling optimized for export on the clone
+      clone.style.width = '960px';
+      clone.style.position = 'fixed';
+      clone.style.top = '-9999px';
+      clone.style.left = '-9999px';
+      clone.style.transform = 'none';
+      clone.style.transition = 'none';
+      
+      // Ensure layout is desktop-oriented by forcing layout columns and paddings
+      const grid = clone.querySelector('.grid');
+      if (grid) {
+        grid.className = grid.className.replace(/grid-cols-\d+|sm:grid-cols-\d+|lg:grid-cols-\d+/g, '').trim() + ' grid-cols-5';
+      }
+      
+      const metricsGrid = clone.querySelector('.grid-cols-1');
+      if (metricsGrid) {
+        metricsGrid.className = metricsGrid.className.replace(/grid-cols-\d+|sm:grid-cols-\d+|lg:grid-cols-\d+/g, '').trim() + ' grid-cols-3';
+      }
+
+      const ranksGrid = clone.querySelector('.grid-cols-1.sm\\:grid-cols-3');
+      if (ranksGrid) {
+        ranksGrid.className = ranksGrid.className.replace(/grid-cols-\d+|sm:grid-cols-\d+|lg:grid-cols-\d+/g, '').trim() + ' grid-cols-3';
+      }
+      
+      document.body.appendChild(clone);
+
+      const opts = { 
+        pixelRatio: 2, 
+        cacheBust: true, 
+        width: 960, 
+        height: clone.offsetHeight,
+        style: {
+          transform: 'none',
+          borderRadius: '16px'
+        }
       };
+      
       const fname = `${memberProfile.username || 'ritual'}-card.png`;
       if (share && typeof navigator !== 'undefined' && navigator.share) {
-        const blob = await htmlToImage.toBlob(cardRef.current, opts);
+        const blob = await htmlToImage.toBlob(clone, opts);
+        document.body.removeChild(clone);
         const file = blob && new File([blob], fname, { type: 'image/png' });
         if (file && navigator.canShare?.({ files: [file] })) {
           await navigator.share({ files: [file], title: `${memberProfile.displayName} · Ritual` });
           return;
         }
+      } else {
+        const dataUrl = await htmlToImage.toPng(clone, opts);
+        document.body.removeChild(clone);
+        const a = document.createElement('a');
+        a.href = dataUrl; a.download = fname; a.click();
       }
-      const dataUrl = await htmlToImage.toPng(cardRef.current, opts);
-      const a = document.createElement('a');
-      a.href = dataUrl; a.download = fname; a.click();
     } catch (e) {
       console.error('[card export]', e);
     } finally {
