@@ -10,6 +10,21 @@ require('dotenv').config();
 
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
+
+// Activity tallies produced by fetch-activity.cjs (refreshed daily by cron).
+// Accurate per-user counts — replaces the laggy/inaccurate live message search.
+const ACTIVITY_STATE_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'activity-state.json');
+function readActivityCounts(uid) {
+  try {
+    const s = JSON.parse(fs.readFileSync(ACTIVITY_STATE_FILE, 'utf8'));
+    return {
+      contributions: (s.contributions && s.contributions.counts && s.contributions.counts[uid]) || 0,
+      events: (s.events && s.events.counts && s.events.counts[uid]) || 0,
+    };
+  } catch { return { contributions: 0, events: 0 }; }
+}
 const { sendAllReminders } = require('./utils/reminder-system.cjs');
 const {
   getUserState,
@@ -746,41 +761,12 @@ async function handleCheck(interaction) {
   const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
   const EVENT_CHANNEL_ID = '1389298240762937414';
 
-  // Real-time fetch using Discord Search API
-  let contributionCount = 0;
-  let eventCount = 0;
-
-  try {
-    // Use Search API for contributions (fast, server-side filtering)
-    const contribSearchUrl = `https://discord.com/api/v10/guilds/${interaction.guild.id}/messages/search?author_id=${targetUser.id}&channel_id=${CONTRIBUTIONS_CHANNEL_ID}`;
-    const contribResponse = await fetch(contribSearchUrl, {
-      headers: { 'Authorization': `Bot ${CONFIG.token}` },
-    });
-
-    if (contribResponse.ok) {
-      const contribData = await contribResponse.json();
-      contributionCount = contribData.total_results || 0;
-      console.log(`Search API contributions for ${displayName}: ${contributionCount}`);
-    } else {
-      console.log(`Search API contributions failed: ${contribResponse.status}`);
-    }
-
-    // Use Search API for events (mentions)
-    const eventSearchUrl = `https://discord.com/api/v10/guilds/${interaction.guild.id}/messages/search?mentions=${targetUser.id}&channel_id=${EVENT_CHANNEL_ID}`;
-    const eventResponse = await fetch(eventSearchUrl, {
-      headers: { 'Authorization': `Bot ${CONFIG.token}` },
-    });
-
-    if (eventResponse.ok) {
-      const eventData = await eventResponse.json();
-      eventCount = eventData.total_results || 0;
-      console.log(`Search API events for ${displayName}: ${eventCount}`);
-    } else {
-      console.log(`Search API events failed: ${eventResponse.status}`);
-    }
-  } catch (err) {
-    console.error('Search API error:', err.message);
-  }
+  // Read from daily activity tallies (fetch-activity.cjs) instead of live
+  // search — accurate counts, kicked users already excluded upstream.
+  const activity = readActivityCounts(targetUser.id);
+  const contributionCount = activity.contributions;
+  const eventCount = activity.events;
+  console.log(`Activity for ${displayName}: ${contributionCount} contributions / ${eventCount} events`);
 
   // X Content Analysis - check cache first
   let contentAnalysis = getXContentCache(targetUser.id);
@@ -879,7 +865,7 @@ async function handleCheck(interaction) {
   if (targetUser?.bot) badges.push('🤖');
   const badgesStr = badges.length > 0 ? ` (${badges.join('')})` : '';
 
-  // Build stats block (Search API provides real-time contribs/events)
+  // Build stats block (contribs/events from daily activity tallies)
   const statsBlock = `@${targetUser.username} | ${displayName}${badgesStr}
 📝 Contributions: ${contributionCount} msgs
 🎉 Events Won/Hosted: ${eventCount}
