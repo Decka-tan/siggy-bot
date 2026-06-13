@@ -433,6 +433,21 @@ export async function GET(req: NextRequest) {
       console.error('[Global message search error]', err);
     }
 
+    // If the live search failed/was rate-limited, fall back to the last stored
+    // count in global-messages.json so the stat stays available.
+    if (!cardData.globalMessagesAvailable) {
+      try {
+        const doc = await r2GetObject<{ users?: Record<string, { globalMessages?: number }> }>(GLOBAL_MSG_KEY);
+        const stored = doc?.users?.[cardData.userId];
+        if (stored && typeof stored.globalMessages === 'number') {
+          cardData.globalMessages = stored.globalMessages;
+          cardData.globalMessagesAvailable = true;
+        }
+      } catch (err) {
+        console.error('[Global message fallback error]', err);
+      }
+    }
+
     // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
     cardData.contributions = await generateContributions(
       cardData.userId,
