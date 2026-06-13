@@ -94,7 +94,9 @@ async function main() {
       }
     }
     after = batch[batch.length - 1].user.id;
+    if (page % 10 === 0) console.log(`  scanning… page ${page}, ${contributors.length} contributors so far`);
     if (batch.length < 1000) break;
+    await sleep(200); // gentle on the member-list rate limit
   }
   console.log(`Found ${contributors.length} contributors.`);
 
