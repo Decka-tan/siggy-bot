@@ -4,11 +4,14 @@
  * Chat leaderboard is populated without waiting for organic profile lookups.
  *
  * Uses the USER token's message search (1 request per member), throttled to
- * avoid rate limits. Resumable: members already in the R2 doc are skipped, and
- * progress is flushed to R2 periodically — safe to kill & re-run.
+ * avoid rate limits. A member is skipped only if their stored count is still
+ * "fresh" (< GM_FRESH_HOURS, default 20h) — so a manual re-run resumes, while a
+ * daily/2-daily cron refreshes everyone. Progress flushed to R2 periodically.
  *
  * Run detached:
  *   setsid node discord-bot/backfill-global-messages.cjs > backfill.log 2>&1 < /dev/null &
+ * Cron (every 2 days, 5am) — crontab line:  0 5 [slash]2 * * ...
+ * i.e.  0 5 (asterisk-slash-2) * *  cd /opt/siggy-bot && node discord-bot/backfill-global-messages.cjs >> /home/ubuntu/backfill.log 2>&1
  */
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
@@ -20,6 +23,7 @@ const GUILD_ID = '1210468736205852672';
 const KEY = 'community/global-messages.json';
 const THROTTLE_MS = 1500;       // between searches
 const FLUSH_EVERY = 25;         // upload progress every N lookups
+const FRESH_MS = (parseFloat(process.env.GM_FRESH_HOURS || '20')) * 3600 * 1000; // skip if recorded more recently than this
 
 const TRACKED = new Set(['Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty']);
 
@@ -98,7 +102,8 @@ async function main() {
   doc.users = doc.users || {};
   let done = 0, skipped = 0;
   for (const c of contributors) {
-    if (doc.users[c.id] && typeof doc.users[c.id].globalMessages === 'number') { skipped++; continue; }
+    const prev = doc.users[c.id];
+    if (prev && typeof prev.globalMessages === 'number' && (Date.now() - (prev.updatedAt || 0) < FRESH_MS)) { skipped++; continue; }
     const count = await searchCount(c.id);
     if (count === null) { console.log(`  ! search failed for @${c.username}`); await sleep(THROTTLE_MS); continue; }
     doc.users[c.id] = { username: c.username, displayName: c.displayName, avatarUrl: c.avatarUrl, globalMessages: count, updatedAt: Date.now() };
