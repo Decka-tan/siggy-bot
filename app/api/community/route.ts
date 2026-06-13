@@ -64,22 +64,34 @@ async function getObject(key: string): Promise<any | null> {
 
 export async function GET() {
   try {
-    const [stats, upgrades, insights, activity] = await Promise.all([
+    const [stats, upgrades, insights, activity, globalMsg] = await Promise.all([
       getObject('community/role-stats.json'),
       getObject('community/recent-upgrades.json'),
       getObject('community/insights.json'),
       getObject('community/member-activity.json'),
+      getObject('community/global-messages.json'),
     ]);
 
     if (!stats) {
       return NextResponse.json({ error: 'Stats not generated yet' }, { status: 503 });
     }
 
+    // Build a chat leaderboard from whoever has been looked up so far.
+    let chat: any[] | null = null;
+    if (globalMsg?.users) {
+      chat = Object.entries(globalMsg.users as Record<string, any>)
+        .map(([userId, u]) => ({ userId, username: u.username, displayName: u.displayName, avatarUrl: u.avatarUrl, count: u.globalMessages || 0 }))
+        .filter((u) => u.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 100)
+        .map((u, i) => ({ ...u, rank: i + 1 }));
+    }
+
     return NextResponse.json({
       stats,
       upgrades: upgrades ?? { upgrades: [], windowDays: 14, updatedAt: stats.updatedAt },
       insights: insights ?? null,
-      activity: activity ?? null,
+      activity: activity ? { ...activity, chat } : (chat ? { chat } : null),
     });
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

@@ -441,7 +441,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [view, setView] = useState<'overview' | 'analytics' | 'insights'>('overview');
-  const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted'>('contributions');
+  const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted' | 'chat'>('contributions');
   const [lbSearch, setLbSearch] = useState('');
   const [lbWindow, setLbWindow] = useState<'all' | '30d' | '7d'>('all');
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
@@ -1503,18 +1503,16 @@ export default function CommunityPage() {
                       <div className="flex flex-col md:flex-row md:items-start justify-between mb-8 gap-4 border-b border-white/[0.03] pb-6">
                         <div>
                           <h2 className="font-display text-xl uppercase tracking-wider text-white/95">
-                            {lbMode === 'contributions' ? 'Top Contributors' : lbMode === 'eventsWon' ? 'Top Event Winners' : 'Top Event Hosts'}
+                            {lbMode === 'contributions' ? 'Top Contributors' : lbMode === 'eventsWon' ? 'Top Event Winners' : lbMode === 'eventsHosted' ? 'Top Event Hosts' : 'Top Chatters'}
                           </h2>
                           <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-0.5">
-                            {(lbWindow === '7d' ? 'Last 7 days · ' : lbWindow === '30d' ? 'Last 30 days · ' : 'All time · ')}
-                            {lbMode === 'contributions'
-                              ? 'ranked by contribution posts'
-                              : lbMode === 'eventsWon'
-                              ? 'ranked by events won'
-                              : 'ranked by events hosted'}
+                            {lbMode === 'chat'
+                              ? 'Among looked-up members · ranked by total messages'
+                              : `${lbWindow === '7d' ? 'Last 7 days · ' : lbWindow === '30d' ? 'Last 30 days · ' : 'All time · '}${lbMode === 'contributions' ? 'ranked by contribution posts' : lbMode === 'eventsWon' ? 'ranked by events won' : 'ranked by events hosted'}`}
                           </p>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-2 shrink-0 self-start md:self-center">
+                          {lbMode !== 'chat' && (
                           <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60">
                             {([['all', 'All Time'], ['30d', '30D'], ['7d', '7D']] as const).map(([k, label]) => (
                               <button
@@ -1527,8 +1525,9 @@ export default function CommunityPage() {
                               </button>
                             ))}
                           </div>
+                          )}
                           <div className="inline-flex p-1 rounded-full border border-white/5 bg-black/60">
-                            {([['contributions', 'Contributions'], ['eventsWon', 'Won'], ['eventsHosted', 'Hosted']] as const).map(([k, label]) => (
+                            {([['contributions', 'Contributions'], ['eventsWon', 'Won'], ['eventsHosted', 'Hosted'], ['chat', 'Chat']] as const).map(([k, label]) => (
                               <button
                                 key={k}
                                 onClick={() => setLbMode(k)}
@@ -1556,9 +1555,9 @@ export default function CommunityPage() {
                       </div>
 
                       {(() => {
-                        const key = lbWindow === 'all' ? lbMode : `${lbMode}${lbWindow}`;
-                        const listFull = (data.activity[key] as any[]) || [];
-                        const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : '#38bdf8';
+                        const key = (lbMode === 'chat' || lbWindow === 'all') ? lbMode : `${lbMode}${lbWindow}`;
+                        const listFull = (data.activity?.[key] as any[]) || [];
+                        const accent = lbMode === 'contributions' ? '#fbbf24' : lbMode === 'eventsWon' ? '#a78bfa' : lbMode === 'eventsHosted' ? '#38bdf8' : '#34d399';
                         if (listFull.length === 0) {
                           return <p className="text-[#444] text-xs font-mono uppercase tracking-wider text-center py-8">No data yet</p>;
                         }
@@ -1591,7 +1590,7 @@ export default function CommunityPage() {
                               <p className="text-[9px] sm:text-[10px] text-[#555] font-mono truncate">@{u.username}</p>
                             </div>
                             <span className="font-mono text-sm sm:text-base font-black w-12 sm:w-16 text-right shrink-0" style={{ color: accent }}>
-                              {u.count.toLocaleString()}
+                              {fmtStat(u.count)}
                             </span>
                           </div>
                         );
@@ -1630,7 +1629,7 @@ export default function CommunityPage() {
                                     </div>
                                     <div className="mt-1 h-3 flex items-center">{Move(u.delta)}</div>
                                     <p className="mt-0.5 text-[11px] sm:text-sm text-white font-bold truncate max-w-full text-center px-1">{u.displayName}</p>
-                                    <p className="font-mono font-black text-sm sm:text-lg" style={{ color: accent }}>{u.count.toLocaleString()}</p>
+                                    <p className="font-mono font-black text-sm sm:text-lg" style={{ color: accent }}>{fmtStat(u.count)}</p>
                                   </div>
                                 );
                               })}
