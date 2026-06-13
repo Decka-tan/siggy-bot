@@ -66,11 +66,11 @@ async function searchCount(uid) {
     try {
       res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/messages/search?author_id=${uid}`, { headers: { Authorization: USER_TOKEN } });
     } catch { await sleep(2000 * (attempt + 1)); continue; }
-    if (res.status === 429) { const w = parseFloat(res.headers.get('Retry-After') || '2'); await sleep(w * 1000 + 500); continue; }
+    if (res.status === 429) { const w = parseFloat(res.headers.get('Retry-After') || '2'); console.log(`    (429, wait ${w}s)`); await sleep(w * 1000 + 500); continue; }
     if (res.status >= 500) { await sleep(2000 * (attempt + 1)); continue; }
-    if (!res.ok) return null;
-    const body = await res.json();
-    return body.total_results || 0;
+    if (!res.ok) { console.log(`    (search ${uid} -> HTTP ${res.status})`); return null; }
+    try { const body = await res.json(); return body.total_results || 0; }
+    catch { return null; }
   }
   return null;
 }
@@ -100,6 +100,7 @@ async function main() {
 
   const doc = await loadDoc();
   doc.users = doc.users || {};
+  console.log(`Loaded doc with ${Object.keys(doc.users).length} existing users. Starting lookups...`);
   let done = 0, skipped = 0;
   for (const c of contributors) {
     const prev = doc.users[c.id];
@@ -108,10 +109,15 @@ async function main() {
     if (count === null) { console.log(`  ! search failed for @${c.username}`); await sleep(THROTTLE_MS); continue; }
     doc.users[c.id] = { username: c.username, displayName: c.displayName, avatarUrl: c.avatarUrl, globalMessages: count, updatedAt: Date.now() };
     done++;
-    if (done % FLUSH_EVERY === 0) { await saveDoc(doc); console.log(`  …${done} looked up (flushed) · last @${c.username}=${count}`); }
+    if (done <= 3 || done % FLUSH_EVERY === 0) {
+      await saveDoc(doc);
+      console.log(`  …${done} looked up (flushed) · @${c.username}=${count}`);
+    }
     await sleep(THROTTLE_MS);
   }
   await saveDoc(doc);
   console.log(`✓ done. looked up ${done}, skipped ${skipped} (already had), total in doc ${Object.keys(doc.users).length}`);
 }
+process.on('unhandledRejection', (e) => { console.error('unhandledRejection:', e); process.exit(1); });
+process.on('uncaughtException', (e) => { console.error('uncaughtException:', e); process.exit(1); });
 main().catch((e) => { console.error(e); process.exit(1); });
