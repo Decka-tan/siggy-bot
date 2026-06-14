@@ -1905,34 +1905,14 @@ const http = require('http');
 const PORT = process.env.PORT || 8888;
 
 const server = http.createServer((req, res) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  };
-
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, corsHeaders);
-    return res.end();
-  }
-
   if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json', ...corsHeaders });
+    res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       status: 'healthy',
       uptime: process.uptime(),
       discord: client.isReady() ? 'connected' : 'connecting',
       guilds: client.guilds ? client.guilds.cache.size : 0,
     }));
-  } else if (req.url === '/api/stats' && req.method === 'GET') {
-    try {
-      const stats = getGlobalStats();
-      res.writeHead(200, { 'Content-Type': 'application/json', ...corsHeaders });
-      res.end(JSON.stringify(stats));
-    } catch (e) {
-      res.writeHead(500, { 'Content-Type': 'application/json', ...corsHeaders });
-      res.end(JSON.stringify({ error: e.message }));
-    }
   } else if (req.url === '/api/refresh-invoice' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
