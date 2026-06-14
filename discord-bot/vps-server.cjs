@@ -609,7 +609,7 @@ client.on('error', (error) => {
 
 // ============ AI ANALYSIS ============
 // Call /api/analyze endpoint with fresh context
-async function generateAIAnalysis(username, displayName, contributionCount, eventCount, roles, contentData) {
+async function generateAIAnalysis(username, displayName, contributionCount, eventCount, eventsWon, eventsHosted, roles, contentData) {
   try {
     // Filter to contributor roles only
     const contributorRoles = ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty', 'mage'];
@@ -883,6 +883,8 @@ async function handleCheck(interaction) {
     displayName,
     contributionCount,
     eventCount,
+    eventsWon,
+    eventsHosted,
     roles,
     contentAnalysis,
   );
