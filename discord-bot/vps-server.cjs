@@ -125,7 +125,7 @@ const leaderboardCommands = [
     options: [
       {
         name: 'start',
-        description: 'Start a new leaderboard session and add the first score',
+        description: 'Start a new leaderboard session and add the first builder',
         type: 1, // SUB_COMMAND
         options: [
           { name: 'user', description: 'User to add', type: 6, required: true },
@@ -134,7 +134,7 @@ const leaderboardCommands = [
       },
       {
         name: 'add',
-        description: 'Increase a user\'s score in the active leaderboard session',
+        description: 'Add/update a builder; duplicate submissions stay 1 point',
         type: 1,
         options: [
           { name: 'user', description: 'User to update', type: 6, required: true },
@@ -1903,14 +1903,34 @@ const http = require('http');
 const PORT = process.env.PORT || 8888;
 
 const server = http.createServer((req, res) => {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, corsHeaders);
+    return res.end();
+  }
+
   if (req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.writeHead(200, { 'Content-Type': 'application/json', ...corsHeaders });
     res.end(JSON.stringify({
       status: 'healthy',
       uptime: process.uptime(),
       discord: client.isReady() ? 'connected' : 'connecting',
       guilds: client.guilds ? client.guilds.cache.size : 0,
     }));
+  } else if (req.url === '/api/stats' && req.method === 'GET') {
+    try {
+      const stats = getGlobalStats();
+      res.writeHead(200, { 'Content-Type': 'application/json', ...corsHeaders });
+      res.end(JSON.stringify(stats));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json', ...corsHeaders });
+      res.end(JSON.stringify({ error: e.message }));
+    }
   } else if (req.url === '/api/refresh-invoice' && req.method === 'POST') {
     let body = '';
     req.on('data', chunk => { body += chunk.toString(); });
