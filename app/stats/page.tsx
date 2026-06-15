@@ -1480,17 +1480,12 @@ export default function CommunityPage() {
                         <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-1">Top 15 by 7-day activity · contributions, events &amp; chat</p>
                       </div>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
-                        {(data.activity.membersOfWeek as any[]).map((m, i) => {
+                        {(data.activity.membersOfWeek as any[]).map((m) => {
                           const rc = m.role ? color(m.role) : '#888';
                           return (
                             <div key={m.userId} className="flex flex-col items-center text-center min-w-0">
-                              <div className="relative">
-                                <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10">
-                                  <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
-                                </div>
-                                {i < 3 && (
-                                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-black" style={{ backgroundColor: ['#fbbf24', '#cbd5e1', '#d97706'][i] }}>{i + 1}</span>
-                                )}
+                              <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10">
+                                <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
                               </div>
                               <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.username}</p>
                               {m.role && (
