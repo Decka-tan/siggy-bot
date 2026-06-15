@@ -1578,6 +1578,11 @@ export default function CommunityPage() {
                             {range}
                             <span className={`ml-1.5 ${wk.frozen ? 'text-[#666]' : 'text-emerald-400'}`}>· {wk.frozen ? 'final' : 'live'}</span>
                           </p>
+                          {!wk.frozen && (
+                            <p className="flex items-center justify-center gap-1 text-[9px] font-mono text-emerald-400/70 mt-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> live · synced daily
+                            </p>
+                          )}
                         </div>
                         <button
                           onClick={() => go(weeks[idx + 1].week)}
