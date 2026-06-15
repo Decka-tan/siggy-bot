@@ -383,7 +383,9 @@ async function main() {
   const roleSnap = readJSON(path.join(DATA_DIR, 'role-snapshot.json'), {});     // uid -> contributor topRole
   const specialRoles = readJSON(path.join(DATA_DIR, 'special-roles.json'), {}); // uid -> Blessed/Cursed/Harmonic
   const motwIds = new Set([...Object.keys(c7), ...Object.keys(w7), ...Object.keys(h7), ...Object.keys(chat7)]);
-  const motw = [...motwIds]
+
+  // Full scored & sorted candidate list (top of which becomes each week's pick).
+  const ranked = [...motwIds]
     .filter((uid) => eligible(uid))
     .map((uid) => {
       const c = c7[uid] || 0, w = w7[uid] || 0, h = h7[uid] || 0, ch = chat7[uid] || 0;
@@ -391,21 +393,53 @@ async function main() {
       return { uid, c, w, h, ch, score };
     })
     .filter((m) => m.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 15)
-    .map((m) => {
-      const u = state.users[m.uid] || {};
-      return {
-        userId: m.uid,
-        username: u.username || m.uid,
-        displayName: u.displayName || u.username || m.uid,
-        avatarUrl: u.avatar || `/api/proxy-avatar?url=${encodeURIComponent(`https://cdn.discordapp.com/embed/avatars/${parseInt(m.uid.slice(-1)) % 5}.png`)}`,
-        role: roleSnap[m.uid] || specialRoles[m.uid] || null,
-        score: Math.round(m.score),
-        contributions: m.c, eventsWon: m.w, eventsHosted: m.h, chat: m.ch,
-      };
-    });
-  console.log(`  members of the week: ${motw.length}`);
+    .sort((a, b) => b.score - a.score);
+
+  const projectMember = (m) => {
+    const u = state.users[m.uid] || {};
+    return {
+      userId: m.uid,
+      username: u.username || m.uid,
+      displayName: u.displayName || u.username || m.uid,
+      avatarUrl: u.avatar || `/api/proxy-avatar?url=${encodeURIComponent(`https://cdn.discordapp.com/embed/avatars/${parseInt(m.uid.slice(-1)) % 5}.png`)}`,
+      role: roleSnap[m.uid] || specialRoles[m.uid] || null,
+      score: Math.round(m.score),
+      contributions: m.c, eventsWon: m.w, eventsHosted: m.h, chat: m.ch,
+    };
+  };
+
+  // ── Weekly Members of the Week with cross-week de-duplication ──
+  // Each week is a fixed 7-day window. Once a week ends it is frozen (its last
+  // computed list is kept). Anyone shown in a previous week is excluded from all
+  // later weeks (Rialo-style — no repeats). The current week recomputes each run.
+  const WEEK_MS = 7 * 86400000;
+  const WEEK1_START = Date.UTC(2026, 5, 8); // Mon 8 Jun 2026 → current week (15 Jun) = Week 2
+  const weekIndexOf = (ts) => Math.max(1, Math.floor((ts - WEEK1_START) / WEEK_MS) + 1);
+  const curWeek = weekIndexOf(now);
+
+  const store = (await getR2('community/motw-weeks.json')) || { weeks: [] };
+  const byNum = {};
+  for (const wk of store.weeks || []) byNum[wk.week] = wk;
+
+  const excluded = new Set();
+  const weeksOut = [];
+  for (let w = 1; w <= curWeek; w++) {
+    const startTs = WEEK1_START + (w - 1) * WEEK_MS;
+    const endTs = startTs + WEEK_MS;
+    const frozen = w < curWeek;
+    let members;
+    if (frozen && byNum[w]) {
+      members = byNum[w].members;                                  // keep finalized list
+    } else {
+      members = ranked.filter((m) => !excluded.has(m.uid)).slice(0, 15).map(projectMember);
+    }
+    members.forEach((m) => excluded.add(m.userId));
+    weeksOut.push({ week: w, startTs, endTs, frozen, updatedAt: now, members });
+  }
+  await uploadR2('community/motw-weeks.json', { weeks: weeksOut, updatedAt: now });
+
+  const motw = weeksOut[weeksOut.length - 1].members; // current week (backward compat)
+  console.log(`  members of the week: week ${curWeek}, ${motw.length} shown · ${weeksOut.length} weeks total`);
 
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
@@ -417,6 +451,7 @@ async function main() {
     eventsHosted7d: hosted7d.out,     eventsHosted30d: hosted30d.out,
     totals: { contributions: contrib.total, eventsWon: won.total, eventsHosted: hosted.total },
     membersOfWeek: motw,
+    motwWeeks: weeksOut,
     byUser,
   });
 

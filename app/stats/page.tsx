@@ -445,6 +445,7 @@ export default function CommunityPage() {
   const [lbSearch, setLbSearch] = useState('');
   const [lbWindow, setLbWindow] = useState<'all' | '30d' | '7d'>('all');
   const [motwInfo, setMotwInfo] = useState(false);
+  const [motwWeekSel, setMotwWeekSel] = useState<number | null>(null); // null = latest
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -1496,7 +1497,21 @@ export default function CommunityPage() {
                   className="space-y-6"
                 >
                   {/* Members of the Week */}
-                  {data.activity?.membersOfWeek?.length > 0 && (
+                  {(() => {
+                    const weeks: any[] = (data.activity?.motwWeeks?.length
+                      ? data.activity.motwWeeks
+                      : (data.activity?.membersOfWeek?.length ? [{ week: 1, startTs: null, endTs: null, frozen: false, members: data.activity.membersOfWeek }] : [])
+                    ).slice().sort((a: any, b: any) => a.week - b.week);
+                    if (!weeks.length) return null;
+                    const latest = weeks[weeks.length - 1].week;
+                    const selWeek = motwWeekSel ?? latest;
+                    const idx = Math.max(0, weeks.findIndex((w: any) => w.week === selWeek));
+                    const wk = weeks[idx] || weeks[weeks.length - 1];
+                    const members: any[] = wk.members || [];
+                    const fmt = (ts: number) => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    const range = wk.startTs ? `${fmt(wk.startTs)} – ${fmt(wk.endTs - 86400000)}` : 'Last 7 days';
+                    const go = (w: number) => setMotwWeekSel(w === latest ? null : w);
+                    return (
                     <div className="rounded-2xl border border-white/5 p-6 sm:p-8 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden">
                       <div className="mb-7 border-b border-white/[0.03] pb-5">
                         <div className="flex items-start justify-between gap-3">
@@ -1549,8 +1564,30 @@ export default function CommunityPage() {
                           )}
                         </AnimatePresence>
                       </div>
+                      {/* Week pagination */}
+                      <div className="flex items-center justify-center gap-3 mb-7">
+                        <button
+                          onClick={() => go(weeks[idx - 1].week)}
+                          disabled={idx === 0}
+                          className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/70 disabled:opacity-25 disabled:cursor-not-allowed hover:border-white/25 transition-colors"
+                          aria-label="Previous week"
+                        >‹</button>
+                        <div className="text-center min-w-[9rem]">
+                          <p className="font-display text-sm uppercase tracking-wider text-white/90">Week {wk.week}</p>
+                          <p className="text-[10px] font-mono text-[#666] mt-0.5">
+                            {range}
+                            <span className={`ml-1.5 ${wk.frozen ? 'text-[#666]' : 'text-emerald-400'}`}>· {wk.frozen ? 'final' : 'live'}</span>
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => go(weeks[idx + 1].week)}
+                          disabled={idx >= weeks.length - 1}
+                          className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/70 disabled:opacity-25 disabled:cursor-not-allowed hover:border-white/25 transition-colors"
+                          aria-label="Next week"
+                        >›</button>
+                      </div>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
-                        {(data.activity.membersOfWeek as any[]).map((m) => {
+                        {members.map((m) => {
                           const rc = m.role ? color(m.role) : '#888';
                           return (
                             <div key={m.userId} className="flex flex-col items-center text-center min-w-0">
@@ -1580,7 +1617,8 @@ export default function CommunityPage() {
                         })}
                       </div>
                     </div>
-                  )}
+                    );
+                  })()}
                 </motion.div>
               )}
 
