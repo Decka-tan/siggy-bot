@@ -1495,9 +1495,10 @@ export default function CommunityPage() {
                               <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10">
                                 <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
                               </div>
-                              <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.username}</p>
+                              <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.displayName}</p>
+                              <p className="text-[9px] sm:text-[10px] font-mono text-[#555] truncate max-w-full px-1">@{m.username}</p>
                               {m.role && (
-                                <span className="mt-1 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full truncate max-w-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
+                                <span className="mt-1.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full truncate max-w-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
                               )}
                             </div>
                           );
