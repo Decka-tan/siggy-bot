@@ -1472,6 +1472,37 @@ export default function CommunityPage() {
                   exit={{ opacity: 0 }}
                   className="space-y-6"
                 >
+                  {/* Members of the Week */}
+                  {data.activity?.membersOfWeek?.length > 0 && (
+                    <div className="rounded-2xl border border-white/5 p-6 sm:p-8 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden">
+                      <div className="mb-7 border-b border-white/[0.03] pb-5">
+                        <h2 className="font-display text-2xl uppercase tracking-wider text-white/95">Members of the Week</h2>
+                        <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-1">Top 15 by 7-day activity · contributions, events &amp; chat</p>
+                      </div>
+                      <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
+                        {(data.activity.membersOfWeek as any[]).map((m, i) => {
+                          const rc = m.role ? color(m.role) : '#888';
+                          return (
+                            <div key={m.userId} className="flex flex-col items-center text-center min-w-0">
+                              <div className="relative">
+                                <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10">
+                                  <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
+                                </div>
+                                {i < 3 && (
+                                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-black" style={{ backgroundColor: ['#fbbf24', '#cbd5e1', '#d97706'][i] }}>{i + 1}</span>
+                                )}
+                              </div>
+                              <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.username}</p>
+                              {m.role && (
+                                <span className="mt-1 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full truncate max-w-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {!data.insights ? (
                     <Card><p className="text-[#555] text-xs font-mono uppercase tracking-widest text-center py-6">Insights compiling under pipeline...</p></Card>
                   ) : (

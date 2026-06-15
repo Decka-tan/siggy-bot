@@ -24,7 +24,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 const fs = require('fs');
 const path = require('path');
-const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
 const { DISCORD_API, sleep, fetchWithRetry } = require('./lib/discord-fetch.cjs');
 
 const BOT_TOKEN   = process.env.DISCORD_BOT_TOKEN;
@@ -72,6 +72,13 @@ async function uploadR2(key, obj) {
     ContentType: 'application/json',
     CacheControl: 'public, max-age=300',
   }));
+}
+
+async function getR2(key) {
+  try {
+    const res = await s3.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
+    return JSON.parse(await res.Body.transformToString());
+  } catch { return null; }
 }
 
 /**
@@ -356,6 +363,57 @@ async function main() {
 
   console.log(`  boards: ${contrib.out.length}/${contrib.total} contrib · ${won.out.length}/${won.total} won · ${hosted.out.length}/${hosted.total} hosted (shown/ranked)`);
 
+  // ── Members of the Week (combined weighted 7d score incl. chat) ──
+  // Chat 7d = delta of global message counts vs a ~7-day-old daily snapshot.
+  const POINTS = { contribution: 3, won: 5, hosted: 8, chat: 0.01 };
+  const chat7 = {};
+  try {
+    const gm = await getR2('community/global-messages.json');
+    const nowCounts = {};
+    if (gm && gm.users) for (const [uid, u] of Object.entries(gm.users)) nowCounts[uid] = u.globalMessages || 0;
+    const hist = (await getR2('community/global-messages-history.json')) || { snapshots: [] };
+    hist.snapshots = hist.snapshots || [];
+    const sevenAgo = now - 7 * 86400000;
+    let base = null;
+    for (const s of hist.snapshots) if (s.ts <= sevenAgo) base = s;     // newest snapshot older than 7d
+    if (!base && hist.snapshots.length) base = hist.snapshots[0];        // else oldest available
+    if (base) for (const uid in nowCounts) chat7[uid] = Math.max(0, nowCounts[uid] - (base.counts[uid] || 0));
+    // append today's snapshot (max once / ~12h), keep last 8
+    const last = hist.snapshots[hist.snapshots.length - 1];
+    if (!last || now - last.ts > 12 * 3600 * 1000) {
+      hist.snapshots.push({ ts: now, counts: nowCounts });
+      hist.snapshots = hist.snapshots.slice(-8);
+      await uploadR2('community/global-messages-history.json', hist);
+    }
+    console.log(`  motw chat: base ${base ? new Date(base.ts).toISOString().slice(0,10) : 'none'} · ${Object.keys(chat7).length} users`);
+  } catch (e) { console.error('  ! motw chat error', e.message); }
+
+  const roleSnap = readJSON(path.join(DATA_DIR, 'role-snapshot.json'), {}); // uid -> topRole
+  const motwIds = new Set([...Object.keys(c7), ...Object.keys(w7), ...Object.keys(h7), ...Object.keys(chat7)]);
+  const motw = [...motwIds]
+    .filter((uid) => eligible(uid))
+    .map((uid) => {
+      const c = c7[uid] || 0, w = w7[uid] || 0, h = h7[uid] || 0, ch = chat7[uid] || 0;
+      const score = c * POINTS.contribution + w * POINTS.won + h * POINTS.hosted + ch * POINTS.chat;
+      return { uid, c, w, h, ch, score };
+    })
+    .filter((m) => m.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 15)
+    .map((m) => {
+      const u = state.users[m.uid] || {};
+      return {
+        userId: m.uid,
+        username: u.username || m.uid,
+        displayName: u.displayName || u.username || m.uid,
+        avatarUrl: u.avatar || `/api/proxy-avatar?url=${encodeURIComponent(`https://cdn.discordapp.com/embed/avatars/${parseInt(m.uid.slice(-1)) % 5}.png`)}`,
+        role: roleSnap[m.uid] || null,
+        score: Math.round(m.score),
+        contributions: m.c, eventsWon: m.w, eventsHosted: m.h, chat: m.ch,
+      };
+    });
+  console.log(`  members of the week: ${motw.length}`);
+
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
     contributions: contrib.out,
@@ -365,6 +423,7 @@ async function main() {
     eventsWon7d: won7d.out,           eventsWon30d: won30d.out,
     eventsHosted7d: hosted7d.out,     eventsHosted30d: hosted30d.out,
     totals: { contributions: contrib.total, eventsWon: won.total, eventsHosted: hosted.total },
+    membersOfWeek: motw,
     byUser,
   });
 
