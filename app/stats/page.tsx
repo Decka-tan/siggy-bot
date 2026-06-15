@@ -1250,27 +1250,6 @@ export default function CommunityPage() {
                       <VBars rows={rows} max={maxCount} />
                     </div>
                   </Card>
-                </motion.div>
-              )}
-
-              {/* ── INSIGHTS ── */}
-              {view === 'insights' && (
-                <motion.div 
-                  key="insights"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="space-y-6"
-                >
-                  {!data.insights ? (
-                    <Card><p className="text-[#555] text-xs font-mono uppercase tracking-widest text-center py-6">Insights compiling under pipeline...</p></Card>
-                  ) : (
-                    <>
-                      <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} total members joined since launch (Hover chart to track dates)`}>
-                        <div className="mt-4">
-                          <GrowthChart pts={growth} />
-                        </div>
-                      </Card>
 
                       <div className="rounded-2xl border border-white/5 p-6 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden group">
                         <div className="absolute -right-20 -top-20 w-48 h-48 rounded-full bg-white/[0.01] blur-3xl pointer-events-none" />
@@ -1481,6 +1460,27 @@ export default function CommunityPage() {
                           )}
                         </div>
                       )}
+                </motion.div>
+              )}
+
+              {/* ── INSIGHTS ── */}
+              {view === 'insights' && (
+                <motion.div 
+                  key="insights"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="space-y-6"
+                >
+                  {!data.insights ? (
+                    <Card><p className="text-[#555] text-xs font-mono uppercase tracking-widest text-center py-6">Insights compiling under pipeline...</p></Card>
+                  ) : (
+                    <>
+                      <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} total members joined since launch (Hover chart to track dates)`}>
+                        <div className="mt-4">
+                          <GrowthChart pts={growth} />
+                        </div>
+                      </Card>
                     </>
                   )}
                 </motion.div>
