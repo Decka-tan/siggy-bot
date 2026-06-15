@@ -26,6 +26,27 @@ function readActivityCounts(uid) {
     };
   } catch { return { contributions: 0, eventsWon: 0, eventsHosted: 0 }; }
 }
+
+// Global message counts (community/global-messages.json on R2), cached 10 min.
+const { S3Client: _S3, GetObjectCommand: _GetObj } = require('@aws-sdk/client-s3');
+const _r2 = new _S3({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: { accessKeyId: process.env.R2_ACCESS_KEY_ID, secretAccessKey: process.env.R2_SECRET_ACCESS_KEY },
+});
+let _gmCache = null, _gmExpiry = 0;
+async function getGlobalMessages(uid) {
+  try {
+    if (!_gmCache || Date.now() > _gmExpiry) {
+      const res = await _r2.send(new _GetObj({ Bucket: process.env.R2_BUCKET_NAME, Key: 'community/global-messages.json' }));
+      _gmCache = JSON.parse(await res.Body.transformToString());
+      _gmExpiry = Date.now() + 10 * 60 * 1000;
+    }
+    const u = _gmCache.users && _gmCache.users[uid];
+    return (u && typeof u.globalMessages === 'number') ? u.globalMessages : null;
+  } catch { return null; }
+}
+
 const { sendAllReminders } = require('./utils/reminder-system.cjs');
 const {
   getUserState,
@@ -769,7 +790,8 @@ async function handleCheck(interaction) {
   const eventsWon = activity.eventsWon;
   const eventsHosted = activity.eventsHosted;
   const eventCount = eventsWon + eventsHosted;
-  console.log(`Activity for ${displayName}: ${contributionCount} contributions / ${eventsWon} won / ${eventsHosted} hosted`);
+  const globalMessages = await getGlobalMessages(targetUser.id);
+  console.log(`Activity for ${displayName}: ${contributionCount} contributions / ${eventsWon} won / ${eventsHosted} hosted / ${globalMessages} msgs`);
 
   // X Content Analysis - check cache first
   let contentAnalysis = getXContentCache(targetUser.id);
@@ -871,7 +893,7 @@ async function handleCheck(interaction) {
   // Build stats block (contribs/events from daily activity tallies)
   const statsBlock = `@${targetUser.username} | ${displayName}${badgesStr}
 📝 Contributions: ${contributionCount} msgs
-🏆 Events Won: ${eventsWon}  ·  🎤 Hosted: ${eventsHosted}
+🏆 Events Won: ${eventsWon}  ·  🎤 Hosted: ${eventsHosted}${globalMessages != null ? `\n💬 Total Messages: ${globalMessages.toLocaleString()}` : ''}
 🎭 Roles: ${roles.slice(0, 10).join(', ') || 'None'}
 📅 Joined: ${joinDate}`;
 
