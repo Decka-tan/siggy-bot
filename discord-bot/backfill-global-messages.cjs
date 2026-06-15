@@ -7,10 +7,10 @@
  *     message count via the USER token's message search (1 req/member, throttled).
  *     A member is skipped if their stored count is still "fresh" (< GM_FRESH_HOURS,
  *     default 20h), so a manual re-run resumes; the cron refreshes everyone.
- *  2. publishChat7d() — for each MotW candidate, query the search API with a
- *     min_id snowflake (last 7 days) to get the REAL messages_last_7d, and write
- *     community/chat-7d.json = { chat7d: { uid: messages_last_7d } }. Accurate
- *     immediately (no snapshot history). fetch-activity just READS this.
+ *  2. publishChatWeeks() — for each MotW candidate, query search with each week's
+ *     min_id/max_id snowflakes (exact calendar window) to get the REAL messages
+ *     that week, and write community/chat-weeks.json = { weeks: { N: { uid: n } } }.
+ *     Accurate immediately (no snapshot history). fetch-activity just READS this.
  *
  * Run detached:
  *   setsid node discord-bot/backfill-global-messages.cjs > backfill.log 2>&1 < /dev/null &
@@ -73,32 +73,41 @@ async function putJSON(key, obj) {
   await s3.send(new PutObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key, Body: JSON.stringify(obj), ContentType: 'application/json' }));
 }
 
-// Publish chat-7d.json = real last-7-day message count per MotW candidate, by
-// querying the search API with a min_id snowflake (date-filtered) — accurate
-// immediately, no snapshot history needed.
-async function publishChat7d(candIds) {
-  const now = Date.now();
-  const minId = snowflakeFor(now - 7 * 86400000);
-  const ids = [...candIds];
-  const chat7d = {};
-  let n = 0;
-  for (const uid of ids) {
-    const c = await searchCount(uid, minId);
-    if (typeof c === 'number' && c > 0) chat7d[uid] = c;
-    if (++n % 25 === 0) console.log(`  chat7d ${n}/${ids.length} candidates scanned…`);
-    await sleep(THROTTLE_MS);
+// Publish chat-weeks.json = real per-week message count per MotW candidate, by
+// querying search with each week's min_id/max_id snowflakes (exact calendar
+// window) — accurate immediately, no snapshot history.
+async function publishChatWeeks(candWeeks) {
+  const out = {};
+  let totalReq = 0;
+  for (const [w, wk] of Object.entries(candWeeks)) {
+    const ids = wk.ids || [];
+    if (!ids.length) continue;
+    const minId = snowflakeFor(wk.startTs), maxId = snowflakeFor(wk.endTs);
+    const counts = {};
+    let n = 0;
+    for (const uid of ids) {
+      const c = await searchCount(uid, minId, maxId);
+      if (typeof c === 'number' && c > 0) counts[uid] = c;
+      totalReq++;
+      if (++n % 25 === 0) console.log(`  week ${w}: ${n}/${ids.length} scanned…`);
+      await sleep(THROTTLE_MS);
+    }
+    out[w] = counts;
+    console.log(`  week ${w}: ${Object.keys(counts).length}/${ids.length} with messages`);
   }
-  await putJSON('community/chat-7d.json', { updatedAt: now, windowDays: 7, chat7d });
-  console.log(`✓ chat-7d (real 7d search): ${Object.keys(chat7d).length}/${ids.length} candidates with messages`);
+  await putJSON('community/chat-weeks.json', { updatedAt: Date.now(), weeks: out });
+  console.log(`✓ chat-weeks published (${totalReq} searches across ${Object.keys(out).length} weeks)`);
 }
 
 // Discord snowflake for a given epoch-ms (used as min_id to date-filter search).
 function snowflakeFor(ms) { return ((BigInt(Math.floor(ms)) - 1420070400000n) << 22n).toString(); }
 
 // USER-token message search (total_results). Honors 429 retry-after.
-// With minId set, total_results = messages on/after that snowflake (a real window).
-async function searchCount(uid, minId) {
-  const qs = minId ? `?author_id=${uid}&min_id=${minId}` : `?author_id=${uid}`;
+// minId/maxId (snowflakes) date-bound the result to an exact window.
+async function searchCount(uid, minId, maxId) {
+  let qs = `?author_id=${uid}`;
+  if (minId) qs += `&min_id=${minId}`;
+  if (maxId) qs += `&max_id=${maxId}`;
   for (let attempt = 0; attempt < 6; attempt++) {
     let res;
     try {
@@ -117,10 +126,11 @@ async function main() {
   if (!USER_TOKEN) { console.error('DISCORD_USER_TOKEN missing'); process.exit(1); }
   const rolesMap = await getRolesMap();
 
-  // MotW candidates (top scorers from the activity boards) — scanned regardless
-  // of role so active non-contributors (e.g. event winners) get chat counted.
-  const candIds = new Set((await getJSON('community/motw-candidates.json', { ids: [] })).ids || []);
-  console.log(`Loaded ${candIds.size} MotW candidate IDs to also scan.`);
+  // MotW candidates per week (contrib/event participants for each week window) —
+  // scanned regardless of role so active non-contributors get chat counted.
+  const candWeeks = (await getJSON('community/motw-candidates.json', { weeks: {} })).weeks || {};
+  const candIds = new Set(Object.values(candWeeks).flatMap((w) => w.ids || []));
+  console.log(`Loaded ${candIds.size} candidate IDs across ${Object.keys(candWeeks).length} weeks.`);
 
   console.log('Scanning members for contributors + candidates...');
   const contributors = [];
@@ -163,12 +173,12 @@ async function main() {
   await saveDoc(doc);
   console.log(`✓ done. looked up ${done}, skipped ${skipped} (already had), total in doc ${Object.keys(doc.users).length}`);
 
-  // Real last-7-day chat per MotW candidate (date-filtered search).
-  if (candIds.size) {
-    console.log(`Scanning real 7d chat for ${candIds.size} candidates...`);
-    await publishChat7d(candIds);
+  // Real per-week chat per MotW candidate (date-filtered search, exact windows).
+  if (Object.keys(candWeeks).length) {
+    console.log('Scanning real per-week chat for candidates...');
+    await publishChatWeeks(candWeeks);
   } else {
-    console.log('No MotW candidates yet (run fetch-activity first) — skipping chat-7d.');
+    console.log('No MotW candidates yet (run fetch-activity first) — skipping chat-weeks.');
   }
 }
 process.on('unhandledRejection', (e) => { console.error('unhandledRejection:', e); process.exit(1); });

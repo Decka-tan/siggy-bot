@@ -268,8 +268,25 @@ async function main() {
   writeState();
   console.log(`  events: +${e.scanned} new messages`);
 
+  // Fixed 7-day week windows (Week 1 starts Mon 8 Jun 2026 → 15 Jun = Week 2).
+  const WEEK_MS = 7 * 86400000;
+  const WEEK1_START = Date.UTC(2026, 5, 8);
+  const weekIndexOf = (ts) => Math.max(1, Math.floor((ts - WEEK1_START) / WEEK_MS) + 1);
+  const curWeek = weekIndexOf(now);
+  // Per-week snowflake bounds for every week 1..curWeek (used to bucket messages
+  // into the exact calendar week they belong to — not "last 7 days from now").
+  const weekBounds = [];
+  for (let w = 1; w <= curWeek; w++) {
+    const startTs = WEEK1_START + (w - 1) * WEEK_MS, endTs = startTs + WEEK_MS;
+    weekBounds.push({ w, startTs, endTs, sfStart: BigInt(snowflakeForMs(startTs)), sfEnd: BigInt(snowflakeForMs(endTs)) });
+  }
+  const cW = {}, wW = {}, hW = {};                 // cW[week] = { uid: count }
+  for (const wb of weekBounds) { cW[wb.w] = {}; wW[wb.w] = {}; hW[wb.w] = {}; }
+  const weekOf = (id) => { const b = BigInt(id); for (const wb of weekBounds) if (b >= wb.sfStart && b < wb.sfEnd) return wb.w; return null; };
+
   // 2b. Rolling windows: scan once from the 30-day cutoff and split out 7-day
-  // (recent messages only, recomputed each run; not persisted).
+  // (recent messages only, recomputed each run; not persisted). Same pass also
+  // buckets each message into its exact week for the weekly Members of the Week.
   const sf30 = snowflakeForMs(now - 30 * 86400000);
   const sf7  = BigInt(snowflakeForMs(now - 7 * 86400000));
   const c7 = {}, c30 = {}, w7 = {}, w30 = {}, h7 = {}, h30 = {};
@@ -277,15 +294,17 @@ async function main() {
     if (!msg.author || msg.author.bot || !isSubmission(msg)) return;
     bump(c30, msg.author.id);
     if (BigInt(msg.id) >= sf7) bump(c7, msg.author.id);
+    const wk = weekOf(msg.id); if (wk) bump(cW[wk], msg.author.id);
   });
   await scanChannel(EVENTS_CHANNEL_ID, sf30, (msg) => {
     const { hosts, winners } = classifyEventMentions(msg, hostSignalRoleIds);
     const byId = new Map((msg.mentions || []).map((u) => [u.id, u]));
     const within7 = BigInt(msg.id) >= sf7;
-    for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(h30, id); if (within7) bump(h7, id); } }
-    for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(w30, id); if (within7) bump(w7, id); } }
+    const wk = weekOf(msg.id);
+    for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(h30, id); if (within7) bump(h7, id); if (wk) bump(hW[wk], id); } }
+    for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(w30, id); if (within7) bump(w7, id); if (wk) bump(wW[wk], id); } }
   });
-  console.log(`  windows: 30d ${Object.keys(c30).length} contrib · 7d ${Object.keys(c7).length} contrib`);
+  console.log(`  windows: 30d ${Object.keys(c30).length} contrib · 7d ${Object.keys(c7).length} contrib · weeks ${weekBounds.length}`);
 
   // 3. Build leaderboards, full rankings, and per-user map.
   const enrich = (uid, count) => {
@@ -363,41 +382,30 @@ async function main() {
 
   console.log(`  boards: ${contrib.out.length}/${contrib.total} contrib · ${won.out.length}/${won.total} won · ${hosted.out.length}/${hosted.total} hosted (shown/ranked)`);
 
-  // ── Members of the Week (combined weighted 7d score incl. chat) ──
-  // Chat 7d = delta of global message counts vs a ~7-day-old daily snapshot.
-  // Weights tuned to effort/difficulty: contributions are frequent (bare
-  // minimum ~7-14/wk), winning events is hard, hosting is the biggest effort.
-  // Chat at 0.02 — heavy chatting (500-1000+/day = 300-500 min/day) is a major
-  // time investment, so ~1000 msgs/wk ≈ 20 pts ≈ hosting 2 events.
+  // ── Weekly Members of the Week ──
+  // Every week is scored from its OWN calendar window (not "last 7 days from
+  // now"): contributions/events come from this run's per-week buckets (cW/wW/hW),
+  // chat from community/chat-weeks.json (per-week, real date-filtered search by
+  // the backfill cron). Anyone shown in an earlier week is excluded from later
+  // weeks (Rialo-style, no repeats). Weeks still inside the 30-day scan range are
+  // recomputed each run; older ones are kept frozen from motw-weeks.json.
+  // Weights tuned to effort: contributions frequent, winning hard, hosting hardest.
+  // Chat 0.02 → ~1000 msgs/wk ≈ 20 pts ≈ hosting 2 events.
   const POINTS = { contribution: 3, won: 5, hosted: 10, chat: 0.02 };
-  // Chat 7d is computed by the standalone refresh-chat.cjs cron (heavy USER-token
-  // search + snapshot history) and published to community/chat-7d.json. Here we
-  // just read that precomputed map — keeps this daily run light.
-  const chat7 = {};
-  try {
-    const cd = await getR2('community/chat-7d.json');
-    if (cd && cd.chat7d) Object.assign(chat7, cd.chat7d);
-    console.log(`  motw chat: ${Object.keys(chat7).length} users (from chat-7d.json${cd ? `, updated ${new Date(cd.updatedAt).toISOString().slice(0,10)}` : ' — missing'})`);
-  } catch (e) { console.error('  ! motw chat read error', e.message); }
-
   const roleSnap = readJSON(path.join(DATA_DIR, 'role-snapshot.json'), {});     // uid -> contributor topRole
   const specialRoles = readJSON(path.join(DATA_DIR, 'special-roles.json'), {}); // uid -> Blessed/Cursed/Harmonic
-  const motwIds = new Set([...Object.keys(c7), ...Object.keys(w7), ...Object.keys(h7), ...Object.keys(chat7)]);
 
-  // Full scored & sorted candidate list (top of which becomes each week's pick).
-  const ranked = [...motwIds]
-    .filter((uid) => eligible(uid))
-    .map((uid) => {
-      const c = c7[uid] || 0, w = w7[uid] || 0, h = h7[uid] || 0, ch = chat7[uid] || 0;
-      const score = c * POINTS.contribution + w * POINTS.won + h * POINTS.hosted + ch * POINTS.chat;
-      return { uid, c, w, h, ch, score };
-    })
-    .filter((m) => m.score > 0)
-    .sort((a, b) => b.score - a.score);
+  const chatWeeks = ((await getR2('community/chat-weeks.json')) || {}).weeks || {};
+  console.log(`  motw chat: ${Object.keys(chatWeeks).length} week(s) from chat-weeks.json`);
 
-  // Publish the top candidate IDs so the chat-refresh cron scans exactly these
-  // (contributor OR not) — e.g. non-contributor event winners get chat counted.
-  await uploadR2('community/motw-candidates.json', { updatedAt: now, ids: ranked.slice(0, 100).map((m) => m.uid) });
+  // Publish per-week candidate IDs (everyone with contrib/event activity that
+  // week) so the backfill cron searches their real chat for that exact window.
+  const candWeeks = {};
+  for (const wb of weekBounds) {
+    const ids = [...new Set([...Object.keys(cW[wb.w]), ...Object.keys(wW[wb.w]), ...Object.keys(hW[wb.w])])].filter(eligible);
+    candWeeks[wb.w] = { startTs: wb.startTs, endTs: wb.endTs, ids };
+  }
+  await uploadR2('community/motw-candidates.json', { updatedAt: now, weeks: candWeeks });
 
   const projectMember = (m) => {
     const u = state.users[m.uid] || {};
@@ -412,33 +420,36 @@ async function main() {
     };
   };
 
-  // ── Weekly Members of the Week with cross-week de-duplication ──
-  // Each week is a fixed 7-day window. Once a week ends it is frozen (its last
-  // computed list is kept). Anyone shown in a previous week is excluded from all
-  // later weeks (Rialo-style — no repeats). The current week recomputes each run.
-  const WEEK_MS = 7 * 86400000;
-  const WEEK1_START = Date.UTC(2026, 5, 8); // Mon 8 Jun 2026 → current week (15 Jun) = Week 2
-  const weekIndexOf = (ts) => Math.max(1, Math.floor((ts - WEEK1_START) / WEEK_MS) + 1);
-  const curWeek = weekIndexOf(now);
-
   const store = (await getR2('community/motw-weeks.json')) || { weeks: [] };
   const byNum = {};
   for (const wk of store.weeks || []) byNum[wk.week] = wk;
 
+  const RETENTION = now - 30 * 86400000;
   const excluded = new Set();
   const weeksOut = [];
-  for (let w = 1; w <= curWeek; w++) {
-    const startTs = WEEK1_START + (w - 1) * WEEK_MS;
-    const endTs = startTs + WEEK_MS;
-    const frozen = w < curWeek;
+  for (const wb of weekBounds) {
+    const w = wb.w;
+    const recomputable = wb.startTs >= RETENTION;     // still within channel-scan range
     let members;
-    if (frozen && byNum[w]) {
-      members = byNum[w].members;                                  // keep finalized list
+    if (!recomputable && byNum[w]) {
+      members = byNum[w].members;                     // out of scan range → keep frozen
     } else {
-      members = ranked.filter((m) => !excluded.has(m.uid)).slice(0, 15).map(projectMember);
+      const cc = cW[w] || {}, ww = wW[w] || {}, hh = hW[w] || {}, chw = chatWeeks[w] || {};
+      const ids = new Set([...Object.keys(cc), ...Object.keys(ww), ...Object.keys(hh), ...Object.keys(chw)]);
+      members = [...ids]
+        .filter((uid) => eligible(uid) && !excluded.has(uid))
+        .map((uid) => {
+          const c = cc[uid] || 0, wn = ww[uid] || 0, h = hh[uid] || 0, ch = chw[uid] || 0;
+          const score = c * POINTS.contribution + wn * POINTS.won + h * POINTS.hosted + ch * POINTS.chat;
+          return { uid, c, w: wn, h, ch, score };
+        })
+        .filter((m) => m.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 15)
+        .map(projectMember);
     }
     members.forEach((m) => excluded.add(m.userId));
-    weeksOut.push({ week: w, startTs, endTs, frozen, updatedAt: now, members });
+    weeksOut.push({ week: w, startTs: wb.startTs, endTs: wb.endTs, frozen: w < curWeek, updatedAt: now, members });
   }
   await uploadR2('community/motw-weeks.json', { weeks: weeksOut, updatedAt: now });
 
