@@ -365,7 +365,10 @@ async function main() {
 
   // ── Members of the Week (combined weighted 7d score incl. chat) ──
   // Chat 7d = delta of global message counts vs a ~7-day-old daily snapshot.
-  const POINTS = { contribution: 3, won: 5, hosted: 8, chat: 0.01 };
+  // Weights tuned to effort/difficulty: contributions are frequent (bare
+  // minimum ~7-14/wk), winning events is hard, hosting is the biggest effort,
+  // chat is high-volume so per-message is tiny (1000/day ≈ 70/wk).
+  const POINTS = { contribution: 3, won: 10, hosted: 20, chat: 0.01 };
   const chat7 = {};
   try {
     const gm = await getR2('community/global-messages.json');
