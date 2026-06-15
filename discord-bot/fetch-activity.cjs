@@ -370,27 +370,15 @@ async function main() {
   // Chat at 0.02 — heavy chatting (500-1000+/day = 300-500 min/day) is a major
   // time investment, so 1000/day ≈ 140/wk lands a dedicated chatter at the top.
   const POINTS = { contribution: 3, won: 10, hosted: 20, chat: 0.02 };
+  // Chat 7d is computed by the standalone refresh-chat.cjs cron (heavy USER-token
+  // search + snapshot history) and published to community/chat-7d.json. Here we
+  // just read that precomputed map — keeps this daily run light.
   const chat7 = {};
   try {
-    const gm = await getR2('community/global-messages.json');
-    const nowCounts = {};
-    if (gm && gm.users) for (const [uid, u] of Object.entries(gm.users)) nowCounts[uid] = u.globalMessages || 0;
-    const hist = (await getR2('community/global-messages-history.json')) || { snapshots: [] };
-    hist.snapshots = hist.snapshots || [];
-    const sevenAgo = now - 7 * 86400000;
-    let base = null;
-    for (const s of hist.snapshots) if (s.ts <= sevenAgo) base = s;     // newest snapshot older than 7d
-    if (!base && hist.snapshots.length) base = hist.snapshots[0];        // else oldest available
-    if (base) for (const uid in nowCounts) chat7[uid] = Math.max(0, nowCounts[uid] - (base.counts[uid] || 0));
-    // append today's snapshot (max once / ~12h), keep last 8
-    const last = hist.snapshots[hist.snapshots.length - 1];
-    if (!last || now - last.ts > 12 * 3600 * 1000) {
-      hist.snapshots.push({ ts: now, counts: nowCounts });
-      hist.snapshots = hist.snapshots.slice(-8);
-      await uploadR2('community/global-messages-history.json', hist);
-    }
-    console.log(`  motw chat: base ${base ? new Date(base.ts).toISOString().slice(0,10) : 'none'} · ${Object.keys(chat7).length} users`);
-  } catch (e) { console.error('  ! motw chat error', e.message); }
+    const cd = await getR2('community/chat-7d.json');
+    if (cd && cd.chat7d) Object.assign(chat7, cd.chat7d);
+    console.log(`  motw chat: ${Object.keys(chat7).length} users (from chat-7d.json${cd ? `, updated ${new Date(cd.updatedAt).toISOString().slice(0,10)}` : ' — missing'})`);
+  } catch (e) { console.error('  ! motw chat read error', e.message); }
 
   const roleSnap = readJSON(path.join(DATA_DIR, 'role-snapshot.json'), {});     // uid -> contributor topRole
   const specialRoles = readJSON(path.join(DATA_DIR, 'special-roles.json'), {}); // uid -> Blessed/Cursed/Harmonic

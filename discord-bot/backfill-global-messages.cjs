@@ -1,12 +1,16 @@
 /**
- * backfill-global-messages.cjs — one-off: look up total message count for every
- * contributor and store it in community/global-messages.json on R2, so the
- * Chat leaderboard is populated without waiting for organic profile lookups.
+ * backfill-global-messages.cjs — the CHAT refresh cron (heavy, runs on its own
+ * cadence, separate from the daily fetch-activity).
  *
- * Uses the USER token's message search (1 request per member), throttled to
- * avoid rate limits. A member is skipped only if their stored count is still
- * "fresh" (< GM_FRESH_HOURS, default 20h) — so a manual re-run resumes, while a
- * daily/2-daily cron refreshes everyone. Progress flushed to R2 periodically.
+ * Two jobs:
+ *  1. Refresh community/global-messages.json — look up each contributor's total
+ *     message count via the USER token's message search (1 req/member, throttled).
+ *     A member is skipped if their stored count is still "fresh" (< GM_FRESH_HOURS,
+ *     default 20h), so a manual re-run resumes; the cron refreshes everyone.
+ *  2. publishChat7d() — snapshot the refreshed cumulative counts into
+ *     global-messages-history.json (max once/12h) and write community/chat-7d.json
+ *     = { chat7d: { uid: messages_last_7d } }. fetch-activity just READS this for
+ *     the Members-of-the-Week score, so the daily run stays light.
  *
  * Run detached:
  *   setsid node discord-bot/backfill-global-messages.cjs > backfill.log 2>&1 < /dev/null &
@@ -57,6 +61,46 @@ async function loadDoc() {
 async function saveDoc(doc) {
   doc.updatedAt = Date.now();
   await s3.send(new PutObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: KEY, Body: JSON.stringify(doc), ContentType: 'application/json' }));
+}
+
+async function getJSON(key, fallback) {
+  try {
+    const res = await s3.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
+    return JSON.parse(await res.Body.transformToString());
+  } catch { return fallback; }
+}
+async function putJSON(key, obj) {
+  await s3.send(new PutObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key, Body: JSON.stringify(obj), ContentType: 'application/json' }));
+}
+
+// Snapshot the just-refreshed cumulative counts, then publish a 7-day chat delta
+// (chat-7d.json) that fetch-activity reads for the Members-of-the-Week score.
+async function publishChat7d(doc) {
+  const now = Date.now();
+  const nowCounts = {};
+  for (const [uid, u] of Object.entries(doc.users || {})) nowCounts[uid] = u.globalMessages || 0;
+
+  const hist = await getJSON('community/global-messages-history.json', { snapshots: [] });
+  hist.snapshots = hist.snapshots || [];
+  // Append today's snapshot (max once / ~12h so daily runs build a real window).
+  const last = hist.snapshots[hist.snapshots.length - 1];
+  if (!last || now - last.ts > 12 * 3600 * 1000) {
+    hist.snapshots.push({ ts: now, counts: nowCounts });
+    hist.snapshots = hist.snapshots.slice(-8);
+    await putJSON('community/global-messages-history.json', hist);
+  }
+
+  const sevenAgo = now - 7 * 86400000;
+  let base = null;
+  for (const s of hist.snapshots) if (s.ts <= sevenAgo) base = s; // newest snapshot older than 7d
+  if (!base && hist.snapshots.length) base = hist.snapshots[0];   // else oldest available
+  const chat7d = {};
+  if (base) for (const uid in nowCounts) {
+    const d = nowCounts[uid] - (base.counts[uid] || 0);
+    if (d > 0) chat7d[uid] = d;
+  }
+  await putJSON('community/chat-7d.json', { updatedAt: now, baseTs: base ? base.ts : null, chat7d });
+  console.log(`✓ chat-7d published: base ${base ? new Date(base.ts).toISOString().slice(0,10) : 'none'} · ${Object.keys(chat7d).length} users with delta`);
 }
 
 // USER-token message search (total_results). Honors 429 retry-after.
@@ -119,6 +163,7 @@ async function main() {
   }
   await saveDoc(doc);
   console.log(`✓ done. looked up ${done}, skipped ${skipped} (already had), total in doc ${Object.keys(doc.users).length}`);
+  await publishChat7d(doc);
 }
 process.on('unhandledRejection', (e) => { console.error('unhandledRejection:', e); process.exit(1); });
 process.on('uncaughtException', (e) => { console.error('uncaughtException:', e); process.exit(1); });
