@@ -96,7 +96,11 @@ async function publishChat7d(doc) {
   if (!base && hist.snapshots.length) base = hist.snapshots[0];   // else oldest available
   const chat7d = {};
   if (base) for (const uid in nowCounts) {
-    const d = nowCounts[uid] - (base.counts[uid] || 0);
+    const prev = base.counts[uid];
+    if (prev === undefined) continue;      // no baseline for this user → can't compute a real
+                                           // 7d delta (would equal their all-time total). Wait
+                                           // until they're in a snapshot, then count from there.
+    const d = nowCounts[uid] - prev;
     if (d > 0) chat7d[uid] = d;
   }
   await putJSON('community/chat-7d.json', { updatedAt: now, baseTs: base ? base.ts : null, chat7d });
