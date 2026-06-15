@@ -46,7 +46,8 @@ const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Radiant Ritu
 // channels as part of their role, not as community contributors).
 const STAFF_ROLES = new Set(['Mods', 'Moderator', 'Foundation Team', 'Event Manager']);
 
-// Alignment roles shown as a fallback label for non-contributors (in priority order).
+// Alignment roles (mutually exclusive) — shown as a label only for members
+// without a contributor role.
 const SPECIAL_ROLES = ['Blessed', 'Cursed', 'Harmonic'];
 
 // Regional community roles (for the Insights tab) — counted over ALL members
