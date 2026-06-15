@@ -368,8 +368,8 @@ async function main() {
   // Weights tuned to effort/difficulty: contributions are frequent (bare
   // minimum ~7-14/wk), winning events is hard, hosting is the biggest effort.
   // Chat at 0.02 — heavy chatting (500-1000+/day = 300-500 min/day) is a major
-  // time investment, so 1000/day ≈ 140/wk lands a dedicated chatter at the top.
-  const POINTS = { contribution: 3, won: 10, hosted: 20, chat: 0.02 };
+  // time investment, so ~1000 msgs/wk ≈ 20 pts ≈ hosting 2 events.
+  const POINTS = { contribution: 3, won: 5, hosted: 10, chat: 0.02 };
   // Chat 7d is computed by the standalone refresh-chat.cjs cron (heavy USER-token
   // search + snapshot history) and published to community/chat-7d.json. Here we
   // just read that precomputed map — keeps this daily run light.

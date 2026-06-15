@@ -1527,8 +1527,8 @@ export default function CommunityPage() {
                                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                   {[
                                     ['Contribution', '×3', 'each link/post', '#57f287'],
-                                    ['Event Won', '×10', 'per win', '#f59e0b'],
-                                    ['Event Hosted', '×20', 'per event run', '#eb459e'],
+                                    ['Event Won', '×5', 'per win', '#f59e0b'],
+                                    ['Event Hosted', '×10', 'per event run', '#eb459e'],
                                     ['Chat', '×0.02', 'per message (7d)', '#5865f2'],
                                   ].map(([label, mult, sub, c]) => (
                                     <div key={label} className="rounded-lg border border-white/5 bg-black/30 px-3 py-2.5">
@@ -1541,8 +1541,8 @@ export default function CommunityPage() {
                                   ))}
                                 </div>
                                 <p className="text-[10px] font-mono text-[#666] leading-relaxed">
-                                  <span className="text-[#888]">score</span> = contrib×3 + won×10 + hosted×20 + chat×0.02. &nbsp;
-                                  Chat ×0.02 means ~1,000 messages/week (≈300–500 min of activity) ≈ 20 pts — on par with winning 2 events.
+                                  <span className="text-[#888]">score</span> = contrib×3 + won×5 + hosted×10 + chat×0.02. &nbsp;
+                                  Chat ×0.02 means ~1,000 messages/week (≈300–500 min of activity) ≈ 20 pts — on par with hosting 2 events.
                                 </p>
                               </div>
                             </motion.div>
