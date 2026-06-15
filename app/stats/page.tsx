@@ -1460,6 +1460,14 @@ export default function CommunityPage() {
                           )}
                         </div>
                       )}
+
+                  {data.insights && (
+                    <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} total members joined since launch (Hover chart to track dates)`}>
+                      <div className="mt-4">
+                        <GrowthChart pts={growth} />
+                      </div>
+                    </Card>
+                  )}
                 </motion.div>
               )}
 
@@ -1496,18 +1504,6 @@ export default function CommunityPage() {
                         })}
                       </div>
                     </div>
-                  )}
-
-                  {!data.insights ? (
-                    <Card><p className="text-[#555] text-xs font-mono uppercase tracking-widest text-center py-6">Insights compiling under pipeline...</p></Card>
-                  ) : (
-                    <>
-                      <Card title="Server Growth" subtitle={`${totalGuild.toLocaleString()} total members joined since launch (Hover chart to track dates)`}>
-                        <div className="mt-4">
-                          <GrowthChart pts={growth} />
-                        </div>
-                      </Card>
-                    </>
                   )}
                 </motion.div>
               )}
