@@ -388,7 +388,8 @@ async function main() {
     console.log(`  motw chat: base ${base ? new Date(base.ts).toISOString().slice(0,10) : 'none'} · ${Object.keys(chat7).length} users`);
   } catch (e) { console.error('  ! motw chat error', e.message); }
 
-  const roleSnap = readJSON(path.join(DATA_DIR, 'role-snapshot.json'), {}); // uid -> topRole
+  const roleSnap = readJSON(path.join(DATA_DIR, 'role-snapshot.json'), {});     // uid -> contributor topRole
+  const specialRoles = readJSON(path.join(DATA_DIR, 'special-roles.json'), {}); // uid -> Blessed/Cursed/Harmonic
   const motwIds = new Set([...Object.keys(c7), ...Object.keys(w7), ...Object.keys(h7), ...Object.keys(chat7)]);
   const motw = [...motwIds]
     .filter((uid) => eligible(uid))
@@ -407,7 +408,7 @@ async function main() {
         username: u.username || m.uid,
         displayName: u.displayName || u.username || m.uid,
         avatarUrl: u.avatar || `/api/proxy-avatar?url=${encodeURIComponent(`https://cdn.discordapp.com/embed/avatars/${parseInt(m.uid.slice(-1)) % 5}.png`)}`,
-        role: roleSnap[m.uid] || null,
+        role: roleSnap[m.uid] || specialRoles[m.uid] || null,
         score: Math.round(m.score),
         contributions: m.c, eventsWon: m.w, eventsHosted: m.h, chat: m.ch,
       };

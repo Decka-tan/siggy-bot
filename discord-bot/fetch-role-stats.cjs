@@ -46,6 +46,9 @@ const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Radiant Ritu
 // channels as part of their role, not as community contributors).
 const STAFF_ROLES = new Set(['Mods', 'Moderator', 'Foundation Team', 'Event Manager']);
 
+// Alignment roles shown as a fallback label for non-contributors (in priority order).
+const SPECIAL_ROLES = ['Blessed', 'Cursed', 'Harmonic'];
+
 // Regional community roles (for the Insights tab) — counted over ALL members
 const REGION_ROLES = [
   'Komunitas Indonesia', 'Viet Community', 'Chinese Community', 'Korean Community',
@@ -87,6 +90,7 @@ async function fetchAllMembers(rolesMap) {
   const members = [];
   const allMemberIds = [];                 // every current (non-bot) member id — used to filter activity
   const staffIds = [];                     // members holding a staff/mod role — excluded from leaderboards
+  const specialRoles = {};                 // userId -> Blessed/Cursed/Harmonic (for non-contributor label)
   // Insights over ALL members (not just ranked)
   let totalGuildMembers = 0;
   const joinByMonth = {};                 // 'YYYY-MM' -> count
@@ -116,6 +120,8 @@ async function fetchAllMembers(rolesMap) {
         }
         const roleNames = m.roles.map(id => rolesMap.get(id)).filter(Boolean);
         if (roleNames.some(rn => STAFF_ROLES.has(rn))) staffIds.push(m.user.id);
+        const special = SPECIAL_ROLES.find(rn => roleNames.includes(rn));
+        if (special) specialRoles[m.user.id] = special;
         // regional: tally
         const memberRegions = roleNames.filter(rn => REGION_SET.has(rn));
         for (const rn of memberRegions) regional[rn]++;        // any
@@ -147,7 +153,7 @@ async function fetchAllMembers(rolesMap) {
       }
     },
   });
-  return { members, allMemberIds, staffIds, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
+  return { members, allMemberIds, staffIds, specialRoles, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 
 function readJSON(file, fallback) {
@@ -169,7 +175,7 @@ async function main() {
   console.log(`[${new Date().toISOString()}] Fetching role stats...`);
 
   const rolesMap = await getRolesMap();
-  const { members, allMemberIds, staffIds, insights } = await fetchAllMembers(rolesMap);
+  const { members, allMemberIds, staffIds, specialRoles, insights } = await fetchAllMembers(rolesMap);
   console.log(`  ${members.length} ranked / ${insights.totalGuildMembers} total members / ${staffIds.length} staff`);
 
   // Dump current member-id set so fetch-activity can exclude kicked/left users
@@ -178,6 +184,7 @@ async function main() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
   fs.writeFileSync(path.join(DATA_DIR, 'member-ids.json'), JSON.stringify(allMemberIds));
   fs.writeFileSync(path.join(DATA_DIR, 'staff-ids.json'), JSON.stringify(staffIds));
+  fs.writeFileSync(path.join(DATA_DIR, 'special-roles.json'), JSON.stringify(specialRoles));
 
   // 1. Distribution
   //    - count    (all):  each member counted in EVERY tracked role they hold
