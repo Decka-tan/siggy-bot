@@ -123,7 +123,12 @@ async function main() {
   if (!USER_TOKEN) { console.error('DISCORD_USER_TOKEN missing'); process.exit(1); }
   const rolesMap = await getRolesMap();
 
-  console.log('Scanning members for contributors...');
+  // MotW candidates (top scorers from the activity boards) — scanned regardless
+  // of role so active non-contributors (e.g. event winners) get chat counted.
+  const candIds = new Set((await getJSON('community/motw-candidates.json', { ids: [] })).ids || []);
+  console.log(`Loaded ${candIds.size} MotW candidate IDs to also scan.`);
+
+  console.log('Scanning members for contributors + candidates...');
   const contributors = [];
   let after = '0';
   for (let page = 0; page < 500; page++) {
@@ -133,16 +138,16 @@ async function main() {
     for (const m of batch) {
       if (m.user.bot) continue;
       const roleNames = m.roles.map((id) => rolesMap.get(id)).filter(Boolean);
-      if (roleNames.some((r) => TRACKED.has(r))) {
+      if (roleNames.some((r) => TRACKED.has(r)) || candIds.has(m.user.id)) {
         contributors.push({ id: m.user.id, username: m.user.username, displayName: m.nick || m.user.global_name || m.user.username, avatarUrl: avatarProxy(m) });
       }
     }
     after = batch[batch.length - 1].user.id;
-    if (page % 10 === 0) console.log(`  scanning… page ${page}, ${contributors.length} contributors so far`);
+    if (page % 10 === 0) console.log(`  scanning… page ${page}, ${contributors.length} targets so far`);
     if (batch.length < 1000) break;
     await sleep(200); // gentle on the member-list rate limit
   }
-  console.log(`Found ${contributors.length} contributors.`);
+  console.log(`Found ${contributors.length} targets (contributors + candidates).`);
 
   const doc = await loadDoc();
   doc.users = doc.users || {};

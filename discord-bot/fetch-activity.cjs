@@ -395,6 +395,10 @@ async function main() {
     .filter((m) => m.score > 0)
     .sort((a, b) => b.score - a.score);
 
+  // Publish the top candidate IDs so the chat-refresh cron scans exactly these
+  // (contributor OR not) — e.g. non-contributor event winners get chat counted.
+  await uploadR2('community/motw-candidates.json', { updatedAt: now, ids: ranked.slice(0, 100).map((m) => m.uid) });
+
   const projectMember = (m) => {
     const u = state.users[m.uid] || {};
     return {
