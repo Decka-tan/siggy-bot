@@ -632,6 +632,10 @@ export default function CommunityPage() {
     return (a.daysToPromo ?? 1e9) - (b.daysToPromo ?? 1e9);
   });
 
+  // recent promotions INTO each role (last 14d) → +N badge in Role Distribution
+  const recentByRole: Record<string, number> = {};
+  for (const u of upgrades) if (u.toRole) recentByRole[u.toRole] = (recentByRole[u.toRole] || 0) + 1;
+
   const growth: GrowthPt[] = data?.insights?.growth ?? [];
   const rawRegional: RegionRow[] = data?.insights?.insightsRegional ?? data?.insights?.regional ?? [];
   const totalGuild = data?.insights?.totalGuildMembers ?? 0;
@@ -1154,7 +1158,17 @@ export default function CommunityPage() {
                             <div className="absolute inset-0 opacity-0 group-hover:opacity-[0.08] transition-opacity duration-500 pointer-events-none" style={{ background: `radial-gradient(circle at 80% 20%, ${c}, transparent 60%)` }} />
                             <div className="relative">
                               <div className="flex items-center justify-between mb-4">
-                                <span className="font-mono text-xs uppercase tracking-wider font-bold text-white/70">{d.role}</span>
+                                <span className="flex items-center gap-1.5 min-w-0">
+                                  <span className="font-mono text-xs uppercase tracking-wider font-bold text-white/70 truncate">{d.role}</span>
+                                  {recentByRole[d.role] > 0 && (
+                                    <span
+                                      title={`${recentByRole[d.role]} promoted here in the last 14 days`}
+                                      className="shrink-0 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-full text-emerald-400 bg-emerald-400/10 border border-emerald-400/20"
+                                    >
+                                      +{recentByRole[d.role]}
+                                    </span>
+                                  )}
+                                </span>
                                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-white/5 bg-white/5 text-[#888]">{d.percent}%</span>
                               </div>
                               <div className="flex items-baseline gap-2 mt-2">
