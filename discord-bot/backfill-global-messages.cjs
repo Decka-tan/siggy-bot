@@ -25,7 +25,7 @@ const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const USER_TOKEN = process.env.DISCORD_USER_TOKEN;
 const GUILD_ID = '1210468736205852672';
 const KEY = 'community/global-messages.json';
-const THROTTLE_MS = parseInt(process.env.GM_THROTTLE_MS || '5000', 10); // between searches (user-token search is heavily rate-limited)
+const THROTTLE_MS = parseInt(process.env.GM_THROTTLE_MS || '7000', 10); // between searches (user-token search is heavily rate-limited)
 const FLUSH_EVERY = 25;         // upload progress every N lookups
 const FRESH_MS = (parseFloat(process.env.GM_FRESH_HOURS || '20')) * 3600 * 1000; // skip if recorded more recently than this
 
