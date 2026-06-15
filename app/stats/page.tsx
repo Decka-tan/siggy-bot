@@ -444,6 +444,7 @@ export default function CommunityPage() {
   const [lbMode, setLbMode] = useState<'contributions' | 'eventsWon' | 'eventsHosted' | 'chat'>('contributions');
   const [lbSearch, setLbSearch] = useState('');
   const [lbWindow, setLbWindow] = useState<'all' | '30d' | '7d'>('all');
+  const [motwInfo, setMotwInfo] = useState(false);
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -1484,8 +1485,55 @@ export default function CommunityPage() {
                   {data.activity?.membersOfWeek?.length > 0 && (
                     <div className="rounded-2xl border border-white/5 p-6 sm:p-8 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden">
                       <div className="mb-7 border-b border-white/[0.03] pb-5">
-                        <h2 className="font-display text-2xl uppercase tracking-wider text-white/95">Members of the Week</h2>
-                        <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-1">Top 15 by 7-day activity · contributions, events &amp; chat</p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h2 className="font-display text-2xl uppercase tracking-wider text-white/95">Members of the Week</h2>
+                            <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-1">Top 15 by 7-day activity · contributions, events &amp; chat</p>
+                          </div>
+                          <button
+                            onClick={() => setMotwInfo((v) => !v)}
+                            aria-label="Scoring breakdown"
+                            className={`shrink-0 flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider px-3 py-1.5 rounded-full border transition-colors ${motwInfo ? 'border-white/20 bg-white/10 text-white/90' : 'border-white/10 bg-black/40 text-[#888] hover:text-white/80 hover:border-white/20'}`}
+                          >
+                            <span className="text-sm leading-none">ⓘ</span> How it&apos;s scored
+                          </button>
+                        </div>
+                        <AnimatePresence initial={false}>
+                          {motwInfo && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-5 rounded-xl border border-white/5 bg-black/40 p-4 sm:p-5 space-y-3">
+                                <p className="text-[11px] font-mono text-[#999] leading-relaxed">
+                                  Each member gets a weighted score over the <span className="text-white/80">last 7 days</span>. Higher weights go to harder, higher-effort actions. Top 15 by total score make the cut. Staff and kicked members are excluded.
+                                </p>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                  {[
+                                    ['Contribution', '×3', 'each link/post', '#57f287'],
+                                    ['Event Won', '×10', 'per win', '#f59e0b'],
+                                    ['Event Hosted', '×20', 'per event run', '#eb459e'],
+                                    ['Chat', '×0.02', 'per message (7d)', '#5865f2'],
+                                  ].map(([label, mult, sub, c]) => (
+                                    <div key={label} className="rounded-lg border border-white/5 bg-black/30 px-3 py-2.5">
+                                      <div className="flex items-baseline gap-1.5">
+                                        <span className="text-base font-display font-bold" style={{ color: c as string }}>{mult}</span>
+                                        <span className="text-[10px] font-mono uppercase tracking-wider text-white/80">{label}</span>
+                                      </div>
+                                      <p className="text-[9px] font-mono text-[#666] mt-0.5">{sub}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                                <p className="text-[10px] font-mono text-[#666] leading-relaxed">
+                                  <span className="text-[#888]">score</span> = contrib×3 + won×10 + hosted×20 + chat×0.02. &nbsp;
+                                  Chat ×0.02 means ~1,000 messages/week (≈300–500 min of activity) ≈ 20 pts — on par with winning 2 events.
+                                </p>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
                         {(data.activity.membersOfWeek as any[]).map((m) => {
@@ -1499,6 +1547,19 @@ export default function CommunityPage() {
                               <p className="text-[9px] sm:text-[10px] font-mono text-[#555] truncate max-w-full px-1">@{m.username}</p>
                               {m.role && (
                                 <span className="mt-1.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full truncate max-w-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
+                              )}
+                              {motwInfo && (
+                                <div className="mt-2 w-full">
+                                  <p className="text-[11px] font-display font-bold text-white/90">{m.score} <span className="text-[8px] font-mono text-[#666] uppercase">pts</span></p>
+                                  <p className="text-[8px] font-mono text-[#666] leading-tight mt-0.5">
+                                    {[
+                                      m.contributions ? `${m.contributions}c` : '',
+                                      m.eventsWon ? `${m.eventsWon}w` : '',
+                                      m.eventsHosted ? `${m.eventsHosted}h` : '',
+                                      m.chat ? `${m.chat >= 1000 ? (m.chat / 1000).toFixed(1) + 'k' : m.chat}💬` : '',
+                                    ].filter(Boolean).join(' · ') || '—'}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           );
