@@ -137,8 +137,14 @@ async function handleInvoiceLink(interaction) {
 /**
  * /bayar command - Start payment claim flow
  */
-async function handleBayar(interaction) {
+async function handleBayar(interaction, directInvoiceId) {
   const { getGuildInvoices } = require('../utils/invoice-db.cjs');
+
+  // Invoked from a specific invoice's "Bayar" button → invoice already known,
+  // skip the invoice picker and go straight to choosing who paid.
+  if (directInvoiceId) {
+    return showPersonSelect(interaction, directInvoiceId, true);
+  }
 
   const invoices = getGuildInvoices(interaction.guildId);
 
@@ -187,28 +193,35 @@ async function handleBayar(interaction) {
  * Handle invoice selection in payment flow
  */
 async function handleBayarSelectInvoice(interaction) {
-  const invoiceId = interaction.values[0];
-  const invoice = getInvoice(invoiceId);
+  return showPersonSelect(interaction, interaction.values[0], false);
+}
+
+/**
+ * Render the "who paid?" person picker for a known invoice.
+ * useReply=true → fresh ephemeral reply (came from the Bayar button);
+ * useReply=false → update the existing ephemeral message (came from a select).
+ */
+async function showPersonSelect(interaction, rawInvoiceId, useReply) {
+  let invoiceId = rawInvoiceId;
+  let invoice = getInvoice(invoiceId);
+  if (!invoice && invoiceId && !String(invoiceId).startsWith('invoice_')) {
+    invoiceId = `invoice_${invoiceId}`;
+    invoice = getInvoice(invoiceId);
+  }
+
+  const respond = (payload) =>
+    useReply ? interaction.reply({ ...payload, ephemeral: true }) : interaction.update(payload);
 
   if (!invoice) {
-    return interaction.update({
-      content: '❌ Invoice tidak ditemukan.',
-      components: []
-    });
+    return respond({ content: '❌ Invoice tidak ditemukan.', components: [] });
   }
 
-  // Get only unpaid participants
   const unpaidParticipants = invoice.participants.filter(p => !p.paid);
-
   if (unpaidParticipants.length === 0) {
-    return interaction.update({
-      content: '✅ Semua orang di invoice ini udah lunas!',
-      components: []
-    });
+    return respond({ content: '✅ Semua orang di invoice ini udah lunas!', components: [] });
   }
 
-  // Build participant select menu
-  const options = unpaidParticipants.map(p =>
+  const options = unpaidParticipants.slice(0, 25).map(p =>
     new StringSelectMenuOptionBuilder()
       .setLabel(`${p.username} - Rp ${Number(p.amount).toLocaleString('id-ID')}`)
       .setValue(p.userId)
@@ -224,8 +237,8 @@ async function handleBayarSelectInvoice(interaction) {
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
 
-  await interaction.update({
-    content: '💵 **Bayar untuk siapa?**\n\nPilih orang yang kamu bayarkan:',
+  return respond({
+    content: `💵 **Bayar — ${invoice.title || 'Invoice'}**\n\nPilih orang yang kamu bayarkan:`,
     components: [row]
   });
 }

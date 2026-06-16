@@ -633,9 +633,10 @@ async function handleInvoiceButton(interaction, action) {
       });
 
     } else if (action === 'bayar') {
-      // Delegate to payment.cjs handleBayar
+      // Delegate to payment.cjs — pass the invoice this button belongs to so it
+      // skips the invoice picker and goes straight to "who paid?".
       const { handleBayar } = require('./payment.cjs');
-      return handleBayar(interaction);
+      return handleBayar(interaction, invoiceId);
 
     } else if (action === 'settle') {
       // Mark all participants as paid
