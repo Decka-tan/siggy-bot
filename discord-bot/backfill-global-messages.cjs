@@ -12,10 +12,11 @@
  *     that week, and write community/chat-weeks.json = { weeks: { N: { uid: n } } }.
  *     Accurate immediately (no snapshot history). fetch-activity just READS this.
  *
+ * Daily cron (5am): re-scans only the LIVE week's chat each day (cheap); the
+ * all-time global-messages refresh self-limits to ~every 2 days via GM_FRESH_HOURS.
+ *   0 5 * * *  cd /opt/siggy-bot && node discord-bot/backfill-global-messages.cjs >> /home/ubuntu/backfill.log 2>&1
  * Run detached:
  *   setsid node discord-bot/backfill-global-messages.cjs > backfill.log 2>&1 < /dev/null &
- * Cron (every 2 days, 5am) — crontab line:  0 5 [slash]2 * * ...
- * i.e.  0 5 (asterisk-slash-2) * *  cd /opt/siggy-bot && node discord-bot/backfill-global-messages.cjs >> /home/ubuntu/backfill.log 2>&1
  */
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const { S3Client, PutObjectCommand, GetObjectCommand } = require('@aws-sdk/client-s3');
@@ -27,7 +28,7 @@ const GUILD_ID = '1210468736205852672';
 const KEY = 'community/global-messages.json';
 const THROTTLE_MS = parseInt(process.env.GM_THROTTLE_MS || '7000', 10); // between searches (user-token search is heavily rate-limited)
 const FLUSH_EVERY = 25;         // upload progress every N lookups
-const FRESH_MS = (parseFloat(process.env.GM_FRESH_HOURS || '20')) * 3600 * 1000; // skip if recorded more recently than this
+const FRESH_MS = (parseFloat(process.env.GM_FRESH_HOURS || '44')) * 3600 * 1000; // skip if recorded more recently than this (daily cron → all-time refreshes ~every 2 days; chat-weeks still runs daily)
 
 const TRACKED = new Set(['Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty']);
 
@@ -77,11 +78,19 @@ async function putJSON(key, obj) {
 // querying search with each week's min_id/max_id snowflakes (exact calendar
 // window) — accurate immediately, no snapshot history.
 async function publishChatWeeks(candWeeks) {
-  const out = {};
+  // Past weeks are immutable (their window has closed) — keep their previously
+  // searched chat and only re-scan the current (live) week each run. This keeps
+  // a daily cadence cheap.
+  const prev = (await getJSON('community/chat-weeks.json', { weeks: {} })).weeks || {};
+  const weekNums = Object.keys(candWeeks).map(Number).filter((n) => !Number.isNaN(n));
+  const curWeek = weekNums.length ? Math.max(...weekNums) : null;
+
+  const out = { ...prev };
   let totalReq = 0;
   for (const [w, wk] of Object.entries(candWeeks)) {
     const ids = wk.ids || [];
-    if (!ids.length) continue;
+    if (Number(w) !== curWeek) continue;    // frozen/past week → keep existing chat (from prev spread)
+    if (!ids.length) { out[w] = out[w] || {}; continue; }
     const minId = snowflakeFor(wk.startTs), maxId = snowflakeFor(wk.endTs);
     const counts = {};
     let n = 0;
@@ -89,14 +98,14 @@ async function publishChatWeeks(candWeeks) {
       const c = await searchCount(uid, minId, maxId);
       if (typeof c === 'number' && c > 0) counts[uid] = c;
       totalReq++;
-      if (++n % 25 === 0) console.log(`  week ${w}: ${n}/${ids.length} scanned…`);
+      if (++n % 25 === 0) console.log(`  week ${w} (live): ${n}/${ids.length} scanned…`);
       await sleep(THROTTLE_MS);
     }
     out[w] = counts;
-    console.log(`  week ${w}: ${Object.keys(counts).length}/${ids.length} with messages`);
+    console.log(`  week ${w} (live): ${Object.keys(counts).length}/${ids.length} with messages`);
   }
   await putJSON('community/chat-weeks.json', { updatedAt: Date.now(), weeks: out });
-  console.log(`✓ chat-weeks published (${totalReq} searches across ${Object.keys(out).length} weeks)`);
+  console.log(`✓ chat-weeks published (live week ${curWeek}, ${totalReq} searches; ${Object.keys(out).length} weeks kept)`);
 }
 
 // Discord snowflake for a given epoch-ms (used as min_id to date-filter search).
