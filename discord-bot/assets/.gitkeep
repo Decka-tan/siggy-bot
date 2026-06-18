@@ -1,0 +1,2 @@
+Place daily-11am.png and daily-3pm.png here on the VPS.
+These are sent by the DAILY_POSTS scheduler in vps-server.cjs.

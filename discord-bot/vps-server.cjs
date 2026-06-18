@@ -1485,6 +1485,53 @@ cron.schedule('0 20 * * 0', async () => {
   }
 });
 
+// ============ DAILY IMAGE POSTS (Asia/Jakarta) ============
+// Two posts per day to a fixed channel. Images are sent as file attachments
+// from discord-bot/assets/ — Discord CDN URLs expire, so we host them locally.
+const DAILY_POSTS = {
+  channelId: '1455014277847973984',
+  posts: [
+    {
+      cron: '0 11 * * *', // 11:00 WIB
+      label: '11AM daily',
+      content: '<@&1463045360514629652>',
+      imageFile: 'daily-11am.png',
+    },
+    {
+      cron: '0 15 * * *', // 15:00 WIB
+      label: '3PM daily',
+      content: '<@416478332452864001> <@392321900577161219>',
+      imageFile: 'daily-3pm.png',
+    },
+  ],
+};
+
+for (const post of DAILY_POSTS.posts) {
+  cron.schedule(post.cron, async () => {
+    try {
+      const channel = await client.channels.fetch(DAILY_POSTS.channelId);
+      if (!channel?.isTextBased()) {
+        console.error(`[Daily ${post.label}] channel not text-based or missing`);
+        return;
+      }
+      const filePath = path.join(__dirname, 'assets', post.imageFile);
+      if (!fs.existsSync(filePath)) {
+        console.error(`[Daily ${post.label}] image missing at ${filePath}`);
+        return;
+      }
+      await channel.send({
+        content: post.content,
+        files: [filePath],
+        allowedMentions: { parse: ['users', 'roles'] },
+      });
+      console.log(`[Daily ${post.label}] sent to #${channel.name || DAILY_POSTS.channelId}`);
+    } catch (err) {
+      console.error(`[Daily ${post.label}] send error:`, err.message);
+    }
+  }, { timezone: 'Asia/Jakarta' });
+}
+console.log(`[Cron] Scheduled ${DAILY_POSTS.posts.length} daily image posts (Asia/Jakarta)`);
+
 client.once('ready', () => {
   const instanceId = process.env.RENDER_SERVICE_ID || process.env.RAILWAY_SERVICE_NAME || 'LOCAL-' + Math.random().toString(36).substr(2, 5);
   console.log(`✅ ${client.user.tag} is online! [Instance: ${instanceId}]`);
