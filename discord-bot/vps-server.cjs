@@ -1830,6 +1830,11 @@ client.on('messageCreate', async (message) => {
   // Only respond if @mentioned
   if (!message.mentions.has(client.user)) return;
 
+  // Servers where AI chat replies are disabled (Siggy still runs slash commands
+  // / scheduled posts there, but won't auto-respond to mentions).
+  const AI_CHAT_DISABLED_GUILDS = new Set(['1455014277197860908']);
+  if (AI_CHAT_DISABLED_GUILDS.has(message.guildId)) return;
+
   // Remove @Siggy from message
   const cleanMessage = message.content
     .replace(/<@!?(\d+)>/, '')
