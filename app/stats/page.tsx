@@ -72,6 +72,29 @@ function fmtStat(n: number): string {
   if (n >= 100_000)   return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
   return n.toLocaleString();
 }
+
+// Counts up from 0 to `value` over `duration` ms with an ease-out curve. Only
+// animates on mount/value-change; honors prefers-reduced-motion.
+function CountUp({ value, duration = 1200 }: { value: number; duration?: number }) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setN(value); return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const from = 0, to = value;
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(from + (to - from) * eased));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, duration]);
+  return <>{n.toLocaleString()}</>;
+}
 function statDef(key: StatKey, m: any): { label: string; value: number; color: string } {
   switch (key) {
     case 'contributions':  return { label: 'Contributions', value: m?.contributionsCount || 0, color: '#fbbf24' };
@@ -674,8 +697,10 @@ export default function CommunityPage() {
       <div className="absolute top-[30%] right-[-10%] w-[60%] h-[70%] rounded-full bg-violet-600/[0.02] blur-[180px] pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[50%] rounded-full bg-emerald-500/[0.02] blur-[140px] pointer-events-none" />
 
-      {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+      {/* Grid Pattern — full height, fades at edges so it never competes with content */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:48px_48px] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_30%,#000_50%,transparent_100%)] pointer-events-none" />
+      {/* Sub-grid dots — finer texture so empty areas feel intentional, not blank */}
+      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:16px_16px] [mask-image:linear-gradient(to_bottom,transparent_0%,#000_25%,#000_85%,transparent_100%)] pointer-events-none" />
 
       <div className="max-w-6xl mx-auto px-6 py-24 relative z-10">
 
@@ -771,16 +796,17 @@ export default function CommunityPage() {
             {/* KPI Cards Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: Total Members */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
                 transition={{ delay: 0.02 }}
-                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-amber-400/20 transition-all duration-300"
+                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-amber-400/20 transition-colors duration-300"
               >
                 <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-500/10 to-transparent" />
                 <p className="font-mono text-[9px] uppercase tracking-wider text-[#555] font-bold">Total Discord Members</p>
                 <p className="font-display text-3xl md:text-4xl text-white mt-2 font-black tracking-tight">
-                  {(totalGuild || total).toLocaleString()}
+                  <CountUp value={totalGuild || total} />
                 </p>
                 <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#666]">
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -789,16 +815,17 @@ export default function CommunityPage() {
               </motion.div>
 
               {/* Card 2: Contributor Count */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
                 transition={{ delay: 0.04 }}
-                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-violet-500/20 transition-all duration-300"
+                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-violet-500/20 transition-colors duration-300"
               >
                 <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-violet-500/10 to-transparent" />
                 <p className="font-mono text-[9px] uppercase tracking-wider text-[#555] font-bold">Active Contributors</p>
                 <p className="font-display text-3xl md:text-4xl text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-400 mt-2 font-black tracking-tight">
-                  {total.toLocaleString()}
+                  <CountUp value={total} />
                 </p>
                 <div className="mt-1 flex items-center gap-1.5 text-[10px] text-[#666]">
                   <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
@@ -807,16 +834,17 @@ export default function CommunityPage() {
               </motion.div>
 
               {/* Card 3: Recent Promotions */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
                 transition={{ delay: 0.06 }}
-                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-emerald-500/20 transition-all duration-300"
+                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-emerald-500/20 transition-colors duration-300"
               >
                 <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent" />
                 <p className="font-mono text-[9px] uppercase tracking-wider text-[#555] font-bold">14d Promotions</p>
                 <p className="font-display text-3xl md:text-4xl text-emerald-400 mt-2 font-black tracking-tight">
-                  {upgrades.length}
+                  <CountUp value={upgrades.length} />
                 </p>
                 <div className="mt-1 flex items-center gap-1.5 text-[10px] text-emerald-400/80 font-bold uppercase tracking-wider">
                   <span>🚀 Active climbs</span>
@@ -824,11 +852,12 @@ export default function CommunityPage() {
               </motion.div>
 
               {/* Card 4: Top Region */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
                 transition={{ delay: 0.08 }}
-                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-sky-500/20 transition-all duration-300"
+                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-sky-500/20 transition-colors duration-300"
               >
                 <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-sky-500/10 to-transparent" />
                 <p className="font-mono text-[9px] uppercase tracking-wider text-[#555] font-bold">Top Region</p>
