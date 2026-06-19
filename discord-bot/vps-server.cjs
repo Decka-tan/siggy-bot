@@ -1459,18 +1459,25 @@ async function registerCommands() {
       console.log('✅ Commands registered globally');
     }
 
-    // Register invoice & payment commands to specific guilds only
+    // Register invoice & payment commands to specific guilds only. For guilds
+    // in FULL_COMMAND_GUILD_IDS we ALSO push the main `commands` set so new/
+    // updated slash commands (e.g. /mood) take effect instantly, bypassing the
+    // ~1h global propagation.
     const invoiceAndPaymentCommands = [...invoiceCommandsSimple, ...paymentCommands];
+    const FULL_COMMAND_GUILD_IDS = new Set(['1455014277197860908']);
     console.log(`💰 Registering ${invoiceAndPaymentCommands.length} invoice/payment commands to ${INVOICE_GUILD_IDS.length} allowed guilds...`);
     for (const guildId of INVOICE_GUILD_IDS) {
       try {
+        const body = FULL_COMMAND_GUILD_IDS.has(guildId)
+          ? [...commands, ...invoiceAndPaymentCommands]
+          : invoiceAndPaymentCommands;
         await rest.put(
           Routes.applicationGuildCommands(CONFIG.clientId, guildId),
-          { body: invoiceAndPaymentCommands }
+          { body }
         );
-        console.log(`✅ Invoice/payment commands registered to guild: ${guildId}`);
+        console.log(`✅ ${FULL_COMMAND_GUILD_IDS.has(guildId) ? 'Full + invoice' : 'Invoice/payment'} commands registered to guild: ${guildId}`);
       } catch (error) {
-        console.error(`❌ Failed to register invoice/payment commands to guild ${guildId}:`, error.message);
+        console.error(`❌ Failed to register commands to guild ${guildId}:`, error.message);
       }
     }
 
