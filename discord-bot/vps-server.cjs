@@ -1567,9 +1567,15 @@ const MOOD_FILES = {
 
 async function handleMoodPost(interaction) {
   const mood = interaction.options.getString('mood');
+  if (!mood) {
+    return interaction.reply({
+      content: '⚠️ Slash command is stale — reload Discord (Ctrl+R) and try again. If it still doesn\'t show a mood dropdown, the new command is still propagating.',
+      ephemeral: true,
+    });
+  }
   const file = MOOD_FILES[mood];
   if (!file) {
-    return interaction.reply({ content: '❌ Unknown mood.', ephemeral: true });
+    return interaction.reply({ content: `❌ Unknown mood: ${mood}`, ephemeral: true });
   }
   const filePath = path.join(__dirname, 'assets', 'moods', file);
   if (!fs.existsSync(filePath)) {
