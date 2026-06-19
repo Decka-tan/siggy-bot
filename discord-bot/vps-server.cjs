@@ -1441,22 +1441,26 @@ async function registerCommands() {
   }
 
   try {
-    // Guild commands for instant update
+    // Guild commands for instant update (dev/main guild)
     if (CONFIG.guildId) {
       console.log(`📡 [DEBUG] Sending PUT request to Discord for Guild: ${CONFIG.guildId}...`);
       const registrationPromise = rest.put(Routes.applicationGuildCommands(CONFIG.clientId, CONFIG.guildId), { body: commands });
-      
-      // Timeout 15 seconds for registration
       const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Discord API Timeout')), 15000));
-      
       await Promise.race([registrationPromise, timeoutPromise]);
       console.log('✅ Commands registered to guild (instant update!)');
       console.log(`   Commands: ${commands.map(c => c.name).join(', ')}`);
-    } else {
-      console.log(`📡 Registering ${commands.length} commands GLOBALLY (may take up to 1 hour to propagate)...`);
-      console.log('   💡 TIP: Set DISCORD_GUILD_ID env var for instant guild commands!');
+    }
+
+    // ALWAYS refresh global commands too so old global defs get overwritten
+    // (otherwise stale entries like the old /mood linger and duplicate the new
+    // guild-registered version). Global propagation takes up to 1h but the new
+    // definition replaces the old one immediately at Discord's side.
+    try {
+      console.log(`🌐 Refreshing ${commands.length} global commands (replaces stale defs)...`);
       await rest.put(Routes.applicationCommands(CONFIG.clientId), { body: commands });
-      console.log('✅ Commands registered globally');
+      console.log('✅ Global commands refreshed');
+    } catch (e) {
+      console.error('❌ Global command refresh failed:', e.message);
     }
 
     // Register invoice & payment commands to specific guilds only. For guilds
