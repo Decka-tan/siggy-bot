@@ -1,0 +1,2 @@
+Mood images for /mood slash command. Filenames must match MOOD_FILES in vps-server.cjs:
+  umazing.jpg, great.jpg, good.jpg, up.png, normal.jpg, down.jpg, bad.jpg, awful.jpg

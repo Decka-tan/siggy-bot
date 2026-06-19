@@ -1387,7 +1387,27 @@ async function registerCommands() {
         ],
       }],
     },
-    { name: 'mood', description: 'Check your current relationship and mood status' },
+    { name: 'relationship', description: 'Check your current relationship status with Siggy' },
+    {
+      name: 'mood',
+      description: 'Share how you\'re feeling today',
+      options: [{
+        name: 'mood',
+        description: 'How are you feeling?',
+        type: 3,
+        required: true,
+        choices: [
+          { name: 'Umazing', value: 'Umazing' },
+          { name: 'Great',   value: 'Great' },
+          { name: 'Good',    value: 'Good' },
+          { name: 'Up',      value: 'Up' },
+          { name: 'Normal',  value: 'Normal' },
+          { name: 'Down',    value: 'Down' },
+          { name: 'Bad',     value: 'Bad' },
+          { name: 'Awful',   value: 'Awful' },
+        ],
+      }],
+    },
     { name: 'reset', description: 'Reset conversation and relationship progress' },
     { name: 'stats', description: 'Show global bot statistics' },
     { name: 'top', description: 'Show top users by message count' },
@@ -1532,6 +1552,36 @@ for (const post of DAILY_POSTS.posts) {
 }
 console.log(`[Cron] Scheduled ${DAILY_POSTS.posts.length} daily image posts (Asia/Jakarta)`);
 
+// ============ /mood (post mood with image) ============
+// Each mood maps to an image in discord-bot/assets/moods/.
+const MOOD_FILES = {
+  Umazing: 'umazing.jpg',
+  Great:   'great.jpg',
+  Good:    'good.jpg',
+  Up:      'up.png',
+  Normal:  'normal.jpg',
+  Down:    'down.jpg',
+  Bad:     'bad.jpg',
+  Awful:   'awful.jpg',
+};
+
+async function handleMoodPost(interaction) {
+  const mood = interaction.options.getString('mood');
+  const file = MOOD_FILES[mood];
+  if (!file) {
+    return interaction.reply({ content: '❌ Unknown mood.', ephemeral: true });
+  }
+  const filePath = path.join(__dirname, 'assets', 'moods', file);
+  if (!fs.existsSync(filePath)) {
+    return interaction.reply({ content: `❌ Mood image missing on server (${file}).`, ephemeral: true });
+  }
+  await interaction.reply({
+    content: `this <@${interaction.user.id}> is feeling **${mood}**`,
+    files: [filePath],
+    allowedMentions: { users: [interaction.user.id] },
+  });
+}
+
 client.once('ready', () => {
   const instanceId = process.env.RENDER_SERVICE_ID || process.env.RAILWAY_SERVICE_NAME || 'LOCAL-' + Math.random().toString(36).substr(2, 5);
   console.log(`✅ ${client.user.tag} is online! [Instance: ${instanceId}]`);
@@ -1597,7 +1647,8 @@ client.on('interactionCreate', async (interaction) => {
         case 'check': await handleCheck(interaction); break;
         case 'research': await handleResearch(interaction); break;
         case 'transform': await handleTransform(interaction); break;
-        case 'mood': await handleMood(interaction); break;
+        case 'mood': await handleMoodPost(interaction); break;
+        case 'relationship': await handleMood(interaction); break;
         case 'reset': await handleReset(interaction); break;
         case 'stats': await handleStats(interaction); break;
         case 'top': await handleTop(interaction); break;
