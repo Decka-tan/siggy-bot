@@ -1523,13 +1523,13 @@ const DAILY_POSTS = {
   channelId: '1455014277847973984',
   posts: [
     {
-      cron: '0 11 * * *', // 11:00 WIB
+      cron: '0 11 * * 1-4,6', // 11:00 WIB — Mon-Thu + Sat (skip Fri & Sun)
       label: '11AM daily',
       content: '<@&1463045360514629652>',
       imageFile: 'daily-11am.png',
     },
     {
-      cron: '0 15 * * *', // 15:00 WIB
+      cron: '0 15 * * 1-6', // 15:00 WIB — Mon-Sat (skip Sun)
       label: '3PM daily',
       content: '<@416478332452864001> <@392321900577161219>',
       imageFile: 'daily-3pm.png',
