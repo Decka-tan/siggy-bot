@@ -12,6 +12,7 @@
 
 const { Client, GatewayIntentBits, EmbedBuilder, SlashCommandBuilder, REST, Routes } = require('discord.js');
 const fetch = require('node-fetch');
+const { handleAskSiggy } = require('./commands/ask-siggy.cjs');
 
 // Configuration
 const CONFIG = {
@@ -270,6 +271,14 @@ const commands = [
   new SlashCommandBuilder()
     .setName('help')
     .setDescription('Show available commands'),
+  new SlashCommandBuilder()
+    .setName('ask-siggy')
+    .setDescription('Ask Siggy on-chain via the Ritual sovereign agent')
+    .addStringOption(option =>
+      option.setName('prompt')
+        .setDescription('What to ask the on-chain agent')
+        .setRequired(true)
+    ),
 ];
 
 // Register commands globally or for guild
@@ -325,6 +334,9 @@ client.on('interactionCreate', async interaction => {
       break;
     case 'help':
       await handleHelpCommand(interaction);
+      break;
+    case 'ask-siggy':
+      await handleAskSiggy(interaction);
       break;
     default:
       await interaction.reply('Unknown command');
