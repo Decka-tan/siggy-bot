@@ -137,6 +137,7 @@ const {
   handleHowGay,
   handleSimp,
 } = require('./commands/fun.cjs');
+const { handleAskSiggy } = require('./commands/ask-siggy.cjs');
 
 // Leaderboard command definitions (single active session)
 const leaderboardCommands = [
@@ -1372,6 +1373,16 @@ async function registerCommands() {
     },
     ...cryptoCommands, // Spread crypto commands here
     ...leaderboardCommands, // Spread leaderboard commands here
+    {
+      name: 'ask-siggy',
+      description: 'Ask Siggy on-chain via Ritual LLM precompile (chain 1979)',
+      options: [{
+        name: 'prompt',
+        description: 'What do you want to ask Siggy?',
+        type: 3,
+        required: true,
+      }],
+    },
     // Note: Invoice & payment commands are registered only to specific guilds (see below)
     {
       name: 'transform',
@@ -1708,6 +1719,7 @@ client.on('interactionCreate', async (interaction) => {
           
           await interaction.editReply(reportMsg);
           break;
+        case 'ask-siggy': await handleAskSiggy(interaction); break;
         case 'bayar': await handleBayar(interaction); break;
         case 'avatar': await handleAvatar(interaction); break;
         case 'choose': await handleChoose(interaction); break;
