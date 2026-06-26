@@ -188,6 +188,38 @@ function AgentPage() {
     if (next) loadWalletBalance(next);
   }
 
+  async function changeWallet() {
+    if (!window.ethereum) return;
+    try {
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      const next = accounts?.[0] || "";
+      setAccount(next);
+      setTopupHash("");
+      if (next) loadWalletBalance(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Change wallet failed.");
+    }
+  }
+
+  async function disconnect() {
+    setAccount("");
+    setWalletBalance(null);
+    setTopupHash("");
+    if (!window.ethereum) return;
+    try {
+      await window.ethereum.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch {
+      // wallet doesn't support revokePermissions — UI state is reset
+    }
+  }
+
   async function switchChain() {
     if (!window.ethereum) return;
     try {
@@ -404,6 +436,18 @@ function AgentPage() {
               </div>
             )}
           </div>
+
+          {connected && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-mono text-text-secondary">Connected as <span className="text-text-primary">{short(account)}</span></span>
+              <button onClick={changeWallet} className="border border-border px-3 py-1.5 font-mono uppercase tracking-wider text-accent hover:border-accent">
+                Change
+              </button>
+              <button onClick={disconnect} className="border border-border px-3 py-1.5 font-mono uppercase tracking-wider text-text-secondary hover:border-red-400/60 hover:text-red-300">
+                Disconnect
+              </button>
+            </div>
+          )}
 
           {topupHash && (
             <div className="mt-4 flex flex-wrap items-center gap-2 border border-emerald-400/40 bg-emerald-400/10 p-3 text-xs text-emerald-200">

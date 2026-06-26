@@ -293,6 +293,47 @@ export default function DeployPage() {
     if (next) loadBalance(next);
   }
 
+  async function changeWallet() {
+    if (!window.ethereum) return;
+    setError("");
+    try {
+      // Forces the wallet to re-prompt the account chooser.
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+      const accounts = await window.ethereum.request({ method: "eth_accounts" });
+      const next = accounts?.[0] || "";
+      setAccount(next);
+      setPrepared(null);
+      setVerify(null);
+      setDeployHash("");
+      setStartHash("");
+      if (next) loadBalance(next);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Change wallet failed.");
+    }
+  }
+
+  async function disconnect() {
+    setAccount("");
+    setWalletBalanceRit(null);
+    setPrepared(null);
+    setVerify(null);
+    setDeployHash("");
+    setStartHash("");
+    if (!window.ethereum) return;
+    try {
+      // EIP-2255 — supported by MetaMask 11+ and Rabby. Best-effort; silent fail elsewhere.
+      await window.ethereum.request({
+        method: "wallet_revokePermissions",
+        params: [{ eth_accounts: {} }],
+      });
+    } catch {
+      // wallet doesn't support revokePermissions — UI state is reset, user can disconnect manually via extension
+    }
+  }
+
   async function switchChain() {
     setError("");
     if (!window.ethereum) return;
@@ -583,9 +624,20 @@ export default function DeployPage() {
               <div className="border border-border bg-bg p-4 font-mono text-sm text-text-secondary">
                 {account ? account : "No wallet connected"}
               </div>
-              <button onClick={connect} className="bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300">
-                {account ? "Reconnect" : "Connect wallet"}
-              </button>
+              {!account ? (
+                <button onClick={connect} className="bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300">
+                  Connect wallet
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button onClick={changeWallet} className="border border-border px-4 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent">
+                    Change
+                  </button>
+                  <button onClick={disconnect} className="border border-border px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-red-400/60 hover:text-red-300">
+                    Disconnect
+                  </button>
+                </div>
+              )}
             </div>
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-secondary">
               <Pill ok={connected} label={connected ? `Wallet ${short(account)}` : "Wallet required"} />
