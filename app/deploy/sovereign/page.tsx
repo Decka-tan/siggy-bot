@@ -189,6 +189,7 @@ function DeployPage() {
   const [advNumCalls, setAdvNumCalls] = useState("5");
   const [advSchedulerGas, setAdvSchedulerGas] = useState("500000");
   const [advCliType, setAdvCliType] = useState("5");
+  const [advSchedulerTtl, setAdvSchedulerTtl] = useState("5000");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
   const [chosenExecutor, setChosenExecutor] = useState<string>("");
   const [health, setHealth] = useState<Health | null>(null);
@@ -322,6 +323,7 @@ function DeployPage() {
       if (typeof s.advNumCalls === "string") setAdvNumCalls(s.advNumCalls);
       if (typeof s.advSchedulerGas === "string") setAdvSchedulerGas(s.advSchedulerGas);
       if (typeof s.advCliType === "string") setAdvCliType(s.advCliType);
+      if (typeof s.advSchedulerTtl === "string") setAdvSchedulerTtl(s.advSchedulerTtl);
       if (typeof s.chosenExecutor === "string") setChosenExecutor(s.chosenExecutor);
     } catch {
       // ignore corrupted state
@@ -335,12 +337,12 @@ function DeployPage() {
     try {
       window.localStorage.setItem(
         FORM_KEY,
-        JSON.stringify({ saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, chosenExecutor }),
+        JSON.stringify({ saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor }),
       );
     } catch {
       // private window etc.
     }
-  }, [saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, chosenExecutor]);
+  }, [saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor]);
 
   // Collapse the form once prepare succeeds so the screen focuses on Preview + Monitor.
   useEffect(() => {
@@ -489,6 +491,7 @@ function DeployPage() {
           numCalls: numCallsNum,
           schedulerGas: schedGasNum,
           cliType: parseInt(advCliType, 10),
+          schedulerTtl: parseInt(advSchedulerTtl, 10),
         }),
       });
       const data = await res.json();
@@ -1041,7 +1044,7 @@ function DeployPage() {
                   <p className="mt-1 text-[10px] text-text-secondary">200k-5M. Lower = cheaper/wakeup.</p>
                 </Field>
               </div>
-              <div className="mt-3">
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Field label="CLI Type (Harness runtime)">
                   <select
                     value={advCliType}
@@ -1052,10 +1055,24 @@ function DeployPage() {
                     <option value="0">0 — Zeroclaw</option>
                     <option value="2">2 — Hermes</option>
                   </select>
+                  <p className="mt-1 text-[10px] text-text-secondary">Crush is safe default for all providers.</p>
+                </Field>
+                <Field label="Scheduler TTL (blocks) — must be ≥ frequency">
+                  <input
+                    type="number"
+                    value={advSchedulerTtl}
+                    onChange={(e) => setAdvSchedulerTtl(e.target.value)}
+                    min={500}
+                    max={20000}
+                    step={500}
+                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  />
                   <p className="mt-1 text-[10px] text-text-secondary">
-                    Runtime CLI inside the TEE. Crush is the safe default for all providers. Only change if you know what
-                    Zeroclaw or Hermes do differently.
+                    Window for system executor to fire each wakeup. Default 5000 ≈ 30 min slack.
                   </p>
+                  {parseInt(advSchedulerTtl, 10) < freqNum && (
+                    <p className="mt-1 text-[10px] text-amber-300">⚠ TTL ({advSchedulerTtl}) lebih kecil dari frequency ({freqNum}) — schedule rawan expire kalau executor laggy.</p>
+                  )}
                 </Field>
               </div>
               <div className="mt-3 grid gap-1 text-[11px] text-text-secondary">

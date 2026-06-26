@@ -108,6 +108,7 @@ function buildCalldata({
   frequency,
   schedulerGas,
   cliType,
+  schedulerTtl,
 }: {
   harness: string;
   prompt: string;
@@ -119,6 +120,7 @@ function buildCalldata({
   frequency: number;
   schedulerGas: number;
   cliType: number;
+  schedulerTtl: number;
 }) {
   const params = [
     executor,
@@ -147,7 +149,7 @@ function buildCalldata({
   ];
   // schedulerGas 500k (not 1.8M) so each call only burns ~0.002 RIT from escrow,
   // and frequency 2000 (~11.7 min) so 0.1 RIT lasts ~50 wakeUps ≈ ~10h base + rolling windows.
-  const schedule = [schedulerGas, frequency, 500, 20000000000, 1000000000, 0];
+  const schedule = [schedulerGas, frequency, schedulerTtl, 20000000000, 1000000000, 0];
   const rolling = [numCalls, 5000, 1];
   const lockDuration = 100000000;
   const calldata = configureInterface.encodeFunctionData("configureFundAndStart", [params, schedule, rolling, lockDuration]);
@@ -245,20 +247,24 @@ export async function POST(request: Request) {
     const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 2000;
     const schedulerGasRaw = Number.isFinite(body.schedulerGas) ? Number(body.schedulerGas) : 500000;
     const cliTypeRaw = Number.isFinite(body.cliType) ? Number(body.cliType) : 5;
+    const schedulerTtlRaw = Number.isFinite(body.schedulerTtl) ? Number(body.schedulerTtl) : 5000;
     if (numCallsRaw < 1 || numCallsRaw > 100) throw new Error("numCalls must be between 1 and 100.");
     if (frequencyRaw < 100 || frequencyRaw > 10000) throw new Error("frequency must be between 100 and 10000 blocks.");
     if (schedulerGasRaw < 200000 || schedulerGasRaw > 5000000) throw new Error("schedulerGas must be between 200,000 and 5,000,000.");
     if (frequencyRaw * numCallsRaw > 10000) throw new Error("frequency × numCalls must be ≤ 10,000 (Scheduler MAX_LIFESPAN).");
     if (![0, 2, 5].includes(cliTypeRaw)) throw new Error("cliType must be 0 (zeroclaw), 2 (hermes), or 5 (crush).");
+    if (schedulerTtlRaw < 500 || schedulerTtlRaw > 20000) throw new Error("schedulerTtl must be between 500 and 20000 blocks.");
+    if (schedulerTtlRaw < frequencyRaw) throw new Error(`schedulerTtl (${schedulerTtlRaw}) must be ≥ frequency (${frequencyRaw}) to give the system executor a full wakeup window.`);
     const numCalls = numCallsRaw;
     const frequency = frequencyRaw;
     const schedulerGas = schedulerGasRaw;
     const cliType = cliTypeRaw;
+    const schedulerTtl = schedulerTtlRaw;
     const salt = keccak256(toUtf8Bytes(saltLabel));
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
     const deployData = factoryInterface.encodeFunctionData("deployHarness", [salt]);
-    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas, cliType });
+    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas, cliType, schedulerTtl });
     const health = await getExecutorHealth();
     const fundingEther = (Number(fundingWei) / 1e18).toFixed(2);
     const schedule = {
@@ -267,7 +273,7 @@ export async function POST(request: Request) {
       numCalls,
       frequency,
       schedulerGas,
-      schedulerTtl: 500,
+      schedulerTtl,
       maxFeePerGas: "20000000000",
       maxPriorityFeePerGas: "1000000000",
     };
