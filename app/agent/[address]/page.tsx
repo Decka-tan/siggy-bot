@@ -70,6 +70,14 @@ function toHexBigInt(value: bigint) {
   return `0x${value.toString(16)}`;
 }
 
+function hexToBigInt(value?: string) {
+  try {
+    return value ? BigInt(value) : 0n;
+  } catch {
+    return 0n;
+  }
+}
+
 export default function AgentRoute() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-bg pt-28 text-text-primary" />}>
@@ -313,7 +321,7 @@ function AgentPage() {
       const hit = direct || keyed || scanned?.prepared;
       if (!hit?.configureTx?.data) return null;
       if (String(hit.harness || "").toLowerCase() !== agentAddress.toLowerCase()) return null;
-      return hit as { harness: string; configureTx: { to: string; data: string; gas?: string } };
+      return hit as { harness: string; configureTx: { to: string; data: string; gas?: string; value?: string } };
     } catch {
       return null;
     }
@@ -329,6 +337,10 @@ function AgentPage() {
       if (!prepared) {
         throw new Error("Retry data not found in this browser. Open the deployer with the same salt label and prepare again.");
       }
+      const retryValue = hexToBigInt(prepared.configureTx.value);
+      if (retryValue <= 0n) {
+        throw new Error("Retry data is missing the original funding value. Open the deployer with the same salt label and prepare again.");
+      }
       const hash = await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [
@@ -336,8 +348,8 @@ function AgentPage() {
             from: account,
             to: prepared.configureTx.to,
             data: prepared.configureTx.data,
-            value: "0x0",
-            gas: prepared.configureTx.gas || "0x3567e0",
+            value: toHexBigInt(retryValue),
+            gas: prepared.configureTx.gas || "0x4c4b40",
           },
         ],
       });
@@ -457,7 +469,7 @@ function AgentPage() {
                 <p className="font-mono text-sm uppercase tracking-wider text-amber-200">Funded but scheduler has not fired</p>
                 <p className="text-sm leading-6 text-text-secondary">
                   Escrow exists, but there are no scheduler events yet. Top-up only adds funds; it does not retry the start call.
-                  If this browser still has the prepared deployment data, retry the schedule using the existing escrow first.
+                  If this browser still has the prepared deployment data, retry the original fund/start transaction value.
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {!connected ? (
@@ -481,7 +493,7 @@ function AgentPage() {
                       className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {busy === "retry" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                      Retry schedule with existing escrow
+                      Retry fund/start
                     </button>
                   )}
                   {savedSalt && (

@@ -188,11 +188,11 @@ function DeployPage() {
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [advFrequency, setAdvFrequency] = useState("2000");
+  const [advFrequency, setAdvFrequency] = useState("5000");
   const [advNumCalls, setAdvNumCalls] = useState("5");
   const [advSchedulerGas, setAdvSchedulerGas] = useState("500000");
   const [advCliType, setAdvCliType] = useState("5");
-  const [advSchedulerTtl, setAdvSchedulerTtl] = useState("5000");
+  const [advSchedulerTtl, setAdvSchedulerTtl] = useState("500");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
   const [chosenExecutor, setChosenExecutor] = useState<string>("");
   const [executorBusy, setExecutorBusy] = useState(false);
@@ -230,16 +230,14 @@ function DeployPage() {
   const modelOk = model.trim().length > 0;
   const advValid =
     freqNum >= 100 &&
-    freqNum <= 10000 &&
+    freqNum <= 86400 &&
     numCallsNum >= 1 &&
     numCallsNum <= 100 &&
     schedGasNum >= 200000 &&
     schedGasNum <= 5000000 &&
     schedulerTtlNum >= 500 &&
     schedulerTtlNum <= 20000 &&
-    schedulerTtlNum >= freqNum &&
-    advLifespan > 0 &&
-    advLifespan <= 10000;
+    advLifespan > 0;
 
   const canPrepare =
     connected &&
@@ -267,12 +265,11 @@ function DeployPage() {
     if (!fundingOk) items.push("Funding must be at least 0.2 RIT");
     if (!healthOk) items.push("Ritual executor health is too low; try later");
     if (!promptOk) items.push("Fill prompt");
-    if (freqNum < 100 || freqNum > 10000) items.push("Frequency must be 100-10000");
+    if (freqNum < 100 || freqNum > 86400) items.push("Frequency must be 100-86400");
     if (numCallsNum < 1 || numCallsNum > 100) items.push("Window calls must be 1-100");
     if (schedGasNum < 200000 || schedGasNum > 5000000) items.push("Scheduler gas must be 200k-5M");
-    if (advLifespan <= 0 || advLifespan > 10000) items.push("Frequency x calls must be <= 10000");
+    if (advLifespan <= 0) items.push("Frequency x calls must be positive");
     if (schedulerTtlNum < 500 || schedulerTtlNum > 20000) items.push("Scheduler TTL must be 500-20000");
-    if (schedulerTtlNum < freqNum) items.push("Scheduler TTL must be >= frequency");
     return items;
   }, [
     connected,
@@ -429,7 +426,7 @@ function DeployPage() {
       if (typeof s.advNumCalls === "string") setAdvNumCalls(s.advNumCalls);
       if (typeof s.advSchedulerGas === "string") setAdvSchedulerGas(s.advSchedulerGas);
       if (typeof s.advCliType === "string") setAdvCliType(s.advCliType);
-      if (typeof s.advSchedulerTtl === "string") setAdvSchedulerTtl(s.advSchedulerTtl);
+      if (typeof s.advSchedulerTtl === "string") setAdvSchedulerTtl(s.advSchedulerTtl === "5000" ? "500" : s.advSchedulerTtl);
       if (typeof s.chosenExecutor === "string") setChosenExecutor(s.chosenExecutor);
     } catch {
       // ignore corrupted state
@@ -1173,11 +1170,11 @@ function DeployPage() {
                     value={advFrequency}
                     onChange={(e) => setAdvFrequency(e.target.value)}
                     min={100}
-                    max={10000}
+                    max={86400}
                     step={100}
                     className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   />
-                  <p className="mt-1 text-[10px] text-text-secondary">100-10000. ~350ms per block.</p>
+                  <p className="mt-1 text-[10px] text-text-secondary">Guide default: 5000 blocks (~29 min). Options go up to 86400.</p>
                 </Field>
                 <Field label="Window num calls">
                   <input
@@ -1211,12 +1208,11 @@ function DeployPage() {
                     className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   >
                     <option value="5">5 — Crush (recommended)</option>
-                    <option value="0">0 — Zeroclaw</option>
-                    <option value="2">2 — Hermes</option>
+                    <option value="6">6 - ZeroClaw</option>
                   </select>
                   <p className="mt-1 text-[10px] text-text-secondary">Crush is safe default for all providers.</p>
                 </Field>
-                <Field label="Scheduler TTL (blocks) — must be ≥ frequency">
+                <Field label="Scheduler TTL (blocks)">
                   <input
                     type="number"
                     value={advSchedulerTtl}
@@ -1227,11 +1223,8 @@ function DeployPage() {
                     className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">
-                    Window for system executor to fire each wakeup. Default 5000 ≈ 30 min slack.
+                    Window for system executor to accept each wakeup. Default 500 matches the public deploy guide.
                   </p>
-                  {parseInt(advSchedulerTtl, 10) < freqNum && (
-                    <p className="mt-1 text-[10px] text-amber-300">⚠ TTL ({advSchedulerTtl}) lebih kecil dari frequency ({freqNum}) — schedule rawan expire kalau executor laggy.</p>
-                  )}
                 </Field>
               </div>
               <div className="mt-3 grid gap-1 text-[11px] text-text-secondary">
@@ -1240,7 +1233,7 @@ function DeployPage() {
                   <span className={advValid ? "font-mono text-text-primary" : "font-mono text-amber-300"}>
                     {advLifespan.toLocaleString()} blocks ({(advLifespan * 0.35 / 60).toFixed(1)} min)
                   </span>
-                  {!advValid && " — invalid: frequency × numCalls must be ≤ 10,000"}
+                  {!advValid && " — invalid schedule values"}
                 </p>
                 <p>
                   Estimated cost per wakeup:{" "}

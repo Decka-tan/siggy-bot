@@ -10,7 +10,7 @@ const REGISTRY = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
 const DELIVERY_LOG = "0x5A16214fF555848411544b005f7Ac063742f39F6";
 const ASYNC_JOB_TRACKER = "0xC069FFCa0389f44eCA2C626e55491b0ab045AEF5";
 const TEMPLATE_BYTES = 10822;
-const MIN_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT — safer minimum for reaching MONITORED
+const MIN_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT — low-fund sovereign start
 const DEFAULT_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT
 const MIN_BALANCE_BUFFER_WEI = 60_000_000_000_000_000n; // 0.06 RIT — covers deploy + configure gas
 
@@ -147,11 +147,10 @@ function buildCalldata({
     8192,
     "",
   ];
-  // schedulerGas 500k (not 1.8M) so each call only burns ~0.002 RIT from escrow,
-  // and frequency 2000 (~11.7 min) so 0.1 RIT lasts ~50 wakeUps ≈ ~10h base + rolling windows.
+  // Public guide defaults: schedulerGas 500k, schedulerTtl 500, and five calls per rolling window.
   const schedule = [schedulerGas, frequency, schedulerTtl, 20000000000, 1000000000, 0];
   const rolling = [numCalls, 5000, 1];
-  const lockDuration = 100000000;
+  const lockDuration = 7400000;
   const calldata = configureInterface.encodeFunctionData("configureFundAndStart", [params, schedule, rolling, lockDuration]);
 
   if (!calldata.startsWith("0xb1906702")) {
@@ -244,17 +243,15 @@ export async function POST(request: Request) {
 
     // Parse + clamp schedule controls (defaults match community-proven values).
     const numCallsRaw = Number.isFinite(body.numCalls) ? Number(body.numCalls) : 5;
-    const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 2000;
+    const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 5000;
     const schedulerGasRaw = Number.isFinite(body.schedulerGas) ? Number(body.schedulerGas) : 500000;
     const cliTypeRaw = Number.isFinite(body.cliType) ? Number(body.cliType) : 5;
-    const schedulerTtlRaw = Number.isFinite(body.schedulerTtl) ? Number(body.schedulerTtl) : 5000;
+    const schedulerTtlRaw = Number.isFinite(body.schedulerTtl) ? Number(body.schedulerTtl) : 500;
     if (numCallsRaw < 1 || numCallsRaw > 100) throw new Error("numCalls must be between 1 and 100.");
-    if (frequencyRaw < 100 || frequencyRaw > 10000) throw new Error("frequency must be between 100 and 10000 blocks.");
+    if (frequencyRaw < 100 || frequencyRaw > 86400) throw new Error("frequency must be between 100 and 86400 blocks.");
     if (schedulerGasRaw < 200000 || schedulerGasRaw > 5000000) throw new Error("schedulerGas must be between 200,000 and 5,000,000.");
-    if (frequencyRaw * numCallsRaw > 10000) throw new Error("frequency × numCalls must be ≤ 10,000 (Scheduler MAX_LIFESPAN).");
-    if (![0, 2, 5].includes(cliTypeRaw)) throw new Error("cliType must be 0 (zeroclaw), 2 (hermes), or 5 (crush).");
+    if (![5, 6].includes(cliTypeRaw)) throw new Error("cliType must be 5 (crush) or 6 (zeroclaw).");
     if (schedulerTtlRaw < 500 || schedulerTtlRaw > 20000) throw new Error("schedulerTtl must be between 500 and 20000 blocks.");
-    if (schedulerTtlRaw < frequencyRaw) throw new Error(`schedulerTtl (${schedulerTtlRaw}) must be ≥ frequency (${frequencyRaw}) to give the system executor a full wakeup window.`);
     const numCalls = numCallsRaw;
     const frequency = frequencyRaw;
     const schedulerGas = schedulerGasRaw;
@@ -302,7 +299,7 @@ export async function POST(request: Request) {
         to: harness,
         data: calldata,
         value: hexNumber(fundingWei),
-        gas: "0x3567e0",
+        gas: "0x4c4b40",
       },
       ownerBalanceWei: ownerBalanceWei.toString(),
       calldataPreview: {
