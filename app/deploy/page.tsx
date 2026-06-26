@@ -288,23 +288,24 @@ export default function DeployLanding() {
           </div>
 
           {/* Right Column: Character Image anchored to bottom right */}
-          <div className="relative h-[55vh] lg:h-[75vh] flex items-end justify-center lg:justify-end overflow-visible pointer-events-none">
+          <div className="relative hidden lg:block self-stretch pointer-events-none min-h-[500px]">
             {/* Ambient Summoning Portal rings behind character */}
             <div className="absolute w-80 h-80 rounded-full border border-accent/5 animate-[spin_30s_linear_infinite] pointer-events-none bottom-10 right-10" />
             <div className="absolute w-[420px] h-[420px] rounded-full border border-dashed border-accent/5 animate-[spin_40s_linear_infinite_reverse] pointer-events-none bottom-0 right-0" />
             <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none bottom-20 right-20" />
 
-            {/* Anime Character with Smooth Decelerating Entry Slide-up */}
+            {/* Anime Character pinned to bottom-right of the column */}
             <motion.div
-              initial={{ opacity: 0, y: 200, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-              className="relative w-full h-[60vh] lg:h-[80vh] flex items-end justify-end overflow-visible"
+              initial={{ opacity: 0, y: 80 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.4, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+              className="absolute bottom-0 right-0 w-[380px] xl:w-[440px]"
+              style={{ height: '90%', maxHeight: '700px' }}
             >
               <motion.div
                 animate={{ y: [0, -10, 0] }}
                 transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
-                className="relative w-[320px] h-[50vh] sm:w-[380px] sm:h-[60vh] lg:w-[440px] lg:h-[75vh]"
+                className="relative w-full h-full"
               >
                 <Image
                   src="/character.png"
@@ -312,7 +313,7 @@ export default function DeployLanding() {
                   fill
                   className="object-contain object-bottom drop-shadow-[0_15px_35px_rgba(255,215,0,0.1)]"
                   priority
-                  sizes="(max-width: 1024px) 380px, 440px"
+                  sizes="440px"
                 />
               </motion.div>
             </motion.div>
