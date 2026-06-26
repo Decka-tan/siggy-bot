@@ -295,9 +295,16 @@ export default function DeployLanding() {
             <div className="absolute w-80 h-80 rounded-full border border-accent/5 animate-[spin_30s_linear_infinite] pointer-events-none bottom-10 right-10" />
             <div className="absolute w-[420px] h-[420px] rounded-full border border-dashed border-accent/5 animate-[spin_40s_linear_infinite_reverse] pointer-events-none bottom-0 right-0" />
             <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none bottom-20 right-20" />
-            <div className="absolute bottom-[-40px] right-[-20px] z-20 h-[360px] w-[34px] rotate-45 rounded-full bg-accent shadow-[0_0_34px_rgba(255,215,0,0.25)]" />
-            <div className="absolute bottom-[20px] right-[38px] z-20 h-[250px] w-[28px] rotate-45 rounded-full bg-accent shadow-[0_0_30px_rgba(255,215,0,0.22)]" />
-            <div className="absolute bottom-[64px] right-[88px] z-20 h-[190px] w-[24px] rotate-45 rounded-full bg-accent shadow-[0_0_24px_rgba(255,215,0,0.2)]" />
+            <div className="absolute bottom-0 right-0 z-30 h-[56%] w-[72%] pointer-events-none">
+              <div
+                className="absolute bottom-0 left-0 h-[30px] w-full bg-accent shadow-[0_0_34px_rgba(255,215,0,0.22)]"
+                style={{ clipPath: "polygon(28px 0, 100% 0, 100% 100%, 0 100%)" }}
+              />
+              <div
+                className="absolute bottom-0 right-0 h-full w-[30px] bg-accent shadow-[0_0_34px_rgba(255,215,0,0.22)]"
+                style={{ clipPath: "polygon(0 28px, 100% 0, 100% 100%, 0 100%)" }}
+              />
+            </div>
 
             {/* Anime Character pinned to bottom-right of the column */}
             <motion.div

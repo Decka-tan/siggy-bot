@@ -162,6 +162,16 @@ export default function LandingPage() {
             <div className="absolute w-80 h-80 rounded-full border border-accent/5 animate-[spin_30s_linear_infinite] pointer-events-none bottom-10 right-10" />
             <div className="absolute w-[420px] h-[420px] rounded-full border border-dashed border-accent/5 animate-[spin_40s_linear_infinite_reverse] pointer-events-none bottom-0 right-0" />
             <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none bottom-20 right-20" />
+            <div className="absolute bottom-0 right-0 z-30 h-[56%] w-[72%] pointer-events-none">
+              <div
+                className="absolute bottom-0 left-0 h-[30px] w-full bg-accent shadow-[0_0_34px_rgba(255,215,0,0.22)]"
+                style={{ clipPath: "polygon(28px 0, 100% 0, 100% 100%, 0 100%)" }}
+              />
+              <div
+                className="absolute bottom-0 right-0 h-full w-[30px] bg-accent shadow-[0_0_34px_rgba(255,215,0,0.22)]"
+                style={{ clipPath: "polygon(0 28px, 100% 0, 100% 100%, 0 100%)" }}
+              />
+            </div>
 
             {/* Ritual Logo Background */}
             <Image
@@ -589,10 +599,12 @@ function ChatWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [dialogueIdx, setDialogueIdx] = useState(0);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = chatScrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [messages, isTyping]);
 
   useEffect(() => {
@@ -637,7 +649,7 @@ function ChatWidget() {
         </div>
       </div>
       
-      <div className="space-y-3 max-h-[190px] overflow-y-auto pr-1 flex flex-col scrollbar-thin">
+      <div ref={chatScrollRef} className="space-y-3 max-h-[190px] overflow-y-auto pr-1 flex flex-col scrollbar-thin">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -690,7 +702,6 @@ function ChatWidget() {
             </div>
           </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
     </div>
   );

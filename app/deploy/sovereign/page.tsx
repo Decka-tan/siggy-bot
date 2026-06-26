@@ -209,6 +209,7 @@ function DeployPage() {
   const [fundingRit, setFundingRit] = useState("0.1");
   const [showHfHelp, setShowHfHelp] = useState(false);
   const [showProviderHelp, setShowProviderHelp] = useState(false);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [advFrequency, setAdvFrequency] = useState("2000"); // ~12 min: fast enough for listing proof
@@ -260,6 +261,12 @@ function DeployPage() {
     ? `~${Math.round(escrowTotalSec / 3600)} hours`
     : `~${Math.round(escrowTotalSec / 86400)} days`;
   const isPresetFreq = FREQUENCY_PRESETS.some((p) => p.value === advFrequency);
+  const usesDefaultSchedule =
+    advFrequency === "2000" &&
+    advNumCalls === "5" &&
+    advSchedulerGas === "400000" &&
+    advCliType === "5" &&
+    advSchedulerTtl === "500";
 
   const promptOk = prompt.trim().length > 0;
   const saltOk = saltLabel.trim().length > 0;
@@ -867,6 +874,44 @@ function DeployPage() {
       <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
       <div className="absolute left-0 bottom-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/3 blur-[150px] pointer-events-none" />
 
+      {showSetupGuide && (
+        <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/80 px-4 py-12 backdrop-blur-md" onClick={() => setShowSetupGuide(false)} role="dialog" aria-modal="true">
+          <div className="mx-auto w-full max-w-2xl rounded-xl border border-white/10 bg-bg p-5 shadow-[0_0_50px_rgba(255,215,0,0.08)]" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-4 flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-xs uppercase tracking-wider text-accent">Setup checklist</p>
+                <h2 className="mt-1 font-display text-3xl leading-none">Before you deploy</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSetupGuide(false)}
+                className="rounded-lg border border-white/10 px-3 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent/40 hover:text-accent"
+              >
+                Close
+              </button>
+            </div>
+            <div className="space-y-3 text-sm leading-6 text-text-secondary">
+              <div className="rounded-lg border border-white/5 bg-surface/50 p-4">
+                <p className="font-mono text-xs uppercase tracking-wider text-text-primary">1. Wallet</p>
+                <p>Use a burner wallet with enough RIT for funding plus gas. Faucet: <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">faucet.ritualfoundation.org</a>, Ritual Discord <code>#ritdrip</code>, or gifted by friends.</p>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-surface/50 p-4">
+                <p className="font-mono text-xs uppercase tracking-wider text-text-primary">2. HuggingFace</p>
+                <p>Create a write token and an empty dataset. Paste repo as <code>username/dataset-name</code>, not a URL.</p>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-surface/50 p-4">
+                <p className="font-mono text-xs uppercase tracking-wider text-text-primary">3. LLM API key</p>
+                <p>OpenRouter is the easiest starting point. Use the Test credentials button before signing any transaction.</p>
+              </div>
+              <div className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-amber-100">
+                <p className="font-mono text-xs uppercase tracking-wider">Safe scheduler path</p>
+                <p>Keep Advanced closed for first deploy. Longer intervals can make the first TEE callback take much longer, so they are not ideal for proving the agent is live.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="relative z-10 mx-auto grid w-full max-w-7xl items-start gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
         <aside className="space-y-5 lg:self-start">
           <div className="border border-border bg-surface/60 backdrop-blur-md p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
@@ -940,16 +985,23 @@ function DeployPage() {
             </div>
           )}
 
-          <section className="border border-border bg-surface p-5">
-            <div className="mb-4 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
+          <section className="rounded-xl border border-white/5 bg-surface/50 p-5 backdrop-blur-md">
+            <div className="mb-2 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
               <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
-              Before you start (5 min)
+              New here?
             </div>
-            <p className="mb-3 text-sm text-text-secondary">
+            <p className="mb-3 max-w-2xl text-sm leading-6 text-text-secondary">
               You&apos;ll deploy a <b>Sovereign Agent</b> — a tiny on-chain bot that wakes up
               and runs a prompt on a TEE-verified AI executor. Total time: <b>5–10 minutes</b>.
             </p>
-            <ol className="space-y-2 text-sm leading-6 text-text-secondary">
+            <button
+              type="button"
+              onClick={() => setShowSetupGuide(true)}
+              className="inline-flex items-center justify-center rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-accent transition-all hover:bg-accent hover:text-black"
+            >
+              Open setup checklist
+            </button>
+            <ol className="hidden space-y-2 text-sm leading-6 text-text-secondary">
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">1.</span>
                 <span>
@@ -1081,6 +1133,20 @@ function DeployPage() {
             icon={<Sparkles className="h-5 w-5" />}
             subtitle="Tell Siggy what your agent should do and where to keep its memory."
           >
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="rounded-lg border border-white/5 bg-bg/45 p-3">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-accent">Step A</p>
+                <p className="mt-1 text-xs text-text-secondary">Name + HuggingFace memory</p>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-bg/45 p-3">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-accent">Step B</p>
+                <p className="mt-1 text-xs text-text-secondary">LLM key + smoke test</p>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-bg/45 p-3">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-accent">Step C</p>
+                <p className="mt-1 text-xs text-text-secondary">Prepare, then sign 2 txs</p>
+              </div>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Agent Name (salt label)">
                 <input
@@ -1193,7 +1259,7 @@ function DeployPage() {
                       Create new key → copy. It should start with <code>{providerCfg.keyPrefix}</code>.
                     </li>
                     <li>
-                      Paste below. Your key is ECIES-encrypted in this browser to the TEE executor before any network call — the server never sees it.
+                      Paste below. Test credentials checks the key before deploy; Prepare deploy ECIES-encrypts secrets in this browser for the TEE executor.
                     </li>
                   </ol>
                 </div>
@@ -1316,6 +1382,11 @@ function DeployPage() {
               <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-wider text-accent">
                 Advanced: schedule + callback gas {showAdvanced ? "(open)" : "(safe defaults)"}
               </summary>
+              {!usesDefaultSchedule && (
+                <div className="mt-4 rounded-lg border border-amber-300/30 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100">
+                  Custom scheduler settings can delay the first TEE callback or make listing harder to verify. For a first deploy, use the defaults: 2000 blocks, 5 calls, 400k gas, TTL 500.
+                </div>
+              )}
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <Field label="Wakeup frequency">
                   <select
@@ -1691,7 +1762,7 @@ function HealthPanel({ health, onRefresh }: { health: Health | null; onRefresh: 
       </div>
       <div className="mt-4 grid gap-2">
         <Pill ok label="Secrets encrypted in your browser" />
-        <Pill ok label="Server never sees plaintext keys" />
+        <Pill ok label="Prepare encrypts secrets in browser" />
       </div>
     </div>
   );
