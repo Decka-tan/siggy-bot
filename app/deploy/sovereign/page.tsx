@@ -188,7 +188,7 @@ function DeployPage() {
   const initialSalt = search?.get("salt") || "";
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
-  const FORM_KEY = "siggy.deploy.form.v1";
+  const FORM_KEY = "siggy.deploy.form.v2"; // bumped: clears old bad defaults (numCalls=5, schedulerGas=500k)
   const PREPARED_KEY = "siggy.deploy.prepared.v1";
   const [saltLabel, setSaltLabel] = useState(initialSalt);
   const [hfRepoId, setHfRepoId] = useState("");
@@ -203,9 +203,9 @@ function DeployPage() {
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [advFrequency, setAdvFrequency] = useState("3000");
-  const [advNumCalls, setAdvNumCalls] = useState("1");
-  const [advSchedulerGas, setAdvSchedulerGas] = useState("400000");
+  const [advFrequency, setAdvFrequency] = useState("28800"); // ~2.8 hr: 0.2 RIT lasts >1 day
+  const [advNumCalls, setAdvNumCalls] = useState("1");       // must be 1 for any large frequency
+  const [advSchedulerGas, setAdvSchedulerGas] = useState("400000"); // 400k × 5 Gwei = 0.002 RIT/wakeup
   const [advCliType, setAdvCliType] = useState("5");
   const [advSchedulerTtl, setAdvSchedulerTtl] = useState("500");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
@@ -451,11 +451,19 @@ function DeployPage() {
       }
       if (typeof s.prompt === "string") setPrompt(s.prompt);
       if (typeof s.fundingRit === "string") setFundingRit(parseFloat(s.fundingRit) >= 0.1 ? s.fundingRit : "0.1");
+      // Migrate old bad frequency values → safe default 28800
       if (typeof s.advFrequency === "string") {
-        setAdvFrequency(s.advFrequency === "5000" ? "2000" : s.advFrequency);
+        const f = s.advFrequency;
+        setAdvFrequency(["2000", "3000", "5000"].includes(f) ? "28800" : f);
       }
-      if (typeof s.advNumCalls === "string") setAdvNumCalls(s.advNumCalls);
-      if (typeof s.advSchedulerGas === "string") setAdvSchedulerGas(s.advSchedulerGas);
+      // Migrate old numCalls > 1 → 1 (required for large frequencies to avoid revert)
+      if (typeof s.advNumCalls === "string") {
+        setAdvNumCalls(parseInt(s.advNumCalls, 10) > 1 ? "1" : s.advNumCalls);
+      }
+      // Migrate old schedulerGas → 400000
+      if (typeof s.advSchedulerGas === "string") {
+        setAdvSchedulerGas(["500000", "1800000"].includes(s.advSchedulerGas) ? "400000" : s.advSchedulerGas);
+      }
       if (typeof s.advCliType === "string") setAdvCliType(s.advCliType);
       if (typeof s.advSchedulerTtl === "string") {
         setAdvSchedulerTtl(parseInt(s.advSchedulerTtl, 10) > 500 ? "500" : s.advSchedulerTtl);
