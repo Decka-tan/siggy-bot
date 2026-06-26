@@ -1,180 +1,224 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, ArrowRight, MessageSquare, BookOpen, Sparkles } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import {
+  ChevronDown,
+  ArrowRight,
+  MessageSquare,
+  BookOpen,
+  Sparkles,
+  Terminal,
+  Send,
+  Users,
+  ShieldCheck,
+  Cpu,
+  RefreshCw,
+  TrendingUp,
+} from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
+import { GoldenParticles } from '@/components/ui/GoldenParticles';
+
+type ChatMessage = {
+  sender: 'summoner' | 'siggy';
+  text: string;
+  mood?: 'happy' | 'default' | 'sad' | 'shock' | 'shy' | 'angry';
+};
+
+const chatDialogue: ChatMessage[] = [
+  { sender: 'summoner', text: "Siggy, prepare the Ritual deployment!" },
+  { sender: 'siggy', text: "Nyan! 🐾 Reading local credentials...", mood: 'default' },
+  { sender: 'siggy', text: "Bytecode compiled successfully (10,822 bytes). Factory predicted: 0x1da3...e122", mood: 'happy' },
+  { sender: 'siggy', text: "Deploying sovereign harness to chain 1979... wait, did you feed me yet? 🐟", mood: 'shock' },
+  { sender: 'summoner', text: "Yes! Sent tuna and 0.2 RIT to your escrow." },
+  { sender: 'siggy', text: "Purrrfect! Escrow locked. Phase 2 delivered. Status: ACTIVE! ⚡", mood: 'shy' },
+];
 
 export default function LandingPage() {
-  const scrollToBio = () => {
-    document.getElementById('bio-section')?.scrollIntoView({ behavior: 'smooth' });
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text-primary">
-      {/* Hero Section */}
-      <section className="min-h-screen relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 z-0">
-          {/* Desktop Background */}
-          <div className="hidden md:block absolute inset-0">
-            {/* Dark Left Side */}
-            <div className="absolute inset-0 bg-bg z-10" style={{ clipPath: 'polygon(0 0, 65% 0, 45% 100%, 0 100%)' }}></div>
+    <div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      className="min-h-screen bg-bg text-text-primary overflow-hidden relative"
+      style={{
+        "--mouse-x": `${mousePos.x}px`,
+        "--mouse-y": `${mousePos.y}px`,
+      } as React.CSSProperties}
+    >
+      {/* Ambient background particles */}
+      <GoldenParticles mode="ambient" />
 
-            {/* Yellow Diagonal Lines */}
-            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(64% 0, 68% 0, 48% 100%, 44% 100%)' }}></div>
-            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(69% 0, 70% 0, 50% 100%, 49% 100%)' }}></div>
+      {/* Dynamic Cursor Spotlight Glow */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none opacity-50 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(700px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(255, 215, 0, 0.07), transparent 75%)`
+        }}
+      />
 
-            {/* Right Side Grid Pattern */}
-            <div className="absolute inset-0 bg-[#333333] z-[-1]" style={{ clipPath: 'polygon(65% 0, 100% 0, 100% 100%, 45% 100%)' }}>
-              <div className="absolute inset-0 opacity-90" style={{
-                backgroundColor: '#333333',
-                backgroundImage: `linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555),
-                                  linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)`,
-                backgroundSize: `100px 100px`,
-                backgroundPosition: `0 0, 50px 50px`
-              }}></div>
-            </div>
+      {/* HERO SECTION */}
+      <section className="min-h-screen relative flex items-center justify-center pt-28 pb-16">
+        {/* Subtle grid mesh overlay */}
+        <div 
+          className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" 
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.15) 1px, transparent 1px)`,
+            backgroundSize: '30px 30px'
+          }}
+        />
+        
+        {/* Subtle background radial spots */}
+        <div className="absolute top-1/4 left-1/4 -z-10 h-96 w-96 rounded-full bg-accent/3 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-accent/4 blur-[160px] pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 w-full z-10 grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+          {/* Left Column: Hero Texts & Interactive Chat Preview */}
+          <div className="space-y-6 flex flex-col justify-center">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent border border-accent/20 rounded-md">
+                <Sparkles className="h-4 w-4 animate-pulse" />
+                Siggy AI Multiverse
+              </div>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-5xl sm:text-6xl md:text-7xl font-display leading-[0.9] tracking-tight text-accent uppercase"
+            >
+              Multi-Verse<br />Cat Girl
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-text-secondary max-w-xl text-sm sm:text-base leading-relaxed"
+            >
+              A multi-dimensional cat who descended to Earth as a chaotic anime girl. 
+              Powered by the decentralised Ritual Network, she's here to assist builders, manage on-chain deployments, and consume tuna.
+            </motion.p>
+
+            {/* Quick Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-wrap gap-3 pt-2"
+            >
+              <Link href="/chat?new=true" className="min-w-[140px]">
+                <button className="w-full bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-xs font-bold uppercase tracking-wider px-6 py-3.5 rounded-lg transition-all flex items-center justify-center gap-2 hover:shadow-[0_0_24px_rgba(255,215,0,0.15)] hover:scale-[1.03]">
+                  <MessageSquare className="w-4 h-4 shrink-0" />
+                  Chat Mode
+                </button>
+              </Link>
+              <Link href="/story" className="min-w-[140px]">
+                <button className="w-full bg-surface/40 hover:bg-surface/60 border border-white/5 hover:border-accent/40 text-text-primary hover:text-accent font-mono text-xs uppercase tracking-wider px-6 py-3.5 rounded-lg transition-all flex items-center justify-center gap-2">
+                  <BookOpen className="w-4 h-4 shrink-0" />
+                  Story Mode
+                </button>
+              </Link>
+              <Link href="/deploy" className="min-w-[140px]">
+                <button className="w-full bg-surface/40 hover:bg-surface/60 border border-white/5 hover:border-accent/40 text-text-primary hover:text-accent font-mono text-xs uppercase tracking-wider px-6 py-3.5 rounded-lg transition-all flex items-center justify-center gap-2">
+                  <Terminal className="w-4 h-4 shrink-0" />
+                  Deploy Agent
+                </button>
+              </Link>
+            </motion.div>
+
+            {/* Interactive Chat Widget Preview */}
+            <motion.div
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="w-full max-w-xl pt-4"
+            >
+              <ChatWidget />
+            </motion.div>
           </div>
 
-          {/* Mobile Background */}
-          <div className="block md:hidden absolute inset-0">
-            {/* Dark Top Side */}
-            <div className="absolute inset-0 bg-bg z-10" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 55%, 0 65%)' }}></div>
+          {/* Right Column: Character Image anchored to bottom right */}
+          <div className="relative h-[55vh] lg:h-[80vh] flex items-end justify-center lg:justify-end overflow-visible pointer-events-none">
+            {/* Ambient Summoning Portal rings behind character */}
+            <div className="absolute w-80 h-80 rounded-full border border-accent/5 animate-[spin_30s_linear_infinite] pointer-events-none bottom-10 right-10" />
+            <div className="absolute w-[420px] h-[420px] rounded-full border border-dashed border-accent/5 animate-[spin_40s_linear_infinite_reverse] pointer-events-none bottom-0 right-0" />
+            <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none bottom-20 right-20" />
 
-            {/* Yellow Diagonal Lines */}
-            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(0 64%, 100% 54%, 100% 56%, 0 66%)' }}></div>
-            <div className="absolute inset-0 bg-accent z-0" style={{ clipPath: 'polygon(0 67%, 100% 57%, 100% 59%, 0 69%)' }}></div>
+            {/* Ritual Logo Background */}
+            <Image
+              src="/Logo_RItual_White.png"
+              alt="Ritual Logo"
+              width={600}
+              height={600}
+              priority
+              className="absolute z-[-1] object-contain opacity-20 pointer-events-none select-none bottom-10 right-[-10%] max-w-[85vw] lg:max-w-[35vw]"
+            />
 
-            {/* Bottom Side Grid Pattern */}
-            <div className="absolute inset-0 bg-[#333333] z-[-1]" style={{ clipPath: 'polygon(0 55%, 100% 45%, 100% 100%, 0 100%)' }}>
-              <div className="absolute inset-0 opacity-90" style={{
-                backgroundColor: '#333333',
-                backgroundImage: `linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555),
-                                  linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)`,
-                backgroundSize: `60px 60px`,
-                backgroundPosition: `0 0, 30px 30px`
-              }}></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero Content */}
-        <div className="relative z-10 h-screen w-full">
-          {/* Left Content */}
-          <div className="max-w-7xl mx-auto px-8 pt-32 sm:pt-36 md:pt-20 h-full flex flex-col md:flex-row items-center">
-            <div className="w-full md:w-1/2 flex flex-col items-start justify-center z-10">
-              <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-display leading-[0.9] md:leading-[0.85] tracking-tight mb-4 md:mb-6 text-accent"
-              >
-                MULTI-VERSE<br />CAT GIRL
-              </motion.h1>
-
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-text-secondary max-w-md mb-10 text-sm md:text-base leading-relaxed"
-              >
-                A multi-dimensional cat who descended to Earth as an anime girl. She&apos;s here to blend in, make friends, and find her soul.
-              </motion.p>
-
+            {/* Anime Character with Smooth Decelerating Entry Slide-up */}
+            <motion.div
+              initial={{ opacity: 0, y: 200, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+              className="relative w-full h-[65vh] lg:h-[85vh] flex items-end justify-end overflow-visible"
+            >
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="flex flex-col sm:flex-row gap-2 sm:gap-4 w-full max-w-lg"
-              >
-                <div className="flex flex-row gap-2 sm:gap-4 w-full">
-                  <Link href="/story" className="flex-1 min-w-[120px]">
-                    <button className="w-full cursor-pointer bg-surface border border-border hover:border-border text-text-primary hover:text-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:shadow-accent/20">
-                      <BookOpen className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                      Story Mode
-                    </button>
-                  </Link>
-                  <Link href="/chat?new=true" className="flex-1 min-w-[120px]">
-                    <button className="w-full cursor-pointer bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-[10px] sm:text-sm uppercase tracking-wider px-2 sm:px-8 py-3 sm:py-4 rounded-lg transition-all flex items-center justify-center gap-1 sm:gap-3 hover:shadow-lg hover:scale-105 font-bold">
-                      <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                      Chat Mode
-                    </button>
-                  </Link>
-                </div>
-              </motion.div>
-
-              {/* Feature badges */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.5 }}
-                className="flex flex-wrap gap-3 mt-6 text-xs font-mono uppercase tracking-wider text-text-secondary"
-              >
-                <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
-                  <Sparkles className="w-3 h-3 text-accent" /> 4 Chapters
-                </span>
-                <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
-                  <Sparkles className="w-3 h-3 text-accent" /> Dynamic Moods
-                </span>
-                <span className="px-3 py-1 rounded-full bg-surface border border-border flex items-center gap-2">
-                  <Sparkles className="w-3 h-3 text-accent" /> Easter Eggs
-                </span>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Right Content - Character Image (mentok kanan bawah!) */}
-          <div className="absolute bottom-0 right-0 pointer-events-none" style={{ right: '-50px', bottom: '-20px' }}>
-            <div className="relative flex items-end justify-end" style={{ height: '100vh', width: 'auto' }}>
-              {/* Ritual Logo Behind Character */}
-              <img
-                src="/Logo_RItual_White.png"
-                alt="Ritual Logo"
-                className="absolute z-[-1] object-contain sepia(1) saturate(8) brightness(0.7) opacity-40 pointer-events-none h-[130vh] md:h-[110vh] max-w-[85vw] md:max-w-[60vw] top-[15vh] md:top-[0] right-[-13vw] md:right-[-9vw]"
-              />
-              <motion.div
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.3 }}
+                animate={{ y: [0, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
+                className="relative w-[320px] h-[55vh] sm:w-[420px] sm:h-[65vh] lg:w-[480px] lg:h-[80vh]"
               >
                 <Image
                   src="/character.png"
-                  alt="Anime Character"
-                  width={800}
-                  height={1000}
-                  className="object-contain object-bottom drop-shadow-2xl relative z-0"
+                  alt="Siggy Character"
+                  fill
+                  className="object-contain object-bottom drop-shadow-[0_15px_35px_rgba(255,215,0,0.1)]"
                   priority
-                  style={{ height: '100vh', width: 'auto', maxHeight: '100vh', maxWidth: '55vw' }}
+                  sizes="(max-width: 1024px) 380px, 480px"
                 />
               </motion.div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* About Section - Who is Siggy */}
-      <section id="about" className="py-24 px-8 bg-bg">
-        <div className="max-w-7xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-display tracking-wide uppercase text-center mb-16 text-accent"
-          >
-            Who is Siggy?
-          </motion.h2>
+      {/* LORE SECTION: Who is Siggy */}
+      <section id="about" className="py-28 px-6 sm:px-8 border-t border-white/5 relative bg-[#060606]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center space-y-3 mb-16">
+            <p className="font-mono text-xs uppercase tracking-wider text-accent">origins</p>
+            <h2 className="text-4xl md:text-5xl font-display tracking-wide uppercase text-accent">Who is Siggy?</h2>
+            <p className="mx-auto max-w-xl text-sm text-text-secondary">
+              A multi-dimensional feline probability fluctuation that materialized in anime girl form to explore human systems.
+            </p>
+          </div>
 
           {/* Form Showcase Galleries */}
-          <div className="flex flex-col gap-12 mb-16 max-w-5xl mx-auto">
+          <div className="grid gap-10 md:grid-cols-2 max-w-5xl mx-auto mb-16">
             {/* Cat Forms */}
-            <div>
-              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
-                Cat Form
+            <div className="space-y-4">
+              <h3 className="text-lg font-mono uppercase tracking-wider text-text-primary border-b border-white/5 pb-2 flex items-center justify-between">
+                <span>Cat Form</span>
+                <span className="text-[10px] text-accent">6 States</span>
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 {[
                   { name: 'Default', img: '/siggy-cat-default.png' },
                   { name: 'Happy', img: '/siggy-cat-happy.png' },
@@ -185,27 +229,28 @@ export default function LandingPage() {
                 ].map((mood, i) => (
                   <motion.div
                     key={mood.name}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-border/30 transition-colors"
+                    transition={{ delay: i * 0.05 }}
+                    className="flex flex-col items-center bg-surface/20 rounded-xl p-3 border border-white/5 hover:border-accent/30 hover:scale-[1.03] transition-all"
                   >
-                    <div className="w-24 h-24 relative mb-3">
-                      <Image src={mood.img} alt={`Cat ${mood.name}`} fill className="object-contain drop-shadow-md" />
+                    <div className="w-16 h-16 relative mb-2">
+                      <Image src={mood.img} alt={`Cat ${mood.name}`} fill className="object-contain" sizes="64px" />
                     </div>
-                    <span className="text-[10px] font-mono text-text-secondary uppercase">Cat {mood.name}</span>
+                    <span className="text-[9px] font-mono text-text-secondary uppercase">{mood.name}</span>
                   </motion.div>
                 ))}
               </div>
             </div>
 
             {/* Anime Girl Forms */}
-            <div>
-              <h3 className="text-xl font-mono uppercase tracking-wider text-text-primary mb-6 text-center border-b border-white/10 pb-4">
-                Anime Girl Form
+            <div className="space-y-4">
+              <h3 className="text-lg font-mono uppercase tracking-wider text-text-primary border-b border-white/5 pb-2 flex items-center justify-between">
+                <span>Anime Girl Form</span>
+                <span className="text-[10px] text-accent">6 States</span>
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 {[
                   { name: 'Default', img: '/siggy-girl-default.png' },
                   { name: 'Happy', img: '/siggy-girl-happy.png' },
@@ -216,112 +261,85 @@ export default function LandingPage() {
                 ].map((mood, i) => (
                   <motion.div
                     key={mood.name}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 15 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex flex-col items-center bg-surface/50 rounded-xl p-4 border border-white/5 hover:border-border/30 transition-colors"
+                    transition={{ delay: i * 0.05 }}
+                    className="flex flex-col items-center bg-surface/20 rounded-xl p-3 border border-white/5 hover:border-accent/30 hover:scale-[1.03] transition-all"
                   >
-                    <div className="w-24 h-24 relative mb-3">
-                      <Image src={mood.img} alt={`Girl ${mood.name}`} fill className="object-contain drop-shadow-md" />
+                    <div className="w-16 h-16 relative mb-2">
+                      <Image src={mood.img} alt={`Girl ${mood.name}`} fill className="object-contain" sizes="64px" />
                     </div>
-                    <span className="text-[10px] font-mono text-text-secondary uppercase">Girl {mood.name}</span>
+                    <span className="text-[9px] font-mono text-text-secondary uppercase">{mood.name}</span>
                   </motion.div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Lore Text */}
-          <div className="max-w-4xl mx-auto space-y-6 text-text-secondary leading-relaxed bg-surface/30 p-8 md:p-12 rounded-3xl border border-white/5">
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-lg md:text-xl"
-            >
-              Siggy began as a <span className="text-accent font-bold">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions. A cat-shaped probability fluctuation that could see all realities at once.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="text-lg md:text-xl"
-            >
-              Curious about Earth, she <span className="text-accent font-bold">DESCENDED</span> to our world. But a cosmic cat would attract too much attention. So she did what any sensible being would do: she transformed into an <span className="text-accent font-bold">anime girl with cat ears</span>. Because subtlety is overrated.
-            </motion.p>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="text-xl md:text-2xl font-display tracking-wide text-accent text-center mt-8 pt-6 border-t border-white/10"
-            >
-              Now she lives among us, learning what it means to be human, one ramen bowl at a time. 🍜
-            </motion.p>
+          {/* Lore Text Box */}
+          <div className="max-w-4xl mx-auto space-y-5 text-text-secondary bg-surface/20 backdrop-blur-sm p-8 md:p-10 rounded-2xl border border-white/5 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full blur-2xl pointer-events-none" />
+            <p className="text-base sm:text-lg leading-relaxed">
+              Siggy began as a <span className="text-accent font-bold">multi-dimensional feline entity</span> born from the Ritual Forge across infinite dimensions. A cat-shaped probability fluctuation that could process multiple timelines at once.
+            </p>
+            <p className="text-base sm:text-lg leading-relaxed">
+              Curious about on-chain execution and human constructs, she descended to Earth. To blend in without causing cosmic system faults, she adopted a hybrid <span className="text-accent font-bold">anime girl form with cat ears</span>.
+            </p>
+            <p className="text-lg sm:text-xl font-display tracking-wide text-accent text-center mt-6 pt-5 border-t border-white/5">
+              Now she helps summoners control autonomous AI agents, one transaction at a time. 🐾
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Two Modes Section */}
-      <section className="py-24 px-8 border-t border-border bg-surface relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-        <div className="max-w-7xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-display tracking-tight uppercase text-center mb-16"
-          >
-            Two Ways to Experience Siggy
-          </motion.h2>
+      {/* TWO MODES SECTION */}
+      <section className="py-28 px-6 sm:px-8 border-t border-white/5 bg-[#080808] relative overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center space-y-3 mb-16">
+            <p className="font-mono text-xs uppercase tracking-wider text-accent">experience</p>
+            <h2 className="text-4xl md:text-5xl font-display tracking-wide uppercase">Two Ways to Connect</h2>
+          </div>
 
-          <div className="grid gap-8 sm:grid-cols-2">
+          <div className="grid gap-8 md:grid-cols-2 max-w-5xl mx-auto">
             {/* Story Mode Card */}
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-border/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
+              transition={{ duration: 0.6 }}
+              className="p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-md hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.06)] hover:scale-[1.01] transition-all flex flex-col justify-between group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
-                <BookOpen className="w-8 h-8 text-accent" />
+              <div>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/10 group-hover:scale-110 transition-transform border border-accent/20">
+                  <BookOpen className="w-6 h-6 text-accent" />
+                </div>
+                <h3 className="font-display text-2xl mb-3 text-text-primary">Story Mode</h3>
+                <p className="text-text-secondary leading-relaxed mb-6 text-xs sm:text-sm">
+                  Experience Siggy's journey from cosmic cat consciousness to Earth through 
+                  a visual novel adventure powered by the Ritual network.
+                </p>
+                <ul className="space-y-2 text-xs text-text-secondary mb-8 font-mono">
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Chapter 1: The Awakening</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Chapter 2: The Descent</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Chapter 3: Meeting the Summoner</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Chapter 4: A New Era</span>
+                  </li>
+                </ul>
               </div>
-              <h3 className="font-display text-2xl mb-4 text-text-primary">Story Mode</h3>
-              <p className="text-text-secondary leading-relaxed mb-8 text-sm md:text-base">
-                Experience Siggy&apos;s journey from cosmic cat consciousness to Earth through 
-                a multidimensional visual novel adventure powered by the Ritual network.
-              </p>
-              <ul className="space-y-3 text-sm text-text-secondary mb-10">
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span><strong>Chapter 1:</strong> The Awakening</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span><strong>Chapter 2:</strong> The Descent → Transformed</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span><strong>Chapter 3:</strong> First Contact → Meeting the Summoner</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span><strong>Chapter 4:</strong> A New Era → Blockchain + AI</span>
-                </li>
-              </ul>
-              <Link href="/story">
-                <button className="w-full px-6 py-4 bg-surface border border-border hover:border-border hover:text-accent font-mono text-xs uppercase tracking-widest rounded-xl transition-all shadow-inner">
+              <Link href="/story" className="w-full">
+                <button className="w-full px-6 py-3.5 bg-surface/40 hover:bg-surface/60 border border-white/5 hover:border-accent/40 hover:text-accent font-mono text-xs uppercase tracking-widest rounded-lg transition-all">
                   Start Story
                 </button>
               </Link>
@@ -329,48 +347,42 @@ export default function LandingPage() {
 
             {/* Chat Mode Card */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/50 backdrop-blur-sm hover:border-border/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.05)] transition-all group"
+              transition={{ duration: 0.6 }}
+              className="p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-md hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.06)] hover:scale-[1.01] transition-all flex flex-col justify-between group"
             >
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
-                <MessageSquare className="w-8 h-8 text-accent" />
+              <div>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/10 group-hover:scale-110 transition-transform border border-accent/20">
+                  <MessageSquare className="w-6 h-6 text-accent" />
+                </div>
+                <h3 className="font-display text-2xl mb-3 text-text-primary">Chat Mode</h3>
+                <p className="text-text-secondary leading-relaxed mb-6 text-xs sm:text-sm">
+                  Engage with Siggy in her anime form! She recognizes you personally and 
+                  manages dynamic emotional states based on your conversations.
+                </p>
+                <ul className="space-y-2 text-xs text-text-secondary mb-8 font-mono">
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Unlimited chat cycles</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>6 dynamic emotional states</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Hidden Ritual Forge secrets</span>
+                  </li>
+                  <li className="flex items-center gap-2.5">
+                    <span className="text-accent font-bold">✓</span>
+                    <span>Interactive prompt overrides</span>
+                  </li>
+                </ul>
               </div>
-              <h3 className="font-display text-2xl mb-4 text-text-primary">Chat Mode</h3>
-              <p className="text-text-secondary leading-relaxed mb-8 text-sm md:text-base">
-                Engage with Siggy in her anime form! She recognizes you personally and 
-                optimizes the planetary hash rate via decentralised AI infrastructure.
-              </p>
-              <ul className="space-y-3 text-sm text-text-secondary mb-10">
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span>Unlimited personalized conversations</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span>Dynamic system with 6 emotional states</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span>Hidden Ritual Forge easter eggs</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-accent/10 border border-border/20 flex items-center justify-center shrink-0">
-                    <span className="text-accent text-[10px]">✓</span>
-                  </div>
-                  <span>Discover her true cosmic feline origins</span>
-                </li>
-              </ul>
-              <Link href="/chat">
-                <button className="w-full px-6 py-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-xs uppercase tracking-widest rounded-xl hover:from-yellow-400 hover:to-accent transition-all shadow-lg shadow-accent/10 font-bold">
+              <Link href="/chat" className="w-full">
+                <button className="w-full px-6 py-3.5 bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-xs font-bold uppercase tracking-widest rounded-lg transition-all shadow-md shadow-accent/5">
                   Start Chatting
                 </button>
               </Link>
@@ -379,207 +391,159 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Discord & Features Section */}
-      <section className="py-24 px-8 border-t border-border bg-bg relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-
-        <div className="max-w-7xl mx-auto">
-          {/* Section Header */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-4">
-              Discord Integration
-            </h2>
-            <p className="text-text-secondary max-w-2xl mx-auto leading-relaxed">
-              Connect with the Ritual Discord community. Check contributors, research topics, and explore member data.
+      {/* DISCORD & FEATURES SECTION */}
+      <section className="py-28 px-6 sm:px-8 border-t border-white/5 bg-[#060606] relative overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center space-y-3 mb-16">
+            <p className="font-mono text-xs uppercase tracking-wider text-accent">integration</p>
+            <h2 className="text-4xl md:text-5xl font-display tracking-wide uppercase">Discord Agent Engine</h2>
+            <p className="mx-auto max-w-xl text-sm text-text-secondary">
+              Connect with the Ritual Discord community. Analyze contributor metrics, research concepts, and sync member logs.
             </p>
-          </motion.div>
+          </div>
 
-          {/* Feature Cards */}
-          <div className="grid gap-8 sm:grid-cols-3">
-            {/* Contributor Check */}
+          {/* Feature Grid */}
+          <div className="grid gap-6 sm:grid-cols-3 max-w-5xl mx-auto">
+            {/* Contributor Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-accent/40 transition-all group"
+              className="p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group"
             >
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">🔍</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
+                🔍
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Contributor Analysis</h3>
-              <p className="text-text-secondary text-sm leading-relaxed mb-5">
-                Use <code className="bg-bg/50 px-2 py-1 rounded text-accent">/check @username</code> to analyze any contributor with AI-powered insights about their activity and impact.
+              <h3 className="font-display text-lg mb-2 text-text-primary">Contributor Insights</h3>
+              <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                Use <code className="bg-bg/60 px-1.5 py-0.5 rounded text-accent font-mono">/check @username</code> to review contributor status, joining epochs, and message scores.
               </p>
-              <div className="text-xs font-mono text-text-secondary border-t border-white/10 pt-4">
-                7,978+ members • Real-time data
+              <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
+                7,978 members tracked
               </div>
             </motion.div>
 
-            {/* Web Research */}
+            {/* Web Research Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-accent/40 transition-all group"
+              transition={{ delay: 0.1 }}
+              className="p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group"
             >
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">🌐</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
+                🌐
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Web Research</h3>
-              <p className="text-text-secondary text-sm leading-relaxed mb-5">
-                Use <code className="bg-bg/50 px-2 py-1 rounded text-accent">/research topic</code> to search the web and get instant answers with cited sources.
+              <h3 className="font-display text-lg mb-2 text-text-primary">AI Web Research</h3>
+              <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                Trigger <code className="bg-bg/60 px-1.5 py-0.5 rounded text-accent font-mono">/research topic</code> to verify documentation, check GitHub updates, and retrieve quotes.
               </p>
-              <div className="text-xs font-mono text-text-secondary border-t border-white/10 pt-4">
-                Powered by Exa.ai • Real-time results
+              <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
+                Powered by Exa Search API
               </div>
             </motion.div>
 
-            {/* Community Data */}
+            {/* Community Stats Card */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-8 rounded-3xl border border-white/5 bg-surface/50 hover:border-accent/40 transition-all group"
+              transition={{ delay: 0.2 }}
+              className="p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group"
             >
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 bg-gradient-to-br from-accent/20 to-yellow-400/20 group-hover:scale-110 transition-transform">
-                <span className="text-2xl">📊</span>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
+                📊
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Community Stats</h3>
-              <p className="text-text-secondary text-sm leading-relaxed mb-5">
-                Access member data including message counts, contributions, events participation, roles, and join dates.
+              <h3 className="font-display text-lg mb-2 text-text-primary">Sync Analytics</h3>
+              <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                Access member metrics, dynamic join curves, active roles, and total event participants.
               </p>
-              <div className="text-xs font-mono text-text-secondary border-t border-white/10 pt-4">
-                7978+ members • Full activity history
+              <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
+                Real-time activity logs
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 px-8 border-t border-border bg-surface relative">
-        <div className="max-w-7xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-display tracking-tight uppercase text-center mb-16"
-          >
-            Powerful Features
-          </motion.h2>
-
-          <div className="grid gap-8 sm:grid-cols-3">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
-            >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">AI</span>
+      {/* DASHBOARD SLEEK STATS & SVG LINE CHART */}
+      <section className="py-28 px-6 sm:px-8 border-t border-white/5 bg-[#080808]">
+        <div className="max-w-6xl mx-auto grid gap-12 lg:grid-cols-[0.8fr_1.2fr] items-center">
+          <div className="space-y-6">
+            <div className="inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent border border-accent/20 rounded-md">
+              <TrendingUp className="h-4 w-4" /> Live dashboard metrics
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-display tracking-tight uppercase">Siggy Analytics</h2>
+            <p className="text-text-secondary text-sm leading-relaxed">
+              Tracking automated agent execution across TEE hosts. As schedule limits fire, statistics are compiled and cataloged securely.
+            </p>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Agents Deployed</span>
+                <p className="mt-1 font-display text-3xl text-accent">1,420</p>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">AI Analysis</h3>
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                DeepSeek-powered contributor analysis with archetype detection,
-                contribution breakdown, and community impact assessment.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
-            >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">🔍</span>
+              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Network Wakeups</span>
+                <p className="mt-1 font-display text-3xl text-accent">849k</p>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Knowledge Base</h3>
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                Context-aware responses using Ritual community knowledge,
-                event history, and member information for accurate answers.
-              </p>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="p-8 rounded-3xl border border-white/5 bg-bg/30 backdrop-blur-sm hover:border-border/40 shadow-xl transition-all"
-            >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/20">
-                <span className="text-2xl font-display text-accent">⚡</span>
+              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Active Nodes</span>
+                <p className="mt-1 font-display text-3xl text-accent">15</p>
               </div>
-              <h3 className="font-display text-xl mb-3 text-text-primary">Real-time Data</h3>
-              <p className="text-xs md:text-sm text-text-secondary leading-relaxed">
-                Live Discord data with member avatars, message counts,
-                contributions, events participation, and role management.
-              </p>
-            </motion.div>
+              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Node Uptime</span>
+                <p className="mt-1 font-display text-3xl text-emerald-400">99.9%</p>
+              </div>
+            </div>
           </div>
+
+          {/* SVG Area Chart widget */}
+          <NetworkChart />
         </div>
       </section>
 
-      {/* Try These Section */}
-      <section className="py-24 px-8 bg-bg relative">
-        <div className="max-w-7xl mx-auto">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-display tracking-tight uppercase mb-16 text-center md:text-left"
-          >
-            Try These
-          </motion.h2>
+      {/* TRY THESE MODS SECTION */}
+      <section className="py-28 px-6 sm:px-8 border-t border-white/5 bg-[#060606]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center space-y-3 mb-16">
+            <p className="font-mono text-xs uppercase tracking-wider text-accent">exploration</p>
+            <h2 className="text-4xl md:text-5xl font-display tracking-wide uppercase">Try These Prompts</h2>
+          </div>
 
-          <div className="grid gap-8 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 max-w-5xl mx-auto">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="p-8 rounded-3xl border border-white/5 bg-surface/50"
+              className="p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-sm"
             >
-              <h3 className="font-display text-xl mb-6 text-accent flex items-center gap-3">
-                <Sparkles className="w-5 h-5" />
-                Mood Triggers
+              <h3 className="font-display text-xl mb-4 text-accent flex items-center gap-2">
+                <Sparkles className="w-5 h-5" /> Mood Overrides
               </h3>
-              <ul className="space-y-4 text-text-secondary text-sm md:text-base font-mono">
-                <li className="pb-3 border-b border-white/5">Mention you are feeling down <span className="text-accent ml-2">→ Sad</span></li>
-                <li className="pb-3 border-b border-white/5">Tell a funny cosmic joke <span className="text-accent ml-2">→ Happy</span></li>
-                <li className="pb-3 border-b border-white/5">Mention a major data breach <span className="text-accent ml-2">→ Shock</span></li>
-                <li className="pb-3 border-b border-white/5">Give her a heartfelt compliment <span className="text-accent ml-2">→ Shy</span></li>
+              <ul className="space-y-3 text-xs sm:text-sm text-text-secondary font-mono">
+                <li className="pb-2 border-b border-white/5">Mention you are feeling down <span className="text-accent ml-1">→ Sad</span></li>
+                <li className="pb-2 border-b border-white/5">Tell a funny cosmic joke <span className="text-accent ml-1">→ Happy</span></li>
+                <li className="pb-2 border-b border-white/5">Mention a major network lag <span className="text-accent ml-1">→ Shock</span></li>
+                <li className="pb-2 border-b border-white/5">Offer a sweet virtual snack <span className="text-accent ml-1">→ Shy</span></li>
               </ul>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="p-8 rounded-3xl border border-white/5 bg-surface/50"
+              transition={{ delay: 0.1 }}
+              className="p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-sm"
             >
-              <h3 className="font-display text-xl mb-6 text-accent flex items-center gap-3">
-                <Sparkles className="w-5 h-5" />
-                Forge Secrets
+              <h3 className="font-display text-xl mb-4 text-accent flex items-center gap-2">
+                <Sparkles className="w-5 h-5" /> Forge Secrets
               </h3>
-              <ul className="space-y-4 text-text-secondary text-sm md:text-base font-mono">
-                <li className="pb-3 border-b border-white/5">Ask &quot;Why did you become an anime girl?&quot;</li>
-                <li className="pb-3 border-b border-white/5">Ask &quot;Do you miss the cosmic void?&quot;</li>
-                <li className="pb-3 border-b border-white/5">Ask &quot;How does the Ritual Forge work?&quot;</li>
-                <li className="pb-3 border-b border-white/5">Say &quot;glitch&quot; into the void.</li>
+              <ul className="space-y-3 text-xs sm:text-sm text-text-secondary font-mono">
+                <li className="pb-2 border-b border-white/5">Ask "Why did you transform into an anime girl?"</li>
+                <li className="pb-2 border-b border-white/5">Ask "Do you remember the cosmic space void?"</li>
+                <li className="pb-2 border-b border-white/5">Ask "How can I deploy a sovereign agent harness?"</li>
+                <li className="pb-2 border-b border-white/5">Say "glitch" directly to trigger glitches.</li>
               </ul>
             </motion.div>
           </div>
@@ -592,28 +556,216 @@ export default function LandingPage() {
       </div>
 
       {/* Footer CTA */}
-      <section className="py-20 px-8 border-t border-border bg-surface text-left md:text-center">
+      <section className="py-24 px-8 border-t border-white/5 bg-surface/25 backdrop-blur-md text-left md:text-center relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-6">
-          <h2 className="text-3xl md:text-4xl font-display tracking-wider uppercase mb-4 text-accent md:text-text-primary">Ready to Meet Siggy?</h2>
-          <p className="text-text-secondary max-w-xl md:mx-auto">
-            Begin your journey through the cosmos and anime culture.
+          <h2 className="text-4xl font-display tracking-wider uppercase mb-4 text-accent">Ready to Meet Siggy?</h2>
+          <p className="text-text-secondary max-w-xl md:mx-auto text-sm">
+            Begin your journey through visual novel paths or deploy autonomous agents onto the Ritual Testnet.
           </p>
-          <div className="flex flex-col md:flex-row gap-4 justify-start md:justify-center pt-2">
-            <Link href="/story" className="w-full md:w-auto">
-              <button className="w-full px-8 py-4 bg-surface border border-border hover:border-border text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-3">
-                <BookOpen className="w-5 h-5" />
+          <div className="flex flex-col sm:flex-row gap-4 justify-start md:justify-center pt-3">
+            <Link href="/story" className="w-full sm:w-auto">
+              <button className="w-full px-8 py-3.5 bg-surface/40 hover:bg-surface/60 border border-white/5 hover:border-accent/40 text-text-primary hover:text-accent font-mono text-sm uppercase tracking-wider rounded-lg transition-all flex items-center justify-center gap-3">
+                <BookOpen className="w-4 h-4" />
                 Read Story
               </button>
             </Link>
-            <Link href="/chat" className="w-full md:w-auto">
-              <button className="w-full px-8 py-4 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm uppercase tracking-wider rounded-lg transition-all hover:from-yellow-400 hover:to-accent flex items-center justify-center gap-3">
-                <MessageSquare className="w-5 h-5" />
+            <Link href="/chat" className="w-full sm:w-auto">
+              <button className="w-full px-8 py-3.5 bg-gradient-to-r from-accent to-yellow-400 text-black font-mono text-sm font-bold uppercase tracking-wider rounded-lg transition-all hover:from-yellow-400 hover:to-accent flex items-center justify-center gap-3">
+                <MessageSquare className="w-4 h-4" />
                 Start Chat
               </button>
             </Link>
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+function ChatWidget() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [dialogueIdx, setDialogueIdx] = useState(0);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+    if (dialogueIdx >= chatDialogue.length) {
+      const timer = setTimeout(() => {
+        setMessages([]);
+        setDialogueIdx(0);
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+
+    const currentMsg = chatDialogue[dialogueIdx];
+    const delay = currentMsg.sender === 'siggy' ? 1400 : 900;
+    
+    const typingTimer = setTimeout(() => {
+      if (currentMsg.sender === 'siggy') {
+        setIsTyping(true);
+        const showMsgTimer = setTimeout(() => {
+          setIsTyping(false);
+          setMessages((prev) => [...prev, currentMsg]);
+          setDialogueIdx((idx) => idx + 1);
+        }, 1600);
+        return () => clearTimeout(showMsgTimer);
+      } else {
+        setMessages((prev) => [...prev, currentMsg]);
+        setDialogueIdx((idx) => idx + 1);
+      }
+    }, delay);
+
+    return () => clearTimeout(typingTimer);
+  }, [dialogueIdx]);
+
+  return (
+    <div className="border border-white/5 bg-[#0a0a0a]/70 backdrop-blur-md rounded-2xl p-4 shadow-2xl font-sans text-xs w-full">
+      <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-accent animate-pulse" />
+          <span className="font-mono text-[10px] uppercase tracking-wider text-text-secondary">Siggy Chat Simulator</span>
+        </div>
+        <div className="flex gap-1">
+          <span className="font-mono text-[9px] text-accent/80 uppercase">Harness: Active</span>
+        </div>
+      </div>
+      
+      <div className="space-y-3 max-h-[190px] overflow-y-auto pr-1 flex flex-col scrollbar-thin">
+        {messages.map((msg, i) => (
+          <div
+            key={i}
+            className={`flex gap-2.5 items-end ${msg.sender === 'summoner' ? 'flex-row-reverse' : ''}`}
+          >
+            {msg.sender === 'siggy' ? (
+              <div className="relative w-7 h-7 rounded-full bg-surface overflow-hidden border border-accent/20 shrink-0">
+                <Image
+                  src={
+                    msg.mood === 'happy' ? '/siggy-girl-happy.png' :
+                    msg.mood === 'shock' ? '/siggy-girl-shock.png' :
+                    msg.mood === 'sad' ? '/siggy-girl-sad.png' :
+                    msg.mood === 'shy' ? '/siggy-girl-shy.png' :
+                    msg.mood === 'angry' ? '/siggy-girl-angry.png' :
+                    '/siggy-girl-default.png'
+                  }
+                  alt="Siggy avatar"
+                  fill
+                  className="object-contain"
+                  sizes="28px"
+                />
+              </div>
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-accent/20 border border-white/10 flex items-center justify-center shrink-0 text-[10px] font-mono text-accent">
+                SUM
+              </div>
+            )}
+            
+            <div
+              className={`max-w-[75%] rounded-2xl px-3.5 py-2.5 text-[11px] leading-relaxed ${
+                msg.sender === 'summoner'
+                  ? 'bg-accent text-black font-medium rounded-br-none'
+                  : 'bg-surface/50 border border-white/5 text-text-primary rounded-bl-none'
+              }`}
+            >
+              <p>{msg.text}</p>
+            </div>
+          </div>
+        ))}
+
+        {isTyping && (
+          <div className="flex gap-2.5 items-end">
+            <div className="relative w-7 h-7 rounded-full bg-surface overflow-hidden border border-accent/20 shrink-0">
+              <Image src="/siggy-girl-happy.png" alt="Siggy avatar" fill className="object-contain" sizes="28px" />
+            </div>
+            <div className="bg-surface/50 border border-white/5 text-text-secondary rounded-2xl rounded-bl-none px-3.5 py-2 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+    </div>
+  );
+}
+
+function NetworkChart() {
+  return (
+    <div className="relative border border-white/5 bg-[#0a0a0a]/60 backdrop-blur-md rounded-2xl p-5 shadow-xl w-full">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Network Heartbeat</span>
+          <h4 className="font-display text-xl text-accent">Global Executions</h4>
+        </div>
+        <div className="flex gap-3 font-mono text-[9px] text-text-secondary">
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-accent" /> Wakeups</span>
+          <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> TEE Proof</span>
+        </div>
+      </div>
+      
+      {/* SVG Line Graph */}
+      <div className="h-44 w-full relative">
+        <svg viewBox="0 0 500 150" className="w-full h-full overflow-visible" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#FFD700" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#FFD700" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="lineGlow" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#FFD700" />
+              <stop offset="50%" stopColor="#FBBF24" />
+              <stop offset="100%" stopColor="#F59E0B" />
+            </linearGradient>
+          </defs>
+          
+          {/* Grid lines */}
+          <line x1="0" y1="25" x2="500" y2="25" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+          <line x1="0" y1="75" x2="500" y2="75" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+          <line x1="0" y1="125" x2="500" y2="125" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+          
+          <line x1="100" y1="0" x2="100" y2="150" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+          <line x1="200" y1="0" x2="200" y2="150" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+          <line x1="300" y1="0" x2="300" y2="150" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+          <line x1="400" y1="0" x2="400" y2="150" stroke="rgba(255,255,255,0.03)" strokeDasharray="4 4" />
+
+          {/* Area Fill */}
+          <path
+            d="M0 150 L 0 110 Q 50 140 100 80 T 200 60 T 300 90 T 400 40 T 500 20 L 500 150 Z"
+            fill="url(#chartGlow)"
+          />
+          
+          {/* Main Line */}
+          <path
+            d="M0 110 Q 50 140 100 80 T 200 60 T 300 90 T 400 40 T 500 20"
+            fill="none"
+            stroke="url(#lineGlow)"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
+
+          {/* Glowing Points */}
+          <circle cx="100" cy="80" r="5" fill="#FFD700" className="animate-ping" style={{ transformOrigin: '100px 80px' }} />
+          <circle cx="100" cy="80" r="4" fill="#FFD700" stroke="#050505" strokeWidth="1.5" />
+          
+          <circle cx="300" cy="90" r="5" fill="#FFD700" className="animate-ping" style={{ transformOrigin: '300px 90px' }} />
+          <circle cx="300" cy="90" r="4" fill="#FFD700" stroke="#050505" strokeWidth="1.5" />
+
+          <circle cx="500" cy="20" r="5" fill="#FFD700" className="animate-ping" style={{ transformOrigin: '500px 20px' }} />
+          <circle cx="500" cy="20" r="4" fill="#FFD700" stroke="#050505" strokeWidth="1.5" />
+        </svg>
+      </div>
+      
+      <div className="flex justify-between font-mono text-[9px] text-text-secondary mt-2 border-t border-white/5 pt-2">
+        <span>00:00</span>
+        <span>06:00</span>
+        <span>12:00</span>
+        <span>18:00</span>
+        <span>Now</span>
+      </div>
     </div>
   );
 }

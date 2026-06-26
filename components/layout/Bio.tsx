@@ -6,14 +6,14 @@ import Image from 'next/image';
 
 export function Bio() {
   return (
-    <section className="py-24 px-6 border-t border-border bg-surface">
+    <section className="py-24 px-6 border-t border-white/5 bg-surface/30 backdrop-blur-sm">
       <div className="max-w-3xl mx-auto flex flex-col md:flex-row items-center gap-12">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="w-48 h-48 shrink-0 rounded-2xl overflow-hidden border border-border relative group"
+          className="w-48 h-48 shrink-0 rounded-2xl overflow-hidden border border-white/10 relative group"
         >
           <div className="absolute inset-0 bg-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 mix-blend-overlay" />
           <Image
@@ -61,7 +61,7 @@ export function Bio() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex items-center gap-4"
           >
-            <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full border border-border hover:border-border hover:text-accent transition-colors duration-300">
+            <a href="https://github.com/Decka-tan" target="_blank" rel="noopener noreferrer" className="p-3 rounded-full border border-white/10 hover:border-accent/40 hover:text-accent transition-all duration-300">
               <Github size={20} />
             </a>
           </motion.div>
