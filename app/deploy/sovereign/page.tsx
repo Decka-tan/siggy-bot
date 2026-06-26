@@ -91,6 +91,21 @@ const RPC_URL = "https://rpc.ritualfoundation.org";
 const DEFAULT_PROMPT =
   "You are Siggy, a scheduled sovereign Ritual agent. Give one short AI x crypto builder insight and confirm the scheduled sovereign agent executed successfully.";
 
+// Escrow is pre-charged schedulerGas × maxFeePerGas per wakeup (not actual gas used).
+// Default: 400k gas × 5 Gwei = 0.002 RIT/wakeup.
+const COST_PER_WAKEUP_RIT = 0.002;
+
+const FREQUENCY_PRESETS = [
+  { value: "3000",   label: "Every ~17 min",     desc: "High activity proof" },
+  { value: "6000",   label: "Every ~35 min",     desc: "Frequent heartbeat" },
+  { value: "14400",  label: "Every ~1.4 hr",     desc: "Balanced" },
+  { value: "28800",  label: "Every ~2.8 hr",     desc: "Light usage" },
+  { value: "74000",  label: "Every ~7.2 hr",     desc: "0.2 RIT ≈ 1 month" },
+  { value: "148000", label: "Every ~14.4 hr",    desc: "0.1 RIT ≈ 1 month" },
+  { value: "246857", label: "Every ~24 hr",      desc: "1× per day" },
+] as const;
+
+
 type ProviderKey = "openrouter" | "openai" | "anthropic" | "gemini";
 
 type ProviderConfig = {
@@ -222,6 +237,17 @@ function DeployPage() {
   const schedGasNum = parseInt(advSchedulerGas || "0", 10);
   const schedulerTtlNum = parseInt(advSchedulerTtl || "0", 10);
   const advLifespan = freqNum * numCallsNum;
+
+  // Live escrow duration: how long does the chosen funding last at this frequency?
+  const escrowWakeups = fundingNum > 0 ? Math.floor(fundingNum / COST_PER_WAKEUP_RIT) : 0;
+  const escrowTotalSec = escrowWakeups * freqNum * 0.35;
+  const escrowDurationText = escrowTotalSec < 3600
+    ? `~${Math.round(escrowTotalSec / 60)} min`
+    : escrowTotalSec < 86400
+    ? `~${Math.round(escrowTotalSec / 3600)} hours`
+    : `~${Math.round(escrowTotalSec / 86400)} days`;
+  const isPresetFreq = FREQUENCY_PRESETS.some((p) => p.value === advFrequency);
+
   const promptOk = prompt.trim().length > 0;
   const saltOk = saltLabel.trim().length > 0;
   const hfRepoOk = /^[\w.-]+\/[\w.-]+$/.test(hfRepoId.trim());
@@ -1171,7 +1197,21 @@ function DeployPage() {
                 Advanced: schedule + callback gas {showAdvanced ? "(open)" : "(safe defaults)"}
               </summary>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <Field label="Frequency (blocks)">
+                <Field label="Wakeup frequency">
+                  <select
+                    value={isPresetFreq ? advFrequency : "custom"}
+                    onChange={(e) => { if (e.target.value !== "custom") setAdvFrequency(e.target.value); }}
+                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  >
+                    {FREQUENCY_PRESETS.map((p) => (
+                      <option key={p.value} value={p.value}>
+                        {p.label} — {p.desc}
+                      </option>
+                    ))}
+                    {!isPresetFreq && (
+                      <option value="custom">Custom ({advFrequency} blocks)</option>
+                    )}
+                  </select>
                   <input
                     type="number"
                     value={advFrequency}
@@ -1179,9 +1219,10 @@ function DeployPage() {
                     min={100}
                     max={300000}
                     step={100}
-                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                    placeholder="or type custom blocks"
+                    className="mt-1 w-full border border-border bg-bg px-3 py-2 font-mono text-xs outline-none focus:border-accent text-text-secondary"
                   />
-                  <p className="mt-1 text-[10px] text-text-secondary">Guide default: 2000 (~12 min). Up to 300,000 blocks (~29 hours). For 1x/day, use 246850 (Window calls must be 1).</p>
+                  <p className="mt-1 text-[10px] text-text-secondary">Keep Window calls at 1 for any frequency above 5,750 blocks.</p>
                 </Field>
                 <Field label="Window num calls">
                   <input
@@ -1255,6 +1296,13 @@ function DeployPage() {
                   Escrow deducted per wakeup:{" "}
                   <span className="font-mono text-text-primary">~{((schedGasNum * 5e-9)).toFixed(4)} RIT</span>
                   <span className="text-text-secondary"> (schedulerGas × 5 Gwei)</span>
+                </p>
+                <p className="mt-1 border border-emerald-400/30 bg-emerald-400/5 px-3 py-2">
+                  <span className="text-emerald-300 font-semibold">{fundingRit} RIT escrow</span>
+                  <span className="text-text-secondary"> → </span>
+                  <span className="font-mono text-text-primary">{escrowWakeups} wakeups</span>
+                  <span className="text-text-secondary"> at this frequency = </span>
+                  <span className="font-mono font-semibold text-emerald-300">{escrowDurationText} of escrow</span>
                 </p>
               </div>
             </details>
