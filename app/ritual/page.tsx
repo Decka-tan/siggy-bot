@@ -111,6 +111,30 @@ export default function RitualDashboardPage() {
               <p className="mt-5 max-w-2xl text-base leading-7 text-text-secondary">
                 Live proof surface for Siggy V5: factory deployed, explorer-listed, and tracked from the same Ritual cache that decides sovereign visibility.
               </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <a
+                  href="/deploy"
+                  className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                >
+                  Deploy your own agent
+                  <ExternalLink className="h-4 w-4" />
+                </a>
+                <a
+                  href="#monitor"
+                  className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const addr = window.prompt("Enter your agent address (0x...)") || "";
+                    if (/^0x[0-9a-fA-F]{40}$/.test(addr.trim())) {
+                      window.location.href = `/agent/${addr.trim()}`;
+                    } else if (addr) {
+                      alert("Invalid address. Format: 0x + 40 hex chars.");
+                    }
+                  }}
+                >
+                  Monitor my agent
+                </a>
+              </div>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">

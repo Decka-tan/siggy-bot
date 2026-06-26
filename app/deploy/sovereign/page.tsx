@@ -761,10 +761,10 @@ export default function DeployPage() {
                 )}
                 {prepared?.harness && (
                   <a
-                    href={`/deploy/topup?address=${prepared.harness}`}
+                    href={`/agent/${prepared.harness}`}
                     className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
                   >
-                    Top up escrow
+                    Open monitor
                     <ArrowRight className="h-4 w-4" />
                   </a>
                 )}
