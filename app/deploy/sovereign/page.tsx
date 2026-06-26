@@ -20,6 +20,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { GoldenParticles } from "@/components/ui/GoldenParticles";
 
 ECIES_CONFIG.symmetricNonceLength = 12;
 
@@ -853,10 +854,20 @@ function DeployPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg pt-28 text-text-primary">
-      <section className="mx-auto grid w-full max-w-7xl gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
+    <div className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden">
+      {/* Ambient background particles */}
+      <GoldenParticles mode="ambient" />
+      
+      {/* Celebratory confetti shower upon transaction 2 completion */}
+      {startDone && <GoldenParticles mode="celebration" />}
+      
+      {/* Decorative background glows */}
+      <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
+      <div className="absolute left-0 bottom-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/3 blur-[150px] pointer-events-none" />
+
+      <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
         <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
-          <div className="border border-border bg-surface p-6">
+          <div className="border border-border bg-surface/60 backdrop-blur-md p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
             <div className="mb-4 inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent">
               <Rocket className="h-4 w-4" />
               Sovereign deployer
@@ -868,9 +879,16 @@ function DeployPage() {
             </p>
           </div>
 
-          <div className="border border-border bg-surface p-5">
-            <h2 className="mb-4 font-mono text-xs uppercase tracking-wider text-text-secondary">Progress</h2>
-            <div className="space-y-3">
+          <div className="relative border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+            <h2 className="mb-5 font-mono text-xs uppercase tracking-wider text-text-secondary">Progress</h2>
+            <div className="relative space-y-4">
+              {/* Connector track line */}
+              <div className="absolute left-[13px] top-3 bottom-3 w-[2px] bg-border/50 z-0" />
+              {/* Active step progress indicator line */}
+              <div 
+                className="absolute left-[13px] top-3 w-[2px] bg-gradient-to-b from-emerald-400 to-accent z-0 transition-all duration-500" 
+                style={{ height: `${Math.max(0, Math.min(100, ((step - 1) / 5) * 100))}%` }}
+              />
               {[
                 "Connect wallet",
                 "Use Ritual Testnet",
@@ -878,22 +896,34 @@ function DeployPage() {
                 "Deploy harness",
                 "Fund and start",
                 "Monitor listing",
-              ].map((label, index) => (
-                <div key={label} className="flex items-center gap-3">
-                  <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center border font-mono text-xs ${
-                      step > index + 1
-                        ? "border-emerald-400 bg-emerald-400 text-black"
-                        : step === index + 1
-                          ? "border-accent text-accent"
-                          : "border-border text-text-secondary"
-                    }`}
-                  >
-                    {step > index + 1 ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+              ].map((label, index) => {
+                const isActive = step === index + 1;
+                const isCompleted = step > index + 1;
+                return (
+                  <div key={label} className="relative z-10 flex items-center gap-4">
+                    <div
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border font-mono text-xs transition-all duration-300 ${
+                        isCompleted
+                          ? "border-emerald-400 bg-emerald-400 text-black shadow-[0_0_10px_rgba(52,211,153,0.3)]"
+                          : isActive
+                            ? "border-accent bg-accent/15 text-accent shadow-[0_0_12px_rgba(255,215,0,0.4)] scale-110 animate-pulse"
+                            : "border-border bg-bg text-text-secondary"
+                      }`}
+                    >
+                      {isCompleted ? <CheckCircle2 className="h-4 w-4 stroke-[3]" /> : index + 1}
+                    </div>
+                    <span className={`font-mono text-xs transition-colors duration-300 ${
+                      isActive 
+                        ? "text-accent font-semibold" 
+                        : isCompleted 
+                        ? "text-emerald-300" 
+                        : "text-text-secondary"
+                    }`}>
+                      {label}
+                    </span>
                   </div>
-                  <span className={step === index + 1 ? "text-text-primary" : "text-text-secondary"}>{label}</span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -1021,7 +1051,7 @@ function DeployPage() {
           </Panel>
 
           {prepared && collapseForm ? (
-            <section className="border border-border bg-surface p-5">
+            <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
                   <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
@@ -1566,14 +1596,16 @@ function Panel({
   icon,
   children,
   subtitle,
+  className = "",
 }: {
   title: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   subtitle?: string;
+  className?: string;
 }) {
   return (
-    <section className="border border-border bg-surface p-5">
+    <section className={`border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)] ${className}`}>
       <div className="mb-2 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
         <span className="text-accent">{icon}</span>
         {title}
@@ -1730,7 +1762,7 @@ function ShareLine({ label, value }: { label: string; value: string }) {
 
 function HealthPanel({ health, onRefresh }: { health: Health | null; onRefresh: () => void }) {
   return (
-    <div className="border border-border bg-surface p-5">
+    <div className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-mono text-xs uppercase tracking-wider text-text-secondary">Executor health</h2>
         <button onClick={onRefresh} className="text-text-secondary hover:text-accent" title="Refresh health">

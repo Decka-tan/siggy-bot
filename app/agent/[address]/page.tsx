@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
+import { GoldenParticles } from "@/components/ui/GoldenParticles";
 
 declare global {
   interface Window {
@@ -389,8 +390,18 @@ function AgentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg pt-28 text-text-primary">
-      <section className="mx-auto w-full max-w-5xl space-y-6 px-4 pb-24 sm:px-6 lg:px-8">
+    <div className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden">
+      {/* Ambient background particles */}
+      <GoldenParticles mode="ambient" />
+      
+      {/* Celebratory confetti if active */}
+      {status === "active" && <GoldenParticles mode="celebration" />}
+
+      {/* Decorative background glows */}
+      <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
+      <div className="absolute left-0 bottom-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/3 blur-[150px] pointer-events-none" />
+
+      <section className="relative z-10 mx-auto w-full max-w-5xl space-y-6 px-4 pb-24 sm:px-6 lg:px-8">
         <header className="grid items-center gap-6 sm:grid-cols-[1fr_auto]">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent">
@@ -546,7 +557,7 @@ function AgentPage() {
           />
         </div>
 
-        <section className="border border-border bg-surface p-5">
+        <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
             <Activity className="h-4 w-4" /> Schedule activity
           </h2>
@@ -587,7 +598,7 @@ function AgentPage() {
           </p>
         </section>
 
-        <section className="border border-border bg-surface p-5">
+        <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
             <ShieldCheck className="h-4 w-4" /> Bytecode integrity
           </h2>
@@ -599,7 +610,7 @@ function AgentPage() {
           </div>
         </section>
 
-        <section className="border border-border bg-surface p-5">
+        <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
             <Coins className="h-4 w-4" /> Top up escrow
           </h2>
@@ -700,7 +711,7 @@ function AgentPage() {
 function StatusCard({ title, value, sub, tone }: { title: string; value: string; sub?: string; tone: "good" | "warn" | "bad" }) {
   const colour = tone === "good" ? "text-emerald-300" : tone === "warn" ? "text-amber-300" : "text-red-300";
   return (
-    <div className="border border-border bg-surface p-5">
+    <div className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
       <p className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">{title}</p>
       <p className={`mt-2 font-display text-3xl ${colour}`}>{value}</p>
       {sub && <p className="mt-1 text-xs text-text-secondary">{sub}</p>}
@@ -710,7 +721,7 @@ function StatusCard({ title, value, sub, tone }: { title: string; value: string;
 
 function Check({ label, ok, detail }: { label: string; ok: boolean; detail: string }) {
   return (
-    <div className="border border-border bg-bg p-4">
+    <div className="border border-border bg-bg/60 backdrop-blur-md p-4 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
       <div className="flex items-center gap-2">
         {ok ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <AlertTriangle className="h-4 w-4 text-amber-300" />}
         <span className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</span>

@@ -17,6 +17,7 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { GoldenParticles } from "@/components/ui/GoldenParticles";
 
 type Choice = "sovereign" | "persistent" | null;
 
@@ -45,7 +46,14 @@ export default function DeployLanding() {
   const selected = choice || "sovereign";
 
   return (
-    <main className="min-h-screen bg-bg text-text-primary">
+    <main className="relative min-h-screen bg-bg text-text-primary overflow-hidden">
+      {/* Ambient background particles */}
+      <GoldenParticles mode="ambient" />
+
+      {/* Decorative background glows */}
+      <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
+      <div className="absolute left-0 bottom-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/3 blur-[150px] pointer-events-none" />
+
       <section className="relative min-h-screen overflow-hidden">
         <HeroBackground />
 
