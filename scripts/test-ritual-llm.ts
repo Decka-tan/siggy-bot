@@ -25,7 +25,7 @@ async function balanceOf(rpc: string, addr: Address): Promise<bigint> {
     abi: [{ name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] }] as const,
     functionName: 'balanceOf',
     args: [addr],
-  })) as bigint;
+  } as any)) as bigint;
 }
 
 async function main() {

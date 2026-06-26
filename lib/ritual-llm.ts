@@ -96,7 +96,7 @@ async function pickExecutor(rpcUrl: string): Promise<Address> {
     abi: REGISTRY_ABI,
     functionName: 'getServicesByCapability',
     args: [CAPABILITY_LLM, true],
-  });
+  } as any);
   const valid = (services as any[]).find(s => s.isValid);
   if (!valid) throw new Error('No valid LLM executor in TEEServiceRegistry');
   return valid.node.teeAddress as Address;
@@ -214,7 +214,7 @@ export async function callRitualLLM(opts: RitualLLMOptions): Promise<RitualLLMRe
     to: LLM_PRECOMPILE,
     data,
     gas: 5_000_000n,
-  });
+  } as any);
 
   await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 120_000 });
   const resultHex = await fetchSpcOutput(opts.rpcUrl, txHash);
