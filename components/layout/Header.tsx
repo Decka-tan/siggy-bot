@@ -86,7 +86,8 @@ export function Header() {
           <Link href="/" className="hover:text-accent transition-colors">Home</Link>
           <Link href="/chat?new=true" className="hover:text-accent transition-colors">Chat</Link>
           <Link href="/deploy" className="hover:text-accent transition-colors">Deploy</Link>
-          <Link href="/agent" className="hover:text-accent transition-colors">My agents</Link>
+          <Link href="/agent" className="hover:text-accent transition-colors">Agents</Link>
+          <Link href="/stats" className="hover:text-accent transition-colors">Stats</Link>
         </nav>
 
         {/* Right Buttons - Adaptive */}
@@ -188,7 +189,14 @@ export function Header() {
                 className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                My agents
+                Agents
+              </Link>
+              <Link
+                href="/stats"
+                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Stats
               </Link>
               <button
                 onClick={() => {

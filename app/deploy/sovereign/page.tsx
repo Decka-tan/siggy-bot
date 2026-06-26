@@ -925,7 +925,7 @@ function DeployPage() {
                   <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     faucet.ritualfoundation.org
                   </a>{" "}
-                  or in Ritual Discord <code>#testnet-faucet</code>.
+                  or in Ritual Discord <code>#ritdrip</code>, or gifted by your Discord friends.
                 </span>
               </li>
               <li className="flex gap-3">
