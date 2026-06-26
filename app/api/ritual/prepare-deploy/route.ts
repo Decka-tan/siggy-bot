@@ -137,7 +137,9 @@ function buildCalldata({
     8192,
     "",
   ];
-  const schedule = [1800000, 180, 500, 20000000000, 1000000000, 0];
+  // schedulerGas 500k (not 1.8M) so each call only burns ~0.002 RIT from escrow,
+  // and frequency 2000 (~11.7 min) so 0.1 RIT lasts ~50 wakeUps ≈ ~10h base + rolling windows.
+  const schedule = [500000, 2000, 500, 20000000000, 1000000000, 0];
   const rolling = [numCalls, 5000, 1];
   const lockDuration = 100000000;
   const calldata = configureInterface.encodeFunctionData("configureFundAndStart", [params, schedule, rolling, lockDuration]);
@@ -220,7 +222,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const numCalls = 50;
+    // windowNumCalls 5 + frequency 2000 = lifespan 10,000 blocks (Scheduler MAX_LIFESPAN).
+    // Rolling window auto-schedules next window at 50% threshold so the agent keeps looping
+    // as long as escrow can pay scheduler fees — proven by frianowzki/ritual-sovereign-agent-guide.
+    const numCalls = 5;
     const salt = keccak256(toUtf8Bytes(saltLabel));
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
@@ -232,8 +237,8 @@ export async function POST(request: Request) {
       value: fundingEther,
       valueWei: fundingWei.toString(),
       numCalls,
-      frequency: 180,
-      schedulerGas: 1800000,
+      frequency: 2000,
+      schedulerGas: 500000,
       schedulerTtl: 500,
       maxFeePerGas: "20000000000",
       maxPriorityFeePerGas: "1000000000",

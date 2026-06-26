@@ -26,8 +26,8 @@ type Quip = { mood: "happy" | "neutral" | "shy"; text: string };
 const sovereignQuips: Quip[] = [
   { mood: "happy", text: "Cheap! 0.1 RIT is enough to get listed. Friendly for first-timer." },
   { mood: "happy", text: "Fast to deploy — connect wallet, sign 2 txs, done." },
-  { mood: "neutral", text: "Short lifespan though. After ~30-60 min the schedule ends and the agent gets de-listed." },
-  { mood: "neutral", text: "Best for: 'I just want to prove I deployed a Ritual sovereign agent' achievement." },
+  { mood: "neutral", text: "With safe defaults (schedulerGas 500k + frequency 2000), 0.1 RIT funds ~50 wakeups — that's roughly 1 wakeup/day for a month." },
+  { mood: "neutral", text: "Top up the escrow before it drains and the agent stays listed indefinitely." },
 ];
 
 const persistentQuips: Quip[] = [
@@ -37,9 +37,9 @@ const persistentQuips: Quip[] = [
   { mood: "shy", text: "Pick this if you want a real always-on Ritual agent service." },
 ];
 
-const SIGGY_HERO = "/siggy-girl-happy.png";
-const SIGGY_SOVEREIGN = "/siggy-girl-default.png";
-const SIGGY_PERSISTENT = "/siggy-girl-shy.png";
+const SIGGY_HERO = "/character.png";
+const SIGGY_SOVEREIGN = "/character.png";
+const SIGGY_PERSISTENT = "/character.png";
 
 export default function DeployLanding() {
   const [choice, setChoice] = useState<Choice>(null);
@@ -160,9 +160,9 @@ export default function DeployLanding() {
                 </ul>
 
                 <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                  <Stat label="Lifespan" value={choice === "sovereign" ? "~30-60 min" : "Indefinite"} icon={<Clock className="h-4 w-4" />} />
+                  <Stat label="Lifespan" value={choice === "sovereign" ? "~50 wakeups / 0.1 RIT" : "Indefinite + DA state"} icon={<Clock className="h-4 w-4" />} />
                   <Stat label="Min funding" value={choice === "sovereign" ? "0.1 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
-                  <Stat label="State" value={choice === "sovereign" ? "Ephemeral" : "DA-backed memory"} icon={<Layers className="h-4 w-4" />} />
+                  <Stat label="Per wakeup cost" value={choice === "sovereign" ? "~0.002 RIT" : "varies"} icon={<Layers className="h-4 w-4" />} />
                   <Stat label="Setup" value={choice === "sovereign" ? "2 txs, ~3 min" : "Official launcher"} icon={<Timer className="h-4 w-4" />} />
                 </div>
               </div>
@@ -190,7 +190,8 @@ export default function DeployLanding() {
                 <ComparisonRow label="Precompile" sov="0x080C" per="0x0820" />
                 <ComparisonRow label="Concept" sov="Job — task one-shot/batch" per="Service — long-lived" />
                 <ComparisonRow label="Best for" sov="Achievement / demo" per="Always-on assistant" />
-                <ComparisonRow label="Lifespan" sov={<X className="inline h-4 w-4 text-red-300" />} per={<Check className="inline h-4 w-4 text-emerald-300" />} sovText="Short" perText="Indefinite" />
+                <ComparisonRow label="Lifespan" sov="~50 wakeups / 0.1 RIT (refillable)" per="Indefinite" />
+                <ComparisonRow label="Per wakeup cost" sov="~0.002 RIT" per="~varies" />
                 <ComparisonRow label="Min funding" sov="0.1 RIT" per="~2.1 RIT" />
                 <ComparisonRow label="State & memory" sov="Ephemeral" per="DA-backed (HF/GCS/Pinata)" />
                 <ComparisonRow label="Reviveable" sov={<X className="inline h-4 w-4 text-red-300" />} per={<Check className="inline h-4 w-4 text-emerald-300" />} />
@@ -251,7 +252,7 @@ export default function DeployLanding() {
             </div>
 
             <div className="relative hidden h-full min-h-[220px] md:block">
-              <Image src="/siggy-girl-happy.png" alt="Siggy ready" fill className="object-contain" sizes="240px" />
+              <Image src="/character.png" alt="Siggy ready" fill className="object-contain" sizes="240px" />
             </div>
           </div>
         </div>
