@@ -181,7 +181,7 @@ function DeployPage() {
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(PROVIDERS.openrouter.defaultModel);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [fundingRit, setFundingRit] = useState("0.1");
+  const [fundingRit, setFundingRit] = useState("0.2");
   const [showHfHelp, setShowHfHelp] = useState(false);
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
@@ -193,6 +193,7 @@ function DeployPage() {
   const [advSchedulerTtl, setAdvSchedulerTtl] = useState("5000");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
   const [chosenExecutor, setChosenExecutor] = useState<string>("");
+  const [executorBusy, setExecutorBusy] = useState(false);
   const [health, setHealth] = useState<Health | null>(null);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [verify, setVerify] = useState<Verify | null>(null);
@@ -206,7 +207,9 @@ function DeployPage() {
   const connected = Boolean(account);
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
   const balanceNum = walletBalanceRit ? parseFloat(walletBalanceRit) : 0;
-  const requiredRit = parseFloat(fundingRit || "0") + 0.06;
+  const fundingNum = parseFloat(fundingRit || "0");
+  const fundingOk = fundingNum >= 0.2 && fundingNum <= 5;
+  const requiredRit = fundingNum + 0.06;
   const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
   const providerCfg = PROVIDERS[provider];
 
@@ -244,6 +247,7 @@ function DeployPage() {
     hfTokenOk &&
     apiKeyOk &&
     modelOk &&
+    fundingOk &&
     advValid;
   const prepareBlockers = useMemo(() => {
     const items: string[] = [];
@@ -255,6 +259,7 @@ function DeployPage() {
     if (!hfTokenOk) items.push("Paste HF token starting with hf_");
     if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
     if (!modelOk) items.push("Choose model");
+    if (!fundingOk) items.push("Funding must be at least 0.2 RIT");
     if (!promptOk) items.push("Fill prompt");
     if (freqNum < 100 || freqNum > 10000) items.push("Frequency must be 100-10000");
     if (numCallsNum < 1 || numCallsNum > 100) items.push("Window calls must be 1-100");
@@ -274,6 +279,7 @@ function DeployPage() {
     apiKeyOk,
     providerCfg,
     modelOk,
+    fundingOk,
     promptOk,
     freqNum,
     numCallsNum,
@@ -283,7 +289,8 @@ function DeployPage() {
   ]);
   const deployDone = Boolean(deployHash) || prepared?.alreadyDeployed || verify?.deployed;
   const startDone = Boolean(startHash);
-  const bytecodeGateOk = Boolean(verify?.templateMatch);
+  const bytecodeSizeOk = Boolean(verify?.deployed && prepared?.templateBytes && verify.bytecodeBytes === prepared.templateBytes);
+  const bytecodeGateOk = Boolean(verify?.templateMatch || bytecodeSizeOk);
   const preparedFundingRit = prepared?.schedule?.value || "";
   const fundingMatchesPrepared = !preparedFundingRit || parseFloat(preparedFundingRit) === parseFloat(fundingRit || "0");
   const canFund = deployDone && bytecodeGateOk && !startDone && fundingMatchesPrepared;
@@ -358,6 +365,7 @@ function DeployPage() {
   }
 
   async function loadExecutors() {
+    setExecutorBusy(true);
     try {
       const res = await fetch("/api/ritual/list-executors", { cache: "no-store" });
       const data = await res.json();
@@ -367,6 +375,8 @@ function DeployPage() {
       }
     } catch {
       // ignore
+    } finally {
+      setExecutorBusy(false);
     }
   }
 
@@ -400,7 +410,7 @@ function DeployPage() {
         else setModel(PROVIDERS[s.provider as ProviderKey].defaultModel);
       }
       if (typeof s.prompt === "string") setPrompt(s.prompt);
-      if (typeof s.fundingRit === "string") setFundingRit(s.fundingRit);
+      if (typeof s.fundingRit === "string") setFundingRit(parseFloat(s.fundingRit) >= 0.2 ? s.fundingRit : "0.2");
       if (typeof s.advFrequency === "string") setAdvFrequency(s.advFrequency);
       if (typeof s.advNumCalls === "string") setAdvNumCalls(s.advNumCalls);
       if (typeof s.advSchedulerGas === "string") setAdvSchedulerGas(s.advSchedulerGas);
@@ -431,6 +441,7 @@ function DeployPage() {
     if (!account || !saltLabel.trim() || prepared) return;
     const cached = readPreparedCache()[preparedCacheId(account, saltLabel)];
     if (!cached?.prepared?.harness) return;
+    if (parseFloat(cached.prepared.schedule?.value || "0") < 0.2) return;
     setPrepared(cached.prepared);
     setDeployHash(cached.deployHash || "");
     setStartHash(cached.startHash || "");
@@ -734,7 +745,7 @@ function DeployPage() {
             <h1 className="font-display text-5xl leading-none tracking-normal sm:text-6xl">Deploy Sovereign Agent</h1>
             <p className="mt-2 font-mono text-xs uppercase tracking-wider text-accent">with ease</p>
             <p className="mt-4 text-sm leading-6 text-text-secondary">
-              Connect wallet, prepare the official factory harness, deploy it, then fund and start the scheduler with 0.5 RITUAL.
+              Connect wallet, prepare the official factory harness, deploy it, then fund and start the scheduler with your chosen RITUAL amount.
             </p>
           </div>
 
@@ -786,13 +797,13 @@ function DeployPage() {
             <p className="mb-3 text-sm text-text-secondary">
               You&apos;ll deploy a <b>Sovereign Agent</b> — a tiny on-chain bot that wakes up every ~12 minutes
               and runs a prompt on a TEE-verified AI executor. Total time: <b>5–10 minutes</b>. Total cost:{" "}
-              <b>~0.15 RIT</b> (one-time).
+              <b>~0.26 RIT</b> (one-time).
             </p>
             <ol className="space-y-2 text-sm leading-6 text-text-secondary">
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">1.</span>
                 <span>
-                  <b>Wallet with ≥ 0.16 RIT.</b> Use a burner wallet (don&apos;t use your main one). Get RITUAL from{" "}
+                  <b>Wallet with ≥ 0.26 RIT.</b> Use a burner wallet (don&apos;t use your main one). Get RITUAL from{" "}
                   <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     faucet.ritualfoundation.org
                   </a>{" "}
@@ -836,7 +847,7 @@ function DeployPage() {
             <div className="mt-4 space-y-3 text-sm leading-6 text-text-secondary">
               <div>
                 <p className="font-mono text-xs text-text-primary">&quot;Wallet balance too low&quot;</p>
-                <p>You need at least your chosen funding amount + 0.06 RIT for gas. Hit the faucet again or lower the funding to 0.1 RIT.</p>
+                <p>You need at least your chosen funding amount + 0.06 RIT for gas. Hit the faucet again or lower the funding to 0.2 RIT.</p>
               </div>
               <div>
                 <p className="font-mono text-xs text-text-primary">&quot;Sender has a pending async job&quot;</p>
@@ -852,7 +863,7 @@ function DeployPage() {
               </div>
               <div>
                 <p className="font-mono text-xs text-text-primary">Agent works but only ~10 wakeups, not 50</p>
-                <p>Old deployments (before Jun 2026) used schedulerGas 1.8M which burns 5× more per wakeup. This deployer uses 500k so 0.1 RIT lasts ~50 wakeups.</p>
+                <p>Old deployments (before Jun 2026) used schedulerGas 1.8M which burns 5× more per wakeup. This deployer uses 500k so 0.2 RIT gives a safer escrow buffer.</p>
               </div>
             </div>
           </details>
@@ -860,7 +871,7 @@ function DeployPage() {
           <Panel
             title="1. Wallet"
             icon={<Wallet className="h-5 w-5" />}
-            subtitle="Connect a Ritual Testnet wallet. Use a burner with at least 0.16 RIT."
+            subtitle="Connect a Ritual Testnet wallet. Use a burner with at least 0.26 RIT."
           >
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
               <div className="border border-border bg-bg p-4 font-mono text-sm text-text-secondary">
@@ -933,7 +944,7 @@ function DeployPage() {
                   className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
                 />
               </Field>
-              <Field label="HF Repo ID (your-username/dataset-name)">
+              <Field label="HuggingFace / HF Repo ID (your-username/dataset-name)">
                 <input
                   value={hfRepoId}
                   onChange={(e) => setHfRepoId(e.target.value)}
@@ -984,7 +995,7 @@ function DeployPage() {
                       — owner = your username, name = anything (e.g. <code>ritual-agent</code>), visibility <b>Private</b>. Don&apos;t add any files.
                     </li>
                     <li>
-                      The HF repo ID is <code>username/dataset-name</code> — paste it in the &quot;HF Repo ID&quot; field. <b>No URL.</b>
+                      The HF repo ID is <code>username/dataset-name</code> — paste it in the &quot;HuggingFace / HF Repo ID&quot; field. <b>No URL.</b>
                     </li>
                   </ol>
                 </div>
@@ -1068,22 +1079,37 @@ function DeployPage() {
               </select>
             </Field>
 
-            <Field label={`TEE Executor (${executors.length} active) — pick a different one if Phase 2 keeps timing out`}>
-              <select
-                value={chosenExecutor}
-                onChange={(e) => setChosenExecutor(e.target.value)}
-                disabled={executors.length === 0}
-                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent disabled:opacity-50"
-              >
-                {executors.length === 0 && <option value="">Loading executors…</option>}
-                {executors.map((ex, i) => (
-                  <option key={ex.teeAddress} value={ex.teeAddress}>
-                    {i === 0 ? "(default) " : ""}
-                    {short(ex.teeAddress)}
-                    {ex.endpoint ? ` — ${ex.endpoint}` : ""}
-                  </option>
-                ))}
-              </select>
+            <Field label={`TEE Executor (${executors.length} active from registry)`}>
+              <div className="flex gap-2">
+                <select
+                  value={chosenExecutor}
+                  onChange={(e) => setChosenExecutor(e.target.value)}
+                  disabled={executors.length === 0 || executorBusy}
+                  className="min-w-0 flex-1 border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent disabled:opacity-50"
+                >
+                  {executors.length === 0 && <option value="">{executorBusy ? "Refreshing executors..." : "No executors loaded"}</option>}
+                  {executors.map((ex, i) => (
+                    <option key={ex.teeAddress} value={ex.teeAddress}>
+                      {i === 0 ? "(default) " : ""}
+                      {short(ex.teeAddress)}
+                      {ex.endpoint ? ` - ${ex.endpoint}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={loadExecutors}
+                  disabled={executorBusy}
+                  className="inline-flex shrink-0 items-center gap-2 border border-border px-3 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Refresh executors from Ritual registry"
+                >
+                  <RefreshCw className={`h-4 w-4 ${executorBusy ? "animate-spin" : ""}`} />
+                  Refresh
+                </button>
+              </div>
+              <p className="mt-2 text-[10px] text-text-secondary">
+                Loaded from Ritual registry. Refresh or choose another executor if Phase 2 times out.
+              </p>
             </Field>
             <Field label="Prompt">
               <textarea
@@ -1095,7 +1121,7 @@ function DeployPage() {
             </Field>
             <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
               <div className="grid grid-cols-4 gap-2">
-                {["0.1", "0.2", "0.5", "1.0"].map((opt) => (
+                {["0.2", "0.5", "1.0", "2.0"].map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setFundingRit(opt)}
@@ -1274,6 +1300,19 @@ function DeployPage() {
                 <p className="text-xs leading-5 text-amber-300">
                   Funding changed after prepare. Prepared tx still funds {prepared.schedule.value} RITUAL; click Prepare deploy again to rebuild it with {fundingRit} RIT.
                 </p>
+              )}
+              {deployDone && !bytecodeGateOk && (
+                <div className="flex flex-wrap items-center gap-3 text-xs leading-5 text-amber-300">
+                  <span>Harness is deployed, but bytecode verification is still catching up. Refresh verify, then fund and start.</span>
+                  <button
+                    type="button"
+                    onClick={() => verifyAgent(prepared.harness)}
+                    className="inline-flex items-center gap-2 border border-amber-300/50 px-3 py-2 font-mono uppercase tracking-wider text-amber-200 hover:border-amber-200"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${busy === "verify" ? "animate-spin" : ""}`} />
+                    Refresh verify
+                  </button>
+                </div>
               )}
             </Panel>
           )}

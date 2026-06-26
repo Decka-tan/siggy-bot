@@ -10,8 +10,8 @@ const REGISTRY = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
 const DELIVERY_LOG = "0x5A16214fF555848411544b005f7Ac063742f39F6";
 const ASYNC_JOB_TRACKER = "0xC069FFCa0389f44eCA2C626e55491b0ab045AEF5";
 const TEMPLATE_BYTES = 10822;
-const MIN_FUNDING_WEI = 50_000_000_000_000_000n; // 0.05 RIT — below this, escrow likely drains before MONITORED state
-const DEFAULT_FUNDING_WEI = 100_000_000_000_000_000n; // 0.1 RIT — proven sufficient
+const MIN_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT — safer minimum for reaching MONITORED
+const DEFAULT_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT
 const MIN_BALANCE_BUFFER_WEI = 60_000_000_000_000_000n; // 0.06 RIT — covers deploy + configure gas
 
 const trackerInterface = new Interface([
@@ -191,7 +191,7 @@ export async function POST(request: Request) {
     if (!ALLOWED_PROVIDERS.includes(provider)) throw new Error(`provider must be one of ${ALLOWED_PROVIDERS.join(", ")}`);
     if (model.length === 0 || model.length > 200) throw new Error("model must be a non-empty string under 200 chars.");
 
-    // Funding (default 0.1 RIT). Clamp into [MIN_FUNDING_WEI, 0.5 RIT].
+    // Funding (default 0.2 RIT). Clamp into [MIN_FUNDING_WEI, 5 RIT].
     let fundingWei = DEFAULT_FUNDING_WEI;
     if (body.fundingWei !== undefined) {
       try {
@@ -200,7 +200,7 @@ export async function POST(request: Request) {
         throw new Error("fundingWei must be a bigint-coerceable string.");
       }
     }
-    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.05 RIT is too tight to reach MONITORED.");
+    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.2 RIT is too tight to reach MONITORED.");
     if (fundingWei > 5_000_000_000_000_000_000n) throw new Error("Funding above 5 RIT is wasteful for sovereign.");
 
     if (!isAddress(owner)) throw new Error("Connect a valid wallet first.");
