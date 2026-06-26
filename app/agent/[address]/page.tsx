@@ -51,6 +51,8 @@ type Verify = {
   escrowWei?: string;
   escrowRit: string;
   explorerUrl: string;
+  wakeupAttempts?: number;
+  phase2Deliveries?: number;
   error?: string;
 };
 
@@ -405,6 +407,47 @@ function AgentPage() {
             tone={blocksSinceActivity !== null && blocksSinceActivity > 50000 ? "warn" : "good"}
           />
         </div>
+
+        <section className="border border-border bg-surface p-5">
+          <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
+            <Activity className="h-4 w-4" /> Schedule activity
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <Check
+              label="Wakeup attempts"
+              ok={(verify?.wakeupAttempts ?? 0) > 0}
+              detail={
+                verify
+                  ? `${verify.wakeupAttempts ?? 0} scheduler events`
+                  : "—"
+              }
+            />
+            <Check
+              label="Phase 2 delivered"
+              ok={(verify?.phase2Deliveries ?? 0) > 0}
+              detail={
+                verify
+                  ? `${verify.phase2Deliveries ?? 0} TEE callbacks`
+                  : "—"
+              }
+            />
+            <Check
+              label="First wakeup ETA"
+              ok={Boolean(verify?.lastActivityBlock)}
+              detail={
+                verify?.lastActivityBlock
+                  ? "wakeup happened ✓"
+                  : verify?.wakeupAttempts
+                    ? "Phase 2 pending…"
+                    : "scheduler hasn't fired yet"
+              }
+            />
+          </div>
+          <p className="mt-3 text-xs text-text-secondary">
+            With the default schedule (frequency 2000), the first wakeup fires ~12 min after Tx 2. Phase 2 callback usually
+            settles a few seconds later. If wakeup count grows but Phase 2 stays 0, the executor is laggy — wait or refill escrow.
+          </p>
+        </section>
 
         <section className="border border-border bg-surface p-5">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">

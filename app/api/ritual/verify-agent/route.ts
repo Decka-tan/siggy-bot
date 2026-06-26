@@ -44,18 +44,33 @@ export async function GET(request: Request) {
     const agent = url.searchParams.get("address") || "";
     if (!isAddress(agent)) throw new Error("Invalid agent address.");
 
-    const [cache, blockHex, code, escrowHex] = await Promise.all([
+    const SCHEDULER = "0x56e776BAE2DD60664b69Bd5F865F1180ffB7D58B";
+    const ASYNC_DELIVERY = "0x5A16214fF555848411544b005f7Ac063742f39F6";
+    const padded = padAddress(agent);
+    const latestHex = (await rpc("eth_blockNumber")) as string;
+    const latestNum = Number(hexToBigInt(latestHex));
+    const lookback = Math.max(0, latestNum - 200_000); // ~19h history cap
+    const fromHex = `0x${lookback.toString(16)}`;
+
+    const [cache, code, escrowHex, schedLogs, p2Logs] = await Promise.all([
       fetch(EXPLORER_CACHE, { cache: "no-store" }).then((r) => r.json()),
-      rpc("eth_blockNumber"),
       rpc("eth_getCode", [agent, "latest"]),
       rpc("eth_call", [
         {
           to: RITUAL_WALLET,
-          data: `0x70a08231${padAddress(agent)}`,
+          data: `0x70a08231${padded}`,
         },
         "latest",
       ]),
+      // Scheduler events targeting this harness (topic[3] = target address indexed)
+      rpc("eth_getLogs", [{ address: SCHEDULER, fromBlock: fromHex, topics: [null, null, null, `0x${padded}`] }]),
+      // AsyncDelivery events to this harness (topic[2] = user/target)
+      rpc("eth_getLogs", [{ address: ASYNC_DELIVERY, fromBlock: fromHex, topics: [null, null, `0x${padded}`] }]),
     ]);
+
+    const blockHex = latestHex;
+    const wakeupAttempts = Array.isArray(schedLogs) ? schedLogs.length : 0;
+    const phase2Deliveries = Array.isArray(p2Logs) ? p2Logs.length : 0;
 
     const sovereign = Array.isArray(cache?.sovereign) ? cache.sovereign : [];
     const hit = sovereign.find((item: { address?: string }) => item.address?.toLowerCase() === agent.toLowerCase());
@@ -83,6 +98,8 @@ export async function GET(request: Request) {
       escrowWei: escrowWei.toString(),
       escrowRit: formatEther(escrowWei),
       explorerUrl: `https://explorer.ritualfoundation.org/agents/${agent}?type=sovereign`,
+      wakeupAttempts,
+      phase2Deliveries,
     });
   } catch (error) {
     return NextResponse.json(
