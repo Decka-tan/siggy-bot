@@ -10,9 +10,11 @@ import {
   Loader2,
   RefreshCw,
   Rocket,
+  Share2,
   Trash2,
   Zap,
 } from "lucide-react";
+import { ShareCardModal } from "@/components/ui/ShareAgentCard";
 
 type AgentRecord = {
   address: string;
@@ -217,6 +219,7 @@ function AgentRow({
   onRemove: () => void;
   onRefresh: () => void;
 }) {
+  const [shareOpen, setShareOpen] = useState(false);
   const created = new Date(record.createdAt).toLocaleString();
   const status = live === undefined ? "loading" : live.listed ? "active" : live.bytecodeBytes ? "dormant" : "missing";
   const statusColor =
@@ -281,6 +284,13 @@ function AgentRow({
           </Link>
         )}
         <button
+          onClick={() => setShareOpen(true)}
+          className="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent transition-all"
+        >
+          <Share2 className="h-4 w-4" />
+          Share
+        </button>
+        <button
           onClick={onRefresh}
           className="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent transition-all"
         >
@@ -295,6 +305,15 @@ function AgentRow({
           Remove
         </button>
       </div>
+
+      <ShareCardModal
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        agentName={record.saltLabel || short(record.address)}
+        amountRit={live?.escrowRit ?? "—"}
+        address={record.address}
+        lastBlock={live?.lastActivityBlock ?? null}
+      />
     </div>
   );
 }
