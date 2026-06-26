@@ -170,7 +170,7 @@ export default function DeployLanding() {
     <main
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden"
+      className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-x-hidden"
       style={{
         "--mouse-x": `${mousePos.x}px`,
         "--mouse-y": `${mousePos.y}px`,
@@ -232,7 +232,9 @@ export default function DeployLanding() {
                 <ArrowRight className="h-4 w-4" />
               </a>
               <Link
-                href="/ritual"
+                href="https://docs.ritualfoundation.org/"
+                target="_blank"
+                rel="noreferrer"
                 className="inline-flex items-center gap-2 border border-white/5 bg-surface/30 px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent/40 rounded-lg transition-colors"
               >
                 What is Ritual?
@@ -293,6 +295,9 @@ export default function DeployLanding() {
             <div className="absolute w-80 h-80 rounded-full border border-accent/5 animate-[spin_30s_linear_infinite] pointer-events-none bottom-10 right-10" />
             <div className="absolute w-[420px] h-[420px] rounded-full border border-dashed border-accent/5 animate-[spin_40s_linear_infinite_reverse] pointer-events-none bottom-0 right-0" />
             <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none bottom-20 right-20" />
+            <div className="absolute bottom-[-40px] right-[-20px] z-20 h-[360px] w-[34px] rotate-45 rounded-full bg-accent shadow-[0_0_34px_rgba(255,215,0,0.25)]" />
+            <div className="absolute bottom-[20px] right-[38px] z-20 h-[250px] w-[28px] rotate-45 rounded-full bg-accent shadow-[0_0_30px_rgba(255,215,0,0.22)]" />
+            <div className="absolute bottom-[64px] right-[88px] z-20 h-[190px] w-[24px] rotate-45 rounded-full bg-accent shadow-[0_0_24px_rgba(255,215,0,0.2)]" />
 
             {/* Anime Character pinned to bottom-right of the column */}
             <motion.div

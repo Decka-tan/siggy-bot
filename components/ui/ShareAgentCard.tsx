@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { toPng } from "html-to-image";
 import {
@@ -245,6 +246,20 @@ export function ShareCardModal({
     `Last block: ${lastBlockText}`,
   ].join("\n");
 
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open, onClose]);
+
   async function downloadCard() {
     if (!cardRef.current || downloading) return;
     setDownloading(true);
@@ -296,31 +311,35 @@ export function ShareCardModal({
 
   if (!open) return null;
 
-  return (
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-[9999] overflow-y-auto px-4 py-16 sm:py-20"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md" />
 
       {/* Panel */}
       <div
-        className="relative z-10 w-full max-w-2xl"
+        className="relative z-10 mx-auto w-full max-w-3xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute -top-10 right-0 text-text-secondary hover:text-white transition-colors"
+          className="mb-3 ml-auto flex items-center gap-1.5 text-text-secondary hover:text-white transition-colors font-mono text-xs uppercase tracking-wider"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" /> Close
         </button>
 
-        <ShareCardVisual cardRef={cardRef} {...props} />
+        <div className="max-h-[calc(100vh-12rem)] overflow-y-auto rounded-xl shadow-[0_0_50px_rgba(255,215,0,0.08)] signature-scroll">
+          <ShareCardVisual cardRef={cardRef} {...props} />
+        </div>
 
         {/* Actions */}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap gap-2 rounded-xl bg-black/60 p-2 backdrop-blur">
           <button
             onClick={downloadCard}
             disabled={downloading}
@@ -347,4 +366,6 @@ export function ShareCardModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

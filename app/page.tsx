@@ -53,7 +53,7 @@ export default function LandingPage() {
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="min-h-screen bg-bg text-text-primary overflow-hidden relative"
+      className="min-h-screen bg-bg text-text-primary overflow-x-hidden relative"
       style={{
         "--mouse-x": `${mousePos.x}px`,
         "--mouse-y": `${mousePos.y}px`,

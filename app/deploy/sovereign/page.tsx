@@ -856,7 +856,7 @@ function DeployPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden">
+    <div className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-x-hidden">
       {/* Ambient background particles */}
       <GoldenParticles mode="ambient" />
       
