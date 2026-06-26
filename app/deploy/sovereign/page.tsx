@@ -172,6 +172,7 @@ function DeployPage() {
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
   const FORM_KEY = "siggy.deploy.form.v1";
+  const PREPARED_KEY = "siggy.deploy.prepared.v1";
   const [saltLabel, setSaltLabel] = useState(initialSalt);
   const [hfRepoId, setHfRepoId] = useState("");
   const [collapseForm, setCollapseForm] = useState(false);
@@ -200,6 +201,7 @@ function DeployPage() {
   const [deployHash, setDeployHash] = useState("");
   const [startHash, setStartHash] = useState("");
   const [copied, setCopied] = useState("");
+  const [preparedRestored, setPreparedRestored] = useState(false);
 
   const connected = Boolean(account);
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
@@ -211,7 +213,14 @@ function DeployPage() {
   const freqNum = parseInt(advFrequency || "0", 10);
   const numCallsNum = parseInt(advNumCalls || "0", 10);
   const schedGasNum = parseInt(advSchedulerGas || "0", 10);
+  const schedulerTtlNum = parseInt(advSchedulerTtl || "0", 10);
   const advLifespan = freqNum * numCallsNum;
+  const promptOk = prompt.trim().length > 0;
+  const saltOk = saltLabel.trim().length > 0;
+  const hfRepoOk = /^[\w.-]+\/[\w.-]+$/.test(hfRepoId.trim());
+  const hfTokenOk = hfToken.trim().startsWith("hf_");
+  const apiKeyOk = apiKey.trim().startsWith(providerCfg.keyPrefix);
+  const modelOk = model.trim().length > 0;
   const advValid =
     freqNum >= 100 &&
     freqNum <= 10000 &&
@@ -219,6 +228,9 @@ function DeployPage() {
     numCallsNum <= 100 &&
     schedGasNum >= 200000 &&
     schedGasNum <= 5000000 &&
+    schedulerTtlNum >= 500 &&
+    schedulerTtlNum <= 20000 &&
+    schedulerTtlNum >= freqNum &&
     advLifespan > 0 &&
     advLifespan <= 10000;
 
@@ -226,17 +238,55 @@ function DeployPage() {
     connected &&
     chainOk &&
     balanceOk &&
-    prompt.trim().length > 0 &&
-    saltLabel.trim().length > 0 &&
-    /^[\w.-]+\/[\w.-]+$/.test(hfRepoId.trim()) &&
-    hfToken.trim().startsWith("hf_") &&
-    apiKey.trim().startsWith(providerCfg.keyPrefix) &&
-    model.trim().length > 0 &&
+    promptOk &&
+    saltOk &&
+    hfRepoOk &&
+    hfTokenOk &&
+    apiKeyOk &&
+    modelOk &&
     advValid;
+  const prepareBlockers = useMemo(() => {
+    const items: string[] = [];
+    if (!connected) items.push("Connect wallet");
+    if (connected && !chainOk) items.push("Switch to Ritual Testnet");
+    if (connected && !balanceOk) items.push(`Need at least ${requiredRit.toFixed(2)} RIT`);
+    if (!saltOk) items.push("Fill salt label");
+    if (!hfRepoOk) items.push("HF repo must be user/repo");
+    if (!hfTokenOk) items.push("Paste HF token starting with hf_");
+    if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
+    if (!modelOk) items.push("Choose model");
+    if (!promptOk) items.push("Fill prompt");
+    if (freqNum < 100 || freqNum > 10000) items.push("Frequency must be 100-10000");
+    if (numCallsNum < 1 || numCallsNum > 100) items.push("Window calls must be 1-100");
+    if (schedGasNum < 200000 || schedGasNum > 5000000) items.push("Scheduler gas must be 200k-5M");
+    if (advLifespan <= 0 || advLifespan > 10000) items.push("Frequency x calls must be <= 10000");
+    if (schedulerTtlNum < 500 || schedulerTtlNum > 20000) items.push("Scheduler TTL must be 500-20000");
+    if (schedulerTtlNum < freqNum) items.push("Scheduler TTL must be >= frequency");
+    return items;
+  }, [
+    connected,
+    chainOk,
+    balanceOk,
+    requiredRit,
+    saltOk,
+    hfRepoOk,
+    hfTokenOk,
+    apiKeyOk,
+    providerCfg,
+    modelOk,
+    promptOk,
+    freqNum,
+    numCallsNum,
+    schedGasNum,
+    advLifespan,
+    schedulerTtlNum,
+  ]);
   const deployDone = Boolean(deployHash) || prepared?.alreadyDeployed || verify?.deployed;
   const startDone = Boolean(startHash);
   const bytecodeGateOk = Boolean(verify?.templateMatch);
-  const canFund = deployDone && bytecodeGateOk && !startDone;
+  const preparedFundingRit = prepared?.schedule?.value || "";
+  const fundingMatchesPrepared = !preparedFundingRit || parseFloat(preparedFundingRit) === parseFloat(fundingRit || "0");
+  const canFund = deployDone && bytecodeGateOk && !startDone && fundingMatchesPrepared;
 
   const step = useMemo(() => {
     if (!connected) return 1;
@@ -273,6 +323,38 @@ function DeployPage() {
     let s = "0x";
     for (let i = 0; i < bytes.length; i += 1) s += bytes[i].toString(16).padStart(2, "0");
     return s;
+  }
+
+  function preparedCacheId(owner: string, label: string) {
+    return `${owner.toLowerCase()}::${label.trim().toLowerCase()}`;
+  }
+
+  function readPreparedCache() {
+    if (typeof window === "undefined") return {};
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(PREPARED_KEY) || "{}");
+      return parsed && typeof parsed === "object"
+        ? (parsed as Record<string, { prepared: Prepared; deployHash?: string; startHash?: string; savedAt?: number }>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+
+  function savePreparedCache(data: Prepared, hashes?: { deployHash?: string; startHash?: string }) {
+    if (typeof window === "undefined" || !data.owner || !data.saltLabel) return;
+    try {
+      const cache = readPreparedCache();
+      cache[preparedCacheId(data.owner, data.saltLabel)] = {
+        prepared: data,
+        deployHash: hashes?.deployHash ?? deployHash,
+        startHash: hashes?.startHash ?? startHash,
+        savedAt: Date.now(),
+      };
+      window.localStorage.setItem(PREPARED_KEY, JSON.stringify(cache));
+    } catch {
+      // Best-effort resume cache only.
+    }
   }
 
   async function loadExecutors() {
@@ -344,6 +426,20 @@ function DeployPage() {
     }
   }, [saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor]);
 
+  // Resume step 3/4 after the user returns from the monitor with the same wallet + salt label.
+  useEffect(() => {
+    if (!account || !saltLabel.trim() || prepared) return;
+    const cached = readPreparedCache()[preparedCacheId(account, saltLabel)];
+    if (!cached?.prepared?.harness) return;
+    setPrepared(cached.prepared);
+    setDeployHash(cached.deployHash || "");
+    setStartHash(cached.startHash || "");
+    setPreparedRestored(true);
+    if (cached.prepared.schedule?.value) setFundingRit(cached.prepared.schedule.value);
+    verifyAgent(cached.prepared.harness);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, saltLabel, prepared]);
+
   // Collapse the form once prepare succeeds so the screen focuses on Preview + Monitor.
   useEffect(() => {
     if (prepared) setCollapseForm(true);
@@ -364,6 +460,9 @@ function DeployPage() {
       setAccount(next);
       setPrepared(null);
       setVerify(null);
+      setDeployHash("");
+      setStartHash("");
+      setPreparedRestored(false);
       setWalletBalanceRit(null);
       if (next) loadBalance(next);
     };
@@ -371,6 +470,9 @@ function DeployPage() {
       setChainId(id);
       setPrepared(null);
       setVerify(null);
+      setDeployHash("");
+      setStartHash("");
+      setPreparedRestored(false);
       if (account) loadBalance(account);
     };
     window.ethereum.on?.("accountsChanged", accountsChanged);
@@ -410,6 +512,7 @@ function DeployPage() {
       setVerify(null);
       setDeployHash("");
       setStartHash("");
+      setPreparedRestored(false);
       if (next) loadBalance(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Change wallet failed.");
@@ -423,6 +526,7 @@ function DeployPage() {
     setVerify(null);
     setDeployHash("");
     setStartHash("");
+    setPreparedRestored(false);
     if (!window.ethereum) return;
     try {
       // EIP-2255 — supported by MetaMask 11+ and Rabby. Best-effort; silent fail elsewhere.
@@ -497,6 +601,8 @@ function DeployPage() {
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Prepare failed.");
       setPrepared(data);
+      setPreparedRestored(false);
+      savePreparedCache(data);
       setHealth(data.health);
       await verifyAgent(data.harness);
     } catch (err) {
@@ -516,6 +622,9 @@ function DeployPage() {
         params: [{ from: account, ...prepared.deployTx }],
       });
       setDeployHash(hash);
+      const deployedPrepared = { ...prepared, alreadyDeployed: true };
+      setPrepared(deployedPrepared);
+      savePreparedCache(deployedPrepared, { deployHash: hash });
       await waitForCode(prepared.harness);
       await verifyAgent(prepared.harness);
     } catch (err) {
@@ -535,6 +644,7 @@ function DeployPage() {
         params: [{ from: account, ...prepared.configureTx }],
       });
       setStartHash(hash);
+      savePreparedCache(prepared, { deployHash, startHash: hash });
       window.setTimeout(() => verifyAgent(prepared.harness), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Start transaction failed.");
@@ -1093,11 +1203,18 @@ function DeployPage() {
             <button
               onClick={prepare}
               disabled={!canPrepare || busy === "prepare"}
+              title={!canPrepare && prepareBlockers.length ? prepareBlockers.join(", ") : undefined}
               className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {busy === "prepare" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
               {busy === "prepare" ? "Encrypting & preparing…" : "Prepare deploy"}
             </button>
+            {!canPrepare && prepareBlockers.length > 0 && (
+              <p className="text-xs leading-5 text-amber-300">
+                Need: {prepareBlockers.slice(0, 3).join(", ")}
+                {prepareBlockers.length > 3 ? `, +${prepareBlockers.length - 3} more` : ""}.
+              </p>
+            )}
             {busy === "prepare" && (
               <p className="text-xs text-text-secondary">
                 Encrypting your API key in this browser → fetching executor → predicting your harness address → building transactions. No tx is sent yet.
@@ -1112,10 +1229,15 @@ function DeployPage() {
               icon={<Database className="h-5 w-5" />}
               subtitle="Tx 1 deploys an empty harness contract (~0.003 RIT gas). Tx 2 funds it and arms the schedule (your chosen RIT + ~0.05 RIT gas)."
             >
+              {preparedRestored && (
+                <div className="border border-emerald-400/40 bg-emerald-400/10 p-3 text-sm text-emerald-200">
+                  Resumed from this browser for salt <span className="font-mono text-text-primary">{prepared.saltLabel}</span>. If transaction 1 is already deployed, sign only Fund and start.
+                </div>
+              )}
               <div className="grid gap-4 md:grid-cols-2">
                 <Preview label="Predicted harness" value={prepared.harness} onCopy={() => copy(prepared.harness, "harness")} copied={copied === "harness"} />
                 <Preview label="Configure selector" value={`${prepared.calldataPreview.selector} (${prepared.calldataPreview.bytes.toLocaleString()} bytes)`} />
-                <Preview label="Funding" value="0.5 RITUAL" />
+                <Preview label="Funding" value={`${prepared.schedule.value} RITUAL`} />
                 <Preview label="Schedule" value={`${prepared.schedule.numCalls} calls / every ${prepared.schedule.frequency} blocks`} />
                 <Preview label="Callback gas" value={prepared.schedule.schedulerGas.toLocaleString()} />
                 <Preview label="Template target" value={`${prepared.templateBytes.toLocaleString()} bytes`} />
@@ -1124,22 +1246,35 @@ function DeployPage() {
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <button
                   onClick={sendDeploy}
-                  disabled={busy === "deploy" || prepared.alreadyDeployed}
+                  disabled={busy === "deploy" || Boolean(deployDone)}
                   className="inline-flex items-center justify-center gap-2 border border-accent bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:border-border disabled:bg-border disabled:text-text-secondary"
                 >
                   {busy === "deploy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                  {prepared.alreadyDeployed ? "Harness deployed" : "Deploy harness"}
+                  {deployDone ? "Harness deployed" : "Deploy harness"}
                 </button>
                 <button
                   onClick={sendStart}
                   disabled={busy === "start" || !canFund}
                   className="inline-flex items-center justify-center gap-2 border border-border px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
-                  title={!deployDone ? "Deploy harness first" : !bytecodeGateOk ? "Bytecode verification pending — refresh verify" : ""}
+                  title={
+                    !deployDone
+                      ? "Deploy harness first"
+                      : !bytecodeGateOk
+                        ? "Bytecode verification pending - refresh verify"
+                        : !fundingMatchesPrepared
+                          ? "Funding changed after prepare - click Prepare deploy again"
+                          : ""
+                  }
                 >
                   {busy === "start" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Fund {fundingRit} and start
+                  Fund {prepared.schedule.value} and start
                 </button>
               </div>
+              {!fundingMatchesPrepared && (
+                <p className="text-xs leading-5 text-amber-300">
+                  Funding changed after prepare. Prepared tx still funds {prepared.schedule.value} RITUAL; click Prepare deploy again to rebuild it with {fundingRit} RIT.
+                </p>
+              )}
             </Panel>
           )}
 

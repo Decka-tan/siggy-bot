@@ -72,7 +72,9 @@ export default function DeployLanding() {
                 <ArrowRight className="h-4 w-4" />
               </a>
               <Link
-                href="/ritual"
+                href="https://www.ritualfoundation.org/docs/overview/what-is-ritual"
+                target="_blank"
+                rel="noreferrer"
                 className="inline-flex items-center gap-2 border border-border px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
               >
                 What is Ritual?
