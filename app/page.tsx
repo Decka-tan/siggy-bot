@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { Bio } from '@/components/layout/Bio';
 import { GoldenParticles } from '@/components/ui/GoldenParticles';
+import { SpotlightCard } from '@/components/ui/SpotlightCard';
 
 type ChatMessage = {
   sender: 'summoner' | 'siggy';
@@ -36,6 +37,33 @@ const chatDialogue: ChatMessage[] = [
   { sender: 'siggy', text: "Purrrfect! Escrow locked. Phase 2 delivered. Status: ACTIVE! ⚡", mood: 'shy' },
 ];
 
+// Count-up hook triggered by scroll visibility
+function useCountUp(target: number, duration = 1400) {
+  const [val, setVal] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const started = useRef(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started.current) {
+        started.current = true;
+        const start = performance.now();
+        const tick = (now: number) => {
+          const p = Math.min(1, (now - start) / duration);
+          const eased = 1 - Math.pow(1 - p, 3);
+          setVal(Math.round(eased * target));
+          if (p < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }
+    }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [target, duration]);
+  return { val, ref };
+}
+
 export default function LandingPage() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,6 +76,20 @@ export default function LandingPage() {
       y: e.clientY - rect.top,
     });
   };
+
+  // Parallax offset: subtle character lean with mouse
+  const heroRef = useRef<HTMLDivElement>(null);
+  const [heroSize, setHeroSize] = useState({ w: 1, h: 1 });
+  useEffect(() => {
+    if (!heroRef.current) return;
+    const ro = new ResizeObserver(([e]) => {
+      setHeroSize({ w: e.contentRect.width, h: e.contentRect.height });
+    });
+    ro.observe(heroRef.current);
+    return () => ro.disconnect();
+  }, []);
+  const parallaxX = ((mousePos.x / (heroSize.w || 1)) - 0.5) * -8;
+  const parallaxY = ((mousePos.y / (heroSize.h || 1)) - 0.5) * -5;
 
   return (
     <div
@@ -173,16 +215,17 @@ export default function LandingPage() {
               className="absolute z-[-1] object-contain opacity-20 pointer-events-none select-none bottom-10 right-[-10%] max-w-[85vw] lg:max-w-[35vw]"
             />
 
-            {/* Anime Character with Smooth Decelerating Entry Slide-up */}
+            {/* Anime Character with Smooth Decelerating Entry Slide-up + Parallax */}
             <motion.div
+              ref={heroRef}
               initial={{ opacity: 0, y: 200, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
               className="relative w-full h-[65vh] lg:h-[85vh] flex items-end justify-end overflow-visible"
             >
               <motion.div
-                animate={{ y: [0, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
+                animate={{ y: [0, -10, 0], x: parallaxX }}
+                transition={{ y: { repeat: Infinity, duration: 4.5, ease: "easeInOut" }, x: { duration: 0.6, ease: "easeOut" } }}
                 className="relative w-[320px] h-[55vh] sm:w-[420px] sm:h-[65vh] lg:w-[480px] lg:h-[80vh]"
               >
                 <Image
@@ -193,9 +236,6 @@ export default function LandingPage() {
                   priority
                   sizes="(max-width: 1024px) 380px, 480px"
                 />
-                {/* Edge Fades to hide 3/4 crop cuts */}
-                <div className="absolute bottom-[-1px] left-0 right-0 h-12 bg-gradient-to-t from-bg to-transparent pointer-events-none z-10" />
-                <div className="absolute top-0 bottom-0 right-[-1px] w-12 bg-gradient-to-l from-bg to-transparent pointer-events-none z-10" />
               </motion.div>
             </motion.div>
           </div>
@@ -311,41 +351,43 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-md hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.06)] hover:scale-[1.01] transition-all flex flex-col justify-between group"
+              className="flex w-full"
             >
-              <div>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/10 group-hover:scale-110 transition-transform border border-accent/20">
-                  <BookOpen className="w-6 h-6 text-accent" />
+              <SpotlightCard className="w-full p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-md hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.06)] hover:scale-[1.01] transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/10 group-hover:scale-110 transition-transform border border-accent/20">
+                    <BookOpen className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-display text-2xl mb-3 text-text-primary">Story Mode</h3>
+                  <p className="text-text-secondary leading-relaxed mb-6 text-xs sm:text-sm">
+                    Experience Siggy's journey from cosmic cat consciousness to Earth through 
+                    a visual novel adventure powered by the Ritual network.
+                  </p>
+                  <ul className="space-y-2 text-xs text-text-secondary mb-8 font-mono">
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Chapter 1: The Awakening</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Chapter 2: The Descent</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Chapter 3: Meeting the Summoner</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Chapter 4: A New Era</span>
+                    </li>
+                  </ul>
                 </div>
-                <h3 className="font-display text-2xl mb-3 text-text-primary">Story Mode</h3>
-                <p className="text-text-secondary leading-relaxed mb-6 text-xs sm:text-sm">
-                  Experience Siggy's journey from cosmic cat consciousness to Earth through 
-                  a visual novel adventure powered by the Ritual network.
-                </p>
-                <ul className="space-y-2 text-xs text-text-secondary mb-8 font-mono">
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Chapter 1: The Awakening</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Chapter 2: The Descent</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Chapter 3: Meeting the Summoner</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Chapter 4: A New Era</span>
-                  </li>
-                </ul>
-              </div>
-              <Link href="/story" className="w-full">
-                <button className="w-full px-6 py-3.5 bg-surface/40 hover:bg-surface/60 border border-white/5 hover:border-accent/40 hover:text-accent font-mono text-xs uppercase tracking-widest rounded-lg transition-all">
-                  Start Story
-                </button>
-              </Link>
+                <Link href="/story" className="w-full">
+                  <button className="w-full px-6 py-3.5 bg-surface/40 hover:bg-surface/60 border border-white/5 hover:border-accent/40 hover:text-accent font-mono text-xs uppercase tracking-widest rounded-lg transition-all">
+                    Start Story
+                  </button>
+                </Link>
+              </SpotlightCard>
             </motion.div>
 
             {/* Chat Mode Card */}
@@ -354,41 +396,43 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-md hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.06)] hover:scale-[1.01] transition-all flex flex-col justify-between group"
+              className="flex w-full"
             >
-              <div>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/10 group-hover:scale-110 transition-transform border border-accent/20">
-                  <MessageSquare className="w-6 h-6 text-accent" />
+              <SpotlightCard className="w-full p-8 rounded-2xl border border-white/5 bg-surface/20 backdrop-blur-md hover:border-accent/40 hover:shadow-[0_0_30px_rgba(255,215,0,0.06)] hover:scale-[1.01] transition-all flex flex-col justify-between group">
+                <div>
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 bg-gradient-to-br from-accent/20 to-yellow-400/10 group-hover:scale-110 transition-transform border border-accent/20">
+                    <MessageSquare className="w-6 h-6 text-accent" />
+                  </div>
+                  <h3 className="font-display text-2xl mb-3 text-text-primary">Chat Mode</h3>
+                  <p className="text-text-secondary leading-relaxed mb-6 text-xs sm:text-sm">
+                    Engage with Siggy in her anime form! She recognizes you personally and 
+                    manages dynamic emotional states based on your conversations.
+                  </p>
+                  <ul className="space-y-2 text-xs text-text-secondary mb-8 font-mono">
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Unlimited chat cycles</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>6 dynamic emotional states</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Hidden Ritual Forge secrets</span>
+                    </li>
+                    <li className="flex items-center gap-2.5">
+                      <span className="text-accent font-bold">✓</span>
+                      <span>Interactive prompt overrides</span>
+                    </li>
+                  </ul>
                 </div>
-                <h3 className="font-display text-2xl mb-3 text-text-primary">Chat Mode</h3>
-                <p className="text-text-secondary leading-relaxed mb-6 text-xs sm:text-sm">
-                  Engage with Siggy in her anime form! She recognizes you personally and 
-                  manages dynamic emotional states based on your conversations.
-                </p>
-                <ul className="space-y-2 text-xs text-text-secondary mb-8 font-mono">
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Unlimited chat cycles</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>6 dynamic emotional states</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Hidden Ritual Forge secrets</span>
-                  </li>
-                  <li className="flex items-center gap-2.5">
-                    <span className="text-accent font-bold">✓</span>
-                    <span>Interactive prompt overrides</span>
-                  </li>
-                </ul>
-              </div>
-              <Link href="/chat" className="w-full">
-                <button className="w-full px-6 py-3.5 bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-xs font-bold uppercase tracking-widest rounded-lg transition-all shadow-md shadow-accent/5">
-                  Start Chatting
-                </button>
-              </Link>
+                <Link href="/chat" className="w-full">
+                  <button className="w-full px-6 py-3.5 bg-gradient-to-r from-accent to-yellow-400 text-black hover:from-yellow-400 hover:to-accent font-mono text-xs font-bold uppercase tracking-widest rounded-lg transition-all shadow-md shadow-accent/5">
+                    Start Chatting
+                  </button>
+                </Link>
+              </SpotlightCard>
             </motion.div>
           </div>
         </div>
@@ -412,18 +456,20 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group"
+              className="flex w-full"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
-                🔍
-              </div>
-              <h3 className="font-display text-lg mb-2 text-text-primary">Contributor Insights</h3>
-              <p className="text-xs text-text-secondary leading-relaxed mb-4">
-                Use <code className="bg-bg/60 px-1.5 py-0.5 rounded text-accent font-mono">/check @username</code> to review contributor status, joining epochs, and message scores.
-              </p>
-              <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
-                7,978 members tracked
-              </div>
+              <SpotlightCard className="w-full p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
+                  🔍
+                </div>
+                <h3 className="font-display text-lg mb-2 text-text-primary">Contributor Insights</h3>
+                <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                  Use <code className="bg-bg/60 px-1.5 py-0.5 rounded text-accent font-mono">/check @username</code> to review contributor status, joining epochs, and message scores.
+                </p>
+                <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
+                  7,978 members tracked
+                </div>
+              </SpotlightCard>
             </motion.div>
 
             {/* Web Research Card */}
@@ -432,18 +478,20 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group"
+              className="flex w-full"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
-                🌐
-              </div>
-              <h3 className="font-display text-lg mb-2 text-text-primary">AI Web Research</h3>
-              <p className="text-xs text-text-secondary leading-relaxed mb-4">
-                Trigger <code className="bg-bg/60 px-1.5 py-0.5 rounded text-accent font-mono">/research topic</code> to verify documentation, check GitHub updates, and retrieve quotes.
-              </p>
-              <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
-                Powered by Exa Search API
-              </div>
+              <SpotlightCard className="w-full p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
+                  🌐
+                </div>
+                <h3 className="font-display text-lg mb-2 text-text-primary">AI Web Research</h3>
+                <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                  Trigger <code className="bg-bg/60 px-1.5 py-0.5 rounded text-accent font-mono">/research topic</code> to verify documentation, check GitHub updates, and retrieve quotes.
+                </p>
+                <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
+                  Powered by Exa Search API
+                </div>
+              </SpotlightCard>
             </motion.div>
 
             {/* Community Stats Card */}
@@ -452,18 +500,20 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group"
+              className="flex w-full"
             >
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
-                📊
-              </div>
-              <h3 className="font-display text-lg mb-2 text-text-primary">Sync Analytics</h3>
-              <p className="text-xs text-text-secondary leading-relaxed mb-4">
-                Access member metrics, dynamic join curves, active roles, and total event participants.
-              </p>
-              <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
-                Real-time activity logs
-              </div>
+              <SpotlightCard className="w-full p-6 bg-surface/20 hover:bg-surface/30 backdrop-blur-md rounded-2xl border border-white/5 hover:border-accent/40 transition-all hover:scale-[1.01] hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] group">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5 bg-accent/15 border border-accent/20 group-hover:scale-105 transition-transform text-accent text-xl">
+                  📊
+                </div>
+                <h3 className="font-display text-lg mb-2 text-text-primary">Sync Analytics</h3>
+                <p className="text-xs text-text-secondary leading-relaxed mb-4">
+                  Access member metrics, dynamic join curves, active roles, and total event participants.
+                </p>
+                <div className="text-[10px] font-mono text-text-secondary border-t border-white/5 pt-3">
+                  Real-time activity logs
+                </div>
+              </SpotlightCard>
             </motion.div>
           </div>
         </div>
@@ -481,24 +531,7 @@ export default function LandingPage() {
               Tracking automated agent execution across TEE hosts. As schedule limits fire, statistics are compiled and cataloged securely.
             </p>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Agents Deployed</span>
-                <p className="mt-1 font-display text-3xl text-accent">1,420</p>
-              </div>
-              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Network Wakeups</span>
-                <p className="mt-1 font-display text-3xl text-accent">849k</p>
-              </div>
-              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Active Nodes</span>
-                <p className="mt-1 font-display text-3xl text-accent">15</p>
-              </div>
-              <div className="border border-white/5 bg-surface/20 p-4 rounded-xl">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Node Uptime</span>
-                <p className="mt-1 font-display text-3xl text-emerald-400">99.9%</p>
-              </div>
-            </div>
+            <AnimatedStatsGrid />
           </div>
 
           {/* SVG Area Chart widget */}
@@ -768,6 +801,37 @@ function NetworkChart() {
         <span>12:00</span>
         <span>18:00</span>
         <span>Now</span>
+      </div>
+    </div>
+  );
+}
+
+function AnimatedStatsGrid() {
+  const agents = useCountUp(1420);
+  const wakeups = useCountUp(849000);
+  const nodes = useCountUp(15);
+
+  return (
+    <div ref={agents.ref} className="grid grid-cols-2 gap-4">
+      <div className="border border-white/5 bg-surface/20 p-4 rounded-xl hover:border-accent/20 transition-colors">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Agents Deployed</span>
+        <p className="mt-1 font-display text-3xl text-accent">
+          {agents.val.toLocaleString()}
+        </p>
+      </div>
+      <div ref={wakeups.ref} className="border border-white/5 bg-surface/20 p-4 rounded-xl hover:border-accent/20 transition-colors">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Network Wakeups</span>
+        <p className="mt-1 font-display text-3xl text-accent">
+          {wakeups.val >= 1000 ? `${(wakeups.val / 1000).toFixed(0)}k` : wakeups.val}
+        </p>
+      </div>
+      <div ref={nodes.ref} className="border border-white/5 bg-surface/20 p-4 rounded-xl hover:border-accent/20 transition-colors">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Active Nodes</span>
+        <p className="mt-1 font-display text-3xl text-accent">{nodes.val}</p>
+      </div>
+      <div className="border border-white/5 bg-surface/20 p-4 rounded-xl hover:border-emerald-400/20 transition-colors">
+        <span className="font-mono text-[9px] uppercase tracking-wider text-text-secondary">Node Uptime</span>
+        <p className="mt-1 font-display text-3xl text-emerald-400">99.9%</p>
       </div>
     </div>
   );

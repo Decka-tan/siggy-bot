@@ -24,6 +24,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { GoldenParticles } from "@/components/ui/GoldenParticles";
+import { SpotlightCard } from "@/components/ui/SpotlightCard";
 
 type Choice = "sovereign" | "persistent" | null;
 
@@ -55,8 +56,38 @@ export default function DeployLanding() {
     "SYSTEM: Siggy Deployer initialized.",
     "SYSTEM: Ready to list on Ritual chain.",
   ]);
+  const [terminalPaused, setTerminalPaused] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const TERMINAL_COMMANDS: Record<string, string[]> = {
+    help: [
+      "Available commands: help, deploy-cost, agent-types, status",
+      "Type a chip below to simulate a command.",
+    ],
+    "deploy-cost": [
+      "Sovereign agent: ~0.002 RIT/wakeup × 5 wakeups = ~0.01 RIT + escrow buffer",
+      "Recommended escrow: 0.1 RIT (covers 5 full schedule cycles)",
+      "Persistent agent: ~2.1 RIT minimum (official Ritual launcher)",
+    ],
+    "agent-types": [
+      "Sovereign (0x080C): Short-lived, cheap, no DA memory. Best for demos.",
+      "Persistent (0x0820): Long-lived, auto-revive, DA-backed. Best for production.",
+    ],
+    status: [
+      "Chain: Ritual Testnet (ID: 1979)",
+      "Registry: 0x3B1...f7e4 — active",
+      "TEE Executors online: 15/15",
+      "Avg block time: 0.35s · Avg gas: 0.0019 RIT/wakeup",
+    ],
+  };
+
+  function runTerminalCommand(cmd: string) {
+    const lines = TERMINAL_COMMANDS[cmd] || [`Error: unknown command '${cmd}'`];
+    setTerminalPaused(true);
+    setTerminalLogs([`> ${cmd}`, ...lines]);
+    setTimeout(() => setTerminalPaused(false), 6000);
+  }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -96,8 +127,9 @@ export default function DeployLanding() {
     };
   }, [choice, dialogueIndex, activeDialogue]);
 
-  // Mock Terminal log streaming
+  // Mock Terminal log streaming — paused when user ran a command
   useEffect(() => {
+    if (terminalPaused) return;
     const mockLogs = [
       "SDK: Local secrets loaded securely.",
       "SIGGY-CORE: Bytecode compiled successfully (10,822 bytes).",
@@ -123,7 +155,7 @@ export default function DeployLanding() {
     }, 4500);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [terminalPaused]);
 
   const handleNextDialogue = () => {
     const quipsList = choice === "sovereign" ? sovereignQuips : persistentQuips;
@@ -207,7 +239,7 @@ export default function DeployLanding() {
               </Link>
             </div>
 
-            {/* Mock Streaming Terminal Console */}
+            {/* Interactive Terminal Console */}
             <div className="border border-white/5 bg-[#0a0a0a]/80 backdrop-blur rounded-xl p-4 shadow-2xl font-mono text-[11px] max-w-xl">
               <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
                 <div className="flex items-center gap-2 text-text-secondary">
@@ -224,7 +256,7 @@ export default function DeployLanding() {
                 {terminalLogs.map((log, i) => (
                   <div key={i} className="flex gap-2">
                     <span className="text-accent select-none">&gt;</span>
-                    <span className={log.includes("SYSTEM:") ? "text-accent" : log.includes("Error") ? "text-red-400" : "text-text-primary"}>
+                    <span className={log.startsWith('> ') ? 'text-accent font-bold' : log.includes("SYSTEM:") ? "text-accent" : log.includes("Error") ? "text-red-400" : "text-text-primary"}>
                       {log}
                     </span>
                   </div>
@@ -233,6 +265,18 @@ export default function DeployLanding() {
                   <span className="text-accent select-none animate-pulse">&gt;</span>
                   <span className="w-2 h-3.5 bg-accent/80 animate-pulse ml-0.5" />
                 </div>
+              </div>
+              {/* Clickable command chips */}
+              <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap gap-1.5">
+                {(['help', 'deploy-cost', 'agent-types', 'status'] as const).map(cmd => (
+                  <button
+                    key={cmd}
+                    onClick={() => runTerminalCommand(cmd)}
+                    className="px-2.5 py-1 rounded-md bg-accent/10 hover:bg-accent/20 border border-accent/15 hover:border-accent/40 text-accent text-[10px] font-mono uppercase tracking-wider transition-all hover:scale-[1.03]"
+                  >
+                    {cmd}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -270,9 +314,6 @@ export default function DeployLanding() {
                   priority
                   sizes="(max-width: 1024px) 380px, 440px"
                 />
-                {/* Edge Fades to hide 3/4 crop cuts */}
-                <div className="absolute bottom-[-1px] left-0 right-0 h-12 bg-gradient-to-t from-bg to-transparent pointer-events-none z-10" />
-                <div className="absolute top-0 bottom-0 right-[-1px] w-12 bg-gradient-to-l from-bg to-transparent pointer-events-none z-10" />
               </motion.div>
             </motion.div>
           </div>
@@ -480,28 +521,33 @@ function ChoiceCard({
   onClick: () => void;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className={`text-left transition-all duration-300 relative overflow-hidden backdrop-blur-md rounded-xl p-6 border ${
+    <SpotlightCard
+      glowColor={active ? "rgba(255, 215, 0, 0.12)" : "rgba(255, 215, 0, 0.05)"}
+      className={`rounded-xl border ${
         active
           ? "border-accent bg-accent/10 shadow-[0_0_24px_rgba(255,215,0,0.08)] scale-[1.01]"
           : "border-white/5 bg-surface/40 hover:border-accent/40 hover:bg-surface/60 hover:scale-[1.005]"
       }`}
     >
-      <div className="flex items-center justify-between">
-        <div className={`inline-flex items-center gap-2 ${active ? "text-accent" : "text-text-secondary"}`}>
-          {icon}
-          <span className="font-mono text-xs uppercase tracking-wider">{kind}</span>
+      <button
+        onClick={onClick}
+        className="w-full text-left p-6"
+      >
+        <div className="flex items-center justify-between">
+          <div className={`inline-flex items-center gap-2 ${active ? "text-accent" : "text-text-secondary"}`}>
+            {icon}
+            <span className="font-mono text-xs uppercase tracking-wider">{kind}</span>
+          </div>
+          <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">{cost}</span>
         </div>
-        <span className="font-mono text-xs uppercase tracking-wider text-text-secondary">{cost}</span>
-      </div>
-      <h3 className="mt-4 font-display text-3xl">{title}</h3>
-      <p className="mt-2 text-sm text-text-secondary">{tagline}</p>
-      <div className="mt-5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-accent">
-        <Sparkles className="h-3.5 w-3.5" />
-        {active ? "Selected" : "Tap to learn"}
-      </div>
-    </button>
+        <h3 className="mt-4 font-display text-3xl">{title}</h3>
+        <p className="mt-2 text-sm text-text-secondary">{tagline}</p>
+        <div className="mt-5 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-accent">
+          <Sparkles className="h-3.5 w-3.5" />
+          {active ? "Selected" : "Tap to learn"}
+        </div>
+      </button>
+    </SpotlightCard>
   );
 }
 

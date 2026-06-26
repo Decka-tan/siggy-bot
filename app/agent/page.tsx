@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Rocket,
   Trash2,
+  Zap,
 } from "lucide-react";
 
 type AgentRecord = {
@@ -230,8 +231,12 @@ function AgentRow({
           <Link href={`/agent/${record.address}`} className="font-display text-2xl text-accent hover:underline">
             {short(record.address)}
           </Link>
-          <span className={`inline-flex items-center gap-1 font-mono text-xs uppercase tracking-wider ${statusColor}`}>
-            <CheckCircle2 className="h-3.5 w-3.5" />
+          <span className={`inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider ${statusColor}`}>
+            <span className={`w-2 h-2 rounded-full inline-block ${
+              status === 'active' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
+              status === 'dormant' ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)] animate-pulse' :
+              status === 'missing' ? 'bg-red-400' : 'bg-white/20 animate-pulse'
+            }`} />
             {statusLabel}
           </span>
         </div>
@@ -266,6 +271,15 @@ function AgentRow({
           Open
           <ArrowRight className="h-4 w-4" />
         </Link>
+        {status === 'dormant' && (
+          <Link
+            href={`/deploy/sovereign?revive=${record.address}`}
+            className="inline-flex items-center justify-center gap-2 border border-amber-400/30 bg-amber-400/10 hover:bg-amber-400/20 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-amber-300 hover:text-amber-200 transition-all"
+          >
+            <Zap className="h-4 w-4" />
+            Re-fund &amp; Revive
+          </Link>
+        )}
         <button
           onClick={onRefresh}
           className="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent transition-all"

@@ -747,8 +747,9 @@ export default function CommunityPage() {
                 <button
                   key={v}
                   onClick={() => setView(v)}
-                  className="relative px-6 py-2.5 rounded-full text-xs font-mono font-semibold uppercase tracking-wider transition-colors duration-300 z-10"
-                  style={{ color: active ? '#000' : '#777' }}
+                  className={`relative px-6 py-2.5 rounded-full text-xs font-mono font-semibold uppercase tracking-wider transition-all duration-300 z-10 ${
+                    active ? 'text-black bg-[#FFD700]' : 'text-text-secondary hover:text-text-primary bg-transparent'
+                  }`}
                 >
                   {active && (
                     <motion.div
