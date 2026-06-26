@@ -183,14 +183,14 @@ function DeployPage() {
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(PROVIDERS.openrouter.defaultModel);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [fundingRit, setFundingRit] = useState("0.2");
+  const [fundingRit, setFundingRit] = useState("0.1");
   const [showHfHelp, setShowHfHelp] = useState(false);
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [advFrequency, setAdvFrequency] = useState("5000");
-  const [advNumCalls, setAdvNumCalls] = useState("5");
-  const [advSchedulerGas, setAdvSchedulerGas] = useState("500000");
+  const [advFrequency, setAdvFrequency] = useState("3000");
+  const [advNumCalls, setAdvNumCalls] = useState("1");
+  const [advSchedulerGas, setAdvSchedulerGas] = useState("400000");
   const [advCliType, setAdvCliType] = useState("5");
   const [advSchedulerTtl, setAdvSchedulerTtl] = useState("500");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
@@ -210,8 +210,8 @@ function DeployPage() {
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
   const balanceNum = walletBalanceRit ? parseFloat(walletBalanceRit) : 0;
   const fundingNum = parseFloat(fundingRit || "0");
-  const fundingOk = fundingNum >= 0.2 && fundingNum <= 5;
-  const requiredRit = fundingNum + 0.06;
+  const fundingOk = fundingNum >= 0.1 && fundingNum <= 5;
+  const requiredRit = fundingNum + 0.05;
   const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
   const providerCfg = PROVIDERS[provider];
   const effectiveHealth = prepared?.health || health;
@@ -230,14 +230,14 @@ function DeployPage() {
   const modelOk = model.trim().length > 0;
   const advValid =
     freqNum >= 100 &&
-    freqNum <= 86400 &&
+    freqNum <= 300000 &&
     numCallsNum >= 1 &&
     numCallsNum <= 100 &&
     schedGasNum >= 200000 &&
     schedGasNum <= 5000000 &&
-    schedulerTtlNum >= 500 &&
-    schedulerTtlNum <= 20000 &&
-    advLifespan > 0;
+    schedulerTtlNum >= 100 &&
+    schedulerTtlNum <= 500 &&
+    (freqNum * (numCallsNum - 1) + schedulerTtlNum) <= 10000;
 
   const canPrepare =
     connected &&
@@ -262,14 +262,17 @@ function DeployPage() {
     if (!hfTokenOk) items.push("Paste HF token starting with hf_");
     if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
     if (!modelOk) items.push("Choose model");
-    if (!fundingOk) items.push("Funding must be at least 0.2 RIT");
+    if (!fundingOk) items.push("Funding must be at least 0.1 RIT");
     if (!healthOk) items.push("Ritual executor health is too low; try later");
     if (!promptOk) items.push("Fill prompt");
-    if (freqNum < 100 || freqNum > 86400) items.push("Frequency must be 100-86400");
+    if (freqNum < 100 || freqNum > 300000) items.push("Frequency must be 100-300,000");
     if (numCallsNum < 1 || numCallsNum > 100) items.push("Window calls must be 1-100");
     if (schedGasNum < 200000 || schedGasNum > 5000000) items.push("Scheduler gas must be 200k-5M");
     if (advLifespan <= 0) items.push("Frequency x calls must be positive");
-    if (schedulerTtlNum < 500 || schedulerTtlNum > 20000) items.push("Scheduler TTL must be 500-20000");
+    if (schedulerTtlNum < 100 || schedulerTtlNum > 500) items.push("Scheduler TTL must be 100-500");
+    if (freqNum * (numCallsNum - 1) + schedulerTtlNum > 10000) {
+      items.push(`Total schedule lifespan is ${(freqNum * (numCallsNum - 1) + schedulerTtlNum).toLocaleString()} blocks (max 10,000 blocks limit)`);
+    }
     return items;
   }, [
     connected,
@@ -421,12 +424,16 @@ function DeployPage() {
         else setModel(PROVIDERS[s.provider as ProviderKey].defaultModel);
       }
       if (typeof s.prompt === "string") setPrompt(s.prompt);
-      if (typeof s.fundingRit === "string") setFundingRit(parseFloat(s.fundingRit) >= 0.2 ? s.fundingRit : "0.2");
-      if (typeof s.advFrequency === "string") setAdvFrequency(s.advFrequency);
+      if (typeof s.fundingRit === "string") setFundingRit(parseFloat(s.fundingRit) >= 0.1 ? s.fundingRit : "0.1");
+      if (typeof s.advFrequency === "string") {
+        setAdvFrequency(s.advFrequency === "5000" ? "2000" : s.advFrequency);
+      }
       if (typeof s.advNumCalls === "string") setAdvNumCalls(s.advNumCalls);
       if (typeof s.advSchedulerGas === "string") setAdvSchedulerGas(s.advSchedulerGas);
       if (typeof s.advCliType === "string") setAdvCliType(s.advCliType);
-      if (typeof s.advSchedulerTtl === "string") setAdvSchedulerTtl(s.advSchedulerTtl === "5000" ? "500" : s.advSchedulerTtl);
+      if (typeof s.advSchedulerTtl === "string") {
+        setAdvSchedulerTtl(parseInt(s.advSchedulerTtl, 10) > 500 ? "500" : s.advSchedulerTtl);
+      }
       if (typeof s.chosenExecutor === "string") setChosenExecutor(s.chosenExecutor);
     } catch {
       // ignore corrupted state
@@ -817,13 +824,13 @@ function DeployPage() {
             <p className="mb-3 text-sm text-text-secondary">
               You&apos;ll deploy a <b>Sovereign Agent</b> — a tiny on-chain bot that wakes up every ~12 minutes
               and runs a prompt on a TEE-verified AI executor. Total time: <b>5–10 minutes</b>. Total cost:{" "}
-              <b>~0.26 RIT</b> (one-time).
+              <b>~0.15 RIT</b> (one-time).
             </p>
             <ol className="space-y-2 text-sm leading-6 text-text-secondary">
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">1.</span>
                 <span>
-                  <b>Wallet with ≥ 0.26 RIT.</b> Use a burner wallet (don&apos;t use your main one). Get RITUAL from{" "}
+                  <b>Wallet with ≥ 0.15 RIT.</b> Use a burner wallet (don&apos;t use your main one). Get RITUAL from{" "}
                   <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     faucet.ritualfoundation.org
                   </a>{" "}
@@ -867,7 +874,7 @@ function DeployPage() {
             <div className="mt-4 space-y-3 text-sm leading-6 text-text-secondary">
               <div>
                 <p className="font-mono text-xs text-text-primary">&quot;Wallet balance too low&quot;</p>
-                <p>You need at least your chosen funding amount + 0.06 RIT for gas. Hit the faucet again or lower the funding to 0.2 RIT.</p>
+                <p>You need at least your chosen funding amount + 0.05 RIT for gas. Hit the faucet again or lower the funding to 0.1 RIT.</p>
               </div>
               <div>
                 <p className="font-mono text-xs text-text-primary">&quot;Sender has a pending async job&quot;</p>
@@ -882,8 +889,8 @@ function DeployPage() {
                 <p>Ritual executor is backlogged. Check the <b>Executor health</b> panel on the left — green means good, amber means slow. Try again later when it&apos;s green.</p>
               </div>
               <div>
-                <p className="font-mono text-xs text-text-primary">Agent works but only ~10 wakeups, not 50</p>
-                <p>Old deployments (before Jun 2026) used schedulerGas 1.8M which burns 5× more per wakeup. This deployer uses 500k so 0.2 RIT gives a safer escrow buffer.</p>
+                <p className="font-mono text-xs text-text-primary">Escrow draining way faster than expected</p>
+                <p>Escrow is charged <b>schedulerGas × maxFeePerGas</b> per wakeup — not actual gas used. Old deployments used 500k gas × 20 Gwei = <b>0.01 RIT/wakeup</b>. This deployer now uses 400k gas × 5 Gwei = <b>0.002 RIT/wakeup</b>, so 0.1 RIT funds ~50 heartbeats as expected.</p>
               </div>
             </div>
           </details>
@@ -1141,7 +1148,7 @@ function DeployPage() {
             </Field>
             <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
               <div className="grid grid-cols-4 gap-2">
-                {["0.2", "0.5", "1.0", "2.0"].map((opt) => (
+                {["0.1", "0.2", "0.5", "1.0"].map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setFundingRit(opt)}
@@ -1170,11 +1177,11 @@ function DeployPage() {
                     value={advFrequency}
                     onChange={(e) => setAdvFrequency(e.target.value)}
                     min={100}
-                    max={86400}
+                    max={300000}
                     step={100}
                     className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   />
-                  <p className="mt-1 text-[10px] text-text-secondary">Guide default: 5000 blocks (~29 min). Options go up to 86400.</p>
+                  <p className="mt-1 text-[10px] text-text-secondary">Guide default: 2000 (~12 min). Up to 300,000 blocks (~29 hours). For 1x/day, use 246850 (Window calls must be 1).</p>
                 </Field>
                 <Field label="Window num calls">
                   <input
@@ -1217,27 +1224,37 @@ function DeployPage() {
                     type="number"
                     value={advSchedulerTtl}
                     onChange={(e) => setAdvSchedulerTtl(e.target.value)}
-                    min={500}
-                    max={20000}
-                    step={500}
+                    min={100}
+                    max={500}
+                    step={50}
                     className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">
-                    Window for system executor to accept each wakeup. Default 500 matches the public deploy guide.
+                    Window for system executor to accept each wakeup. Default/max 500 matches the public deploy guide.
                   </p>
                 </Field>
               </div>
               <div className="mt-3 grid gap-1 text-[11px] text-text-secondary">
                 <p>
-                  Lifespan per window:{" "}
-                  <span className={advValid ? "font-mono text-text-primary" : "font-mono text-amber-300"}>
-                    {advLifespan.toLocaleString()} blocks ({(advLifespan * 0.35 / 60).toFixed(1)} min)
+                  Total schedule block span:{" "}
+                  <span className={advValid ? "font-mono text-text-primary" : "font-mono text-amber-300 font-semibold"}>
+                    {(freqNum * (numCallsNum - 1) + schedulerTtlNum).toLocaleString()} blocks (max 10,000 blocks limit)
                   </span>
-                  {!advValid && " — invalid schedule values"}
                 </p>
+                {freqNum * (numCallsNum - 1) + schedulerTtlNum > 10000 && (
+                  <p className="text-amber-300 font-semibold">
+                    ⚠ Revert Warning: Total schedule span exceeds 10,000 blocks. Reduce frequency or number of calls.
+                  </p>
+                )}
+                {schedulerTtlNum > 500 && (
+                  <p className="text-amber-300 font-semibold">
+                    ⚠ Revert Warning: Scheduler TTL cannot exceed 500 blocks.
+                  </p>
+                )}
                 <p>
-                  Estimated cost per wakeup:{" "}
-                  <span className="font-mono text-text-primary">~{((schedGasNum * 1.2e-9 + 0.0005)).toFixed(4)} RIT</span>
+                  Escrow deducted per wakeup:{" "}
+                  <span className="font-mono text-text-primary">~{((schedGasNum * 5e-9)).toFixed(4)} RIT</span>
+                  <span className="text-text-secondary"> (schedulerGas × 5 Gwei)</span>
                 </p>
               </div>
             </details>

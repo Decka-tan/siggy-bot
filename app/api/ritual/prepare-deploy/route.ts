@@ -10,9 +10,9 @@ const REGISTRY = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
 const DELIVERY_LOG = "0x5A16214fF555848411544b005f7Ac063742f39F6";
 const ASYNC_JOB_TRACKER = "0xC069FFCa0389f44eCA2C626e55491b0ab045AEF5";
 const TEMPLATE_BYTES = 10822;
-const MIN_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT — low-fund sovereign start
-const DEFAULT_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT
-const MIN_BALANCE_BUFFER_WEI = 60_000_000_000_000_000n; // 0.06 RIT — covers deploy + configure gas
+const MIN_FUNDING_WEI = 100_000_000_000_000_000n; // 0.1 RIT — low-fund sovereign start
+const DEFAULT_FUNDING_WEI = 100_000_000_000_000_000n; // 0.1 RIT
+const MIN_BALANCE_BUFFER_WEI = 50_000_000_000_000_000n; // 0.05 RIT — covers deploy + configure gas
 
 const trackerInterface = new Interface([
   "function hasPendingJobForSender(address sender) view returns (bool)",
@@ -109,6 +109,8 @@ function buildCalldata({
   schedulerGas,
   cliType,
   schedulerTtl,
+  maxFeePerGas,
+  maxPriorityFeePerGas,
 }: {
   harness: string;
   prompt: string;
@@ -121,6 +123,8 @@ function buildCalldata({
   schedulerGas: number;
   cliType: number;
   schedulerTtl: number;
+  maxFeePerGas: bigint;
+  maxPriorityFeePerGas: bigint;
 }) {
   const params = [
     executor,
@@ -148,7 +152,7 @@ function buildCalldata({
     "",
   ];
   // Public guide defaults: schedulerGas 500k, schedulerTtl 500, and five calls per rolling window.
-  const schedule = [schedulerGas, frequency, schedulerTtl, 20000000000, 1000000000, 0];
+  const schedule = [schedulerGas, frequency, schedulerTtl, maxFeePerGas, maxPriorityFeePerGas, 0];
   const rolling = [numCalls, 5000, 1];
   const lockDuration = 7400000;
   const calldata = configureInterface.encodeFunctionData("configureFundAndStart", [params, schedule, rolling, lockDuration]);
@@ -199,7 +203,7 @@ export async function POST(request: Request) {
         throw new Error("fundingWei must be a bigint-coerceable string.");
       }
     }
-    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.2 RIT is too tight to reach MONITORED.");
+    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.1 RIT is too tight to reach MONITORED.");
     if (fundingWei > 5_000_000_000_000_000_000n) throw new Error("Funding above 5 RIT is wasteful for sovereign.");
 
     if (!isAddress(owner)) throw new Error("Connect a valid wallet first.");
@@ -243,25 +247,47 @@ export async function POST(request: Request) {
 
     // Parse + clamp schedule controls (defaults match community-proven values).
     const numCallsRaw = Number.isFinite(body.numCalls) ? Number(body.numCalls) : 5;
-    const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 5000;
-    const schedulerGasRaw = Number.isFinite(body.schedulerGas) ? Number(body.schedulerGas) : 500000;
+    const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 2000;
+    const schedulerGasRaw = Number.isFinite(body.schedulerGas) ? Number(body.schedulerGas) : 400000;
     const cliTypeRaw = Number.isFinite(body.cliType) ? Number(body.cliType) : 5;
     const schedulerTtlRaw = Number.isFinite(body.schedulerTtl) ? Number(body.schedulerTtl) : 500;
     if (numCallsRaw < 1 || numCallsRaw > 100) throw new Error("numCalls must be between 1 and 100.");
-    if (frequencyRaw < 100 || frequencyRaw > 86400) throw new Error("frequency must be between 100 and 86400 blocks.");
-    if (schedulerGasRaw < 200000 || schedulerGasRaw > 5000000) throw new Error("schedulerGas must be between 200,000 and 5,000,000.");
+    if (frequencyRaw < 100 || frequencyRaw > 300000) throw new Error("frequency must be between 100 and 300,000 blocks.");
+    if (schedulerGasRaw < 350000 || schedulerGasRaw > 5000000) throw new Error("schedulerGas must be between 350,000 and 5,000,000.");
     if (![5, 6].includes(cliTypeRaw)) throw new Error("cliType must be 5 (crush) or 6 (zeroclaw).");
-    if (schedulerTtlRaw < 500 || schedulerTtlRaw > 20000) throw new Error("schedulerTtl must be between 500 and 20000 blocks.");
+    if (schedulerTtlRaw < 100 || schedulerTtlRaw > 500) throw new Error("schedulerTtl must be between 100 and 500 blocks.");
+    if (frequencyRaw * (numCallsRaw - 1) + schedulerTtlRaw > 10000) {
+      throw new Error(`Total schedule span (frequency × (numCalls - 1) + schedulerTtl) is ${(frequencyRaw * (numCallsRaw - 1) + schedulerTtlRaw).toLocaleString()} blocks, which exceeds the contract limit of 10,000 blocks.`);
+    }
     const numCalls = numCallsRaw;
     const frequency = frequencyRaw;
     const schedulerGas = schedulerGasRaw;
     const cliType = cliTypeRaw;
     const schedulerTtl = schedulerTtlRaw;
+
+    // Gas price controls: escrow is pre-charged schedulerGas × maxFeePerGas per wakeup.
+    // Network base fee on Ritual is ~7 Wei (≈0), so 5 Gwei is more than enough to guarantee execution.
+    // 400,000 gas × 5 Gwei = 0.002 RIT per heartbeat — matches the community guide target.
+    let maxFeePerGas = 5000000000n; // 5 gwei default (gives 0.002 RIT/wakeup at 400k gas)
+    if (body.maxFeePerGas !== undefined) {
+      try {
+        const val = BigInt(String(body.maxFeePerGas));
+        if (val > 0n) maxFeePerGas = val;
+      } catch {}
+    }
+    let maxPriorityFeePerGas = 1000000000n; // 1 gwei default
+    if (body.maxPriorityFeePerGas !== undefined) {
+      try {
+        const val = BigInt(String(body.maxPriorityFeePerGas));
+        if (val >= 0n) maxPriorityFeePerGas = val;
+      } catch {}
+    }
+
     const salt = keccak256(toUtf8Bytes(saltLabel));
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
     const deployData = factoryInterface.encodeFunctionData("deployHarness", [salt]);
-    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas, cliType, schedulerTtl });
+    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas, cliType, schedulerTtl, maxFeePerGas, maxPriorityFeePerGas });
     const health = await getExecutorHealth();
     const fundingEther = (Number(fundingWei) / 1e18).toFixed(2);
     const schedule = {
@@ -271,8 +297,8 @@ export async function POST(request: Request) {
       frequency,
       schedulerGas,
       schedulerTtl,
-      maxFeePerGas: "20000000000",
-      maxPriorityFeePerGas: "1000000000",
+      maxFeePerGas: maxFeePerGas.toString(),
+      maxPriorityFeePerGas: maxPriorityFeePerGas.toString(),
     };
 
     return NextResponse.json({

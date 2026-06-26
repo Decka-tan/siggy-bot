@@ -26,7 +26,7 @@ type Quip = { mood: "happy" | "neutral" | "shy"; text: string };
 const sovereignQuips: Quip[] = [
   { mood: "happy", text: "Cheap! 0.1 RIT is enough to get listed. Friendly for first-timer." },
   { mood: "happy", text: "Fast to deploy — connect wallet, sign 2 txs, done." },
-  { mood: "neutral", text: "With safe defaults (schedulerGas 500k + frequency 2000), 0.1 RIT funds ~50 wakeups — that's roughly 1 wakeup/day for a month." },
+  { mood: "neutral", text: "With safe defaults (schedulerGas 500k + frequency 2000), 0.1 RIT funds a full 5-wakeup schedule loop spanning ~50 minutes. Escrow refills keep it alive." },
   { mood: "neutral", text: "Top up the escrow before it drains and the agent stays listed indefinitely." },
 ];
 
@@ -88,15 +88,15 @@ export default function DeployLanding() {
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-md">
-            <div className="absolute inset-0 -z-10 translate-x-4 translate-y-4 bg-accent/20" aria-hidden />
-            <div className="relative aspect-square bg-surface">
+          <div className="relative mx-auto w-full max-w-md group">
+            <div className="absolute inset-0 -z-10 translate-x-4 translate-y-4 bg-accent/15 transition-transform duration-500 group-hover:translate-x-6 group-hover:translate-y-6" aria-hidden />
+            <div className="relative aspect-square border border-border bg-surface/30 backdrop-blur-md transition-all duration-500 group-hover:border-accent/40 group-hover:shadow-[0_0_30px_rgba(255,215,0,0.08)]">
               <Image
                 src={SIGGY_HERO}
                 alt="Siggy"
                 fill
                 priority
-                className="object-contain p-6"
+                className="object-contain p-6 transition-transform duration-500 group-hover:scale-105"
                 sizes="(min-width: 1024px) 400px, 80vw"
               />
             </div>
@@ -136,7 +136,7 @@ export default function DeployLanding() {
 
           {/* SIGGY TALK */}
           {choice && (
-            <div className="grid gap-6 border border-border bg-surface p-6 md:grid-cols-[180px_1fr] md:p-8">
+            <div className="grid gap-6 border border-accent/30 bg-surface/20 backdrop-blur-md p-6 md:grid-cols-[180px_1fr] md:p-8 shadow-[0_0_25px_rgba(255,215,0,0.03)] transition-all duration-300">
               <div className="relative mx-auto h-32 w-32 md:h-44 md:w-44">
                 <Image
                   src={choice === "sovereign" ? SIGGY_SOVEREIGN : SIGGY_PERSISTENT}
@@ -163,9 +163,9 @@ export default function DeployLanding() {
                 </ul>
 
                 <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                  <Stat label="Lifespan" value={choice === "sovereign" ? "~50 wakeups / 0.1 RIT" : "Indefinite + DA state"} icon={<Clock className="h-4 w-4" />} />
-                  <Stat label="Min funding" value={choice === "sovereign" ? "0.1 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
-                  <Stat label="Per wakeup cost" value={choice === "sovereign" ? "~0.002 RIT" : "varies"} icon={<Layers className="h-4 w-4" />} />
+                  <Stat label="Lifespan" value={choice === "sovereign" ? "5 wakeups per schedule (refillable)" : "Indefinite + DA state"} icon={<Clock className="h-4 w-4" />} />
+                  <Stat label="Min funding" value={choice === "sovereign" ? "0.2 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
+                  <Stat label="Per wakeup cost" value={choice === "sovereign" ? "~0.009 RIT" : "varies"} icon={<Layers className="h-4 w-4" />} />
                   <Stat label="Setup" value={choice === "sovereign" ? "2 txs, ~3 min" : "Official launcher"} icon={<Timer className="h-4 w-4" />} />
                 </div>
               </div>
@@ -193,9 +193,9 @@ export default function DeployLanding() {
                 <ComparisonRow label="Precompile" sov="0x080C" per="0x0820" />
                 <ComparisonRow label="Concept" sov="Job — task one-shot/batch" per="Service — long-lived" />
                 <ComparisonRow label="Best for" sov="Achievement / demo" per="Always-on assistant" />
-                <ComparisonRow label="Lifespan" sov="~50 wakeups / 0.1 RIT (refillable)" per="Indefinite" />
-                <ComparisonRow label="Per wakeup cost" sov="~0.002 RIT" per="~varies" />
-                <ComparisonRow label="Min funding" sov="0.1 RIT" per="~2.1 RIT" />
+                <ComparisonRow label="Lifespan" sov="5 wakeups per schedule (refillable)" per="Indefinite" />
+                <ComparisonRow label="Per wakeup cost" sov="~0.009 RIT" per="~varies" />
+                <ComparisonRow label="Min funding" sov="0.2 RIT" per="~2.1 RIT" />
                 <ComparisonRow label="State & memory" sov="Ephemeral" per="DA-backed (HF/GCS/Pinata)" />
                 <ComparisonRow label="Reviveable" sov={<X className="inline h-4 w-4 text-red-300" />} per={<Check className="inline h-4 w-4 text-emerald-300" />} />
                 <ComparisonRow label="Deploy here" sov="Siggy deployer" per="agents.ritualfoundation.org" />
@@ -293,9 +293,11 @@ function ChoiceCard({
   return (
     <button
       onClick={onClick}
-      className={`text-left transition ${
-        active ? "border-accent bg-accent/10" : "border-border bg-surface hover:border-accent/60"
-      } border p-6`}
+      className={`text-left transition-all duration-300 relative overflow-hidden backdrop-blur-md border ${
+        active 
+          ? "border-accent bg-accent/10 shadow-[0_0_20px_rgba(255,215,0,0.1)] scale-[1.01]" 
+          : "border-border bg-surface/40 hover:border-accent/40 hover:bg-surface/65 hover:scale-[1.005]"
+      } p-6`}
     >
       <div className="flex items-center justify-between">
         <div className={`inline-flex items-center gap-2 ${active ? "text-accent" : "text-text-secondary"}`}>

@@ -66,13 +66,27 @@ export async function GET(request: Request) {
       ]),
     ]);
 
+    const bytecodeBytes = code === "0x" ? 0 : (code.length - 2) / 2;
+    const escrowWei = hexToBigInt(escrowHex);
+    const lowerCode = (code || "0x").toLowerCase();
+    const hasStartSelector = lowerCode.includes("b1906702");
+    const hasCallbackSelector = lowerCode.includes("18bb7d95");
+    const hasRejectedV4Callback = lowerCode.includes("80b63e7e");
+    const templateMatch =
+      bytecodeBytes === 10822 && hasStartSelector && hasCallbackSelector && !hasRejectedV4Callback;
+    const isSovereign = templateMatch || hasStartSelector;
+
     // Optional activity logs — wrap in try so an RPC limit error doesn't blank the whole page.
     let schedLogs: unknown[] = [];
     let p2Logs: unknown[] = [];
     try {
+      const p2LogsPromise = isSovereign
+        ? rpc("eth_getLogs", [{ address: agent, fromBlock: fromHex, topics: ["0x0f46290068e3564761b6805b2330989b9ff59aa79006e68999e3047d22909c4f"] }])
+        : rpc("eth_getLogs", [{ address: ASYNC_DELIVERY, fromBlock: fromHex, topics: [null, null, `0x${padded}`] }]);
+
       const res = await Promise.all([
         rpc("eth_getLogs", [{ address: SCHEDULER, fromBlock: fromHex, topics: [null, null, null, `0x${padded}`] }]),
-        rpc("eth_getLogs", [{ address: ASYNC_DELIVERY, fromBlock: fromHex, topics: [null, null, `0x${padded}`] }]),
+        p2LogsPromise,
       ]);
       schedLogs = Array.isArray(res[0]) ? (res[0] as unknown[]) : [];
       p2Logs = Array.isArray(res[1]) ? (res[1] as unknown[]) : [];
@@ -88,14 +102,6 @@ export async function GET(request: Request) {
 
     const sovereign = Array.isArray(cache?.sovereign) ? cache.sovereign : [];
     const hit = sovereign.find((item: { address?: string }) => item.address?.toLowerCase() === agent.toLowerCase());
-    const bytecodeBytes = code === "0x" ? 0 : (code.length - 2) / 2;
-    const escrowWei = hexToBigInt(escrowHex);
-    const lowerCode = (code || "0x").toLowerCase();
-    const hasStartSelector = lowerCode.includes("b1906702");
-    const hasCallbackSelector = lowerCode.includes("18bb7d95");
-    const hasRejectedV4Callback = lowerCode.includes("80b63e7e");
-    const templateMatch =
-      bytecodeBytes === 10822 && hasStartSelector && hasCallbackSelector && !hasRejectedV4Callback;
 
     return NextResponse.json({
       ok: true,
