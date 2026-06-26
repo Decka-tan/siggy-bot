@@ -10,12 +10,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: 'rgb(var(--color-bg) / <alpha-value>)',
-        surface: 'rgb(var(--color-surface) / <alpha-value>)',
-        border: 'rgb(var(--color-border) / <alpha-value>)',
-        accent: 'rgb(var(--color-accent) / <alpha-value>)',
-        'text-primary': 'rgb(var(--color-text-primary) / <alpha-value>)',
-        'text-secondary': 'rgb(var(--color-text-secondary) / <alpha-value>)',
+        bg: '#050505',
+        surface: '#121212',
+        border: 'rgba(255, 255, 255, 0.08)',
+        accent: '#FFD700',
+        'text-primary': '#fafafa',
+        'text-secondary': '#a3a3a3',
       },
       fontFamily: {
         sans: ['var(--font-sans)'],

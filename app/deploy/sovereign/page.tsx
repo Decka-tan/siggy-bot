@@ -865,8 +865,8 @@ function DeployPage() {
       <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
       <div className="absolute left-0 bottom-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/3 blur-[150px] pointer-events-none" />
 
-      <section className="relative z-10 mx-auto grid w-full max-w-7xl gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
-        <aside className="space-y-5 lg:sticky lg:top-28 lg:self-start">
+      <section className="relative z-10 mx-auto grid w-full max-w-7xl items-start gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
+        <aside className="space-y-5 lg:self-start">
           <div className="border border-border bg-surface/60 backdrop-blur-md p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
             <div className="mb-4 inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent">
               <Rocket className="h-4 w-4" />
