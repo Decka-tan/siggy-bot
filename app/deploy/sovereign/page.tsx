@@ -214,6 +214,8 @@ function DeployPage() {
   const requiredRit = fundingNum + 0.06;
   const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
   const providerCfg = PROVIDERS[provider];
+  const effectiveHealth = prepared?.health || health;
+  const healthOk = Boolean(effectiveHealth?.healthy);
 
   const freqNum = parseInt(advFrequency || "0", 10);
   const numCallsNum = parseInt(advNumCalls || "0", 10);
@@ -250,6 +252,7 @@ function DeployPage() {
     apiKeyOk &&
     modelOk &&
     fundingOk &&
+    healthOk &&
     advValid;
   const prepareBlockers = useMemo(() => {
     const items: string[] = [];
@@ -262,6 +265,7 @@ function DeployPage() {
     if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
     if (!modelOk) items.push("Choose model");
     if (!fundingOk) items.push("Funding must be at least 0.2 RIT");
+    if (!healthOk) items.push("Ritual executor health is too low; try later");
     if (!promptOk) items.push("Fill prompt");
     if (freqNum < 100 || freqNum > 10000) items.push("Frequency must be 100-10000");
     if (numCallsNum < 1 || numCallsNum > 100) items.push("Window calls must be 1-100");
@@ -282,6 +286,7 @@ function DeployPage() {
     providerCfg,
     modelOk,
     fundingOk,
+    healthOk,
     promptOk,
     freqNum,
     numCallsNum,
@@ -296,7 +301,7 @@ function DeployPage() {
   const bytecodeGateOk = Boolean(verify?.templateMatch || bytecodeSizeOk);
   const preparedFundingRit = prepared?.schedule?.value || "";
   const fundingMatchesPrepared = !preparedFundingRit || parseFloat(preparedFundingRit) === parseFloat(fundingRit || "0");
-  const canFund = deployDone && bytecodeGateOk && !startDone && fundingMatchesPrepared;
+  const canFund = deployDone && bytecodeGateOk && !startDone && fundingMatchesPrepared && healthOk;
 
   const step = useMemo(() => {
     if (!connected) return 1;
@@ -339,6 +344,10 @@ function DeployPage() {
     return `${owner.toLowerCase()}::${label.trim().toLowerCase()}`;
   }
 
+  function preparedHarnessCacheId(harness: string) {
+    return `harness::${harness.toLowerCase()}`;
+  }
+
   function readPreparedCache() {
     if (typeof window === "undefined") return {};
     try {
@@ -355,12 +364,14 @@ function DeployPage() {
     if (typeof window === "undefined" || !data.owner || !data.saltLabel) return;
     try {
       const cache = readPreparedCache();
-      cache[preparedCacheId(data.owner, data.saltLabel)] = {
+      const record = {
         prepared: data,
         deployHash: hashes?.deployHash ?? deployHash,
         startHash: hashes?.startHash ?? startHash,
         savedAt: Date.now(),
       };
+      cache[preparedCacheId(data.owner, data.saltLabel)] = record;
+      cache[preparedHarnessCacheId(data.harness)] = record;
       window.localStorage.setItem(PREPARED_KEY, JSON.stringify(cache));
     } catch {
       // Best-effort resume cache only.
@@ -653,9 +664,19 @@ function DeployPage() {
     setBusy("start");
     setError("");
     try {
+      const tx = { from: account, ...prepared.configureTx };
+      try {
+        await window.ethereum.request({
+          method: "eth_call",
+          params: [tx, "latest"],
+        });
+      } catch (callErr: any) {
+        const message = callErr?.data?.message || callErr?.message || "Start simulation failed.";
+        throw new Error(`Fund/start would fail before signing: ${message}`);
+      }
       const hash = await window.ethereum.request({
         method: "eth_sendTransaction",
-        params: [{ from: account, ...prepared.configureTx }],
+        params: [tx],
       });
       setStartHash(hash);
       savePreparedCache(prepared, { deployHash, startHash: hash });
@@ -1300,7 +1321,9 @@ function DeployPage() {
                         ? "Bytecode verification pending - refresh verify"
                         : !fundingMatchesPrepared
                           ? "Funding changed after prepare - click Prepare deploy again"
-                          : ""
+                          : !healthOk
+                            ? "Ritual executor health is too low - try later"
+                            : ""
                   }
                 >
                   {busy === "start" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -1327,7 +1350,12 @@ function DeployPage() {
               )}
               {deployDone && bytecodeGateOk && !startDone && (
                 <p className="text-xs leading-5 text-amber-300">
-                  Harness is deployed but escrow is still 0 RIT. Click Fund {prepared.schedule.value} and start to send transaction 2.
+                  Harness is deployed but escrow is still 0 RIT. Fund/start will simulate first; if the call would revert, no wallet signature will be requested.
+                </p>
+              )}
+              {deployDone && bytecodeGateOk && !startDone && !healthOk && (
+                <p className="text-xs leading-5 text-amber-300">
+                  Fund/start is paused because executor health is low. This protects the escrow from getting stuck while Ritual is lagging.
                 </p>
               )}
             </Panel>

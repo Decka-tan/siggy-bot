@@ -302,11 +302,15 @@ function AgentPage() {
 
   function readPreparedCache() {
     if (typeof window === "undefined") return null;
-    if (!account || !savedSalt) return null;
     try {
       const cache = JSON.parse(window.localStorage.getItem(PREPARED_KEY) || "{}");
-      const key = `${account.toLowerCase()}::${savedSalt.trim().toLowerCase()}`;
-      const hit = cache?.[key]?.prepared;
+      const direct = cache?.[`harness::${agentAddress.toLowerCase()}`]?.prepared;
+      const key = account && savedSalt ? `${account.toLowerCase()}::${savedSalt.trim().toLowerCase()}` : "";
+      const keyed = key ? cache?.[key]?.prepared : null;
+      const scanned = Object.values(cache || {}).find((record: any) => {
+        return String(record?.prepared?.harness || "").toLowerCase() === agentAddress.toLowerCase();
+      }) as any;
+      const hit = direct || keyed || scanned?.prepared;
       if (!hit?.configureTx?.data) return null;
       if (String(hit.harness || "").toLowerCase() !== agentAddress.toLowerCase()) return null;
       return hit as { harness: string; configureTx: { to: string; data: string; gas?: string } };
