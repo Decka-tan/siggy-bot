@@ -38,8 +38,9 @@ const persistentQuips: Quip[] = [
 ];
 
 const SIGGY_HERO = "/character.png";
-const SIGGY_SOVEREIGN = "/character.png";
-const SIGGY_PERSISTENT = "/character.png";
+const SIGGY_SOVEREIGN = "/siggy-girl-happy.png";
+const SIGGY_PERSISTENT = "/siggy-girl-shock.png";
+const SIGGY_CTA = "/siggy-girl-happy.png";
 
 export default function DeployLanding() {
   const [choice, setChoice] = useState<Choice>(null);
@@ -252,7 +253,7 @@ export default function DeployLanding() {
             </div>
 
             <div className="relative hidden h-full min-h-[220px] md:block">
-              <Image src="/character.png" alt="Siggy ready" fill className="object-contain" sizes="240px" />
+              <Image src={SIGGY_CTA} alt="Siggy ready" fill className="object-contain" sizes="240px" />
             </div>
           </div>
         </div>

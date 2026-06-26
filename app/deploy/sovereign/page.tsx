@@ -160,8 +160,8 @@ function short(value = "") {
 export default function DeployPage() {
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
-  const [saltLabel, setSaltLabel] = useState(`siggy-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`);
-  const [hfRepoId, setHfRepoId] = useState("decka-tan/ritual-sovereign-agent");
+  const [saltLabel, setSaltLabel] = useState("");
+  const [hfRepoId, setHfRepoId] = useState("");
   const [hfToken, setHfToken] = useState("");
   const [provider, setProvider] = useState<ProviderKey>("openrouter");
   const [apiKey, setApiKey] = useState("");
@@ -191,7 +191,8 @@ export default function DeployPage() {
     chainOk &&
     balanceOk &&
     prompt.trim().length > 0 &&
-    hfRepoId.includes("/") &&
+    saltLabel.trim().length > 0 &&
+    /^[\w.-]+\/[\w.-]+$/.test(hfRepoId.trim()) &&
     hfToken.trim().startsWith("hf_") &&
     apiKey.trim().startsWith(providerCfg.keyPrefix) &&
     model.trim().length > 0;
@@ -519,18 +520,19 @@ export default function DeployPage() {
 
           <Panel title="2. Agent input" icon={<Sparkles className="h-5 w-5" />}>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Salt label">
+              <Field label="Salt label (any string — determines your agent address)">
                 <input
                   value={saltLabel}
                   onChange={(e) => setSaltLabel(e.target.value)}
+                  placeholder="my-agent-1"
                   className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
                 />
               </Field>
-              <Field label="HF repo ID">
+              <Field label="HF Repo ID (your-username/dataset-name)">
                 <input
                   value={hfRepoId}
                   onChange={(e) => setHfRepoId(e.target.value)}
-                  placeholder="username/dataset"
+                  placeholder="your-username/your-dataset"
                   className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
                 />
               </Field>
