@@ -84,10 +84,7 @@ export function Header() {
         {/* Desktop Navigation - Centered */}
         <nav className="hidden md:flex items-center justify-center gap-8 text-sm font-medium">
           <Link href="/" className="hover:text-accent transition-colors">Home</Link>
-          <a href="#about" className="hover:text-accent transition-colors">About</a>
-          <Link href="/story" className="hover:text-accent transition-colors">Story</Link>
           <Link href="/chat?new=true" className="hover:text-accent transition-colors">Chat</Link>
-          <Link href="/ritual" className="hover:text-accent transition-colors">Agent</Link>
           <Link href="/deploy" className="hover:text-accent transition-colors">Deploy</Link>
           <Link href="/agent" className="hover:text-accent transition-colors">My agents</Link>
         </nav>
@@ -172,33 +169,12 @@ export function Header() {
               >
                 Home
               </Link>
-              <a
-                href="#about"
-                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                About
-              </a>
-              <Link
-                href="/story"
-                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Story
-              </Link>
               <Link
                 href="/chat"
                 className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Chat
-              </Link>
-              <Link
-                href="/ritual"
-                className="block font-mono text-xs uppercase tracking-wider text-text-primary hover:text-accent transition-colors py-2 px-3 rounded-lg hover:bg-surface"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Agent
               </Link>
               <Link
                 href="/deploy"
