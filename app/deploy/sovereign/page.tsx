@@ -72,6 +72,9 @@ type Verify = {
   deployed: boolean;
   bytecodeBytes: number;
   templateMatch: boolean;
+  hasStartSelector?: boolean;
+  hasCallbackSelector?: boolean;
+  hasRejectedV4Callback?: boolean;
   listed: boolean;
   lastActivityBlock: number | null;
   escrowRit: string;
@@ -97,6 +100,8 @@ export default function DeployPage() {
   const [hfToken, setHfToken] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
+  const [fundingRit, setFundingRit] = useState("0.1");
+  const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [verify, setVerify] = useState<Verify | null>(null);
@@ -108,15 +113,21 @@ export default function DeployPage() {
 
   const connected = Boolean(account);
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
+  const balanceNum = walletBalanceRit ? parseFloat(walletBalanceRit) : 0;
+  const requiredRit = parseFloat(fundingRit || "0") + 0.06;
+  const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
   const canPrepare =
     connected &&
     chainOk &&
+    balanceOk &&
     prompt.trim().length > 0 &&
     hfRepoId.includes("/") &&
     hfToken.trim().startsWith("hf_") &&
     openaiApiKey.trim().startsWith("sk-");
   const deployDone = Boolean(deployHash) || prepared?.alreadyDeployed || verify?.deployed;
   const startDone = Boolean(startHash);
+  const bytecodeGateOk = Boolean(verify?.templateMatch);
+  const canFund = deployDone && bytecodeGateOk && !startDone;
 
   const step = useMemo(() => {
     if (!connected) return 1;
@@ -134,6 +145,18 @@ export default function DeployPage() {
       if (data.ok) setHealth(data.health);
     } catch {
       setHealth(null);
+    }
+  }
+
+  async function loadBalance(address: string) {
+    if (!window.ethereum || !address) return;
+    try {
+      const hex = (await window.ethereum.request({ method: "eth_getBalance", params: [address, "latest"] })) as string;
+      const wei = BigInt(hex);
+      const rit = Number(wei) / 1e18;
+      setWalletBalanceRit(rit.toFixed(4));
+    } catch {
+      setWalletBalanceRit(null);
     }
   }
 
@@ -164,14 +187,18 @@ export default function DeployPage() {
     window.ethereum.request({ method: "eth_chainId" }).then(setChainId);
 
     const accountsChanged = (accounts: string[]) => {
-      setAccount(accounts?.[0] || "");
+      const next = accounts?.[0] || "";
+      setAccount(next);
       setPrepared(null);
       setVerify(null);
+      setWalletBalanceRit(null);
+      if (next) loadBalance(next);
     };
     const chainChanged = (id: string) => {
       setChainId(id);
       setPrepared(null);
       setVerify(null);
+      if (account) loadBalance(account);
     };
     window.ethereum.on?.("accountsChanged", accountsChanged);
     window.ethereum.on?.("chainChanged", chainChanged);
@@ -188,8 +215,10 @@ export default function DeployPage() {
       return;
     }
     const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-    setAccount(accounts?.[0] || "");
+    const next = accounts?.[0] || "";
+    setAccount(next);
     setChainId(await window.ethereum.request({ method: "eth_chainId" }));
+    if (next) loadBalance(next);
   }
 
   async function switchChain() {
@@ -229,10 +258,11 @@ export default function DeployPage() {
       });
       const { encryptedSecrets, executor } = await encryptSecretsClientSide(secretPayload);
 
+      const fundingWei = (BigInt(Math.round(parseFloat(fundingRit) * 1e6)) * 10n ** 12n).toString();
       const res = await fetch("/api/ritual/prepare-deploy", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ owner: account, saltLabel, hfRepoId, prompt, encryptedSecrets, executor }),
+        body: JSON.stringify({ owner: account, saltLabel, hfRepoId, prompt, encryptedSecrets, executor, fundingWei }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Prepare failed.");
@@ -303,6 +333,22 @@ export default function DeployPage() {
       setBusy((current) => (current === "verify" ? "" : current));
     }
   }
+
+  // Gap fix 4: auto-poll after start until LISTED or escrow drained or 30 min timeout.
+  useEffect(() => {
+    if (!startHash || !prepared?.harness) return;
+    if (verify?.listed) return;
+    if (verify?.escrowRit === "0") return;
+    const start = Date.now();
+    const timer = window.setInterval(() => {
+      if (Date.now() - start > 30 * 60 * 1000) {
+        window.clearInterval(timer);
+        return;
+      }
+      verifyAgent(prepared.harness);
+    }, 30_000);
+    return () => window.clearInterval(timer);
+  }, [startHash, prepared?.harness, verify?.listed, verify?.escrowRit]);
 
   async function copy(value: string, key: string) {
     await navigator.clipboard.writeText(value);
@@ -378,6 +424,9 @@ export default function DeployPage() {
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-secondary">
               <Pill ok={connected} label={connected ? `Wallet ${short(account)}` : "Wallet required"} />
               <Pill ok={chainOk} label={chainOk ? "Ritual Testnet 1979" : `Wrong chain ${chainId || "-"}`} />
+              {walletBalanceRit !== null && (
+                <Pill ok={balanceOk} label={`Balance ${walletBalanceRit} RIT`} />
+              )}
               {!chainOk && connected && (
                 <button onClick={switchChain} className="border border-border px-3 py-1.5 font-mono uppercase tracking-wider text-accent hover:border-accent">
                   Switch chain
@@ -432,6 +481,26 @@ export default function DeployPage() {
                 className="w-full resize-none border border-border bg-bg px-3 py-3 text-sm leading-6 outline-none focus:border-accent"
               />
             </Field>
+            <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
+              <div className="grid grid-cols-4 gap-2">
+                {["0.05", "0.1", "0.2", "0.5"].map((opt) => (
+                  <button
+                    key={opt}
+                    onClick={() => setFundingRit(opt)}
+                    className={`border px-3 py-3 font-mono text-sm uppercase tracking-wider ${
+                      fundingRit === opt ? "border-accent bg-accent/10 text-accent" : "border-border text-text-secondary hover:border-accent/60"
+                    }`}
+                  >
+                    {opt} RIT
+                  </button>
+                ))}
+              </div>
+              {!balanceOk && connected && walletBalanceRit && (
+                <p className="mt-2 text-xs text-amber-300">
+                  Wallet has {walletBalanceRit} RIT — need {requiredRit.toFixed(2)} RIT (funding + gas). Lower funding or top up faucet.
+                </p>
+              )}
+            </Field>
             <button
               onClick={prepare}
               disabled={!canPrepare || busy === "prepare"}
@@ -464,11 +533,12 @@ export default function DeployPage() {
                 </button>
                 <button
                   onClick={sendStart}
-                  disabled={busy === "start" || !deployDone}
+                  disabled={busy === "start" || !canFund}
                   className="inline-flex items-center justify-center gap-2 border border-border px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  title={!deployDone ? "Deploy harness first" : !bytecodeGateOk ? "Bytecode verification pending — refresh verify" : ""}
                 >
                   {busy === "start" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Fund 0.5 and start
+                  Fund {fundingRit} and start
                 </button>
               </div>
             </Panel>

@@ -103,12 +103,14 @@ function buildCalldata({
   hfRepoId,
   encryptedSecrets,
   executor,
+  numCalls,
 }: {
   harness: string;
   prompt: string;
   hfRepoId: string;
   encryptedSecrets: string;
   executor: string;
+  numCalls: number;
 }) {
   const params = [
     executor,
@@ -136,7 +138,7 @@ function buildCalldata({
     "",
   ];
   const schedule = [1800000, 180, 500, 20000000000, 1000000000, 0];
-  const rolling = [30, 5000, 1];
+  const rolling = [numCalls, 5000, 1];
   const lockDuration = 100000000;
   const calldata = configureInterface.encodeFunctionData("configureFundAndStart", [params, schedule, rolling, lockDuration]);
 
@@ -144,6 +146,22 @@ function buildCalldata({
     throw new Error(`configure selector mismatch: ${calldata.slice(0, 10)}`);
   }
   return calldata;
+}
+
+async function getBalance(addr: string) {
+  const hex = (await rpc("eth_getBalance", [addr, "latest"])) as string;
+  return BigInt(hex);
+}
+
+async function hasPendingAsync(owner: string) {
+  const data = trackerInterface.encodeFunctionData("hasPendingJobForSender", [owner]);
+  try {
+    const result = (await rpc("eth_call", [{ to: ASYNC_JOB_TRACKER, data }, "latest"])) as string;
+    const [pending] = trackerInterface.decodeFunctionResult("hasPendingJobForSender", result);
+    return Boolean(pending);
+  } catch {
+    return false;
+  }
 }
 
 export async function POST(request: Request) {
@@ -156,6 +174,18 @@ export async function POST(request: Request) {
     const encryptedSecrets = String(body.encryptedSecrets || "").trim();
     const executor = String(body.executor || "").trim();
 
+    // Funding (default 0.1 RIT). Clamp into [MIN_FUNDING_WEI, 0.5 RIT].
+    let fundingWei = DEFAULT_FUNDING_WEI;
+    if (body.fundingWei !== undefined) {
+      try {
+        fundingWei = BigInt(String(body.fundingWei));
+      } catch {
+        throw new Error("fundingWei must be a bigint-coerceable string.");
+      }
+    }
+    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.05 RIT is too tight to reach MONITORED.");
+    if (fundingWei > 5_000_000_000_000_000_000n) throw new Error("Funding above 5 RIT is wasteful for sovereign.");
+
     if (!isAddress(owner)) throw new Error("Connect a valid wallet first.");
     if (!prompt) throw new Error("Prompt is required.");
     if (!/^[\w.-]+\/[\w.-]+$/.test(hfRepoId)) throw new Error("HF repo must be in user/repo format.");
@@ -163,6 +193,23 @@ export async function POST(request: Request) {
       throw new Error("encryptedSecrets must be a hex blob from client-side ECIES encryption.");
     }
     if (!isAddress(executor)) throw new Error("Invalid executor address from client.");
+
+    // Gap fix 1: balance check
+    const ownerBalanceWei = await getBalance(owner);
+    const requiredWei = fundingWei + MIN_BALANCE_BUFFER_WEI;
+    if (ownerBalanceWei < requiredWei) {
+      throw new Error(
+        `Wallet balance too low. Have ${(Number(ownerBalanceWei) / 1e18).toFixed(4)} RIT, need ${(Number(requiredWei) / 1e18).toFixed(4)} RIT (funding + gas buffer).`,
+      );
+    }
+
+    // Gap fix 2: pending async lock check
+    const pending = await hasPendingAsync(owner);
+    if (pending) {
+      throw new Error(
+        "Your wallet has a pending async sovereign job. Wait ~10-30 minutes for the executor to clear it before deploying.",
+      );
+    }
 
     // Re-fetch executor from registry to verify it still matches client-side encryption target.
     // If executor rotated between get-executor and prepare-deploy, abort so user re-encrypts.
@@ -173,16 +220,18 @@ export async function POST(request: Request) {
       );
     }
 
+    const numCalls = 50;
     const salt = keccak256(toUtf8Bytes(saltLabel));
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
     const deployData = factoryInterface.encodeFunctionData("deployHarness", [salt]);
-    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor });
+    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls });
     const health = await getExecutorHealth();
+    const fundingEther = (Number(fundingWei) / 1e18).toFixed(2);
     const schedule = {
-      value: "0.5",
-      valueWei: "500000000000000000",
-      numCalls: 30,
+      value: fundingEther,
+      valueWei: fundingWei.toString(),
+      numCalls,
       frequency: 180,
       schedulerGas: 1800000,
       schedulerTtl: 500,
@@ -213,9 +262,10 @@ export async function POST(request: Request) {
       configureTx: {
         to: harness,
         data: calldata,
-        value: hexNumber(500000000000000000n),
+        value: hexNumber(fundingWei),
         gas: "0x3567e0",
       },
+      ownerBalanceWei: ownerBalanceWei.toString(),
       calldataPreview: {
         selector: calldata.slice(0, 10),
         bytes: (calldata.length - 2) / 2,

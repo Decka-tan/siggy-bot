@@ -61,6 +61,12 @@ export async function GET(request: Request) {
     const hit = sovereign.find((item: { address?: string }) => item.address?.toLowerCase() === agent.toLowerCase());
     const bytecodeBytes = code === "0x" ? 0 : (code.length - 2) / 2;
     const escrowWei = hexToBigInt(escrowHex);
+    const lowerCode = (code || "0x").toLowerCase();
+    const hasStartSelector = lowerCode.includes("b1906702");
+    const hasCallbackSelector = lowerCode.includes("18bb7d95");
+    const hasRejectedV4Callback = lowerCode.includes("80b63e7e");
+    const templateMatch =
+      bytecodeBytes === 10822 && hasStartSelector && hasCallbackSelector && !hasRejectedV4Callback;
 
     return NextResponse.json({
       ok: true,
@@ -68,7 +74,10 @@ export async function GET(request: Request) {
       blockNumber: Number(hexToBigInt(blockHex)),
       deployed: code !== "0x",
       bytecodeBytes,
-      templateMatch: bytecodeBytes === 10822,
+      templateMatch,
+      hasStartSelector,
+      hasCallbackSelector,
+      hasRejectedV4Callback,
       listed: Boolean(hit),
       lastActivityBlock: hit?.lastActivityBlock || null,
       escrowWei: escrowWei.toString(),
