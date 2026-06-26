@@ -171,8 +171,10 @@ function DeployPage() {
   const initialSalt = search?.get("salt") || "";
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
+  const FORM_KEY = "siggy.deploy.form.v1";
   const [saltLabel, setSaltLabel] = useState(initialSalt);
   const [hfRepoId, setHfRepoId] = useState("");
+  const [collapseForm, setCollapseForm] = useState(false);
   const [hfToken, setHfToken] = useState("");
   const [provider, setProvider] = useState<ProviderKey>("openrouter");
   const [apiKey, setApiKey] = useState("");
@@ -299,6 +301,51 @@ function DeployPage() {
     const cipherBytes = encrypt(match.publicKey, plaintext);
     return { encryptedSecrets: toHex(cipherBytes), executor: match.teeAddress };
   }
+
+  // Restore form state from localStorage (sensitive fields like API key + HF token NOT persisted).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(FORM_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (typeof s.saltLabel === "string" && !initialSalt) setSaltLabel(s.saltLabel);
+      if (typeof s.hfRepoId === "string") setHfRepoId(s.hfRepoId);
+      if (typeof s.provider === "string" && s.provider in PROVIDERS) {
+        setProvider(s.provider as ProviderKey);
+        if (typeof s.model === "string") setModel(s.model);
+        else setModel(PROVIDERS[s.provider as ProviderKey].defaultModel);
+      }
+      if (typeof s.prompt === "string") setPrompt(s.prompt);
+      if (typeof s.fundingRit === "string") setFundingRit(s.fundingRit);
+      if (typeof s.advFrequency === "string") setAdvFrequency(s.advFrequency);
+      if (typeof s.advNumCalls === "string") setAdvNumCalls(s.advNumCalls);
+      if (typeof s.advSchedulerGas === "string") setAdvSchedulerGas(s.advSchedulerGas);
+      if (typeof s.advCliType === "string") setAdvCliType(s.advCliType);
+      if (typeof s.chosenExecutor === "string") setChosenExecutor(s.chosenExecutor);
+    } catch {
+      // ignore corrupted state
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist non-sensitive form state on every change.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        FORM_KEY,
+        JSON.stringify({ saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, chosenExecutor }),
+      );
+    } catch {
+      // private window etc.
+    }
+  }, [saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, chosenExecutor]);
+
+  // Collapse the form once prepare succeeds so the screen focuses on Preview + Monitor.
+  useEffect(() => {
+    if (prepared) setCollapseForm(true);
+  }, [prepared?.harness]);
 
   useEffect(() => {
     loadHealth();
@@ -735,6 +782,30 @@ function DeployPage() {
             </div>
           </Panel>
 
+          {prepared && collapseForm ? (
+            <section className="border border-border bg-surface p-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
+                  <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
+                  2. Agent setup ✓ ready
+                </div>
+                <button
+                  onClick={() => setCollapseForm(false)}
+                  className="border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-accent hover:border-accent"
+                >
+                  Edit
+                </button>
+              </div>
+              <div className="grid gap-2 text-xs text-text-secondary sm:grid-cols-3">
+                <p>Salt: <span className="font-mono text-text-primary">{saltLabel}</span></p>
+                <p>HF: <span className="font-mono text-text-primary">{hfRepoId}</span></p>
+                <p>Provider: <span className="font-mono text-text-primary">{provider}</span></p>
+                <p>Model: <span className="font-mono text-text-primary">{model}</span></p>
+                <p>Funding: <span className="font-mono text-text-primary">{fundingRit} RIT</span></p>
+                <p>Schedule: <span className="font-mono text-text-primary">{advNumCalls} × {advFrequency} blk</span></p>
+              </div>
+            </section>
+          ) : (
           <Panel
             title="2. Agent setup"
             icon={<Sparkles className="h-5 w-5" />}
@@ -1016,6 +1087,7 @@ function DeployPage() {
               </p>
             )}
           </Panel>
+          )}
 
           {prepared && (
             <Panel
