@@ -186,6 +186,9 @@ function DeployPage() {
   const [advFrequency, setAdvFrequency] = useState("2000");
   const [advNumCalls, setAdvNumCalls] = useState("5");
   const [advSchedulerGas, setAdvSchedulerGas] = useState("500000");
+  const [advCliType, setAdvCliType] = useState("5");
+  const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
+  const [chosenExecutor, setChosenExecutor] = useState<string>("");
   const [health, setHealth] = useState<Health | null>(null);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [verify, setVerify] = useState<Verify | null>(null);
@@ -269,19 +272,37 @@ function DeployPage() {
     return s;
   }
 
+  async function loadExecutors() {
+    try {
+      const res = await fetch("/api/ritual/list-executors", { cache: "no-store" });
+      const data = await res.json();
+      if (data.ok && Array.isArray(data.executors)) {
+        setExecutors(data.executors);
+        if (!chosenExecutor && data.executors[0]) setChosenExecutor(data.executors[0].teeAddress);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   async function encryptSecretsClientSide(payloadJson: string) {
-    const res = await fetch("/api/ritual/get-executor", { cache: "no-store" });
-    const data = await res.json();
-    if (!res.ok || !data.ok) throw new Error(data.error || "Failed to fetch executor.");
-    const pubKey: string = data.publicKey;
-    const executor: string = data.executor;
+    const list = executors.length ? executors : await (async () => {
+      const r = await fetch("/api/ritual/list-executors", { cache: "no-store" });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Failed to fetch executors");
+      return d.executors as { teeAddress: string; publicKey: string }[];
+    })();
+    const target = chosenExecutor || list[0]?.teeAddress || "";
+    const match = list.find((x) => x.teeAddress.toLowerCase() === target.toLowerCase()) || list[0];
+    if (!match) throw new Error("No active executors available right now.");
     const plaintext = new TextEncoder().encode(payloadJson);
-    const cipherBytes = encrypt(pubKey, plaintext);
-    return { encryptedSecrets: toHex(cipherBytes), executor };
+    const cipherBytes = encrypt(match.publicKey, plaintext);
+    return { encryptedSecrets: toHex(cipherBytes), executor: match.teeAddress };
   }
 
   useEffect(() => {
     loadHealth();
+    loadExecutors();
     if (!window.ethereum) return;
 
     window.ethereum.request({ method: "eth_accounts" }).then((accounts: string[]) => {
@@ -420,6 +441,7 @@ function DeployPage() {
           frequency: freqNum,
           numCalls: numCallsNum,
           schedulerGas: schedGasNum,
+          cliType: parseInt(advCliType, 10),
         }),
       });
       const data = await res.json();
@@ -861,6 +883,24 @@ function DeployPage() {
                 ))}
               </select>
             </Field>
+
+            <Field label={`TEE Executor (${executors.length} active) — pick a different one if Phase 2 keeps timing out`}>
+              <select
+                value={chosenExecutor}
+                onChange={(e) => setChosenExecutor(e.target.value)}
+                disabled={executors.length === 0}
+                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent disabled:opacity-50"
+              >
+                {executors.length === 0 && <option value="">Loading executors…</option>}
+                {executors.map((ex, i) => (
+                  <option key={ex.teeAddress} value={ex.teeAddress}>
+                    {i === 0 ? "(default) " : ""}
+                    {short(ex.teeAddress)}
+                    {ex.endpoint ? ` — ${ex.endpoint}` : ""}
+                  </option>
+                ))}
+              </select>
+            </Field>
             <Field label="Prompt">
               <textarea
                 value={prompt}
@@ -928,6 +968,23 @@ function DeployPage() {
                     className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">200k-5M. Lower = cheaper/wakeup.</p>
+                </Field>
+              </div>
+              <div className="mt-3">
+                <Field label="CLI Type (Harness runtime)">
+                  <select
+                    value={advCliType}
+                    onChange={(e) => setAdvCliType(e.target.value)}
+                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  >
+                    <option value="5">5 — Crush (recommended)</option>
+                    <option value="0">0 — Zeroclaw</option>
+                    <option value="2">2 — Hermes</option>
+                  </select>
+                  <p className="mt-1 text-[10px] text-text-secondary">
+                    Runtime CLI inside the TEE. Crush is the safe default for all providers. Only change if you know what
+                    Zeroclaw or Hermes do differently.
+                  </p>
                 </Field>
               </div>
               <div className="mt-3 grid gap-1 text-[11px] text-text-secondary">

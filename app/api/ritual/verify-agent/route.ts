@@ -49,10 +49,12 @@ export async function GET(request: Request) {
     const padded = padAddress(agent);
     const latestHex = (await rpc("eth_blockNumber")) as string;
     const latestNum = Number(hexToBigInt(latestHex));
-    const lookback = Math.max(0, latestNum - 200_000); // ~19h history cap
+    // Ritual RPC caps eth_getLogs at 100k blocks. Stay under to keep this endpoint stable.
+    const lookback = Math.max(0, latestNum - 99_000); // ~9.6h history cap at 350ms blocks
     const fromHex = `0x${lookback.toString(16)}`;
 
-    const [cache, code, escrowHex, schedLogs, p2Logs] = await Promise.all([
+    // Core RPC calls — must always succeed for the page to render.
+    const [cache, code, escrowHex] = await Promise.all([
       fetch(EXPLORER_CACHE, { cache: "no-store" }).then((r) => r.json()),
       rpc("eth_getCode", [agent, "latest"]),
       rpc("eth_call", [
@@ -62,11 +64,23 @@ export async function GET(request: Request) {
         },
         "latest",
       ]),
-      // Scheduler events targeting this harness (topic[3] = target address indexed)
-      rpc("eth_getLogs", [{ address: SCHEDULER, fromBlock: fromHex, topics: [null, null, null, `0x${padded}`] }]),
-      // AsyncDelivery events to this harness (topic[2] = user/target)
-      rpc("eth_getLogs", [{ address: ASYNC_DELIVERY, fromBlock: fromHex, topics: [null, null, `0x${padded}`] }]),
     ]);
+
+    // Optional activity logs — wrap in try so an RPC limit error doesn't blank the whole page.
+    let schedLogs: unknown[] = [];
+    let p2Logs: unknown[] = [];
+    try {
+      const res = await Promise.all([
+        rpc("eth_getLogs", [{ address: SCHEDULER, fromBlock: fromHex, topics: [null, null, null, `0x${padded}`] }]),
+        rpc("eth_getLogs", [{ address: ASYNC_DELIVERY, fromBlock: fromHex, topics: [null, null, `0x${padded}`] }]),
+      ]);
+      schedLogs = Array.isArray(res[0]) ? (res[0] as unknown[]) : [];
+      p2Logs = Array.isArray(res[1]) ? (res[1] as unknown[]) : [];
+    } catch {
+      // RPC may cap fromBlock range or be temporarily down — return -1 so the UI shows "—"
+      schedLogs = [];
+      p2Logs = [];
+    }
 
     const blockHex = latestHex;
     const wakeupAttempts = Array.isArray(schedLogs) ? schedLogs.length : 0;

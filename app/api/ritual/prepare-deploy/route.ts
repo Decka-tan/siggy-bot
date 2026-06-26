@@ -107,6 +107,7 @@ function buildCalldata({
   model,
   frequency,
   schedulerGas,
+  cliType,
 }: {
   harness: string;
   prompt: string;
@@ -117,6 +118,7 @@ function buildCalldata({
   model: string;
   frequency: number;
   schedulerGas: number;
+  cliType: number;
 }) {
   const params = [
     executor,
@@ -130,7 +132,7 @@ function buildCalldata({
     3000000,
     1000000000,
     100000000,
-    5,
+    cliType,
     prompt,
     encryptedSecrets,
     ["hf", `${hfRepoId}/sessions/session-001.jsonl`, "HF_TOKEN"],
@@ -224,31 +226,39 @@ export async function POST(request: Request) {
       );
     }
 
-    // Re-fetch executor from registry to verify it still matches client-side encryption target.
-    // If executor rotated between get-executor and prepare-deploy, abort so user re-encrypts.
-    const live = await getExecutor();
-    if (live.executor.toLowerCase() !== executor.toLowerCase()) {
-      throw new Error(
-        `Executor rotated since you opened the page (${executor.slice(0, 10)} → ${live.executor.slice(0, 10)}). Re-prepare to encrypt for the new executor.`,
-      );
+    // Verify the executor the client chose is still in the registry's active set.
+    // If it dropped out (deregistered) between encrypt + send, abort so user re-encrypts.
+    const data = registryInterface.encodeFunctionData("getServicesByCapability", [0, true]);
+    const result = (await rpc("eth_call", [{ to: REGISTRY, data }, "latest"])) as string;
+    const [services] = registryInterface.decodeFunctionResult("getServicesByCapability", result);
+    const stillActive = (Array.isArray(services) ? services : []).some((s: any) => {
+      const node = s.node || s[0];
+      const addr = String(node.b || node[1]);
+      return addr.toLowerCase() === executor.toLowerCase();
+    });
+    if (!stillActive) {
+      throw new Error(`Executor ${executor.slice(0, 10)}… is no longer active. Re-prepare to pick a fresh executor.`);
     }
 
     // Parse + clamp schedule controls (defaults match community-proven values).
     const numCallsRaw = Number.isFinite(body.numCalls) ? Number(body.numCalls) : 5;
     const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 2000;
     const schedulerGasRaw = Number.isFinite(body.schedulerGas) ? Number(body.schedulerGas) : 500000;
+    const cliTypeRaw = Number.isFinite(body.cliType) ? Number(body.cliType) : 5;
     if (numCallsRaw < 1 || numCallsRaw > 100) throw new Error("numCalls must be between 1 and 100.");
     if (frequencyRaw < 100 || frequencyRaw > 10000) throw new Error("frequency must be between 100 and 10000 blocks.");
     if (schedulerGasRaw < 200000 || schedulerGasRaw > 5000000) throw new Error("schedulerGas must be between 200,000 and 5,000,000.");
     if (frequencyRaw * numCallsRaw > 10000) throw new Error("frequency × numCalls must be ≤ 10,000 (Scheduler MAX_LIFESPAN).");
+    if (![0, 2, 5].includes(cliTypeRaw)) throw new Error("cliType must be 0 (zeroclaw), 2 (hermes), or 5 (crush).");
     const numCalls = numCallsRaw;
     const frequency = frequencyRaw;
     const schedulerGas = schedulerGasRaw;
+    const cliType = cliTypeRaw;
     const salt = keccak256(toUtf8Bytes(saltLabel));
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
     const deployData = factoryInterface.encodeFunctionData("deployHarness", [salt]);
-    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas });
+    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas, cliType });
     const health = await getExecutorHealth();
     const fundingEther = (Number(fundingWei) / 1e18).toFixed(2);
     const schedule = {
