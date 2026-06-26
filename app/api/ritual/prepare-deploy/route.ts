@@ -105,6 +105,8 @@ function buildCalldata({
   executor,
   numCalls,
   model,
+  frequency,
+  schedulerGas,
 }: {
   harness: string;
   prompt: string;
@@ -113,6 +115,8 @@ function buildCalldata({
   executor: string;
   numCalls: number;
   model: string;
+  frequency: number;
+  schedulerGas: number;
 }) {
   const params = [
     executor,
@@ -141,7 +145,7 @@ function buildCalldata({
   ];
   // schedulerGas 500k (not 1.8M) so each call only burns ~0.002 RIT from escrow,
   // and frequency 2000 (~11.7 min) so 0.1 RIT lasts ~50 wakeUps ≈ ~10h base + rolling windows.
-  const schedule = [500000, 2000, 500, 20000000000, 1000000000, 0];
+  const schedule = [schedulerGas, frequency, 500, 20000000000, 1000000000, 0];
   const rolling = [numCalls, 5000, 1];
   const lockDuration = 100000000;
   const calldata = configureInterface.encodeFunctionData("configureFundAndStart", [params, schedule, rolling, lockDuration]);
@@ -229,23 +233,30 @@ export async function POST(request: Request) {
       );
     }
 
-    // windowNumCalls 5 + frequency 2000 = lifespan 10,000 blocks (Scheduler MAX_LIFESPAN).
-    // Rolling window auto-schedules next window at 50% threshold so the agent keeps looping
-    // as long as escrow can pay scheduler fees — proven by frianowzki/ritual-sovereign-agent-guide.
-    const numCalls = 5;
+    // Parse + clamp schedule controls (defaults match community-proven values).
+    const numCallsRaw = Number.isFinite(body.numCalls) ? Number(body.numCalls) : 5;
+    const frequencyRaw = Number.isFinite(body.frequency) ? Number(body.frequency) : 2000;
+    const schedulerGasRaw = Number.isFinite(body.schedulerGas) ? Number(body.schedulerGas) : 500000;
+    if (numCallsRaw < 1 || numCallsRaw > 100) throw new Error("numCalls must be between 1 and 100.");
+    if (frequencyRaw < 100 || frequencyRaw > 10000) throw new Error("frequency must be between 100 and 10000 blocks.");
+    if (schedulerGasRaw < 200000 || schedulerGasRaw > 5000000) throw new Error("schedulerGas must be between 200,000 and 5,000,000.");
+    if (frequencyRaw * numCallsRaw > 10000) throw new Error("frequency × numCalls must be ≤ 10,000 (Scheduler MAX_LIFESPAN).");
+    const numCalls = numCallsRaw;
+    const frequency = frequencyRaw;
+    const schedulerGas = schedulerGasRaw;
     const salt = keccak256(toUtf8Bytes(saltLabel));
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
     const deployData = factoryInterface.encodeFunctionData("deployHarness", [salt]);
-    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model });
+    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model, frequency, schedulerGas });
     const health = await getExecutorHealth();
     const fundingEther = (Number(fundingWei) / 1e18).toFixed(2);
     const schedule = {
       value: fundingEther,
       valueWei: fundingWei.toString(),
       numCalls,
-      frequency: 2000,
-      schedulerGas: 500000,
+      frequency,
+      schedulerGas,
       schedulerTtl: 500,
       maxFeePerGas: "20000000000",
       maxPriorityFeePerGas: "1000000000",

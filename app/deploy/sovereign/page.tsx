@@ -171,6 +171,10 @@ export default function DeployPage() {
   const [showHfHelp, setShowHfHelp] = useState(false);
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [advFrequency, setAdvFrequency] = useState("2000");
+  const [advNumCalls, setAdvNumCalls] = useState("5");
+  const [advSchedulerGas, setAdvSchedulerGas] = useState("500000");
   const [health, setHealth] = useState<Health | null>(null);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
   const [verify, setVerify] = useState<Verify | null>(null);
@@ -186,6 +190,21 @@ export default function DeployPage() {
   const requiredRit = parseFloat(fundingRit || "0") + 0.06;
   const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
   const providerCfg = PROVIDERS[provider];
+
+  const freqNum = parseInt(advFrequency || "0", 10);
+  const numCallsNum = parseInt(advNumCalls || "0", 10);
+  const schedGasNum = parseInt(advSchedulerGas || "0", 10);
+  const advLifespan = freqNum * numCallsNum;
+  const advValid =
+    freqNum >= 100 &&
+    freqNum <= 10000 &&
+    numCallsNum >= 1 &&
+    numCallsNum <= 100 &&
+    schedGasNum >= 200000 &&
+    schedGasNum <= 5000000 &&
+    advLifespan > 0 &&
+    advLifespan <= 10000;
+
   const canPrepare =
     connected &&
     chainOk &&
@@ -195,7 +214,8 @@ export default function DeployPage() {
     /^[\w.-]+\/[\w.-]+$/.test(hfRepoId.trim()) &&
     hfToken.trim().startsWith("hf_") &&
     apiKey.trim().startsWith(providerCfg.keyPrefix) &&
-    model.trim().length > 0;
+    model.trim().length > 0 &&
+    advValid;
   const deployDone = Boolean(deployHash) || prepared?.alreadyDeployed || verify?.deployed;
   const startDone = Boolean(startHash);
   const bytecodeGateOk = Boolean(verify?.templateMatch);
@@ -386,6 +406,9 @@ export default function DeployPage() {
           fundingWei,
           model,
           provider,
+          frequency: freqNum,
+          numCalls: numCallsNum,
+          schedulerGas: schedGasNum,
         }),
       });
       const data = await res.json();
@@ -829,6 +852,62 @@ export default function DeployPage() {
                 </p>
               )}
             </Field>
+            <details className="border border-border bg-bg p-4" onToggle={(e) => setShowAdvanced((e.target as HTMLDetailsElement).open)}>
+              <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-wider text-accent">
+                Advanced: schedule + callback gas {showAdvanced ? "(open)" : "(safe defaults)"}
+              </summary>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                <Field label="Frequency (blocks)">
+                  <input
+                    type="number"
+                    value={advFrequency}
+                    onChange={(e) => setAdvFrequency(e.target.value)}
+                    min={100}
+                    max={10000}
+                    step={100}
+                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  />
+                  <p className="mt-1 text-[10px] text-text-secondary">100-10000. ~350ms per block.</p>
+                </Field>
+                <Field label="Window num calls">
+                  <input
+                    type="number"
+                    value={advNumCalls}
+                    onChange={(e) => setAdvNumCalls(e.target.value)}
+                    min={1}
+                    max={100}
+                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  />
+                  <p className="mt-1 text-[10px] text-text-secondary">1-100. Wakeups per rolling window.</p>
+                </Field>
+                <Field label="Scheduler gas">
+                  <input
+                    type="number"
+                    value={advSchedulerGas}
+                    onChange={(e) => setAdvSchedulerGas(e.target.value)}
+                    min={200000}
+                    max={5000000}
+                    step={50000}
+                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                  />
+                  <p className="mt-1 text-[10px] text-text-secondary">200k-5M. Lower = cheaper/wakeup.</p>
+                </Field>
+              </div>
+              <div className="mt-3 grid gap-1 text-[11px] text-text-secondary">
+                <p>
+                  Lifespan per window:{" "}
+                  <span className={advValid ? "font-mono text-text-primary" : "font-mono text-amber-300"}>
+                    {advLifespan.toLocaleString()} blocks ({(advLifespan * 0.35 / 60).toFixed(1)} min)
+                  </span>
+                  {!advValid && " — invalid: frequency × numCalls must be ≤ 10,000"}
+                </p>
+                <p>
+                  Estimated cost per wakeup:{" "}
+                  <span className="font-mono text-text-primary">~{((schedGasNum * 1.2e-9 + 0.0005)).toFixed(4)} RIT</span>
+                </p>
+              </div>
+            </details>
+
             <button
               onClick={prepare}
               disabled={!canPrepare || busy === "prepare"}
