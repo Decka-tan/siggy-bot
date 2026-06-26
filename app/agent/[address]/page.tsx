@@ -557,7 +557,7 @@ function AgentPage() {
           />
         </div>
 
-        <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+        <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
             <Activity className="h-4 w-4" /> Schedule activity
           </h2>
@@ -598,7 +598,7 @@ function AgentPage() {
           </p>
         </section>
 
-        <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+        <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
             <ShieldCheck className="h-4 w-4" /> Bytecode integrity
           </h2>
@@ -610,7 +610,7 @@ function AgentPage() {
           </div>
         </section>
 
-        <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+        <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
           <h2 className="mb-4 inline-flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-text-secondary">
             <Coins className="h-4 w-4" /> Top up escrow
           </h2>
@@ -627,7 +627,7 @@ function AgentPage() {
                   key={opt}
                   onClick={() => setTopupAmount(opt)}
                   className={`border px-3 py-3 font-mono text-sm uppercase tracking-wider ${
-                    topupAmount === opt ? "border-accent bg-accent/10 text-accent" : "border-border text-text-secondary hover:border-accent/60"
+                    topupAmount === opt ? "border-accent bg-accent/10 text-accent rounded-lg" : "border-white/10 text-text-secondary hover:border-accent/40 rounded-lg"
                   }`}
                 >
                   {opt} RIT
@@ -674,10 +674,10 @@ function AgentPage() {
           {connected && (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               <span className="font-mono text-text-secondary">Connected as <span className="text-text-primary">{short(account)}</span></span>
-              <button onClick={changeWallet} className="border border-border px-3 py-1.5 font-mono uppercase tracking-wider text-accent hover:border-accent">
+              <button onClick={changeWallet} className="border border-white/10 px-3 py-1.5 font-mono uppercase tracking-wider text-accent hover:border-accent/40 rounded-lg">
                 Change
               </button>
-              <button onClick={disconnect} className="border border-border px-3 py-1.5 font-mono uppercase tracking-wider text-text-secondary hover:border-red-400/60 hover:text-red-300">
+              <button onClick={disconnect} className="border border-white/10 px-3 py-1.5 font-mono uppercase tracking-wider text-text-secondary hover:border-red-400/60 hover:text-red-300 rounded-lg">
                 Disconnect
               </button>
             </div>
@@ -711,7 +711,7 @@ function AgentPage() {
 function StatusCard({ title, value, sub, tone }: { title: string; value: string; sub?: string; tone: "good" | "warn" | "bad" }) {
   const colour = tone === "good" ? "text-emerald-300" : tone === "warn" ? "text-amber-300" : "text-red-300";
   return (
-    <div className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+    <div className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
       <p className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">{title}</p>
       <p className={`mt-2 font-display text-3xl ${colour}`}>{value}</p>
       {sub && <p className="mt-1 text-xs text-text-secondary">{sub}</p>}
@@ -721,7 +721,7 @@ function StatusCard({ title, value, sub, tone }: { title: string; value: string;
 
 function Check({ label, ok, detail }: { label: string; ok: boolean; detail: string }) {
   return (
-    <div className="border border-border bg-bg/60 backdrop-blur-md p-4 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+    <div className="border border-white/5 bg-bg/50 backdrop-blur-md rounded-xl p-4 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
       <div className="flex items-center gap-2">
         {ok ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <AlertTriangle className="h-4 w-4 text-amber-300" />}
         <span className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</span>

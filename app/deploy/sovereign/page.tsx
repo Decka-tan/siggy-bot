@@ -1596,7 +1596,7 @@ function Panel({
   icon,
   children,
   subtitle,
-  className = "",
+  className,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -1605,7 +1605,7 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section className={`border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)] ${className}`}>
+    <section className={`border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)] ${className}`}>
       <div className="mb-2 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
         <span className="text-accent">{icon}</span>
         {title}
@@ -1636,7 +1636,7 @@ function Pill({ ok, label }: { ok: boolean; label: string }) {
 
 function Preview({ label, value, onCopy, copied }: { label: string; value: string; onCopy?: () => void; copied?: boolean }) {
   return (
-    <div className="border border-border bg-bg p-4">
+    <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
       <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</p>
       <div className="flex min-w-0 items-center justify-between gap-3">
         <p className="min-w-0 truncate font-mono text-sm text-text-primary">{value}</p>
@@ -1652,7 +1652,7 @@ function Preview({ label, value, onCopy, copied }: { label: string; value: strin
 
 function Status({ label, ok, value }: { label: string; ok: boolean; value: string }) {
   return (
-    <div className="border border-border bg-bg p-4">
+    <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
       <div className={ok ? "text-emerald-300" : "text-amber-300"}>
         {ok ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
       </div>
