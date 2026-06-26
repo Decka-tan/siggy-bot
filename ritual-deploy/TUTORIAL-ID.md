@@ -265,8 +265,8 @@ params = (
     ('hf', f'{HF_REPO}/prompts/default-system.md', ''),
     'gpt-4o-mini', [], 50, 8192, '',
 )
-schedule = (1_800_000, 180, 500, 20_000_000_000, 1_000_000_000, 0)
-rolling  = (30, 5000, 1)
+schedule = (500_000, 2000, 500, 20_000_000_000, 1_000_000_000, 0)
+rolling  = (5, 5000, 1)  # windowNumCalls=5, threshold=50%, retry=1
 LOCK_DURATION = 100_000_000
 
 PARAMS_T = "(address,uint256,bytes,uint64,uint64,string,address,bytes4,uint256,uint256,uint256,uint16,string,bytes,(string,string,string),(string,string,string),(string,string,string)[],(string,string,string),string,string[],uint16,uint32,string)"

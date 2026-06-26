@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { encrypt, ECIES_CONFIG } from "eciesjs";
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle2,
   Copy,
   Database,
@@ -568,6 +569,15 @@ export default function DeployPage() {
                   >
                     Explorer
                     <ExternalLink className="h-4 w-4" />
+                  </a>
+                )}
+                {prepared?.harness && (
+                  <a
+                    href={`/deploy/topup?address=${prepared.harness}`}
+                    className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                  >
+                    Top up escrow
+                    <ArrowRight className="h-4 w-4" />
                   </a>
                 )}
               </div>

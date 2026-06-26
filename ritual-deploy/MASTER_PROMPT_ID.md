@@ -131,16 +131,16 @@ SovereignAgentParams:
   rpcUrls:                     ""
 
 SovereignScheduleConfig:
-  schedulerGas:                1_800_000
-  frequency:                   180          (block antar execution)
+  schedulerGas:                500_000      (budget rendah = ~0.002 RIT per wakeup)
+  frequency:                   2000         (~11.7 menit antar execution)
   schedulerTtl:                500
   maxFeePerGas:                20_000_000_000  (20 gwei)
   maxPriorityFeePerGas:        1_000_000_000   (1 gwei)
   value:                       0
 
 SovereignRollingConfig:
-  windowNumCalls:              30           (harus: frequency × numCalls ≤ 10,000)
-  rolloverThresholdBps:        5000
+  windowNumCalls:              5            (frequency × numCalls = 10,000 = MAX_LIFESPAN)
+  rolloverThresholdBps:        5000         (50% — schedule successor window lebih awal)
   rolloverRetryEveryCalls:     1
 
 lockDuration:                  100_000_000
