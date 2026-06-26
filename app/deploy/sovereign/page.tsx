@@ -134,6 +134,7 @@ const PROVIDERS: Record<ProviderKey, ProviderConfig> = {
     modelOptions: [
       "google/gemini-2.5-flash:free",
       "meta-llama/llama-3.1-8b-instruct:free",
+      "openrouter/free",
       "google/gemini-2.5-flash",
       "openai/gpt-4o-mini",
     ],
