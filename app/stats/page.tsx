@@ -369,13 +369,13 @@ function GrowthChart({ pts }: { pts: GrowthPt[] }) {
     >
       <defs>
         <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0" />
+          <stop offset="0%" stopColor="#FFD700" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#FFD700" stopOpacity="0" />
         </linearGradient>
         <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="var(--color-accent)" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="#FFD700" stopOpacity="0.6" />
           <stop offset="50%" stopColor="#fff" stopOpacity="1" />
-          <stop offset="100%" stopColor="var(--color-accent)" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#FFD700" stopOpacity="0.8" />
         </linearGradient>
       </defs>
       {Array.from({ length: grid + 1 }).map((_, i) => {
@@ -402,8 +402,8 @@ function GrowthChart({ pts }: { pts: GrowthPt[] }) {
       {/* Interactive Tooltip / Crosshair */}
       {hoverIndex !== null && (
         <g>
-          <line x1={x(hoverIndex)} y1={padT} x2={x(hoverIndex)} y2={H - padB} stroke="var(--color-accent)" strokeOpacity="0.25" strokeWidth="1.5" strokeDasharray="2,2" />
-          <circle cx={x(hoverIndex)} cy={y(pts[hoverIndex].cumulative)} r="5.5" fill="var(--color-accent)" stroke="#030303" strokeWidth="2.5" />
+          <line x1={x(hoverIndex)} y1={padT} x2={x(hoverIndex)} y2={H - padB} stroke="#FFD700" strokeOpacity="0.25" strokeWidth="1.5" strokeDasharray="2,2" />
+          <circle cx={x(hoverIndex)} cy={y(pts[hoverIndex].cumulative)} r="5.5" fill="#FFD700" stroke="#030303" strokeWidth="2.5" />
           <g transform={`translate(${x(hoverIndex) > W / 2 ? x(hoverIndex) - 150 : x(hoverIndex) + 14}, ${y(pts[hoverIndex].cumulative) - 30})`}>
             <rect width="136" height="42" rx="6" fill="#0b0b0b" stroke="rgba(255,255,255,0.08)" strokeWidth="1.5" filter="drop-shadow(0 4px 12px rgba(0,0,0,0.5))" />
             <text x="12" y="17" fontSize="8" fill="#555" fontFamily="monospace" fontWeight="bold">DATE: {pts[hoverIndex].month}</text>
@@ -754,7 +754,7 @@ export default function CommunityPage() {
                     <motion.div
                       layoutId="active-tab-pill"
                       className="absolute inset-0 rounded-full"
-                      style={{ backgroundColor: 'var(--color-accent)' }}
+                      style={{ backgroundColor: '#FFD700' }}
                       transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                     />
                   )}
@@ -1159,7 +1159,7 @@ export default function CommunityPage() {
                           onClick={() => setDistMode(k)}
                           className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
                           style={{
-                            backgroundColor: distMode === k ? 'var(--color-accent)' : 'transparent',
+                            backgroundColor: distMode === k ? '#FFD700' : 'transparent',
                             color: distMode === k ? '#000' : '#555',
                           }}
                         >
@@ -1237,7 +1237,7 @@ export default function CommunityPage() {
                           onClick={() => setDistMode(k)}
                           className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
                           style={{
-                            backgroundColor: distMode === k ? 'var(--color-accent)' : 'transparent',
+                            backgroundColor: distMode === k ? '#FFD700' : 'transparent',
                             color: distMode === k ? '#000' : '#555',
                           }}
                         >
@@ -1315,7 +1315,7 @@ export default function CommunityPage() {
                                 onClick={() => setRegionMode(k)}
                                 className="px-4 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
                                 style={{ 
-                                  backgroundColor: regionMode === k ? 'var(--color-accent)' : 'transparent', 
+                                  backgroundColor: regionMode === k ? '#FFD700' : 'transparent', 
                                   color: regionMode === k ? '#000' : '#555' 
                                 }}
                               >
@@ -1391,7 +1391,7 @@ export default function CommunityPage() {
                                         onClick={() => setRrSortMode(mode)}
                                         className="px-3 py-1 rounded text-[9px] font-mono font-bold uppercase tracking-wider transition-colors duration-200"
                                         style={{
-                                          backgroundColor: rrSortMode === mode ? 'var(--color-accent)' : 'transparent',
+                                          backgroundColor: rrSortMode === mode ? '#FFD700' : 'transparent',
                                           color: rrSortMode === mode ? '#000' : '#555',
                                         }}
                                       >
@@ -1409,7 +1409,7 @@ export default function CommunityPage() {
                                       onClick={() => setRegionRoleMode(k)}
                                       className="px-3 py-1 rounded text-[9px] font-mono font-bold uppercase tracking-wider transition-colors duration-200"
                                       style={{
-                                        backgroundColor: regionRoleMode === k ? 'var(--color-accent)' : 'transparent',
+                                        backgroundColor: regionRoleMode === k ? '#FFD700' : 'transparent',
                                         color: regionRoleMode === k ? '#000' : '#555',
                                       }}
                                     >
@@ -1689,7 +1689,7 @@ export default function CommunityPage() {
                                 key={k}
                                 onClick={() => setLbWindow(k)}
                                 className="px-3.5 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
-                                style={{ backgroundColor: lbWindow === k ? 'var(--color-accent)' : 'transparent', color: lbWindow === k ? '#000' : '#555' }}
+                                style={{ backgroundColor: lbWindow === k ? '#FFD700' : 'transparent', color: lbWindow === k ? '#000' : '#555' }}
                               >
                                 {label}
                               </button>
@@ -1702,7 +1702,7 @@ export default function CommunityPage() {
                                 key={k}
                                 onClick={() => setLbMode(k)}
                                 className="px-3.5 py-1.5 rounded-full text-[10px] font-mono uppercase font-bold tracking-wider transition-colors duration-300"
-                                style={{ backgroundColor: lbMode === k ? 'var(--color-accent)' : 'transparent', color: lbMode === k ? '#000' : '#555' }}
+                                style={{ backgroundColor: lbMode === k ? '#FFD700' : 'transparent', color: lbMode === k ? '#000' : '#555' }}
                               >
                                 {label}
                               </button>
