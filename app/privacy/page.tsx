@@ -19,7 +19,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="space-y-8 text-text-secondary">
-          <section className="bg-surface border border-border rounded-lg p-8">
+          <section className="bg-surface/40 backdrop-blur-md rounded-xl border border-white/5 rounded-lg p-8">
             <p className="leading-relaxed">
               At Siggy Bot, we take your privacy seriously. This Privacy Policy explains how we collect,
               use, and protect your information when you use our multi-dimensional cat chat service.
@@ -226,7 +226,7 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          <section className="bg-surface border border-border rounded-lg p-8">
+          <section className="bg-surface/40 backdrop-blur-md rounded-xl border border-white/5 rounded-lg p-8">
             <a
               href="/"
               className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-colors"

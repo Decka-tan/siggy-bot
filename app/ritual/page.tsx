@@ -96,10 +96,10 @@ export default function RitualDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg pt-28 text-text-primary">
+    <div className="min-h-screen bg-bg/50 backdrop-blur-sm rounded-lg pt-28 text-text-primary">
       <section className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 pb-16 sm:px-6 lg:px-8">
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="flex flex-col justify-between gap-8 border-b border-border pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
+          <div className="flex flex-col justify-between gap-8 border-b border-white/5 pb-8 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-8">
             <div>
               <div className="mb-5 inline-flex items-center gap-2 border border-accent/40 bg-accent/10 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent">
                 <ShieldCheck className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default function RitualDashboardPage() {
                 </a>
                 <a
                   href="#monitor"
-                  className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                  className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent transition-all"
                   onClick={(e) => {
                     e.preventDefault();
                     const addr = window.prompt("Enter your agent address (0x...)") || "";
@@ -158,7 +158,7 @@ export default function RitualDashboardPage() {
             </div>
           </div>
 
-          <div className="relative min-h-[320px] overflow-hidden border border-border bg-surface">
+          <div className="relative min-h-[320px] overflow-hidden border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl">
             <Image
               src="/siggy-transparent.png"
               alt="Siggy"
@@ -211,7 +211,7 @@ export default function RitualDashboardPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <section className="border border-border bg-surface p-5">
+          <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5">
             <div className="mb-5 flex items-center justify-between gap-4">
               <div>
                 <h2 className="font-mono text-sm uppercase tracking-wider text-text-primary">Proof record</h2>
@@ -219,7 +219,7 @@ export default function RitualDashboardPage() {
               </div>
               <button
                 onClick={loadStatus}
-                className="inline-flex items-center gap-2 border border-border px-3 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent"
+                className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-3 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent transition-all"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -236,14 +236,14 @@ export default function RitualDashboardPage() {
             </div>
           </section>
 
-          <section className="border border-border bg-surface p-5">
+          <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5">
             <div className="mb-5">
               <h2 className="font-mono text-sm uppercase tracking-wider text-text-primary">Operator commands</h2>
               <p className="mt-1 text-sm text-text-secondary">Read-only checks and the saved future deploy flow.</p>
             </div>
             <div className="space-y-3">
               {commands.map((command) => (
-                <div key={command.label} className="border border-border bg-bg p-4">
+                <div key={command.label} className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-wider text-accent">
                       <Terminal className="h-4 w-4" />
@@ -251,7 +251,7 @@ export default function RitualDashboardPage() {
                     </div>
                     <button
                       onClick={() => copyText(command.label, command.value)}
-                      className="inline-flex items-center gap-2 border border-border px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent"
+                      className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-text-secondary hover:text-accent transition-all"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       {copied === command.label ? "Copied" : "Copy"}
@@ -283,7 +283,7 @@ function Metric({
 }) {
   const toneClass = tone === "good" ? "text-emerald-300" : tone === "warn" ? "text-amber-300" : "text-accent";
   return (
-    <div className="border border-border bg-surface p-4">
+    <div className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-4">
       <div className={`mb-3 ${toneClass}`}>{icon}</div>
       <p className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</p>
       <p className="mt-1 truncate text-lg font-semibold text-text-primary">{value}</p>
@@ -293,8 +293,8 @@ function Metric({
 
 function StatusTile({ icon, label, value }: { icon: React.ReactElement; label: string; value: string }) {
   return (
-    <div className="border border-border bg-surface p-5">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center border border-border text-accent">
+    <div className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5">
+      <div className="mb-4 flex h-10 w-10 items-center justify-center border border-white/5 text-accent">
         {icon}
       </div>
       <p className="font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</p>
@@ -305,7 +305,7 @@ function StatusTile({ icon, label, value }: { icon: React.ReactElement; label: s
 
 function ProofLine({ label, value, link }: { label: string; value: string; link?: string }) {
   return (
-    <div className="grid gap-2 border-b border-border pb-3 last:border-b-0 last:pb-0 sm:grid-cols-[130px_1fr]">
+    <div className="grid gap-2 border-b border-white/5 pb-3 last:border-b-0 last:pb-0 sm:grid-cols-[130px_1fr]">
       <p className="font-mono text-xs uppercase tracking-wider text-text-secondary">{label}</p>
       {link && value ? (
         <a

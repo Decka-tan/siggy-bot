@@ -421,7 +421,7 @@ function AgentPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={verifyAgent}
-              className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+              className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent transition-all"
             >
               <RefreshCw className={`h-4 w-4 ${busy === "verify" ? "animate-spin" : ""}`} />
               Refresh
@@ -430,7 +430,7 @@ function AgentPage() {
               href={`https://explorer.ritualfoundation.org/address/${agentAddress}`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+              className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent transition-all"
             >
               Explorer
               <ExternalLink className="h-4 w-4" />
@@ -510,7 +510,7 @@ function AgentPage() {
                   {savedSalt && (
                     <Link
                       href={`/deploy/sovereign?salt=${encodeURIComponent(savedSalt)}`}
-                      className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                      className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent transition-all"
                     >
                       Open deployer
                       <ArrowRight className="h-4 w-4" />

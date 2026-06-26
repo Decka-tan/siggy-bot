@@ -1018,7 +1018,7 @@ function DeployPage() {
             subtitle="Connect a Ritual Testnet wallet. Use a burner with at least 0.26 RIT."
           >
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-              <div className="border border-border bg-bg p-4 font-mono text-sm text-text-secondary">
+              <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4 font-mono text-sm text-text-secondary">
                 {account ? account : "No wallet connected"}
               </div>
               {!account ? (
@@ -1027,10 +1027,10 @@ function DeployPage() {
                 </button>
               ) : (
                 <div className="flex gap-2">
-                  <button onClick={changeWallet} className="border border-border px-4 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent">
+                  <button onClick={changeWallet} className="border border-white/10 hover:border-accent/40 rounded-lg px-4 py-3 font-mono text-xs uppercase tracking-wider text-accent transition-all">
                     Change
                   </button>
-                  <button onClick={disconnect} className="border border-border px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-red-400/60 hover:text-red-300">
+                  <button onClick={disconnect} className="border border-white/10 hover:border-red-500/40 rounded-lg px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-red-300 transition-all">
                     Disconnect
                   </button>
                 </div>
@@ -1043,7 +1043,7 @@ function DeployPage() {
                 <Pill ok={balanceOk} label={`Balance ${walletBalanceRit} RIT`} />
               )}
               {!chainOk && connected && (
-                <button onClick={switchChain} className="border border-border px-3 py-1.5 font-mono uppercase tracking-wider text-accent hover:border-accent">
+                <button onClick={switchChain} className="border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1.5 font-mono uppercase tracking-wider text-accent transition-all">
                   Switch chain
                 </button>
               )}
@@ -1051,7 +1051,7 @@ function DeployPage() {
           </Panel>
 
           {prepared && collapseForm ? (
-            <section className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+            <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
                   <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
@@ -1059,7 +1059,7 @@ function DeployPage() {
                 </div>
                 <button
                   onClick={() => setCollapseForm(false)}
-                  className="border border-border px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-accent hover:border-accent"
+                  className="border border-white/10 hover:border-accent/40 rounded-lg px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-accent transition-all"
                 >
                   Edit
                 </button>
@@ -1085,7 +1085,7 @@ function DeployPage() {
                   value={saltLabel}
                   onChange={(e) => setSaltLabel(e.target.value)}
                   placeholder="my-agent-1"
-                  className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+                  className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent transition-all"
                 />
               </Field>
               <Field label="HuggingFace / HF Repo ID (your-username/dataset-name)">
@@ -1093,7 +1093,7 @@ function DeployPage() {
                   value={hfRepoId}
                   onChange={(e) => setHfRepoId(e.target.value.trim().toLowerCase())}
                   placeholder="your-username/your-dataset"
-                  className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+                  className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent transition-all"
                 />
               </Field>
             </div>
@@ -1104,7 +1104,7 @@ function DeployPage() {
                 onChange={(e) => setHfToken(e.target.value)}
                 placeholder="hf_..."
                 autoComplete="off"
-                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+                className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent transition-all"
               />
               <button
                 type="button"
@@ -1114,7 +1114,7 @@ function DeployPage() {
                 {showHfHelp ? "Hide" : "Show"} HuggingFace setup steps
               </button>
               {showHfHelp && (
-                <div className="mt-2 space-y-2 border border-border bg-bg p-4 text-xs leading-5 text-text-secondary">
+                <div className="mt-2 space-y-2 border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4 text-xs leading-5 text-text-secondary">
                   <p className="font-semibold text-text-primary">How to get HF_TOKEN + HF_REPO_ID (~2 min):</p>
                   <ol className="ml-4 list-decimal space-y-1">
                     <li>
@@ -1155,7 +1155,7 @@ function DeployPage() {
                   setModel(PROVIDERS[next].defaultModel);
                   setApiKey("");
                 }}
-                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+                className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent transition-all"
               >
                 {(Object.keys(PROVIDERS) as ProviderKey[]).map((p) => (
                   <option key={p} value={p}>
@@ -1171,7 +1171,7 @@ function DeployPage() {
                 {showProviderHelp ? "Hide" : "Show"} how to get a {providerCfg.label.split(" ")[0]} API key
               </button>
               {showProviderHelp && (
-                <div className="mt-2 space-y-2 border border-border bg-bg p-4 text-xs leading-5 text-text-secondary">
+                <div className="mt-2 space-y-2 border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4 text-xs leading-5 text-text-secondary">
                   <p className="font-semibold text-text-primary">{providerCfg.label} setup</p>
                   <p>{providerCfg.notes}</p>
                   <ol className="ml-4 list-decimal space-y-1">
@@ -1205,7 +1205,7 @@ function DeployPage() {
                 onChange={(e) => setApiKey(e.target.value)}
                 placeholder={`${providerCfg.keyPrefix}...`}
                 autoComplete="off"
-                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+                className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent transition-all"
               />
             </Field>
 
@@ -1213,7 +1213,7 @@ function DeployPage() {
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+                className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent transition-all"
               >
                 {providerCfg.modelOptions.map((m) => (
                   <option key={m} value={m}>
@@ -1223,7 +1223,7 @@ function DeployPage() {
               </select>
             </Field>
 
-            <div className="border border-border bg-bg p-4">
+            <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
@@ -1255,7 +1255,7 @@ function DeployPage() {
                   value={chosenExecutor}
                   onChange={(e) => setChosenExecutor(e.target.value)}
                   disabled={executors.length === 0 || executorBusy}
-                  className="min-w-0 flex-1 border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent disabled:opacity-50"
+                  className="min-w-0 flex-1 border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 font-mono text-sm outline-none focus:border-accent disabled:opacity-50 transition-all"
                 >
                   {executors.length === 0 && <option value="">{executorBusy ? "Refreshing executors..." : "No executors loaded"}</option>}
                   {executors.map((ex, i) => (
@@ -1270,7 +1270,7 @@ function DeployPage() {
                   type="button"
                   onClick={loadExecutors}
                   disabled={executorBusy}
-                  className="inline-flex shrink-0 items-center gap-2 border border-border px-3 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex shrink-0 items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 transition-all"
                   title="Refresh executors from Ritual registry"
                 >
                   <RefreshCw className={`h-4 w-4 ${executorBusy ? "animate-spin" : ""}`} />
@@ -1287,7 +1287,7 @@ function DeployPage() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 rows={6}
-                className="w-full resize-none border border-border bg-bg px-3 py-3 text-sm leading-6 outline-none focus:border-accent"
+                className="w-full resize-none border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-4 py-3 text-sm leading-6 outline-none focus:border-accent transition-all"
               />
             </Field>
             <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
@@ -1297,7 +1297,7 @@ function DeployPage() {
                     key={opt}
                     onClick={() => setFundingRit(opt)}
                     className={`border px-3 py-3 font-mono text-sm uppercase tracking-wider ${
-                      fundingRit === opt ? "border-accent bg-accent/10 text-accent" : "border-border text-text-secondary hover:border-accent/60"
+                      fundingRit === opt ? "border-accent bg-accent/10 text-accent rounded-lg" : "border-white/10 text-text-secondary hover:border-accent/40 rounded-lg"
                     }`}
                   >
                     {opt} RIT
@@ -1310,7 +1310,7 @@ function DeployPage() {
                 </p>
               )}
             </Field>
-            <details className="border border-border bg-bg p-4" onToggle={(e) => setShowAdvanced((e.target as HTMLDetailsElement).open)}>
+            <details className="border border-white/5 bg-bg/40 backdrop-blur-sm rounded-lg p-4" onToggle={(e) => setShowAdvanced((e.target as HTMLDetailsElement).open)}>
               <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-wider text-accent">
                 Advanced: schedule + callback gas {showAdvanced ? "(open)" : "(safe defaults)"}
               </summary>
@@ -1319,7 +1319,7 @@ function DeployPage() {
                   <select
                     value={isPresetFreq ? advFrequency : "custom"}
                     onChange={(e) => { if (e.target.value !== "custom") setAdvFrequency(e.target.value); }}
-                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                    className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   >
                     {FREQUENCY_PRESETS.map((p) => (
                       <option key={p.value} value={p.value}>
@@ -1338,7 +1338,7 @@ function DeployPage() {
                     max={300000}
                     step={100}
                     placeholder="or type custom blocks"
-                    className="mt-1 w-full border border-border bg-bg px-3 py-2 font-mono text-xs outline-none focus:border-accent text-text-secondary"
+                    className="mt-1 w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-xs outline-none focus:border-accent text-text-secondary transition-all"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">Keep Window calls at 1 for any frequency above 5,750 blocks.</p>
                 </Field>
@@ -1349,7 +1349,7 @@ function DeployPage() {
                     onChange={(e) => setAdvNumCalls(e.target.value)}
                     min={1}
                     max={100}
-                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                    className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">1-100. Wakeups per rolling window.</p>
                 </Field>
@@ -1361,7 +1361,7 @@ function DeployPage() {
                     min={200000}
                     max={5000000}
                     step={50000}
-                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                    className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">200k-5M. Lower = cheaper/wakeup.</p>
                 </Field>
@@ -1371,7 +1371,7 @@ function DeployPage() {
                   <select
                     value={advCliType}
                     onChange={(e) => setAdvCliType(e.target.value)}
-                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                    className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   >
                     <option value="5">5 — Crush (recommended)</option>
                     <option value="6">6 - ZeroClaw</option>
@@ -1386,7 +1386,7 @@ function DeployPage() {
                     min={100}
                     max={500}
                     step={50}
-                    className="w-full border border-border bg-bg px-3 py-2 font-mono text-sm outline-none focus:border-accent"
+                    className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   />
                   <p className="mt-1 text-[10px] text-text-secondary">
                     Window for system executor to accept each wakeup. Default/max 500 matches the public deploy guide.
@@ -1477,7 +1477,7 @@ function DeployPage() {
                 <button
                   onClick={sendDeploy}
                   disabled={busy === "deploy" || Boolean(deployDone)}
-                  className="inline-flex items-center justify-center gap-2 border border-accent bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:border-border disabled:bg-border disabled:text-text-secondary"
+                  className="inline-flex items-center justify-center gap-2 border border-accent bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:border-white/5 disabled:bg-white/5 disabled:text-text-secondary rounded-lg transition-all"
                 >
                   {busy === "deploy" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
                   {deployDone ? "Harness deployed" : "Deploy harness"}
@@ -1485,7 +1485,7 @@ function DeployPage() {
                 <button
                   onClick={sendStart}
                   disabled={busy === "start" || !canFund}
-                  className="inline-flex items-center justify-center gap-2 border border-border px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 transition-all"
                   title={
                     !deployDone
                       ? "Deploy harness first"
@@ -1553,7 +1553,7 @@ function DeployPage() {
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   onClick={() => verifyAgent()}
-                  className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:border-accent hover:text-accent"
+                  className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent transition-all"
                 >
                   <RefreshCw className={`h-4 w-4 ${busy === "verify" ? "animate-spin" : ""}`} />
                   Refresh verify
@@ -1563,7 +1563,7 @@ function DeployPage() {
                     href={verify.explorerUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                    className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent transition-all"
                   >
                     Explorer
                     <ExternalLink className="h-4 w-4" />
@@ -1572,7 +1572,7 @@ function DeployPage() {
                 {prepared?.harness && (
                   <a
                     href={`/agent/${prepared.harness}`}
-                    className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                    className="inline-flex items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent transition-all"
                   >
                     Open monitor
                     <ArrowRight className="h-4 w-4" />
@@ -1708,7 +1708,7 @@ function DeployedShareCard({
           <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
             <ShareLine label="Agent Name" value={agentName} />
             <ShareLine label="Deployed" value={`${amountRit} RIT`} />
-            <div className="border border-border bg-surface p-3 sm:col-span-2">
+            <div className="border border-white/5 bg-surface/50 backdrop-blur-sm rounded-lg p-4 sm:col-span-2">
               <p className="font-mono text-[10px] uppercase tracking-wider text-text-secondary">Agent address</p>
               <a
                 href={url}
@@ -1726,7 +1726,7 @@ function DeployedShareCard({
           <button
             type="button"
             onClick={copyShare}
-            className="mt-4 inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+            className="mt-4 inline-flex items-center gap-2 border border-white/10 hover:border-accent/45 px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent rounded-lg transition-all"
           >
             {copiedShare ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copiedShare ? "Copied" : "Copy share text"}
@@ -1753,7 +1753,7 @@ function DeployedShareCard({
 
 function ShareLine({ label, value }: { label: string; value: string }) {
   return (
-    <div className="border border-border bg-surface p-3">
+    <div className="border border-white/5 bg-surface/50 backdrop-blur-sm rounded-lg p-4">
       <p className="font-mono text-[10px] uppercase tracking-wider text-text-secondary">{label}</p>
       <p className="mt-1 min-w-0 truncate font-mono text-sm text-text-primary">{value}</p>
     </div>
@@ -1762,7 +1762,7 @@ function ShareLine({ label, value }: { label: string; value: string }) {
 
 function HealthPanel({ health, onRefresh }: { health: Health | null; onRefresh: () => void }) {
   return (
-    <div className="border border-border bg-surface/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
+    <div className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-mono text-xs uppercase tracking-wider text-text-secondary">Executor health</h2>
         <button onClick={onRefresh} className="text-text-secondary hover:text-accent" title="Refresh health">

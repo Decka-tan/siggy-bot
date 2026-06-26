@@ -19,7 +19,7 @@ export default function TermsPage() {
         </div>
 
         <div className="space-y-8 text-text-secondary">
-          <section className="bg-surface border border-border rounded-lg p-8">
+          <section className="bg-surface/40 backdrop-blur-md rounded-xl border border-white/5 rounded-lg p-8">
             <p className="leading-relaxed">
               Welcome to Siggy Bot ("we," "our," or "us"). By using our multi-dimensional cat chat service,
               you agree to these Terms of Service. Please read them carefully.
@@ -170,7 +170,7 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          <section className="bg-surface border border-border rounded-lg p-8">
+          <section className="bg-surface/40 backdrop-blur-md rounded-xl border border-white/5 rounded-lg p-8">
             <a
               href="/"
               className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-black font-bold rounded-lg hover:bg-accent/90 transition-colors"

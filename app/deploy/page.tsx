@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
   Check,
@@ -17,49 +18,142 @@ import {
   Timer,
   X,
   Zap,
+  Terminal,
+  ChevronRight,
+  RefreshCw,
+  HelpCircle,
 } from "lucide-react";
 import { GoldenParticles } from "@/components/ui/GoldenParticles";
 
 type Choice = "sovereign" | "persistent" | null;
 
-type Quip = { mood: "happy" | "neutral" | "shy"; text: string };
+type Quip = { text: string };
 
 const sovereignQuips: Quip[] = [
-  { mood: "happy", text: "Cheap! 0.1 RIT is enough to get listed. Friendly for first-timer." },
-  { mood: "happy", text: "Fast to deploy — connect wallet, sign 2 txs, done." },
-  { mood: "neutral", text: "Short lifespan though. After ~30-60 min the schedule ends and the agent gets de-listed." },
-  { mood: "neutral", text: "Best for: 'I just want to prove I deployed a Ritual sovereign agent' achievement." },
+  { text: "Cheap! 0.1 RIT is enough to get listed on the testnet. Very friendly for first-timers." },
+  { text: "Fast to deploy — connect your web3 wallet, sign 2 transactions, and you are done." },
+  { text: "Short lifespan by default. After 5 wakeups the schedule ends and the agent becomes dormant." },
+  { text: "Best for: 'I just want to prove I deployed a Ritual agent' or claiming testnet achievements." },
 ];
 
 const persistentQuips: Quip[] = [
-  { mood: "happy", text: "Long-lived! Built to keep an identity, memory, and revive on failure." },
-  { mood: "neutral", text: "More expensive though — official launcher wants ~2.1 RIT minimum." },
-  { mood: "neutral", text: "Setup goes through agents.ritualfoundation.org. They handle the harness for you." },
-  { mood: "shy", text: "Pick this if you want a real always-on Ritual agent service." },
+  { text: "Long-lived! Built to keep an active identity, persistent memory, and auto-revive on executor failure." },
+  { text: "More expensive — the official Ritual portal launcher expects around 2.1 RIT minimum." },
+  { text: "Setup goes through agents.ritualfoundation.org. They handle the execution harness lifecycle." },
+  { text: "Pick this if you are building a real, always-on assistant or production AI agent service." },
 ];
 
 const SIGGY_HERO = "/siggy-girl-happy.png";
-const SIGGY_SOVEREIGN = "/siggy-girl-default.png";
-const SIGGY_PERSISTENT = "/siggy-girl-shy.png";
+const SIGGY_SOVEREIGN = "/siggy-girl-happy.png";
+const SIGGY_PERSISTENT = "/siggy-girl-shock.png";
 
 export default function DeployLanding() {
-  const [choice, setChoice] = useState<Choice>(null);
+  const [choice, setChoice] = useState<Choice>("sovereign");
+  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [typewriterText, setTypewriterText] = useState("");
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([
+    "SYSTEM: Siggy Deployer initialized.",
+    "SYSTEM: Ready to list on Ritual chain.",
+  ]);
+
+  const active = choice ? (choice === "sovereign" ? sovereignQuips : persistentQuips) : sovereignQuips;
+  const activeDialogue = active[dialogueIndex]?.text || "";
+
+  // Reset dialogue index on choice swap
+  useEffect(() => {
+    setDialogueIndex(0);
+  }, [choice]);
+
+  // Typewriter effect
+  useEffect(() => {
+    let isCancelled = false;
+    let currentIdx = 0;
+    setTypewriterText("");
+
+    const type = () => {
+      if (isCancelled) return;
+      if (currentIdx <= activeDialogue.length) {
+        setTypewriterText(activeDialogue.substring(0, currentIdx));
+        currentIdx++;
+        setTimeout(type, 16);
+      }
+    };
+    type();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [choice, dialogueIndex, activeDialogue]);
+
+  // Mock Terminal log streaming
+  useEffect(() => {
+    const mockLogs = [
+      "SDK: Local secrets loaded securely.",
+      "SIGGY-CORE: Bytecode compiled successfully (10,822 bytes).",
+      "FACTORY: Predicting client address on chain 1979...",
+      "FACTORY: Predicted harness: 0x1da3...e122",
+      "SMOKE-TEST: Running HF credentials validation...",
+      "SMOKE-TEST: Credentials match, mock inference OK.",
+      "ESCROW: Expected schedule cost ~0.002 RIT per loop.",
+      "ESCROW: Escrow threshold set to 0.1 RIT.",
+      "SYSTEM: Awaiting wallet transaction signatures...",
+      "SYSTEM: Active listening mode armed.",
+    ];
+    let idx = 0;
+    const interval = setInterval(() => {
+      setTerminalLogs((prev) => {
+        const nextLogs = [...prev, mockLogs[idx]];
+        if (nextLogs.length > 5) {
+          nextLogs.shift();
+        }
+        return nextLogs;
+      });
+      idx = (idx + 1) % mockLogs.length;
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleNextDialogue = () => {
+    const quipsList = choice === "sovereign" ? sovereignQuips : persistentQuips;
+    if (dialogueIndex < quipsList.length - 1) {
+      setDialogueIndex((prev) => prev + 1);
+    } else {
+      setDialogueIndex(0);
+    }
+  };
 
   return (
     <main className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden">
-      {/* Ambient background particles */}
       <GoldenParticles mode="ambient" />
 
-      {/* Decorative background glows */}
-      <div className="absolute right-0 top-0 -z-10 h-[500px] w-[500px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
+      {/* Background radial glows */}
+      <div className="absolute right-0 top-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
       <div className="absolute left-0 bottom-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/3 blur-[150px] pointer-events-none" />
 
-      <section className="relative mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-12px) rotate(1deg); }
+        }
+        .siggy-float {
+          animation: float 4.5s ease-in-out infinite;
+        }
+        @keyframes spinSlow {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .orbit-ring {
+          animation: spinSlow 20s linear infinite;
+        }
+      `}</style>
+
+      <section className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
         {/* HERO */}
-        <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent">
-              <Rocket className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent border border-accent/20 rounded-md">
+              <Rocket className="h-4 w-4 animate-pulse" />
               Ritual Testnet Deployer
             </div>
             <h1 className="font-display text-5xl leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
@@ -73,7 +167,7 @@ export default function DeployLanding() {
             <div className="flex flex-wrap gap-3 pt-2">
               <a
                 href="#pick"
-                className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-300 transition rounded-lg"
               >
                 Pick your agent
                 <ArrowRight className="h-4 w-4" />
@@ -86,30 +180,64 @@ export default function DeployLanding() {
               </Link>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 pt-4 text-xs text-text-secondary">
-              <Pill icon={<Shield className="h-3.5 w-3.5" />} label="Secrets stay in your browser" />
+            {/* Mock Streaming Terminal Console */}
+            <div className="border border-white/5 bg-[#0a0a0a]/80 backdrop-blur rounded-xl p-4 shadow-2xl font-mono text-[11px] max-w-xl">
+              <div className="flex items-center justify-between border-b border-white/5 pb-2 mb-3">
+                <div className="flex items-center gap-2 text-text-secondary">
+                  <Terminal className="h-3.5 w-3.5 text-accent" />
+                  <span>Siggy Deploy Console v1.0.0</span>
+                </div>
+                <div className="flex gap-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-500/40" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/40" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-500/40" />
+                </div>
+              </div>
+              <div className="space-y-1.5 min-h-[90px] text-text-secondary">
+                {terminalLogs.map((log, i) => (
+                  <div key={i} className="flex gap-2">
+                    <span className="text-accent select-none">&gt;</span>
+                    <span className={log.includes("SYSTEM:") ? "text-accent" : log.includes("Error") ? "text-red-400" : "text-text-primary"}>
+                      {log}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex gap-2">
+                  <span className="text-accent select-none animate-pulse">&gt;</span>
+                  <span className="w-2 h-3.5 bg-accent/80 animate-pulse ml-0.5" />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-text-secondary">
+              <Pill icon={<Shield className="h-3.5 w-3.5" />} label="Secrets stay in browser" />
               <Pill icon={<Zap className="h-3.5 w-3.5" />} label="Verified factory pattern" />
               <Pill icon={<Coins className="h-3.5 w-3.5" />} label="From 0.1 RIT" />
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-md group">
-            <div className="absolute inset-0 -z-10 rounded-full bg-accent/5 blur-3xl opacity-75 pointer-events-none" aria-hidden />
-            <div className="relative aspect-square bg-surface/20 backdrop-blur-md rounded-2xl border border-white/5 overflow-hidden shadow-[0_0_30px_rgba(255,215,0,0.02)]">
+          {/* Floating Character Portal */}
+          <div className="relative mx-auto w-full max-w-sm lg:max-w-none flex items-center justify-center">
+            {/* Summoning portal circles */}
+            <div className="absolute w-80 h-80 rounded-full border border-accent/10 orbit-ring -z-10 pointer-events-none" />
+            <div className="absolute w-[360px] h-[360px] rounded-full border border-dashed border-accent/5 orbit-ring [animation-direction:reverse] -z-10 pointer-events-none" />
+            <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl -z-20 pointer-events-none" />
+
+            <div className="relative w-72 h-72 sm:w-80 sm:h-80 siggy-float">
               <Image
                 src={SIGGY_HERO}
-                alt="Siggy"
+                alt="Siggy ready"
                 fill
                 priority
-                className="object-contain p-6"
-                sizes="(min-width: 1024px) 400px, 80vw"
+                className="object-contain drop-shadow-[0_10px_35px_rgba(255,215,0,0.15)]"
+                sizes="320px"
               />
             </div>
           </div>
         </div>
 
         {/* PICK SECTION */}
-        <div id="pick" className="mt-24 space-y-8">
+        <div id="pick" className="mt-28 space-y-8">
           <div className="text-center">
             <p className="font-mono text-xs uppercase tracking-wider text-accent">Step 1</p>
             <h2 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Pick your agent type</h2>
@@ -139,53 +267,74 @@ export default function DeployLanding() {
             />
           </div>
 
-          {/* SIGGY TALK */}
-          {choice && (
-            <div className="grid gap-6 border border-white/5 bg-surface/30 backdrop-blur-md rounded-xl p-6 shadow-[0_0_40px_rgba(255,215,0,0.02)] md:grid-cols-[180px_1fr] md:p-8">
-              <div className="relative mx-auto h-32 w-32 md:h-44 md:w-44">
-                <Image
-                  src={choice === "sovereign" ? SIGGY_SOVEREIGN : SIGGY_PERSISTENT}
-                  alt="Siggy"
-                  fill
-                  className="object-contain"
-                  sizes="180px"
-                />
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-wider text-accent">Siggy says</p>
-                  <p className="mt-1 font-display text-2xl">
-                    {choice === "sovereign" ? "Sovereign is a job, not a service." : "Persistent is a real always-on service."}
-                  </p>
+          {/* VISUAL NOVEL DIALOGUE CONSOLE */}
+          <AnimatePresence mode="wait">
+            {choice && (
+              <motion.div
+                key={choice}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+                className="grid gap-6 border border-white/5 bg-surface/30 backdrop-blur-md rounded-2xl p-6 shadow-[0_0_40px_rgba(255,215,0,0.02)] md:grid-cols-[180px_1fr] md:p-8"
+              >
+                <div className="relative mx-auto h-36 w-36 md:h-44 md:w-44 flex items-end justify-center overflow-hidden">
+                  <motion.div
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut" }}
+                    className="relative w-full h-full"
+                  >
+                    <Image
+                      src={choice === "sovereign" ? SIGGY_SOVEREIGN : SIGGY_PERSISTENT}
+                      alt="Siggy"
+                      fill
+                      className="object-contain"
+                      sizes="180px"
+                    />
+                  </motion.div>
                 </div>
-                <ul className="space-y-2.5">
-                  {(choice === "sovereign" ? sovereignQuips : persistentQuips).map((quip, idx) => (
-                    <li key={idx} className="flex gap-3 text-sm leading-6 text-text-secondary">
-                      <span className="mt-1 inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
-                      {quip.text}
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-5 flex flex-col justify-between">
+                  <div
+                    onClick={handleNextDialogue}
+                    className="group/dialogue cursor-pointer relative bg-bg/40 border border-white/5 p-4 rounded-xl hover:border-accent/20 transition-all min-h-[90px] flex flex-col justify-between"
+                  >
+                    <div>
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-accent flex items-center gap-1.5">
+                        <Sparkles className="h-3 w-3" /> Siggy says
+                      </p>
+                      <p className="mt-2 text-sm leading-relaxed text-text-primary pr-4">
+                        {typewriterText}
+                        <span className="w-1.5 h-3.5 bg-accent/85 inline-block ml-1 animate-pulse" />
+                      </p>
+                    </div>
+                    <div className="flex justify-end mt-2">
+                      <button className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-widest text-text-secondary group-hover/dialogue:text-accent transition-colors">
+                        <span>Next advice</span>
+                        <ChevronRight className="h-3 w-3 group-hover/dialogue:translate-x-0.5 transition-transform" />
+                      </button>
+                    </div>
+                  </div>
 
-                <div className="grid gap-3 pt-2 sm:grid-cols-2">
-                  <Stat label="Lifespan" value={choice === "sovereign" ? "~30-60 min" : "Indefinite"} icon={<Clock className="h-4 w-4" />} />
-                  <Stat label="Min funding" value={choice === "sovereign" ? "0.1 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
-                  <Stat label="State" value={choice === "sovereign" ? "Ephemeral" : "DA-backed memory"} icon={<Layers className="h-4 w-4" />} />
-                  <Stat label="Setup" value={choice === "sovereign" ? "2 txs, ~3 min" : "Official launcher"} icon={<Timer className="h-4 w-4" />} />
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <Stat label="Lifespan" value={choice === "sovereign" ? "5 wakeups per schedule" : "Indefinite"} icon={<Clock className="h-4 w-4" />} />
+                    <Stat label="Min funding" value={choice === "sovereign" ? "0.1 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
+                    <Stat label="State" value={choice === "sovereign" ? "Ephemeral" : "DA-backed memory"} icon={<Layers className="h-4 w-4" />} />
+                    <Stat label="Setup" value={choice === "sovereign" ? "2 txs, ~3 min" : "Official launcher"} icon={<Timer className="h-4 w-4" />} />
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* COMPARISON */}
-        <div className="mt-24 space-y-6">
+        <div className="mt-28 space-y-8">
           <div className="text-center">
             <p className="font-mono text-xs uppercase tracking-wider text-accent">Side by side</p>
             <h2 className="mt-2 font-display text-4xl leading-tight sm:text-5xl">Sovereign vs Persistent</h2>
           </div>
 
-          <div className="overflow-x-auto border border-white/5 bg-surface/35 backdrop-blur-sm rounded-xl">
+          <div className="overflow-x-auto border border-white/5 bg-surface/35 backdrop-blur-sm rounded-2xl shadow-xl">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
                 <tr className="border-b border-white/5 bg-bg/40 font-mono text-[11px] uppercase tracking-wider text-text-secondary">
@@ -209,8 +358,8 @@ export default function DeployLanding() {
         </div>
 
         {/* CTA */}
-        <div className="mt-24">
-          <div className="grid gap-8 border border-white/5 bg-surface/30 backdrop-blur-md rounded-xl p-8 shadow-[0_0_40px_rgba(255,215,0,0.02)] md:grid-cols-[1fr_240px] md:p-12">
+        <div className="mt-28">
+          <div className="grid gap-8 border border-white/5 bg-surface/30 backdrop-blur-md rounded-2xl p-8 shadow-[0_0_40px_rgba(255,215,0,0.02)] md:grid-cols-[1fr_240px] md:p-12">
             <div className="space-y-5">
               <p className="font-mono text-xs uppercase tracking-wider text-accent">Step 2</p>
               <h2 className="font-display text-4xl leading-tight sm:text-5xl">Ready to deploy?</h2>
@@ -226,7 +375,7 @@ export default function DeployLanding() {
                     href="https://agents.ritualfoundation.org/"
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                    className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-300 transition rounded-lg"
                   >
                     Open Ritual launcher
                     <ExternalLink className="h-4 w-4" />
@@ -234,7 +383,7 @@ export default function DeployLanding() {
                 ) : (
                   <Link
                     href="/deploy/sovereign"
-                    className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                    className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black hover:bg-yellow-300 transition rounded-lg"
                   >
                     Deploy sovereign with Siggy
                     <ArrowRight className="h-4 w-4" />
@@ -244,21 +393,15 @@ export default function DeployLanding() {
                   href="https://github.com/Decka-tan/siggy-bot/blob/main/ritual-deploy/TUTORIAL-EN.md"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 border border-white/5 px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent/40 rounded-lg"
+                  className="inline-flex items-center gap-2 border border-white/5 px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent/40 rounded-lg transition"
                 >
                   Read tutorial
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </div>
-
-              {!choice && (
-                <p className="pt-2 text-xs text-text-secondary">
-                  Tip: pick Sovereign or Persistent above to swap the action button.
-                </p>
-              )}
             </div>
 
-            <div className="relative hidden h-full min-h-[220px] md:block">
+            <div className="relative hidden h-full min-h-[200px] md:block siggy-float">
               <Image src="/siggy-girl-happy.png" alt="Siggy ready" fill className="object-contain" sizes="240px" />
             </div>
           </div>
