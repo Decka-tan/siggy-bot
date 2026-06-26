@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowRight,
@@ -55,6 +55,17 @@ export default function DeployLanding() {
     "SYSTEM: Siggy Deployer initialized.",
     "SYSTEM: Ready to list on Ritual chain.",
   ]);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setMousePos({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
 
   const active = choice ? (choice === "sovereign" ? sovereignQuips : persistentQuips) : sovereignQuips;
   const activeDialogue = active[dialogueIndex]?.text || "";
@@ -124,8 +135,24 @@ export default function DeployLanding() {
   };
 
   return (
-    <main className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden">
+    <main
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-hidden"
+      style={{
+        "--mouse-x": `${mousePos.x}px`,
+        "--mouse-y": `${mousePos.y}px`,
+      } as React.CSSProperties}
+    >
       <GoldenParticles mode="ambient" />
+
+      {/* Dynamic Cursor Spotlight Glow */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none opacity-50 transition-opacity duration-300"
+        style={{
+          background: `radial-gradient(800px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(255, 215, 0, 0.07), transparent 75%)`
+        }}
+      />
 
       {/* Background radial glows */}
       <div className="absolute right-0 top-0 -z-10 h-[600px] w-[600px] rounded-full bg-accent/5 blur-[120px] pointer-events-none" />
@@ -216,23 +243,35 @@ export default function DeployLanding() {
             </div>
           </div>
 
-          {/* Floating Character Portal */}
-          <div className="relative mx-auto w-full max-w-sm lg:max-w-none flex items-center justify-center">
-            {/* Summoning portal circles */}
-            <div className="absolute w-80 h-80 rounded-full border border-accent/10 orbit-ring -z-10 pointer-events-none" />
-            <div className="absolute w-[360px] h-[360px] rounded-full border border-dashed border-accent/5 orbit-ring [animation-direction:reverse] -z-10 pointer-events-none" />
-            <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl -z-20 pointer-events-none" />
+          {/* Right Column: Character Image anchored to bottom right */}
+          <div className="relative h-[55vh] lg:h-[75vh] flex items-end justify-center lg:justify-end overflow-visible pointer-events-none">
+            {/* Ambient Summoning Portal rings behind character */}
+            <div className="absolute w-80 h-80 rounded-full border border-accent/5 animate-[spin_30s_linear_infinite] pointer-events-none bottom-10 right-10" />
+            <div className="absolute w-[420px] h-[420px] rounded-full border border-dashed border-accent/5 animate-[spin_40s_linear_infinite_reverse] pointer-events-none bottom-0 right-0" />
+            <div className="absolute w-64 h-64 rounded-full bg-accent/5 blur-3xl pointer-events-none bottom-20 right-20" />
 
-            <div className="relative w-72 h-72 sm:w-80 sm:h-80 siggy-float">
-              <Image
-                src={SIGGY_HERO}
-                alt="Siggy ready"
-                fill
-                priority
-                className="object-contain drop-shadow-[0_10px_35px_rgba(255,215,0,0.15)]"
-                sizes="320px"
-              />
-            </div>
+            {/* Anime Character with Smooth Decelerating Entry Slide-up */}
+            <motion.div
+              initial={{ opacity: 0, y: 200, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
+              className="relative w-full h-[60vh] lg:h-[80vh] flex items-end justify-end overflow-visible"
+            >
+              <motion.div
+                animate={{ y: [0, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 4.5, ease: "easeInOut" }}
+                className="relative w-[320px] h-[50vh] sm:w-[380px] sm:h-[60vh] lg:w-[440px] lg:h-[75vh]"
+              >
+                <Image
+                  src="/character.png"
+                  alt="Siggy Character"
+                  fill
+                  className="object-contain object-bottom drop-shadow-[0_15px_35px_rgba(255,215,0,0.1)]"
+                  priority
+                  sizes="(max-width: 1024px) 380px, 440px"
+                />
+              </motion.div>
+            </motion.div>
           </div>
         </div>
 
