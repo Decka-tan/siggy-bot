@@ -8,7 +8,15 @@ const RPC_URL = process.env.RITUAL_RPC_URL || process.env.RPC_URL || "https://rp
 const FACTORY = "0x9dC4C054e53bCc4Ce0A0Ff09E890A7a8e817f304";
 const REGISTRY = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
 const DELIVERY_LOG = "0x5A16214fF555848411544b005f7Ac063742f39F6";
+const ASYNC_JOB_TRACKER = "0xC069FFCa0389f44eCA2C626e55491b0ab045AEF5";
 const TEMPLATE_BYTES = 10822;
+const MIN_FUNDING_WEI = 50_000_000_000_000_000n; // 0.05 RIT — below this, escrow likely drains before MONITORED state
+const DEFAULT_FUNDING_WEI = 100_000_000_000_000_000n; // 0.1 RIT — proven sufficient
+const MIN_BALANCE_BUFFER_WEI = 60_000_000_000_000_000n; // 0.06 RIT — covers deploy + configure gas
+
+const trackerInterface = new Interface([
+  "function hasPendingJobForSender(address sender) view returns (bool)",
+]);
 
 const factoryInterface = new Interface([
   "function predictHarness(address owner, bytes32 salt) view returns (address harness, bytes32 codeHash)",
