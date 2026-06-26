@@ -80,6 +80,7 @@ function AgentPage() {
   const agentAddress = (params?.address || "").toLowerCase();
   const validAgent = /^0x[0-9a-fA-F]{40}$/.test(agentAddress);
 
+  const [savedSalt, setSavedSalt] = useState<string>("");
   const [verify, setVerify] = useState<Verify | null>(null);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -152,6 +153,20 @@ function AgentPage() {
     verifyAgent();
     const timer = window.setInterval(verifyAgent, 60_000);
     return () => window.clearInterval(timer);
+  }, [agentAddress]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("siggy.deployed.agents.v1");
+      if (!raw) return;
+      const list = JSON.parse(raw);
+      if (!Array.isArray(list)) return;
+      const match = list.find((r: any) => r?.address?.toLowerCase?.() === agentAddress);
+      if (match?.saltLabel) setSavedSalt(String(match.saltLabel));
+    } catch {
+      // ignore
+    }
   }, [agentAddress]);
 
   useEffect(() => {
@@ -341,6 +356,33 @@ function AgentPage() {
           <div className="flex items-start gap-3 border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {verify?.templateMatch && parseFloat(verify.escrowRit || "0") === 0 && verify.lastActivityBlock === null && (
+          <div className="border border-amber-400/40 bg-amber-400/10 p-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+              <div className="space-y-2">
+                <p className="font-mono text-sm uppercase tracking-wider text-amber-200">Harness deployed but NOT funded</p>
+                <p className="text-sm leading-6 text-text-secondary">
+                  Looks like you signed transaction 1 (deploy) but never signed transaction 2 (fund + arm schedule).
+                  Top-up alone won&apos;t start it — the schedule was never configured.
+                </p>
+                <p className="text-sm leading-6 text-text-secondary">
+                  Open the deployer{savedSalt ? <> with salt label <code className="text-text-primary">{savedSalt}</code></> : ""},
+                  fill the form again with the <b>same salt label</b>, click <b>Prepare deploy</b>, and sign the second
+                  transaction. The first one will be auto-skipped.
+                </p>
+                <Link
+                  href={savedSalt ? `/deploy/sovereign?salt=${encodeURIComponent(savedSalt)}` : "/deploy/sovereign"}
+                  className="mt-1 inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                >
+                  Resume deploy {savedSalt ? "(salt pre-filled)" : ""}
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
           </div>
         )}
 

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { encrypt, ECIES_CONFIG } from "eciesjs";
 import {
   AlertTriangle,
@@ -157,10 +158,20 @@ function short(value = "") {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
-export default function DeployPage() {
+export default function DeployRoute() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-bg pt-28 text-text-primary" />}>
+      <DeployPage />
+    </Suspense>
+  );
+}
+
+function DeployPage() {
+  const search = useSearchParams();
+  const initialSalt = search?.get("salt") || "";
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
-  const [saltLabel, setSaltLabel] = useState("");
+  const [saltLabel, setSaltLabel] = useState(initialSalt);
   const [hfRepoId, setHfRepoId] = useState("");
   const [hfToken, setHfToken] = useState("");
   const [provider, setProvider] = useState<ProviderKey>("openrouter");
