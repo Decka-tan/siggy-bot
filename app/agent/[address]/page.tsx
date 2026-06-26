@@ -35,6 +35,7 @@ const DEPOSIT_FOR_SELECTOR = "0x2f4f21e2";
 const LOCK_BLOCKS = 100_000_000n;
 const TOPUP_OPTIONS = ["0.1", "0.2", "0.5", "1.0"];
 const COST_PER_WAKEUP_RIT = 0.002;
+const PREPARED_KEY = "siggy.deploy.prepared.v1";
 
 type Verify = {
   ok: boolean;
@@ -89,6 +90,7 @@ function AgentPage() {
   const [copied, setCopied] = useState("");
   const [topupAmount, setTopupAmount] = useState("0.1");
   const [topupHash, setTopupHash] = useState("");
+  const [retryHash, setRetryHash] = useState("");
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
   const [walletBalance, setWalletBalance] = useState<string | null>(null);
@@ -99,6 +101,12 @@ function AgentPage() {
   const needRit = parseFloat(topupAmount || "0") + 0.005;
   const balanceOk = !connected || !walletBalance || balanceNum >= needRit;
   const canTopup = validAgent && connected && chainOk && balanceOk;
+  const fundedButNotScheduled =
+    Boolean(verify?.templateMatch) &&
+    parseFloat(verify?.escrowRit || "0") > 0 &&
+    (verify?.wakeupAttempts ?? 0) === 0 &&
+    (verify?.phase2Deliveries ?? 0) === 0 &&
+    verify?.lastActivityBlock === null;
 
   const wakeupsLeft = useMemo(() => {
     if (!verify?.escrowRit) return null;
@@ -292,6 +300,55 @@ function AgentPage() {
     }
   }
 
+  function readPreparedCache() {
+    if (typeof window === "undefined") return null;
+    if (!account || !savedSalt) return null;
+    try {
+      const cache = JSON.parse(window.localStorage.getItem(PREPARED_KEY) || "{}");
+      const key = `${account.toLowerCase()}::${savedSalt.trim().toLowerCase()}`;
+      const hit = cache?.[key]?.prepared;
+      if (!hit?.configureTx?.data) return null;
+      if (String(hit.harness || "").toLowerCase() !== agentAddress.toLowerCase()) return null;
+      return hit as { harness: string; configureTx: { to: string; data: string; gas?: string } };
+    } catch {
+      return null;
+    }
+  }
+
+  async function retrySchedule() {
+    if (!window.ethereum || !validAgent) return;
+    setBusy("retry");
+    setError("");
+    setRetryHash("");
+    try {
+      const prepared = readPreparedCache();
+      if (!prepared) {
+        throw new Error("Retry data not found in this browser. Open the deployer with the same salt label and prepare again.");
+      }
+      const hash = await window.ethereum.request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: account,
+            to: prepared.configureTx.to,
+            data: prepared.configureTx.data,
+            value: "0x0",
+            gas: prepared.configureTx.gas || "0x3567e0",
+          },
+        ],
+      });
+      setRetryHash(hash);
+      window.setTimeout(() => {
+        loadWalletBalance(account);
+        verifyAgent();
+      }, 6000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Retry schedule failed");
+    } finally {
+      setBusy("");
+    }
+  }
+
   async function copy(value: string, key: string) {
     await navigator.clipboard.writeText(value);
     setCopied(key);
@@ -383,6 +440,71 @@ function AgentPage() {
                   Resume deploy {savedSalt ? "(salt pre-filled)" : ""}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {fundedButNotScheduled && (
+          <div className="border border-amber-400/40 bg-amber-400/10 p-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+              <div className="space-y-3">
+                <p className="font-mono text-sm uppercase tracking-wider text-amber-200">Funded but scheduler has not fired</p>
+                <p className="text-sm leading-6 text-text-secondary">
+                  Escrow exists, but there are no scheduler events yet. Top-up only adds funds; it does not retry the start call.
+                  If this browser still has the prepared deployment data, retry the schedule using the existing escrow first.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {!connected ? (
+                    <button
+                      onClick={connect}
+                      className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                    >
+                      <Wallet className="h-4 w-4" /> Connect wallet
+                    </button>
+                  ) : !chainOk ? (
+                    <button
+                      onClick={switchChain}
+                      className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300"
+                    >
+                      Switch to Ritual Testnet
+                    </button>
+                  ) : (
+                    <button
+                      onClick={retrySchedule}
+                      disabled={busy === "retry"}
+                      className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busy === "retry" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      Retry schedule with existing escrow
+                    </button>
+                  )}
+                  {savedSalt && (
+                    <Link
+                      href={`/deploy/sovereign?salt=${encodeURIComponent(savedSalt)}`}
+                      className="inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+                    >
+                      Open deployer
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
+                </div>
+                {retryHash && (
+                  <div className="flex flex-wrap items-center gap-2 border border-emerald-400/40 bg-emerald-400/10 p-3 text-xs text-emerald-200">
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="font-mono">Retry submitted</span>
+                    <span className="min-w-0 truncate font-mono">{retryHash}</span>
+                    <a
+                      href={`https://explorer.ritualfoundation.org/tx/${retryHash}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-accent hover:underline"
+                    >
+                      Open <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -80,6 +80,8 @@ type Verify = {
   listed: boolean;
   lastActivityBlock: number | null;
   escrowRit: string;
+  wakeupAttempts?: number;
+  phase2Deliveries?: number;
   explorerUrl: string;
   error?: string;
 };
@@ -288,7 +290,8 @@ function DeployPage() {
     schedulerTtlNum,
   ]);
   const deployDone = Boolean(deployHash) || prepared?.alreadyDeployed || verify?.deployed;
-  const startDone = Boolean(startHash);
+  const escrowNum = verify?.escrowRit ? parseFloat(verify.escrowRit) : 0;
+  const startDone = Boolean(verify?.listed || escrowNum > 0 || (verify?.wakeupAttempts || 0) > 0 || (verify?.phase2Deliveries || 0) > 0);
   const bytecodeSizeOk = Boolean(verify?.deployed && prepared?.templateBytes && verify.bytecodeBytes === prepared.templateBytes);
   const bytecodeGateOk = Boolean(verify?.templateMatch || bytecodeSizeOk);
   const preparedFundingRit = prepared?.schedule?.value || "";
@@ -712,6 +715,14 @@ function DeployPage() {
   }, [prepared?.harness, prepared?.saltLabel, prepared?.owner, deployHash, startHash]);
 
   // Gap fix 4: auto-poll after start until LISTED or escrow drained or 30 min timeout.
+  useEffect(() => {
+    if (!startHash || !verify?.deployed || verify?.listed) return;
+    if (parseFloat(verify.escrowRit || "0") > 0) return;
+    setStartHash("");
+    if (prepared) savePreparedCache(prepared, { deployHash, startHash: "" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startHash, verify?.deployed, verify?.listed, verify?.escrowRit, prepared?.harness, deployHash]);
+
   useEffect(() => {
     if (!startHash || !prepared?.harness) return;
     if (verify?.listed) return;
@@ -1313,6 +1324,11 @@ function DeployPage() {
                     Refresh verify
                   </button>
                 </div>
+              )}
+              {deployDone && bytecodeGateOk && !startDone && (
+                <p className="text-xs leading-5 text-amber-300">
+                  Harness is deployed but escrow is still 0 RIT. Click Fund {prepared.schedule.value} and start to send transaction 2.
+                </p>
               )}
             </Panel>
           )}
