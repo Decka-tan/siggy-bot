@@ -88,6 +88,70 @@ const RPC_URL = "https://rpc.ritualfoundation.org";
 const DEFAULT_PROMPT =
   "You are Siggy, a scheduled sovereign Ritual agent. Give one short AI x crypto builder insight and confirm the scheduled sovereign agent executed successfully.";
 
+type ProviderKey = "openrouter" | "openai" | "anthropic" | "gemini";
+
+type ProviderConfig = {
+  label: string;
+  envKey: string;
+  keyPrefix: string;
+  defaultModel: string;
+  signupUrl: string;
+  apiKeyUrl: string;
+  notes: string;
+  modelOptions: string[];
+};
+
+const PROVIDERS: Record<ProviderKey, ProviderConfig> = {
+  openrouter: {
+    label: "OpenRouter (free models available)",
+    envKey: "OPENROUTER_API_KEY",
+    keyPrefix: "sk-or-",
+    defaultModel: "google/gemini-2.5-flash:free",
+    signupUrl: "https://openrouter.ai/sign-up",
+    apiKeyUrl: "https://openrouter.ai/keys",
+    notes:
+      "Cheapest option. Many free models like google/gemini-2.5-flash:free. Sign up → top up $0 → create key → copy.",
+    modelOptions: [
+      "google/gemini-2.5-flash:free",
+      "meta-llama/llama-3.1-8b-instruct:free",
+      "google/gemini-2.5-flash",
+      "openai/gpt-4o-mini",
+    ],
+  },
+  openai: {
+    label: "OpenAI",
+    envKey: "OPENAI_API_KEY",
+    keyPrefix: "sk-",
+    defaultModel: "gpt-4o-mini",
+    signupUrl: "https://platform.openai.com/signup",
+    apiKeyUrl: "https://platform.openai.com/api-keys",
+    notes:
+      "Most popular. Requires ~$5 credit on account. Create new key → copy. Keep usage limit low.",
+    modelOptions: ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini"],
+  },
+  anthropic: {
+    label: "Anthropic (Claude)",
+    envKey: "ANTHROPIC_API_KEY",
+    keyPrefix: "sk-ant-",
+    defaultModel: "claude-sonnet-4-5-20250929",
+    signupUrl: "https://console.anthropic.com/",
+    apiKeyUrl: "https://console.anthropic.com/settings/keys",
+    notes:
+      "Highest quality reasoning. Pay-as-you-go after free credits. Console → Settings → API Keys → Create.",
+    modelOptions: ["claude-sonnet-4-5-20250929", "claude-opus-4-1-20250805", "claude-haiku-4-5-20251001"],
+  },
+  gemini: {
+    label: "Google Gemini",
+    envKey: "GEMINI_API_KEY",
+    keyPrefix: "AIza",
+    defaultModel: "gemini-2.5-flash",
+    signupUrl: "https://aistudio.google.com/",
+    apiKeyUrl: "https://aistudio.google.com/app/apikey",
+    notes: "Free tier available. Open AI Studio → Get API key → Create new key.",
+    modelOptions: ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+  },
+};
+
 function short(value = "") {
   if (value.length < 14) return value;
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
@@ -99,9 +163,13 @@ export default function DeployPage() {
   const [saltLabel, setSaltLabel] = useState(`siggy-${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "")}`);
   const [hfRepoId, setHfRepoId] = useState("decka-tan/ritual-sovereign-agent");
   const [hfToken, setHfToken] = useState("");
-  const [openaiApiKey, setOpenaiApiKey] = useState("");
+  const [provider, setProvider] = useState<ProviderKey>("openrouter");
+  const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState(PROVIDERS.openrouter.defaultModel);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [fundingRit, setFundingRit] = useState("0.1");
+  const [showHfHelp, setShowHfHelp] = useState(false);
+  const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [prepared, setPrepared] = useState<Prepared | null>(null);
@@ -117,6 +185,7 @@ export default function DeployPage() {
   const balanceNum = walletBalanceRit ? parseFloat(walletBalanceRit) : 0;
   const requiredRit = parseFloat(fundingRit || "0") + 0.06;
   const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
+  const providerCfg = PROVIDERS[provider];
   const canPrepare =
     connected &&
     chainOk &&
@@ -124,7 +193,8 @@ export default function DeployPage() {
     prompt.trim().length > 0 &&
     hfRepoId.includes("/") &&
     hfToken.trim().startsWith("hf_") &&
-    openaiApiKey.trim().startsWith("sk-");
+    apiKey.trim().startsWith(providerCfg.keyPrefix) &&
+    model.trim().length > 0;
   const deployDone = Boolean(deployHash) || prepared?.alreadyDeployed || verify?.deployed;
   const startDone = Boolean(startHash);
   const bytecodeGateOk = Boolean(verify?.templateMatch);
@@ -252,9 +322,10 @@ export default function DeployPage() {
     setVerify(null);
     try {
       // Encrypt secrets in-browser to the TEE executor pubkey before sending anything.
-      // The server never sees plaintext OPENAI_API_KEY or HF_TOKEN.
+      // The server never sees plaintext API_KEY or HF_TOKEN.
       const secretPayload = JSON.stringify({
-        OPENAI_API_KEY: openaiApiKey,
+        LLM_PROVIDER: provider,
+        [providerCfg.envKey]: apiKey,
         HF_TOKEN: hfToken,
       });
       const { encryptedSecrets, executor } = await encryptSecretsClientSide(secretPayload);
@@ -263,7 +334,17 @@ export default function DeployPage() {
       const res = await fetch("/api/ritual/prepare-deploy", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ owner: account, saltLabel, hfRepoId, prompt, encryptedSecrets, executor, fundingWei }),
+        body: JSON.stringify({
+          owner: account,
+          saltLabel,
+          hfRepoId,
+          prompt,
+          encryptedSecrets,
+          executor,
+          fundingWei,
+          model,
+          provider,
+        }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Prepare failed.");
@@ -463,16 +544,121 @@ export default function DeployPage() {
                 autoComplete="off"
                 className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
               />
+              <button
+                type="button"
+                onClick={() => setShowHfHelp((v) => !v)}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-accent hover:underline"
+              >
+                {showHfHelp ? "Hide" : "Show"} HuggingFace setup steps
+              </button>
+              {showHfHelp && (
+                <div className="mt-2 space-y-2 border border-border bg-bg p-4 text-xs leading-5 text-text-secondary">
+                  <p className="font-semibold text-text-primary">How to get HF_TOKEN + HF_REPO_ID (~2 min):</p>
+                  <ol className="ml-4 list-decimal space-y-1">
+                    <li>
+                      Open{" "}
+                      <a href="https://huggingface.co/join" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                        huggingface.co/join
+                      </a>{" "}
+                      and create an account (free, just email + username).
+                    </li>
+                    <li>
+                      Go to{" "}
+                      <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                        huggingface.co/settings/tokens
+                      </a>{" "}
+                      → click <b>+ Create new token</b> → Token type: <b>Write</b> → copy the <code>hf_...</code> string into the field above.
+                    </li>
+                    <li>
+                      Create an empty dataset at{" "}
+                      <a href="https://huggingface.co/new-dataset" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                        huggingface.co/new-dataset
+                      </a>{" "}
+                      — owner = your username, name = anything (e.g. <code>ritual-agent</code>), visibility <b>Private</b>. Don&apos;t add any files.
+                    </li>
+                    <li>
+                      The HF repo ID is <code>username/dataset-name</code> — paste it in the &quot;HF Repo ID&quot; field. <b>No URL.</b>
+                    </li>
+                  </ol>
+                </div>
+              )}
             </Field>
-            <Field label="OpenAI API key">
+
+            <Field label="LLM Provider">
+              <select
+                value={provider}
+                onChange={(e) => {
+                  const next = e.target.value as ProviderKey;
+                  setProvider(next);
+                  setModel(PROVIDERS[next].defaultModel);
+                  setApiKey("");
+                }}
+                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+              >
+                {(Object.keys(PROVIDERS) as ProviderKey[]).map((p) => (
+                  <option key={p} value={p}>
+                    {PROVIDERS[p].label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowProviderHelp((v) => !v)}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-accent hover:underline"
+              >
+                {showProviderHelp ? "Hide" : "Show"} how to get a {providerCfg.label.split(" ")[0]} API key
+              </button>
+              {showProviderHelp && (
+                <div className="mt-2 space-y-2 border border-border bg-bg p-4 text-xs leading-5 text-text-secondary">
+                  <p className="font-semibold text-text-primary">{providerCfg.label} setup</p>
+                  <p>{providerCfg.notes}</p>
+                  <ol className="ml-4 list-decimal space-y-1">
+                    <li>
+                      Sign up:{" "}
+                      <a href={providerCfg.signupUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                        {providerCfg.signupUrl.replace("https://", "")}
+                      </a>
+                    </li>
+                    <li>
+                      Open API keys page:{" "}
+                      <a href={providerCfg.apiKeyUrl} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                        {providerCfg.apiKeyUrl.replace("https://", "")}
+                      </a>
+                    </li>
+                    <li>
+                      Create new key → copy. It should start with <code>{providerCfg.keyPrefix}</code>.
+                    </li>
+                    <li>
+                      Paste below. Your key is ECIES-encrypted in this browser to the TEE executor before any network call — the server never sees it.
+                    </li>
+                  </ol>
+                </div>
+              )}
+            </Field>
+
+            <Field label={`${providerCfg.label.split(" ")[0]} API key (starts with ${providerCfg.keyPrefix})`}>
               <input
                 type="password"
-                value={openaiApiKey}
-                onChange={(e) => setOpenaiApiKey(e.target.value)}
-                placeholder="sk-..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={`${providerCfg.keyPrefix}...`}
                 autoComplete="off"
                 className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
               />
+            </Field>
+
+            <Field label="Model">
+              <select
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
+              >
+                {providerCfg.modelOptions.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
             </Field>
             <Field label="Prompt">
               <textarea
@@ -484,7 +670,7 @@ export default function DeployPage() {
             </Field>
             <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
               <div className="grid grid-cols-4 gap-2">
-                {["0.05", "0.1", "0.2", "0.5"].map((opt) => (
+                {["0.1", "0.2", "0.5", "1.0"].map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setFundingRit(opt)}

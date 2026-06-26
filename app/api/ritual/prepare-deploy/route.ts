@@ -104,6 +104,7 @@ function buildCalldata({
   encryptedSecrets,
   executor,
   numCalls,
+  model,
 }: {
   harness: string;
   prompt: string;
@@ -111,6 +112,7 @@ function buildCalldata({
   encryptedSecrets: string;
   executor: string;
   numCalls: number;
+  model: string;
 }) {
   const params = [
     executor,
@@ -131,7 +133,7 @@ function buildCalldata({
     ["hf", `${hfRepoId}/artifacts/`, "HF_TOKEN"],
     [],
     ["hf", `${hfRepoId}/prompts/default-system.md`, ""],
-    "gpt-4o-mini",
+    model,
     [],
     50,
     8192,
@@ -175,6 +177,11 @@ export async function POST(request: Request) {
     const hfRepoId = normalizeRepo(String(body.hfRepoId || "decka-tan/ritual-sovereign-agent"));
     const encryptedSecrets = String(body.encryptedSecrets || "").trim();
     const executor = String(body.executor || "").trim();
+    const model = String(body.model || "gpt-4o-mini").trim();
+    const provider = String(body.provider || "openai").trim().toLowerCase();
+    const ALLOWED_PROVIDERS = ["openrouter", "openai", "anthropic", "gemini"];
+    if (!ALLOWED_PROVIDERS.includes(provider)) throw new Error(`provider must be one of ${ALLOWED_PROVIDERS.join(", ")}`);
+    if (model.length === 0 || model.length > 200) throw new Error("model must be a non-empty string under 200 chars.");
 
     // Funding (default 0.1 RIT). Clamp into [MIN_FUNDING_WEI, 0.5 RIT].
     let fundingWei = DEFAULT_FUNDING_WEI;
@@ -230,7 +237,7 @@ export async function POST(request: Request) {
     const { harness, codeHash } = await predictHarness(owner, salt);
     const existingCode = (await rpc("eth_getCode", [harness, "latest"])) as string;
     const deployData = factoryInterface.encodeFunctionData("deployHarness", [salt]);
-    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls });
+    const calldata = buildCalldata({ harness, prompt, hfRepoId, encryptedSecrets, executor, numCalls, model });
     const health = await getExecutorHealth();
     const fundingEther = (Number(fundingWei) / 1e18).toFixed(2);
     const schedule = {
