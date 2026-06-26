@@ -207,7 +207,7 @@ export default function DeployLanding() {
         }
       `}</style>
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6 lg:px-8">
+      <section className="mx-auto w-full max-w-7xl px-6 pb-24 sm:px-8">
         {/* HERO */}
         <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="space-y-6">

@@ -119,7 +119,7 @@ export default function MyAgentsPage() {
 
   return (
     <div className="min-h-screen bg-bg pt-28 text-text-primary">
-      <section className="mx-auto w-full max-w-5xl space-y-6 px-4 pb-24 sm:px-6 lg:px-8">
+      <section className="mx-auto w-full max-w-7xl space-y-6 px-6 pb-24 sm:px-8">
         <header className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent border border-accent/20 rounded-md">
