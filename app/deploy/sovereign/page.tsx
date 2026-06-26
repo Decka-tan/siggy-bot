@@ -863,7 +863,7 @@ function DeployPage() {
   }
 
   return (
-    <div className="relative min-h-screen bg-bg pt-28 text-text-primary overflow-x-hidden">
+    <div className="relative min-h-screen bg-bg pt-24 text-text-primary overflow-x-hidden sm:pt-28">
       {/* Ambient background particles */}
       <GoldenParticles mode="ambient" />
       
@@ -912,8 +912,19 @@ function DeployPage() {
         </div>
       )}
 
-      <section className="relative z-10 mx-auto grid w-full max-w-7xl items-start gap-8 px-4 pb-16 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:px-8">
-        <aside className="space-y-5 lg:self-start">
+      <section className="relative z-10 mx-auto grid w-full max-w-7xl items-start gap-4 px-3 pb-14 sm:gap-6 sm:px-6 lg:grid-cols-[0.78fr_1.22fr] lg:gap-8 lg:px-8">
+        <div className="border border-border bg-surface/60 p-4 backdrop-blur-md lg:hidden">
+          <div className="mb-3 inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-accent">
+            <Rocket className="h-3.5 w-3.5" />
+            Sovereign deployer
+          </div>
+          <h1 className="font-display text-4xl leading-none tracking-normal">Deploy Agent</h1>
+          <p className="mt-2 text-sm leading-6 text-text-secondary">
+            Connect wallet, test credentials, then sign deploy + fund.
+          </p>
+        </div>
+
+        <aside className="hidden space-y-5 lg:block lg:self-start">
           <div className="border border-border bg-surface/60 backdrop-blur-md p-6 transition-all duration-300 hover:border-accent/30 hover:shadow-[0_0_20px_rgba(255,215,0,0.03)]">
             <div className="mb-4 inline-flex items-center gap-2 bg-accent/15 px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-accent">
               <Rocket className="h-4 w-4" />
@@ -977,15 +988,15 @@ function DeployPage() {
           <HealthPanel health={health} onRefresh={loadHealth} />
         </aside>
 
-        <main className="space-y-5">
+        <main className="min-w-0 space-y-4 sm:space-y-5">
           {error && (
-            <div className="flex items-start gap-3 border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
+            <div className="flex items-start gap-3 border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-100 sm:p-4">
               <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          <section className="rounded-xl border border-white/5 bg-surface/50 p-5 backdrop-blur-md">
+          <section className="rounded-xl border border-white/5 bg-surface/50 p-4 backdrop-blur-md sm:p-5">
             <div className="mb-2 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
               <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
               New here?
@@ -997,7 +1008,7 @@ function DeployPage() {
             <button
               type="button"
               onClick={() => setShowSetupGuide(true)}
-              className="inline-flex items-center justify-center rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-accent transition-all hover:bg-accent hover:text-black"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-accent transition-all hover:bg-accent hover:text-black sm:w-auto"
             >
               Open setup checklist
             </button>
@@ -1042,7 +1053,7 @@ function DeployPage() {
             </ol>
           </section>
 
-          <details className="border border-border bg-surface p-5 open:pb-5">
+          <details className="border border-border bg-surface p-4 open:pb-4 sm:p-5 sm:open:pb-5">
             <summary className="cursor-pointer font-mono text-xs uppercase tracking-wider text-accent">
               If something goes wrong (common errors + fixes)
             </summary>
@@ -1072,7 +1083,7 @@ function DeployPage() {
             subtitle="Connect a Ritual Testnet wallet. Use a burner with at least 0.26 RIT."
           >
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-              <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4 font-mono text-sm text-text-secondary">
+              <div className="min-w-0 break-all rounded-lg border border-white/5 bg-bg/50 p-3 font-mono text-xs text-text-secondary backdrop-blur-sm sm:p-4 sm:text-sm">
                 {account ? account : "No wallet connected"}
               </div>
               {!account ? (
@@ -1080,7 +1091,7 @@ function DeployPage() {
                   Connect wallet
                 </button>
               ) : (
-                <div className="flex gap-2">
+                <div className="grid gap-2 sm:flex">
                   <button onClick={changeWallet} className="border border-white/10 hover:border-accent/40 rounded-lg px-4 py-3 font-mono text-xs uppercase tracking-wider text-accent transition-all">
                     Change
                   </button>
@@ -1090,7 +1101,7 @@ function DeployPage() {
                 </div>
               )}
             </div>
-            <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-secondary">
+            <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-text-secondary sm:gap-3 sm:text-xs">
               <Pill ok={connected} label={connected ? `Wallet ${short(account)}` : "Wallet required"} />
               <Pill ok={chainOk} label={chainOk ? "Ritual Testnet 1979" : `Wrong chain ${chainId || "-"}`} />
               {walletBalanceRit !== null && (
@@ -1105,7 +1116,7 @@ function DeployPage() {
           </Panel>
 
           {prepared && collapseForm ? (
-            <section className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
+            <section className="rounded-xl border border-white/5 bg-surface/40 p-4 backdrop-blur-md transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)] sm:p-6">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
                   <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
@@ -1119,10 +1130,10 @@ function DeployPage() {
                 </button>
               </div>
               <div className="grid gap-2 text-xs text-text-secondary sm:grid-cols-3">
-                <p>Agent: <span className="font-mono text-text-primary">{saltLabel}</span></p>
-                <p>HF: <span className="font-mono text-text-primary">{hfRepoId}</span></p>
+                <p className="min-w-0">Agent: <span className="break-all font-mono text-text-primary">{saltLabel}</span></p>
+                <p className="min-w-0">HF: <span className="break-all font-mono text-text-primary">{hfRepoId}</span></p>
                 <p>Provider: <span className="font-mono text-text-primary">{provider}</span></p>
-                <p>Model: <span className="font-mono text-text-primary">{model}</span></p>
+                <p className="min-w-0">Model: <span className="break-all font-mono text-text-primary">{model}</span></p>
                 <p>Funding: <span className="font-mono text-text-primary">{fundingRit} RIT</span></p>
                 <p>Schedule: <span className="font-mono text-text-primary">{advNumCalls} × {advFrequency} blk</span></p>
               </div>
@@ -1133,7 +1144,7 @@ function DeployPage() {
             icon={<Sparkles className="h-5 w-5" />}
             subtitle="Tell Siggy what your agent should do and where to keep its memory."
           >
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="hidden gap-2 sm:grid sm:grid-cols-3">
               <div className="rounded-lg border border-white/5 bg-bg/45 p-3">
                 <p className="font-mono text-[10px] uppercase tracking-wider text-accent">Step A</p>
                 <p className="mt-1 text-xs text-text-secondary">Name + HuggingFace memory</p>
@@ -1291,25 +1302,25 @@ function DeployPage() {
               </select>
             </Field>
 
-            <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
-              <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-lg border border-white/5 bg-bg/50 p-3 backdrop-blur-sm sm:p-4">
+              <div className="grid gap-3 sm:flex sm:flex-wrap sm:items-center">
                 <button
                   type="button"
                   onClick={runSmokeTest}
                   disabled={!hfRepoOk || !hfTokenOk || !apiKeyOk || !modelOk || Boolean(busy)}
-                  className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex w-full items-center justify-center gap-2 bg-accent px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:py-2"
                 >
                   {busy === "smoke" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
                   {busy === "smoke" ? "Testing..." : "Test credentials"}
                 </button>
                 {smoke.status === "ok" && smoke.signature === smokeSignature && (
-                  <span className="font-mono text-xs text-green-300">{smoke.message}</span>
+                  <span className="min-w-0 text-xs leading-5 text-green-300 sm:font-mono">{smoke.message}</span>
                 )}
                 {smoke.status === "fail" && smoke.signature === smokeSignature && (
                   <span className="min-w-0 flex-1 text-xs leading-5 text-red-200">{smoke.message}</span>
                 )}
                 {smoke.status === "ok" && smoke.signature !== smokeSignature && (
-                  <span className="font-mono text-xs text-amber-300">Credentials changed - test again</span>
+                  <span className="text-xs leading-5 text-amber-300 sm:font-mono">Credentials changed - test again</span>
                 )}
               </div>
               <p className="mt-2 text-[10px] text-text-secondary">
@@ -1318,7 +1329,7 @@ function DeployPage() {
             </div>
 
             <Field label={`TEE Executor (${executors.length} active from registry)`}>
-              <div className="flex gap-2">
+              <div className="grid gap-2 sm:flex">
                 <select
                   value={chosenExecutor}
                   onChange={(e) => setChosenExecutor(e.target.value)}
@@ -1338,7 +1349,7 @@ function DeployPage() {
                   type="button"
                   onClick={loadExecutors}
                   disabled={executorBusy}
-                  className="inline-flex shrink-0 items-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-4 font-mono text-xs uppercase tracking-wider text-text-secondary hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 transition-all"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 px-4 py-3 font-mono text-xs uppercase tracking-wider text-text-secondary transition-all hover:border-accent/40 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50 sm:py-0"
                   title="Refresh executors from Ritual registry"
                 >
                   <RefreshCw className={`h-4 w-4 ${executorBusy ? "animate-spin" : ""}`} />
@@ -1359,13 +1370,13 @@ function DeployPage() {
               />
             </Field>
             <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {["0.1", "0.2", "0.5", "1.0"].map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setFundingRit(opt)}
-                    className={`border px-3 py-3 font-mono text-sm uppercase tracking-wider ${
-                      fundingRit === opt ? "border-accent bg-accent/10 text-accent rounded-lg" : "border-white/10 text-text-secondary hover:border-accent/40 rounded-lg"
+                    className={`rounded-lg border px-3 py-3 font-mono text-sm uppercase tracking-wider ${
+                      fundingRit === opt ? "border-accent bg-accent/10 text-accent" : "border-white/10 text-text-secondary hover:border-accent/40"
                     }`}
                   >
                     {opt} RIT
@@ -1502,7 +1513,7 @@ function DeployPage() {
               onClick={prepare}
               disabled={!canPrepare || Boolean(busy)}
               title={!canPrepare && prepareBlockers.length ? prepareBlockers.join(", ") : undefined}
-              className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex w-full items-center justify-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
             >
               {busy === "prepare" || busy === "smoke" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
               {busy === "smoke" ? "Testing credentials…" : busy === "prepare" ? "Encrypting & preparing…" : prepareWillSmokeTest ? "Test & prepare deploy" : "Prepare deploy"}
@@ -1537,7 +1548,7 @@ function DeployPage() {
                   Resumed from this browser for salt <span className="font-mono text-text-primary">{prepared.saltLabel}</span>. If transaction 1 is already deployed, sign only Fund and start.
                 </div>
               )}
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
                 <Preview label="Predicted harness" value={prepared.harness} onCopy={() => copy(prepared.harness, "harness")} copied={copied === "harness"} />
                 <Preview label="Configure selector" value={`${prepared.calldataPreview.selector} (${prepared.calldataPreview.bytes.toLocaleString()} bytes)`} />
                 <Preview label="Funding" value={`${prepared.schedule.value} RITUAL`} />
@@ -1558,7 +1569,7 @@ function DeployPage() {
                 <button
                   onClick={sendStart}
                   disabled={busy === "start" || !canFund}
-                  className="inline-flex items-center justify-center gap-2 border border-white/10 hover:border-accent/40 rounded-lg px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 transition-all"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 px-5 py-3 font-mono text-xs uppercase tracking-wider text-accent transition-all hover:border-accent/40 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
                   title={
                     !deployDone
                       ? "Deploy harness first"
@@ -1680,21 +1691,21 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section className={`border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-6 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)] ${className}`}>
-      <div className="mb-2 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
-        <span className="text-accent">{icon}</span>
-        {title}
+    <section className={`min-w-0 rounded-xl border border-white/5 bg-surface/40 p-4 backdrop-blur-md transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)] sm:p-6 ${className}`}>
+      <div className="mb-2 flex min-w-0 items-start gap-2 font-mono text-xs uppercase tracking-wider text-text-primary sm:items-center sm:text-sm">
+        <span className="shrink-0 text-accent">{icon}</span>
+        <span className="min-w-0 leading-5">{title}</span>
       </div>
-      {subtitle && <p className="mb-4 text-sm text-text-secondary">{subtitle}</p>}
-      <div className="space-y-4">{children}</div>
+      {subtitle && <p className="mb-4 text-sm leading-6 text-text-secondary">{subtitle}</p>}
+      <div className="min-w-0 space-y-4">{children}</div>
     </section>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="block">
-      <span className="mb-2 block font-mono text-xs uppercase tracking-wider text-text-secondary">{label}</span>
+    <label className="block min-w-0">
+      <span className="mb-2 block break-words font-mono text-[11px] uppercase tracking-wider text-text-secondary sm:text-xs">{label}</span>
       {children}
     </label>
   );
@@ -1702,19 +1713,19 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function Pill({ ok, label }: { ok: boolean; label: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 border px-3 py-1.5 font-mono uppercase tracking-wider ${ok ? "border-emerald-400/50 text-emerald-300" : "border-amber-400/50 text-amber-300"}`}>
-      {ok ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
-      {label}
+    <span className={`inline-flex max-w-full items-center gap-2 border px-2.5 py-1.5 font-mono uppercase tracking-wider sm:px-3 ${ok ? "border-emerald-400/50 text-emerald-300" : "border-amber-400/50 text-amber-300"}`}>
+      {ok ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0" /> : <AlertTriangle className="h-3.5 w-3.5 shrink-0" />}
+      <span className="min-w-0 break-all">{label}</span>
     </span>
   );
 }
 
 function Preview({ label, value, onCopy, copied }: { label: string; value: string; onCopy?: () => void; copied?: boolean }) {
   return (
-    <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
+    <div className="min-w-0 rounded-lg border border-white/5 bg-bg/50 p-3 backdrop-blur-sm sm:p-4">
       <p className="mb-2 font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</p>
       <div className="flex min-w-0 items-center justify-between gap-3">
-        <p className="min-w-0 truncate font-mono text-sm text-text-primary">{value}</p>
+        <p className="min-w-0 break-all font-mono text-xs text-text-primary sm:truncate sm:text-sm">{value}</p>
         {onCopy && (
           <button onClick={onCopy} className="shrink-0 text-text-secondary hover:text-accent" title="Copy">
             {copied ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -1727,12 +1738,12 @@ function Preview({ label, value, onCopy, copied }: { label: string; value: strin
 
 function Status({ label, ok, value }: { label: string; ok: boolean; value: string }) {
   return (
-    <div className="border border-white/5 bg-bg/50 backdrop-blur-sm rounded-lg p-4">
+    <div className="rounded-lg border border-white/5 bg-bg/50 p-3 backdrop-blur-sm sm:p-4">
       <div className={ok ? "text-emerald-300" : "text-amber-300"}>
         {ok ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
       </div>
       <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</p>
-      <p className="mt-1 font-mono text-sm text-text-primary">{value}</p>
+      <p className="mt-1 break-all font-mono text-sm text-text-primary">{value}</p>
     </div>
   );
 }
@@ -1740,7 +1751,7 @@ function Status({ label, ok, value }: { label: string; ok: boolean; value: strin
 
 function HealthPanel({ health, onRefresh }: { health: Health | null; onRefresh: () => void }) {
   return (
-    <div className="border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5 transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)]">
+    <div className="rounded-xl border border-white/5 bg-surface/40 p-4 backdrop-blur-md transition-all duration-300 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.04)] sm:p-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="font-mono text-xs uppercase tracking-wider text-text-secondary">Executor health</h2>
         <button onClick={onRefresh} className="text-text-secondary hover:text-accent" title="Refresh health">
