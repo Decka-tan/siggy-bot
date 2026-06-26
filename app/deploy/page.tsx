@@ -270,6 +270,9 @@ export default function DeployLanding() {
                   priority
                   sizes="(max-width: 1024px) 380px, 440px"
                 />
+                {/* Edge Fades to hide 3/4 crop cuts */}
+                <div className="absolute bottom-[-1px] left-0 right-0 h-12 bg-gradient-to-t from-bg to-transparent pointer-events-none z-10" />
+                <div className="absolute top-0 bottom-0 right-[-1px] w-12 bg-gradient-to-l from-bg to-transparent pointer-events-none z-10" />
               </motion.div>
             </motion.div>
           </div>
