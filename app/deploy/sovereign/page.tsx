@@ -301,7 +301,7 @@ function DeployPage() {
   const bytecodeGateOk = Boolean(verify?.templateMatch || bytecodeSizeOk);
   const preparedFundingRit = prepared?.schedule?.value || "";
   const fundingMatchesPrepared = !preparedFundingRit || parseFloat(preparedFundingRit) === parseFloat(fundingRit || "0");
-  const canFund = deployDone && bytecodeGateOk && !startDone && fundingMatchesPrepared && healthOk;
+  const canFund = deployDone && bytecodeGateOk && !startDone && fundingMatchesPrepared;
 
   const step = useMemo(() => {
     if (!connected) return 1;
@@ -665,15 +665,6 @@ function DeployPage() {
     setError("");
     try {
       const tx = { from: account, ...prepared.configureTx };
-      try {
-        await window.ethereum.request({
-          method: "eth_call",
-          params: [tx, "latest"],
-        });
-      } catch (callErr: any) {
-        const message = callErr?.data?.message || callErr?.message || "Start simulation failed.";
-        throw new Error(`Fund/start would fail before signing: ${message}`);
-      }
       const hash = await window.ethereum.request({
         method: "eth_sendTransaction",
         params: [tx],
@@ -1321,9 +1312,7 @@ function DeployPage() {
                         ? "Bytecode verification pending - refresh verify"
                         : !fundingMatchesPrepared
                           ? "Funding changed after prepare - click Prepare deploy again"
-                          : !healthOk
-                            ? "Ritual executor health is too low - try later"
-                            : ""
+                          : ""
                   }
                 >
                   {busy === "start" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -1350,7 +1339,7 @@ function DeployPage() {
               )}
               {deployDone && bytecodeGateOk && !startDone && (
                 <p className="text-xs leading-5 text-amber-300">
-                  Harness is deployed but escrow is still 0 RIT. Fund/start will simulate first; if the call would revert, no wallet signature will be requested.
+                  Harness is deployed but escrow is still 0 RIT. Click Fund {prepared.schedule.value} and start to open transaction 2 in your wallet.
                 </p>
               )}
               {deployDone && bytecodeGateOk && !startDone && !healthOk && (
