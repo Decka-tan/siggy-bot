@@ -255,11 +255,12 @@ function DeployPage() {
 
   const promptOk = prompt.trim().length > 0;
   const saltOk = saltLabel.trim().length > 0;
-  const hfRepoOk = /^[\w.-]+\/[\w.-]+$/.test(hfRepoId.trim());
+  const normalizedHfRepoId = hfRepoId.trim().toLowerCase().replace(/^https:\/\/huggingface\.co\/datasets\//i, "").replace(/^\/+|\/+$/g, "");
+  const hfRepoOk = /^[a-z0-9][a-z0-9_.-]*\/[a-z0-9][a-z0-9_.-]*$/.test(normalizedHfRepoId);
   const hfTokenOk = hfToken.trim().startsWith("hf_");
   const apiKeyOk = apiKey.trim().startsWith(providerCfg.keyPrefix);
   const modelOk = model.trim().length > 0;
-  const smokeSignature = JSON.stringify([hfRepoId.trim(), hfToken.trim(), provider, apiKey.trim(), model.trim()]);
+  const smokeSignature = JSON.stringify([normalizedHfRepoId, hfToken.trim(), provider, apiKey.trim(), model.trim()]);
   const smokeOk = smoke.status === "ok" && smoke.signature === smokeSignature;
   const advValid =
     freqNum >= 100 &&
@@ -453,7 +454,7 @@ function DeployPage() {
       if (!raw) return;
       const s = JSON.parse(raw);
       if (typeof s.saltLabel === "string" && !initialSalt) setSaltLabel(s.saltLabel);
-      if (typeof s.hfRepoId === "string") setHfRepoId(s.hfRepoId);
+      if (typeof s.hfRepoId === "string") setHfRepoId(s.hfRepoId.trim().toLowerCase());
       if (typeof s.provider === "string" && s.provider in PROVIDERS) {
         setProvider(s.provider as ProviderKey);
         if (typeof s.model === "string") setModel(s.model);
@@ -644,7 +645,7 @@ function DeployPage() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          hfRepoId,
+          hfRepoId: normalizedHfRepoId,
           hfToken,
           provider,
           apiKey,
@@ -691,7 +692,7 @@ function DeployPage() {
         body: JSON.stringify({
           owner: account,
           saltLabel,
-          hfRepoId,
+          hfRepoId: normalizedHfRepoId,
           prompt,
           encryptedSecrets,
           executor,
@@ -1047,7 +1048,7 @@ function DeployPage() {
               <Field label="HuggingFace / HF Repo ID (your-username/dataset-name)">
                 <input
                   value={hfRepoId}
-                  onChange={(e) => setHfRepoId(e.target.value)}
+                  onChange={(e) => setHfRepoId(e.target.value.trim().toLowerCase())}
                   placeholder="your-username/your-dataset"
                   className="w-full border border-border bg-bg px-3 py-3 font-mono text-sm outline-none focus:border-accent"
                 />

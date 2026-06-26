@@ -10,6 +10,7 @@ const ALLOWED_PROVIDERS: Provider[] = ["openrouter", "openai", "anthropic", "gem
 function normalizeRepo(repo: string) {
   return repo
     .trim()
+    .toLowerCase()
     .replace(/^https:\/\/huggingface\.co\/datasets\//i, "")
     .replace(/^\/+|\/+$/g, "");
 }
@@ -36,7 +37,9 @@ async function fetchJson(url: string, init: RequestInit, label: string) {
 
 async function testHuggingFace(hfToken: string, hfRepoId: string) {
   const repo = normalizeRepo(hfRepoId);
-  if (!/^[-\w.]+\/[-\w.]+$/.test(repo)) throw new Error("HF repo must be user/repo, not a URL.");
+  if (!/^[a-z0-9][a-z0-9_.-]*\/[a-z0-9][a-z0-9_.-]*$/.test(repo)) {
+    throw new Error("HF repo must be lowercase user/repo, not a URL.");
+  }
   if (!hfToken.startsWith("hf_")) throw new Error("HF token must start with hf_.");
 
   const whoami = await fetchJson(
@@ -48,7 +51,7 @@ async function testHuggingFace(hfToken: string, hfRepoId: string) {
   if (tokenRole === "read") throw new Error("HuggingFace token is read-only. Create a Write token.");
 
   await fetchJson(
-    `https://huggingface.co/api/datasets/${encodeURIComponent(repo)}`,
+    `https://huggingface.co/api/datasets/${repo.split("/").map(encodeURIComponent).join("/")}`,
     { headers: { authorization: `Bearer ${hfToken}` } },
     "HuggingFace dataset",
   );

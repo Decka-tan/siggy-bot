@@ -34,6 +34,7 @@ type JsonRpc = { result?: string | unknown[]; error?: { message?: string } };
 function normalizeRepo(repo: string) {
   return repo
     .trim()
+    .toLowerCase()
     .replace(/^https:\/\/huggingface\.co\/datasets\//i, "")
     .replace(/^\/+|\/+$/g, "");
 }
