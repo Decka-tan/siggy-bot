@@ -203,8 +203,8 @@ function DeployPage() {
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [advFrequency, setAdvFrequency] = useState("28800"); // ~2.8 hr: 0.2 RIT lasts >1 day
-  const [advNumCalls, setAdvNumCalls] = useState("1");       // must be 1 for any large frequency
+  const [advFrequency, setAdvFrequency] = useState("2000"); // ~12 min: fast enough for listing proof
+  const [advNumCalls, setAdvNumCalls] = useState("5");
   const [advSchedulerGas, setAdvSchedulerGas] = useState("400000"); // 400k × 5 Gwei = 0.002 RIT/wakeup
   const [advCliType, setAdvCliType] = useState("5");
   const [advSchedulerTtl, setAdvSchedulerTtl] = useState("500");
@@ -220,6 +220,11 @@ function DeployPage() {
   const [startHash, setStartHash] = useState("");
   const [copied, setCopied] = useState("");
   const [preparedRestored, setPreparedRestored] = useState(false);
+  const [smoke, setSmoke] = useState<{ status: "idle" | "ok" | "fail"; signature: string; message: string }>({
+    status: "idle",
+    signature: "",
+    message: "",
+  });
 
   const connected = Boolean(account);
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
@@ -254,6 +259,8 @@ function DeployPage() {
   const hfTokenOk = hfToken.trim().startsWith("hf_");
   const apiKeyOk = apiKey.trim().startsWith(providerCfg.keyPrefix);
   const modelOk = model.trim().length > 0;
+  const smokeSignature = JSON.stringify([hfRepoId.trim(), hfToken.trim(), provider, apiKey.trim(), model.trim()]);
+  const smokeOk = smoke.status === "ok" && smoke.signature === smokeSignature;
   const advValid =
     freqNum >= 100 &&
     freqNum <= 300000 &&
@@ -275,6 +282,7 @@ function DeployPage() {
     hfTokenOk &&
     apiKeyOk &&
     modelOk &&
+    smokeOk &&
     fundingOk &&
     healthOk &&
     advValid;
@@ -288,6 +296,7 @@ function DeployPage() {
     if (!hfTokenOk) items.push("Paste HF token starting with hf_");
     if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
     if (!modelOk) items.push("Choose model");
+    if (hfRepoOk && hfTokenOk && apiKeyOk && modelOk && !smokeOk) items.push("Run credential smoke test");
     if (!fundingOk) items.push("Funding must be at least 0.1 RIT");
     if (!healthOk) items.push("Ritual executor health is too low; try later");
     if (!promptOk) items.push("Fill prompt");
@@ -309,6 +318,7 @@ function DeployPage() {
     hfRepoOk,
     hfTokenOk,
     apiKeyOk,
+    smokeOk,
     providerCfg,
     modelOk,
     fundingOk,
@@ -454,11 +464,11 @@ function DeployPage() {
       // Migrate old bad frequency values → safe default 28800
       if (typeof s.advFrequency === "string") {
         const f = s.advFrequency;
-        setAdvFrequency(["2000", "3000", "5000"].includes(f) ? "28800" : f);
+        setAdvFrequency(["28800", "74000", "148000", "246857"].includes(f) ? "2000" : f);
       }
       // Migrate old numCalls > 1 → 1 (required for large frequencies to avoid revert)
       if (typeof s.advNumCalls === "string") {
-        setAdvNumCalls(parseInt(s.advNumCalls, 10) > 1 ? "1" : s.advNumCalls);
+        setAdvNumCalls(s.advNumCalls === "1" ? "5" : s.advNumCalls);
       }
       // Migrate old schedulerGas → 400000
       if (typeof s.advSchedulerGas === "string") {
@@ -623,6 +633,40 @@ function DeployPage() {
       });
     }
     setChainId(await window.ethereum.request({ method: "eth_chainId" }));
+  }
+
+  async function runSmokeTest() {
+    setBusy("smoke");
+    setError("");
+    setSmoke({ status: "idle", signature: smokeSignature, message: "" });
+    try {
+      const res = await fetch("/api/ritual/smoke-test", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          hfRepoId,
+          hfToken,
+          provider,
+          apiKey,
+          model,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Smoke test failed.");
+      setSmoke({
+        status: "ok",
+        signature: smokeSignature,
+        message: `${providerCfg.label.split(" ")[0]} + HuggingFace verified`,
+      });
+    } catch (err) {
+      setSmoke({
+        status: "fail",
+        signature: smokeSignature,
+        message: err instanceof Error ? err.message : "Smoke test failed.",
+      });
+    } finally {
+      setBusy("");
+    }
   }
 
   async function prepare() {
@@ -803,10 +847,10 @@ function DeployPage() {
               <Rocket className="h-4 w-4" />
               Sovereign deployer
             </div>
-            <h1 className="font-display text-5xl leading-none tracking-normal sm:text-6xl">Deploy Sovereign Agent</h1>
+            <h1 className="font-display text-5xl leading-none tracking-normal sm:text-6xl">Deploy Agent</h1>
             <p className="mt-2 font-mono text-xs uppercase tracking-wider text-accent">with ease</p>
             <p className="mt-4 text-sm leading-6 text-text-secondary">
-              Connect wallet, prepare the official factory harness, deploy it, then fund and start the scheduler with your chosen RITUAL amount.
+              Connect wallet, prepare the factory harness, deploy it, then fund and start your agent.
             </p>
           </div>
 
@@ -856,15 +900,14 @@ function DeployPage() {
               Before you start (5 min)
             </div>
             <p className="mb-3 text-sm text-text-secondary">
-              You&apos;ll deploy a <b>Sovereign Agent</b> — a tiny on-chain bot that wakes up every ~12 minutes
-              and runs a prompt on a TEE-verified AI executor. Total time: <b>5–10 minutes</b>. Total cost:{" "}
-              <b>~0.15 RIT</b> (one-time).
+              You&apos;ll deploy a <b>Sovereign Agent</b> — a tiny on-chain bot that wakes up
+              and runs a prompt on a TEE-verified AI executor. Total time: <b>5–10 minutes</b>.
             </p>
             <ol className="space-y-2 text-sm leading-6 text-text-secondary">
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">1.</span>
                 <span>
-                  <b>Wallet with ≥ 0.15 RIT.</b> Use a burner wallet (don&apos;t use your main one). Get RITUAL from{" "}
+                  <b>Wallet with ≥ 0.15 RIT.</b> Use a burner wallet. Get RITUAL from{" "}
                   <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     faucet.ritualfoundation.org
                   </a>{" "}
@@ -889,13 +932,13 @@ function DeployPage() {
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">3.</span>
                 <span>
-                  <b>One LLM API key.</b> Cheapest = OpenRouter (free models available). Other options work too — you&apos;ll pick from a dropdown below.
+                  <b>One LLM API key.</b> Cheapest = OpenRouter. Other options work too — pick from a dropdown below.
                 </span>
               </li>
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">4.</span>
                 <span>
-                  <b>Keep this tab open</b> while the executor settles (~3 min). Closing it won&apos;t break anything but you&apos;ll need to use the monitor link to see status.
+                  <b>Keep this tab open</b> while the executor settles (~3 min).
                 </span>
               </li>
             </ol>
@@ -921,10 +964,6 @@ function DeployPage() {
               <div>
                 <p className="font-mono text-xs text-text-primary">Listed status takes forever (more than 30 min)</p>
                 <p>Ritual executor is backlogged. Check the <b>Executor health</b> panel on the left — green means good, amber means slow. Try again later when it&apos;s green.</p>
-              </div>
-              <div>
-                <p className="font-mono text-xs text-text-primary">Escrow draining way faster than expected</p>
-                <p>Escrow is charged <b>schedulerGas × maxFeePerGas</b> per wakeup — not actual gas used. Old deployments used 500k gas × 20 Gwei = <b>0.01 RIT/wakeup</b>. This deployer now uses 400k gas × 5 Gwei = <b>0.002 RIT/wakeup</b>, so 0.1 RIT funds ~50 heartbeats as expected.</p>
               </div>
             </div>
           </details>
@@ -1140,6 +1179,32 @@ function DeployPage() {
               </select>
             </Field>
 
+            <div className="border border-border bg-bg p-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={runSmokeTest}
+                  disabled={!hfRepoOk || !hfTokenOk || !apiKeyOk || !modelOk || busy === "smoke"}
+                  className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {busy === "smoke" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                  {busy === "smoke" ? "Testing..." : "Test credentials"}
+                </button>
+                {smoke.status === "ok" && smoke.signature === smokeSignature && (
+                  <span className="font-mono text-xs text-green-300">{smoke.message}</span>
+                )}
+                {smoke.status === "fail" && smoke.signature === smokeSignature && (
+                  <span className="min-w-0 flex-1 text-xs leading-5 text-red-200">{smoke.message}</span>
+                )}
+                {smoke.status === "ok" && smoke.signature !== smokeSignature && (
+                  <span className="font-mono text-xs text-amber-300">Credentials changed - test again</span>
+                )}
+              </div>
+              <p className="mt-2 text-[10px] text-text-secondary">
+                Runs a tiny model call and verifies HuggingFace token/repo before any on-chain transaction.
+              </p>
+            </div>
+
             <Field label={`TEE Executor (${executors.length} active from registry)`}>
               <div className="flex gap-2">
                 <select
@@ -1169,7 +1234,8 @@ function DeployPage() {
                 </button>
               </div>
               <p className="mt-2 text-[10px] text-text-secondary">
-                Loaded from Ritual registry. Refresh or choose another executor if Phase 2 times out.
+                With the default schedule (frequency 2,000 blocks = ~12 min), the first wakeup fires after roughly 12 minutes. Phase 2 callback usually
+                settles a few seconds later. If wakeup count grows but Phase 2 stays 0, the executor is laggy — wait or refill escrow.
               </p>
             </Field>
             <Field label="Prompt">
@@ -1566,3 +1632,4 @@ function HealthPanel({ health, onRefresh }: { health: Health | null; onRefresh: 
     </div>
   );
 }
+
