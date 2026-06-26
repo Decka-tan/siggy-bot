@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1058.0",
+    "@vercel/analytics": "^2.0.1",
     "ai": "^3.0.0",
     "animejs": "^4.4.1",
     "better-sqlite3": "^9.2.2",
