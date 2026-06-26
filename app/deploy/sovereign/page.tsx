@@ -1734,18 +1734,15 @@ function DeployedShareCard({
           </button>
         </div>
 
-        <div className="relative hidden min-h-[260px] bg-[#333333] md:block">
-          <div
-            className="absolute inset-0 opacity-70"
-            style={{
-              backgroundImage:
-                "linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555), linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)",
-              backgroundPosition: "0 0, 28px 28px",
-              backgroundSize: "56px 56px",
-            }}
-          />
-          <div className="absolute inset-y-0 left-0 w-5 bg-accent" />
-          <Image src="/character.png" alt="Siggy" fill className="object-contain object-bottom p-3" sizes="220px" />
+        <div className="relative hidden min-h-[260px] md:block overflow-hidden bg-[#0a0a0a]">
+          {/* Premium dark gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-accent/8 via-transparent to-black/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {/* Gold left accent bar */}
+          <div className="absolute inset-y-0 left-0 w-[3px] bg-accent" />
+          {/* Subtle glow behind character */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-40 h-40 rounded-full bg-accent/10 blur-3xl pointer-events-none" />
+          <Image src="/character.png" alt="Siggy" fill className="object-contain object-bottom" sizes="220px" />
         </div>
       </div>
     </div>
