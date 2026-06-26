@@ -481,6 +481,32 @@ export default function DeployPage() {
     }
   }
 
+  // Persist deployed agents to localStorage so /agent shows the user's history.
+  useEffect(() => {
+    if (!prepared?.harness) return;
+    if (typeof window === "undefined") return;
+    try {
+      const key = "siggy.deployed.agents.v1";
+      const raw = window.localStorage.getItem(key);
+      const list: any[] = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(list) && list.some((r) => r?.address?.toLowerCase?.() === prepared.harness.toLowerCase())) return;
+      const next = [
+        {
+          address: prepared.harness,
+          saltLabel: prepared.saltLabel,
+          deployTx: deployHash || undefined,
+          configureTx: startHash || undefined,
+          owner: prepared.owner,
+          createdAt: Date.now(),
+        },
+        ...(Array.isArray(list) ? list : []),
+      ].slice(0, 50);
+      window.localStorage.setItem(key, JSON.stringify(next));
+    } catch {
+      // localStorage may be unavailable in private windows — ignore
+    }
+  }, [prepared?.harness, prepared?.saltLabel, prepared?.owner, deployHash, startHash]);
+
   // Gap fix 4: auto-poll after start until LISTED or escrow drained or 30 min timeout.
   useEffect(() => {
     if (!startHash || !prepared?.harness) return;
