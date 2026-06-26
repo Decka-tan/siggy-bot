@@ -495,7 +495,90 @@ export default function DeployPage() {
             </div>
           )}
 
-          <Panel title="1. Wallet" icon={<Wallet className="h-5 w-5" />}>
+          <section className="border border-border bg-surface p-5">
+            <div className="mb-4 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
+              <span className="text-accent"><Sparkles className="h-5 w-5" /></span>
+              Before you start (5 min)
+            </div>
+            <p className="mb-3 text-sm text-text-secondary">
+              You&apos;ll deploy a <b>Sovereign Agent</b> — a tiny on-chain bot that wakes up every ~12 minutes
+              and runs a prompt on a TEE-verified AI executor. Total time: <b>5–10 minutes</b>. Total cost:{" "}
+              <b>~0.15 RIT</b> (one-time).
+            </p>
+            <ol className="space-y-2 text-sm leading-6 text-text-secondary">
+              <li className="flex gap-3">
+                <span className="font-mono text-xs text-accent">1.</span>
+                <span>
+                  <b>Wallet with ≥ 0.16 RIT.</b> Use a burner wallet (don&apos;t use your main one). Get RITUAL from{" "}
+                  <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                    faucet.ritualfoundation.org
+                  </a>{" "}
+                  or in Ritual Discord <code>#testnet-faucet</code>.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-mono text-xs text-accent">2.</span>
+                <span>
+                  <b>HuggingFace account + Write token + empty dataset.</b> Free, ~2 min.{" "}
+                  <a href="https://huggingface.co/join" target="_blank" rel="noreferrer" className="text-accent hover:underline">Sign up</a>
+                  {" "}→{" "}
+                  <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                    Create Write token
+                  </a>
+                  {" "}→{" "}
+                  <a href="https://huggingface.co/new-dataset" target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                    Make empty dataset
+                  </a>.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-mono text-xs text-accent">3.</span>
+                <span>
+                  <b>One LLM API key.</b> Cheapest = OpenRouter (free models available). Other options work too — you&apos;ll pick from a dropdown below.
+                </span>
+              </li>
+              <li className="flex gap-3">
+                <span className="font-mono text-xs text-accent">4.</span>
+                <span>
+                  <b>Keep this tab open</b> while the executor settles (~3 min). Closing it won&apos;t break anything but you&apos;ll need to use the monitor link to see status.
+                </span>
+              </li>
+            </ol>
+          </section>
+
+          <details className="border border-border bg-surface p-5 open:pb-5">
+            <summary className="cursor-pointer font-mono text-xs uppercase tracking-wider text-accent">
+              If something goes wrong (common errors + fixes)
+            </summary>
+            <div className="mt-4 space-y-3 text-sm leading-6 text-text-secondary">
+              <div>
+                <p className="font-mono text-xs text-text-primary">&quot;Wallet balance too low&quot;</p>
+                <p>You need at least your chosen funding amount + 0.06 RIT for gas. Hit the faucet again or lower the funding to 0.1 RIT.</p>
+              </div>
+              <div>
+                <p className="font-mono text-xs text-text-primary">&quot;Sender has a pending async job&quot;</p>
+                <p>Your wallet already has an in-flight sovereign call. Wait 10–30 min for the executor to clear it, or use a fresh burner wallet.</p>
+              </div>
+              <div>
+                <p className="font-mono text-xs text-text-primary">&quot;DeploymentFailed&quot; / harness empty after deploy</p>
+                <p>Gas limit too low. Refresh the page and retry — the deployer auto-sets gas limit to 3M which should pass.</p>
+              </div>
+              <div>
+                <p className="font-mono text-xs text-text-primary">Listed status takes forever (more than 30 min)</p>
+                <p>Ritual executor is backlogged. Check the <b>Executor health</b> panel on the left — green means good, amber means slow. Try again later when it&apos;s green.</p>
+              </div>
+              <div>
+                <p className="font-mono text-xs text-text-primary">Agent works but only ~10 wakeups, not 50</p>
+                <p>Old deployments (before Jun 2026) used schedulerGas 1.8M which burns 5× more per wakeup. This deployer uses 500k so 0.1 RIT lasts ~50 wakeups.</p>
+              </div>
+            </div>
+          </details>
+
+          <Panel
+            title="1. Wallet"
+            icon={<Wallet className="h-5 w-5" />}
+            subtitle="Connect a Ritual Testnet wallet. Use a burner with at least 0.16 RIT."
+          >
             <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
               <div className="border border-border bg-bg p-4 font-mono text-sm text-text-secondary">
                 {account ? account : "No wallet connected"}
@@ -518,7 +601,11 @@ export default function DeployPage() {
             </div>
           </Panel>
 
-          <Panel title="2. Agent input" icon={<Sparkles className="h-5 w-5" />}>
+          <Panel
+            title="2. Agent setup"
+            icon={<Sparkles className="h-5 w-5" />}
+            subtitle="Tell Siggy what your agent should do and where to keep its memory."
+          >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Salt label (any string — determines your agent address)">
                 <input
@@ -696,12 +783,21 @@ export default function DeployPage() {
               className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {busy === "prepare" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              Prepare deploy
+              {busy === "prepare" ? "Encrypting & preparing…" : "Prepare deploy"}
             </button>
+            {busy === "prepare" && (
+              <p className="text-xs text-text-secondary">
+                Encrypting your API key in this browser → fetching executor → predicting your harness address → building transactions. No tx is sent yet.
+              </p>
+            )}
           </Panel>
 
           {prepared && (
-            <Panel title="3. Preview transactions" icon={<Database className="h-5 w-5" />}>
+            <Panel
+              title="3. Preview & sign 2 transactions"
+              icon={<Database className="h-5 w-5" />}
+              subtitle="Tx 1 deploys an empty harness contract (~0.003 RIT gas). Tx 2 funds it and arms the schedule (your chosen RIT + ~0.05 RIT gas)."
+            >
               <div className="grid gap-4 md:grid-cols-2">
                 <Preview label="Predicted harness" value={prepared.harness} onCopy={() => copy(prepared.harness, "harness")} copied={copied === "harness"} />
                 <Preview label="Configure selector" value={`${prepared.calldataPreview.selector} (${prepared.calldataPreview.bytes.toLocaleString()} bytes)`} />
@@ -734,7 +830,11 @@ export default function DeployPage() {
           )}
 
           {(deployHash || startHash || verify) && (
-            <Panel title="4. Monitor" icon={<ShieldCheck className="h-5 w-5" />}>
+            <Panel
+              title="4. Wait for LISTED"
+              icon={<ShieldCheck className="h-5 w-5" />}
+              subtitle="Auto-checks every 30 seconds. Typical: 3–15 minutes after Tx 2 to appear in the agents list."
+            >
               <div className="grid gap-3 md:grid-cols-3">
                 <Status label="Deployed" ok={Boolean(verify?.deployed)} value={verify?.bytecodeBytes ? `${verify.bytecodeBytes.toLocaleString()} bytes` : "-"} />
                 <Status label="Template match" ok={Boolean(verify?.templateMatch)} value={verify?.templateMatch ? "10822 bytes" : "Waiting"} />
@@ -781,13 +881,24 @@ export default function DeployPage() {
   );
 }
 
-function Panel({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
+function Panel({
+  title,
+  icon,
+  children,
+  subtitle,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  subtitle?: string;
+}) {
   return (
     <section className="border border-border bg-surface p-5">
-      <div className="mb-5 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
+      <div className="mb-2 flex items-center gap-2 font-mono text-sm uppercase tracking-wider text-text-primary">
         <span className="text-accent">{icon}</span>
         {title}
       </div>
+      {subtitle && <p className="mb-4 text-sm text-text-secondary">{subtitle}</p>}
       <div className="space-y-4">{children}</div>
     </section>
   );
