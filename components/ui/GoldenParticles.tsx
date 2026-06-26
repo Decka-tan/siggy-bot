@@ -53,15 +53,10 @@ export function GoldenParticles({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    // Viewport-based sizing for absolute reliability
     const handleResize = () => {
-      if (mode === "celebration") {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-      } else {
-        const rect = canvas.parentElement?.getBoundingClientRect();
-        canvas.width = rect?.width || window.innerWidth;
-        canvas.height = rect?.height || window.innerHeight;
-      }
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     };
 
     handleResize();
@@ -77,7 +72,7 @@ export function GoldenParticles({
         size,
         color: getRandomColor(Math.random() * 0.4 + 0.1),
         alpha: Math.random() * 0.6 + 0.1,
-        decay: 0.002 + Math.random() * 0.003,
+        decay: 0.001 + Math.random() * 0.002,
         shape: Math.random() > 0.85 ? "spark" : "circle",
       };
     };
@@ -222,11 +217,11 @@ export function GoldenParticles({
     };
   }, [mode, trigger, count]);
 
-  // CSS classes based on mode
+  // Use fixed positioning so it overlays nicely and handles scroll
   const classes =
     mode === "celebration"
       ? "fixed inset-0 pointer-events-none z-50"
-      : "absolute inset-0 pointer-events-none z-0 opacity-60";
+      : "fixed inset-0 pointer-events-none z-0 opacity-40";
 
   return <canvas ref={canvasRef} className={classes} />;
 }
