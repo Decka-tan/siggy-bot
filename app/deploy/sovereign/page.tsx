@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { encrypt, ECIES_CONFIG } from "eciesjs";
 import {
   AlertTriangle,
@@ -175,6 +176,10 @@ function short(value = "") {
   return `${value.slice(0, 6)}...${value.slice(-4)}`;
 }
 
+function agentUrl(address: string) {
+  return `https://siggy.decka.my.id/agent/${address}`;
+}
+
 export default function DeployRoute() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-bg pt-28 text-text-primary" />}>
@@ -283,21 +288,20 @@ function DeployPage() {
     hfTokenOk &&
     apiKeyOk &&
     modelOk &&
-    smokeOk &&
     fundingOk &&
     healthOk &&
     advValid;
+  const prepareWillSmokeTest = hfRepoOk && hfTokenOk && apiKeyOk && modelOk && !smokeOk;
   const prepareBlockers = useMemo(() => {
     const items: string[] = [];
     if (!connected) items.push("Connect wallet");
     if (connected && !chainOk) items.push("Switch to Ritual Testnet");
     if (connected && !balanceOk) items.push(`Need at least ${requiredRit.toFixed(2)} RIT`);
-    if (!saltOk) items.push("Fill salt label");
+    if (!saltOk) items.push("Fill Agent Name");
     if (!hfRepoOk) items.push("HF repo must be user/repo");
     if (!hfTokenOk) items.push("Paste HF token starting with hf_");
     if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
     if (!modelOk) items.push("Choose model");
-    if (hfRepoOk && hfTokenOk && apiKeyOk && modelOk && !smokeOk) items.push("Run credential smoke test");
     if (!fundingOk) items.push("Funding must be at least 0.1 RIT");
     if (!healthOk) items.push("Ritual executor health is too low; try later");
     if (!promptOk) items.push("Fill prompt");
@@ -319,7 +323,6 @@ function DeployPage() {
     hfRepoOk,
     hfTokenOk,
     apiKeyOk,
-    smokeOk,
     providerCfg,
     modelOk,
     fundingOk,
@@ -636,7 +639,7 @@ function DeployPage() {
     setChainId(await window.ethereum.request({ method: "eth_chainId" }));
   }
 
-  async function runSmokeTest() {
+  async function runSmokeTest(): Promise<boolean> {
     setBusy("smoke");
     setError("");
     setSmoke({ status: "idle", signature: smokeSignature, message: "" });
@@ -659,23 +662,33 @@ function DeployPage() {
         signature: smokeSignature,
         message: `${providerCfg.label.split(" ")[0]} + HuggingFace verified`,
       });
+      return true;
     } catch (err) {
       setSmoke({
         status: "fail",
         signature: smokeSignature,
         message: err instanceof Error ? err.message : "Smoke test failed.",
       });
+      return false;
     } finally {
       setBusy("");
     }
   }
 
   async function prepare() {
-    setBusy("prepare");
     setError("");
     setPrepared(null);
     setVerify(null);
     try {
+      if (!smokeOk) {
+        const ok = await runSmokeTest();
+        if (!ok) {
+          setError("Credential smoke test failed. Fix HuggingFace/API/model first; no on-chain transaction was prepared.");
+          return;
+        }
+      }
+
+      setBusy("prepare");
       // Encrypt secrets in-browser to the TEE executor pubkey before sending anything.
       // The server never sees plaintext API_KEY or HF_TOKEN.
       const secretPayload = JSON.stringify({
@@ -1022,7 +1035,7 @@ function DeployPage() {
                 </button>
               </div>
               <div className="grid gap-2 text-xs text-text-secondary sm:grid-cols-3">
-                <p>Salt: <span className="font-mono text-text-primary">{saltLabel}</span></p>
+                <p>Agent: <span className="font-mono text-text-primary">{saltLabel}</span></p>
                 <p>HF: <span className="font-mono text-text-primary">{hfRepoId}</span></p>
                 <p>Provider: <span className="font-mono text-text-primary">{provider}</span></p>
                 <p>Model: <span className="font-mono text-text-primary">{model}</span></p>
@@ -1037,7 +1050,7 @@ function DeployPage() {
             subtitle="Tell Siggy what your agent should do and where to keep its memory."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Salt label (any string — determines your agent address)">
+              <Field label="Agent Name (salt label)">
                 <input
                   value={saltLabel}
                   onChange={(e) => setSaltLabel(e.target.value)}
@@ -1185,7 +1198,7 @@ function DeployPage() {
                 <button
                   type="button"
                   onClick={runSmokeTest}
-                  disabled={!hfRepoOk || !hfTokenOk || !apiKeyOk || !modelOk || busy === "smoke"}
+                  disabled={!hfRepoOk || !hfTokenOk || !apiKeyOk || !modelOk || Boolean(busy)}
                   className="inline-flex items-center gap-2 bg-accent px-4 py-2 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {busy === "smoke" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
@@ -1384,12 +1397,12 @@ function DeployPage() {
 
             <button
               onClick={prepare}
-              disabled={!canPrepare || busy === "prepare"}
+              disabled={!canPrepare || Boolean(busy)}
               title={!canPrepare && prepareBlockers.length ? prepareBlockers.join(", ") : undefined}
               className="inline-flex items-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy === "prepare" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-              {busy === "prepare" ? "Encrypting & preparing…" : "Prepare deploy"}
+              {busy === "prepare" || busy === "smoke" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+              {busy === "smoke" ? "Testing credentials…" : busy === "prepare" ? "Encrypting & preparing…" : prepareWillSmokeTest ? "Test & prepare deploy" : "Prepare deploy"}
             </button>
             {!canPrepare && prepareBlockers.length > 0 && (
               <p className="text-xs leading-5 text-amber-300">
@@ -1400,6 +1413,11 @@ function DeployPage() {
             {busy === "prepare" && (
               <p className="text-xs text-text-secondary">
                 Encrypting your API key in this browser → fetching executor → predicting your harness address → building transactions. No tx is sent yet.
+              </p>
+            )}
+            {busy === "smoke" && (
+              <p className="text-xs text-text-secondary">
+                Checking HuggingFace repo/write token and running a tiny model call before prepare. No wallet transaction is opened yet.
               </p>
             )}
           </Panel>
@@ -1494,6 +1512,14 @@ function DeployPage() {
                 <Status label="Template match" ok={Boolean(verify?.templateMatch)} value={verify?.templateMatch ? "10822 bytes" : "Waiting"} />
                 <Status label="Explorer listed" ok={Boolean(verify?.listed)} value={verify?.lastActivityBlock ? `Block ${verify.lastActivityBlock}` : "Not yet"} />
               </div>
+              {prepared?.harness && (startHash || startDone) && (
+                <DeployedShareCard
+                  agentName={prepared.saltLabel || saltLabel}
+                  amountRit={prepared.schedule.value}
+                  address={prepared.harness}
+                  lastBlock={verify?.lastActivityBlock}
+                />
+              )}
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
                   onClick={() => verifyAgent()}
@@ -1600,6 +1626,104 @@ function Status({ label, ok, value }: { label: string; ok: boolean; value: strin
       </div>
       <p className="mt-3 font-mono text-[11px] uppercase tracking-wider text-text-secondary">{label}</p>
       <p className="mt-1 font-mono text-sm text-text-primary">{value}</p>
+    </div>
+  );
+}
+
+function DeployedShareCard({
+  agentName,
+  amountRit,
+  address,
+  lastBlock,
+}: {
+  agentName: string;
+  amountRit: string;
+  address: string;
+  lastBlock: number | null | undefined;
+}) {
+  const [copiedShare, setCopiedShare] = useState(false);
+  const url = agentUrl(address);
+  const lastBlockText = lastBlock ? `Block ${lastBlock.toLocaleString()}` : "Waiting for LISTED";
+  const shareText = [
+    "I deployed my agent!",
+    `Agent Name: ${agentName}`,
+    `Deployed: ${amountRit} RIT`,
+    `Agent address: ${short(address)}`,
+    url,
+    `Last block: ${lastBlockText}`,
+  ].join("\n");
+
+  async function copyShare() {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopiedShare(true);
+      window.setTimeout(() => setCopiedShare(false), 1200);
+    } catch {
+      setCopiedShare(false);
+    }
+  }
+
+  return (
+    <div className="mt-5 overflow-hidden border border-accent/40 bg-bg">
+      <div className="grid gap-0 md:grid-cols-[1fr_220px]">
+        <div className="p-5">
+          <div className="inline-flex items-center gap-2 border border-accent/30 bg-accent/10 px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider text-accent">
+            <Sparkles className="h-3.5 w-3.5" />
+            Share card
+          </div>
+          <h3 className="mt-4 font-display text-3xl leading-none text-accent">I deployed my agent!</h3>
+
+          <div className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+            <ShareLine label="Agent Name" value={agentName} />
+            <ShareLine label="Deployed" value={`${amountRit} RIT`} />
+            <div className="border border-border bg-surface p-3 sm:col-span-2">
+              <p className="font-mono text-[10px] uppercase tracking-wider text-text-secondary">Agent address</p>
+              <a
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 inline-flex max-w-full items-center gap-2 truncate font-mono text-sm text-accent hover:underline"
+              >
+                {short(address)}
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            </div>
+            <ShareLine label="Last block" value={lastBlockText} />
+          </div>
+
+          <button
+            type="button"
+            onClick={copyShare}
+            className="mt-4 inline-flex items-center gap-2 border border-border px-4 py-2 font-mono text-xs uppercase tracking-wider text-accent hover:border-accent"
+          >
+            {copiedShare ? <CheckCircle2 className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copiedShare ? "Copied" : "Copy share text"}
+          </button>
+        </div>
+
+        <div className="relative hidden min-h-[260px] bg-[#333333] md:block">
+          <div
+            className="absolute inset-0 opacity-70"
+            style={{
+              backgroundImage:
+                "linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555), linear-gradient(45deg, #555555 25%, transparent 25%, transparent 75%, #555555 75%, #555555)",
+              backgroundPosition: "0 0, 28px 28px",
+              backgroundSize: "56px 56px",
+            }}
+          />
+          <div className="absolute inset-y-0 left-0 w-5 bg-accent" />
+          <Image src="/character.png" alt="Siggy" fill className="object-contain object-bottom p-3" sizes="220px" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareLine({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-border bg-surface p-3">
+      <p className="font-mono text-[10px] uppercase tracking-wider text-text-secondary">{label}</p>
+      <p className="mt-1 min-w-0 truncate font-mono text-sm text-text-primary">{value}</p>
     </div>
   );
 }
