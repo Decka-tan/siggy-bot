@@ -38,6 +38,7 @@ const TOPUP_OPTIONS = ["0.1", "0.2", "0.5", "1.0"];
 const COST_PER_WAKEUP_RIT = 0.02;
 const DEFAULT_FREQUENCY_BLOCKS = 2000;
 const AVG_BLOCK_SECONDS = 0.35;
+const CALLBACK_GRACE_BLOCKS = Math.ceil((15 * 60) / AVG_BLOCK_SECONDS);
 const PREPARED_KEY = "siggy.deploy.prepared.v1";
 
 type Verify = {
@@ -127,10 +128,15 @@ function AgentPage() {
     (verify?.wakeupAttempts ?? 0) === 0 &&
     (verify?.phase2Deliveries ?? 0) === 0 &&
     verify?.lastActivityBlock === null;
+  const blocksSinceScheduler = verify?.lastSchedulerBlock && verify?.blockNumber
+    ? verify.blockNumber - verify.lastSchedulerBlock
+    : null;
   const schedulerWithoutCallback =
     Boolean(verify?.templateMatch) &&
     (verify?.wakeupAttempts ?? 0) > 0 &&
-    (verify?.phase2Deliveries ?? 0) === 0;
+    (verify?.phase2Deliveries ?? 0) === 0 &&
+    blocksSinceScheduler !== null &&
+    blocksSinceScheduler >= CALLBACK_GRACE_BLOCKS;
   const topupPaused = fundedButNotScheduled || schedulerWithoutCallback;
   const effectiveFrequency = savedSchedule.frequency || DEFAULT_FREQUENCY_BLOCKS;
 
@@ -699,8 +705,8 @@ function AgentPage() {
           </h2>
 
           <p className="text-sm text-text-secondary">
-            Top-up only extends an agent that already receives Phase 2 callbacks. It cannot refund escrow, fix broken HF/API settings,
-            or retry a start call that was never armed. Conservative reserve estimate: ~{COST_PER_WAKEUP_RIT} RIT per successful wakeup/delivery.
+            Top-up only extends an agent that already receives Phase 2 callbacks. Deposited RIT is managed by Ritual&apos;s escrow contracts;
+            this monitor does not expose a withdraw path or repair broken HF/API settings. Conservative reserve estimate: ~{COST_PER_WAKEUP_RIT} RIT per successful wakeup/delivery.
           </p>
 
           {topupPaused && (

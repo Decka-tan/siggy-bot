@@ -114,6 +114,7 @@ type ProviderConfig = {
   label: string;
   envKey: string;
   keyPrefix: string;
+  keyPrefixes?: string[];
   defaultModel: string;
   signupUrl: string;
   apiKeyUrl: string;
@@ -164,7 +165,8 @@ const PROVIDERS: Record<ProviderKey, ProviderConfig> = {
   gemini: {
     label: "Google Gemini",
     envKey: "GEMINI_API_KEY",
-    keyPrefix: "AQ.Ab",
+    keyPrefix: "AQ.Ab / AIza",
+    keyPrefixes: ["AQ.Ab", "AIza"],
     defaultModel: "gemini-2.5-flash",
     signupUrl: "https://aistudio.google.com/",
     apiKeyUrl: "https://aistudio.google.com/app/apikey",
@@ -180,6 +182,12 @@ function short(value = "") {
 
 function agentUrl(address: string) {
   return `https://siggy.decka.my.id/agent/${address}`;
+}
+
+function acceptsProviderKey(providerCfg: ProviderConfig, key: string) {
+  const trimmed = key.trim();
+  const prefixes = providerCfg.keyPrefixes || [providerCfg.keyPrefix];
+  return prefixes.some((prefix) => trimmed.startsWith(prefix));
 }
 
 export default function DeployRoute() {
@@ -272,7 +280,7 @@ function DeployPage() {
   const normalizedHfRepoId = hfRepoId.trim().toLowerCase().replace(/^https:\/\/huggingface\.co\/datasets\//i, "").replace(/^\/+|\/+$/g, "");
   const hfRepoOk = /^[a-z0-9][a-z0-9_.-]*\/[a-z0-9][a-z0-9_.-]*$/.test(normalizedHfRepoId);
   const hfTokenOk = hfToken.trim().startsWith("hf_");
-  const apiKeyOk = apiKey.trim().startsWith(providerCfg.keyPrefix);
+  const apiKeyOk = acceptsProviderKey(providerCfg, apiKey);
   const modelOk = model.trim().length > 0;
   const smokeSignature = JSON.stringify([normalizedHfRepoId, hfToken.trim(), provider, apiKey.trim(), model.trim()]);
   const smokeOk = smoke.status === "ok" && smoke.signature === smokeSignature;
@@ -1507,7 +1515,7 @@ function DeployPage() {
                   <span className="font-mono font-semibold text-emerald-300">{escrowDurationText} of escrow</span>
                 </p>
                 <p className="mt-1 border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-amber-100">
-                  Escrow is locked in the harness. Siggy cannot withdraw or refund it if the TEE callback never lands.
+                  Heads up: deposited RIT is managed by Ritual&apos;s escrow contracts. This deployer can monitor or top up the balance, but it does not expose a withdraw path.
                 </p>
               </div>
             </details>
