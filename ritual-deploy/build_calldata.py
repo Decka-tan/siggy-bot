@@ -39,7 +39,7 @@ params = (
     'SOVEREIGN_AGENT_TASK',
     HARNESS,
     bytes.fromhex('8ca12055'),
-    3_000_000, 1_000_000_000, 100_000_000, 5,
+    3_000_000, 10_000_000, 1_000_000, 5,
     os.environ.get('PROMPT', "You are Siggy, a sovereign Ritual agent. Analyze one trend at AI x crypto intersection, suggest one product idea, return short confirmation."),
     enc_secrets,
     ('hf', f'{HF_REPO}/sessions/session-001.jsonl', 'HF_TOKEN'),

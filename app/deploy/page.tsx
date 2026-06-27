@@ -31,7 +31,7 @@ type Choice = "sovereign" | "persistent" | null;
 type Quip = { text: string };
 
 const sovereignQuips: Quip[] = [
-  { text: "Cheap! 0.1 RIT is enough to get listed on the testnet. Very friendly for first-timers." },
+  { text: "Start with 0.2 RIT. It is the practical minimum Siggy exposes for live executor conditions." },
   { text: "Fast to deploy — connect your web3 wallet, sign 2 transactions, and you are done." },
   { text: "Short lifespan by default. After 5 wakeups the schedule ends and the agent becomes dormant." },
   { text: "Best for: 'I just want to prove I deployed a Ritual agent' or claiming testnet achievements." },
@@ -67,7 +67,7 @@ export default function DeployLanding() {
     ],
     "deploy-cost": [
       "Sovereign agent: budget ~0.02 RIT per successful wakeup/delivery reserve",
-      "Start small: 0.1-0.2 RIT proves the flow; escrow cannot be withdrawn if callback fails",
+      "Start small: 0.2 RIT proves the flow; escrow cannot be withdrawn if callback fails",
       "Persistent agent: ~2.1 RIT minimum (official Ritual launcher)",
     ],
     "agent-types": [
@@ -138,7 +138,7 @@ export default function DeployLanding() {
       "SMOKE-TEST: Running HF credentials validation...",
       "SMOKE-TEST: Credentials match, mock inference OK.",
       "ESCROW: Budgeting ~0.02 RIT reserve per successful wakeup.",
-      "ESCROW: Escrow threshold set to 0.1 RIT.",
+      "ESCROW: Escrow threshold set to 0.2 RIT.",
       "SYSTEM: Awaiting wallet transaction signatures...",
       "SYSTEM: Active listening mode armed.",
     ];
@@ -285,7 +285,7 @@ export default function DeployLanding() {
             <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-text-secondary">
               <Pill icon={<Shield className="h-3.5 w-3.5" />} label="Secrets stay in browser" />
               <Pill icon={<Zap className="h-3.5 w-3.5" />} label="Verified factory pattern" />
-              <Pill icon={<Coins className="h-3.5 w-3.5" />} label="From 0.1 RIT" />
+              <Pill icon={<Coins className="h-3.5 w-3.5" />} label="From 0.2 RIT" />
             </div>
           </div>
 
@@ -348,7 +348,7 @@ export default function DeployLanding() {
               kind="sovereign"
               title="Sovereign Agent"
               tagline="Job primitive · short-lived · cheap"
-              cost="from 0.1 RIT"
+              cost="from 0.2 RIT"
               active={choice === "sovereign"}
               onClick={() => setChoice("sovereign")}
             />
@@ -413,7 +413,7 @@ export default function DeployLanding() {
 
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Stat label="Lifespan" value={choice === "sovereign" ? "5 wakeups per schedule" : "Indefinite"} icon={<Clock className="h-4 w-4" />} />
-                    <Stat label="Min funding" value={choice === "sovereign" ? "0.1 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
+                    <Stat label="Min funding" value={choice === "sovereign" ? "0.2 RIT" : "~2.1 RIT"} icon={<Coins className="h-4 w-4" />} />
                     <Stat label="State" value={choice === "sovereign" ? "Ephemeral" : "DA-backed memory"} icon={<Layers className="h-4 w-4" />} />
                     <Stat label="Setup" value={choice === "sovereign" ? "2 txs, ~3 min" : "Official launcher"} icon={<Timer className="h-4 w-4" />} />
                   </div>
@@ -444,7 +444,7 @@ export default function DeployLanding() {
                 <ComparisonRow label="Concept" sov="Job — task one-shot/batch" per="Service — long-lived" />
                 <ComparisonRow label="Best for" sov="Achievement / demo" per="Always-on assistant" />
                 <ComparisonRow label="Lifespan" sov={<X className="inline h-4 w-4 text-red-300" />} per={<Check className="inline h-4 w-4 text-emerald-300" />} sovText="Short" perText="Indefinite" />
-                <ComparisonRow label="Min funding" sov="0.1 RIT" per="~2.1 RIT" />
+                <ComparisonRow label="Min funding" sov="0.2 RIT" per="~2.1 RIT" />
                 <ComparisonRow label="State & memory" sov="Ephemeral" per="DA-backed (HF/GCS/Pinata)" />
                 <ComparisonRow label="Reviveable" sov={<X className="inline h-4 w-4 text-red-300" />} per={<Check className="inline h-4 w-4 text-emerald-300" />} />
                 <ComparisonRow label="Deploy here" sov="Siggy deployer" per="agents.ritualfoundation.org" />

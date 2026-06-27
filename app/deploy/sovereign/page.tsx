@@ -102,8 +102,8 @@ const FREQUENCY_PRESETS = [
   { value: "6000",   label: "Every ~35 min",     desc: "Frequent heartbeat" },
   { value: "14400",  label: "Every ~1.4 hr",     desc: "Balanced" },
   { value: "28800",  label: "Every ~2.8 hr",     desc: "Light usage" },
-  { value: "74000",  label: "Every ~7.2 hr",     desc: "0.2 RIT ≈ 1 month" },
-  { value: "148000", label: "Every ~14.4 hr",    desc: "0.1 RIT ≈ 1 month" },
+  { value: "74000",  label: "Every ~7.2 hr",     desc: "Low activity" },
+  { value: "148000", label: "Every ~14.4 hr",    desc: "Very low activity" },
   { value: "246857", label: "Every ~24 hr",      desc: "1× per day" },
 ] as const;
 
@@ -213,7 +213,7 @@ function DeployPage() {
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState(PROVIDERS.openrouter.defaultModel);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [fundingRit, setFundingRit] = useState("0.1");
+  const [fundingRit, setFundingRit] = useState("0.2");
   const [showHfHelp, setShowHfHelp] = useState(false);
   const [showProviderHelp, setShowProviderHelp] = useState(false);
   const [showSetupGuide, setShowSetupGuide] = useState(false);
@@ -246,7 +246,7 @@ function DeployPage() {
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
   const balanceNum = walletBalanceRit ? parseFloat(walletBalanceRit) : 0;
   const fundingNum = parseFloat(fundingRit || "0");
-  const fundingOk = fundingNum >= 0.1 && fundingNum <= 5;
+  const fundingOk = fundingNum >= 0.2 && fundingNum <= 5;
   const requiredRit = fundingNum + 0.05;
   const balanceOk = !connected || !walletBalanceRit || balanceNum >= requiredRit;
   const providerCfg = PROVIDERS[provider];
@@ -319,7 +319,7 @@ function DeployPage() {
     if (!hfTokenOk) items.push("Paste HF token starting with hf_");
     if (!apiKeyOk) items.push(`Paste ${providerCfg.label.split(" ")[0]} key starting with ${providerCfg.keyPrefix}`);
     if (!modelOk) items.push("Choose model");
-    if (!fundingOk) items.push("Funding must be at least 0.1 RIT");
+    if (!fundingOk) items.push("Funding must be at least 0.2 RIT");
     if (!healthOk) items.push("Ritual executor health is too low; try later");
     if (!promptOk) items.push("Fill prompt");
     if (freqNum < 100 || freqNum > 300000) items.push("Frequency must be 100-300,000");
@@ -481,7 +481,7 @@ function DeployPage() {
         else setModel(PROVIDERS[s.provider as ProviderKey].defaultModel);
       }
       if (typeof s.prompt === "string") setPrompt(s.prompt);
-      if (typeof s.fundingRit === "string") setFundingRit(parseFloat(s.fundingRit) >= 0.1 ? s.fundingRit : "0.1");
+      if (typeof s.fundingRit === "string") setFundingRit(parseFloat(s.fundingRit) >= 0.2 ? s.fundingRit : "0.2");
       // Migrate old bad frequency values → safe default 28800
       if (typeof s.advFrequency === "string") {
         const f = s.advFrequency;
@@ -1024,7 +1024,7 @@ function DeployPage() {
               <li className="flex gap-3">
                 <span className="font-mono text-xs text-accent">1.</span>
                 <span>
-                  <b>Wallet with ≥ 0.15 RIT.</b> Use a burner wallet. Get RITUAL from{" "}
+                  <b>Wallet with ≥ 0.26 RIT.</b> Use a burner wallet. Get RITUAL from{" "}
                   <a href="https://faucet.ritualfoundation.org" target="_blank" rel="noreferrer" className="text-accent hover:underline">
                     faucet.ritualfoundation.org
                   </a>{" "}
@@ -1068,7 +1068,7 @@ function DeployPage() {
             <div className="mt-4 space-y-3 text-sm leading-6 text-text-secondary">
               <div>
                 <p className="font-mono text-xs text-text-primary">&quot;Wallet balance too low&quot;</p>
-                <p>You need at least your chosen funding amount + 0.05 RIT for gas. Hit the faucet again or lower the funding to 0.1 RIT.</p>
+                <p>You need at least your chosen funding amount + 0.05 RIT for gas. Hit the faucet again or lower the funding to 0.2 RIT.</p>
               </div>
               <div>
                 <p className="font-mono text-xs text-text-primary">&quot;Sender has a pending async job&quot;</p>
@@ -1379,7 +1379,7 @@ function DeployPage() {
             </Field>
             <Field label={`Initial funding (locked to harness escrow). Need ≥ ${requiredRit.toFixed(2)} RIT in wallet.`}>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {["0.1", "0.2", "0.5", "1.0"].map((opt) => (
+                {["0.2", "0.5", "1.0"].map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setFundingRit(opt)}

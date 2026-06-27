@@ -137,8 +137,8 @@ function buildCalldata({
     harness,
     "0x8ca12055",
     3000000,
-    1000000000,
-    100000000,
+    10000000, // 0.01 Gwei (10,000,000 Wei)
+    1000000,  // 0.001 Gwei (1,000,000 Wei)
     cliType,
     prompt,
     encryptedSecrets,

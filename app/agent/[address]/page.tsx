@@ -34,7 +34,7 @@ const CHAIN_ID_HEX = "0x7bb";
 const RPC_URL = "https://rpc.ritualfoundation.org";
 const DEPOSIT_FOR_SELECTOR = "0x2f4f21e2";
 const LOCK_BLOCKS = 100_000_000n;
-const TOPUP_OPTIONS = ["0.1", "0.2", "0.5", "1.0"];
+const TOPUP_OPTIONS = ["0.2", "0.5", "1.0"];
 const COST_PER_WAKEUP_RIT = 0.02;
 const DEFAULT_FREQUENCY_BLOCKS = 2000;
 const AVG_BLOCK_SECONDS = 0.35;
@@ -108,7 +108,7 @@ function AgentPage() {
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState("");
-  const [topupAmount, setTopupAmount] = useState("0.1");
+  const [topupAmount, setTopupAmount] = useState("0.2");
   const [topupHash, setTopupHash] = useState("");
   const [retryHash, setRetryHash] = useState("");
   const [account, setAccount] = useState("");
