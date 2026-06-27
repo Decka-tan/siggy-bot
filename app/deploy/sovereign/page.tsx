@@ -165,7 +165,7 @@ const PROVIDERS: Record<ProviderKey, ProviderConfig> = {
   gemini: {
     label: "Google Gemini",
     envKey: "GEMINI_API_KEY",
-    keyPrefix: "AIza",
+    keyPrefix: "AQ.Ab",
     defaultModel: "gemini-2.5-flash",
     signupUrl: "https://aistudio.google.com/",
     apiKeyUrl: "https://aistudio.google.com/app/apikey",
