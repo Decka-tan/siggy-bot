@@ -203,7 +203,7 @@ function DeployPage() {
   const initialSalt = search?.get("salt") || "";
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
-  const FORM_KEY = "siggy.deploy.form.v2"; // bumped: clears old bad defaults (numCalls=5, schedulerGas=500k)
+  const FORM_KEY = "siggy.deploy.form.v3"; // bumped to v3: forces new optimized defaults (0.2 RIT min, 350k gas)
   const PREPARED_KEY = "siggy.deploy.prepared.v1";
   const [saltLabel, setSaltLabel] = useState(initialSalt);
   const [hfRepoId, setHfRepoId] = useState("");
