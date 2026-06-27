@@ -35,7 +35,9 @@ const RPC_URL = "https://rpc.ritualfoundation.org";
 const DEPOSIT_FOR_SELECTOR = "0x2f4f21e2";
 const LOCK_BLOCKS = 100_000_000n;
 const TOPUP_OPTIONS = ["0.1", "0.2", "0.5", "1.0"];
-const COST_PER_WAKEUP_RIT = 0.002;
+const COST_PER_WAKEUP_RIT = 0.02;
+const DEFAULT_FREQUENCY_BLOCKS = 2000;
+const AVG_BLOCK_SECONDS = 0.35;
 const PREPARED_KEY = "siggy.deploy.prepared.v1";
 
 type Verify = {
@@ -55,7 +57,15 @@ type Verify = {
   explorerUrl: string;
   wakeupAttempts?: number;
   phase2Deliveries?: number;
+  lastSchedulerBlock?: number | null;
   error?: string;
+};
+
+type SavedSchedule = {
+  frequency?: number;
+  numCalls?: number;
+  schedulerGas?: number;
+  source: "saved" | "prepared" | "default";
 };
 
 function short(value = "") {
@@ -103,6 +113,7 @@ function AgentPage() {
   const [account, setAccount] = useState("");
   const [chainId, setChainId] = useState("");
   const [walletBalance, setWalletBalance] = useState<string | null>(null);
+  const [savedSchedule, setSavedSchedule] = useState<SavedSchedule>({ source: "default" });
 
   const connected = Boolean(account);
   const chainOk = chainId.toLowerCase() === CHAIN_ID_HEX;
@@ -116,12 +127,39 @@ function AgentPage() {
     (verify?.wakeupAttempts ?? 0) === 0 &&
     (verify?.phase2Deliveries ?? 0) === 0 &&
     verify?.lastActivityBlock === null;
+  const schedulerWithoutCallback =
+    Boolean(verify?.templateMatch) &&
+    (verify?.wakeupAttempts ?? 0) > 0 &&
+    (verify?.phase2Deliveries ?? 0) === 0;
+  const topupPaused = fundedButNotScheduled || schedulerWithoutCallback;
+  const effectiveFrequency = savedSchedule.frequency || DEFAULT_FREQUENCY_BLOCKS;
 
   const wakeupsLeft = useMemo(() => {
     if (!verify?.escrowRit) return null;
     const rit = parseFloat(verify.escrowRit);
     return Math.floor(rit / COST_PER_WAKEUP_RIT);
   }, [verify?.escrowRit]);
+
+  const nextWakeup = useMemo(() => {
+    if (!verify?.blockNumber || !verify.deployed || !effectiveFrequency) return null;
+    const anchor = verify.lastSchedulerBlock || verify.lastActivityBlock;
+    if (!anchor) {
+      return {
+        label: "waiting for first scheduler event",
+        detail: savedSchedule.source === "default" ? "using default 2000-block schedule" : "schedule known from this browser",
+      };
+    }
+    const nextBlock = anchor + effectiveFrequency;
+    const blocksUntil = Math.max(0, nextBlock - verify.blockNumber);
+    const minutes = Math.max(0, Math.round((blocksUntil * AVG_BLOCK_SECONDS) / 60));
+    return {
+      nextBlock,
+      blocksUntil,
+      minutes,
+      label: blocksUntil === 0 ? "due now / executor pending" : `~${minutes} min`,
+      detail: `${blocksUntil.toLocaleString()} blocks until block ${nextBlock.toLocaleString()}`,
+    };
+  }, [effectiveFrequency, savedSchedule.source, verify?.blockNumber, verify?.deployed, verify?.lastActivityBlock, verify?.lastSchedulerBlock]);
 
   const blocksSinceActivity = useMemo(() => {
     if (!verify?.lastActivityBlock || !verify?.blockNumber) return null;
@@ -183,6 +221,38 @@ function AgentPage() {
       if (!Array.isArray(list)) return;
       const match = list.find((r: any) => r?.address?.toLowerCase?.() === agentAddress);
       if (match?.saltLabel) setSavedSalt(String(match.saltLabel));
+      if (match?.schedule?.frequency) {
+        setSavedSchedule({
+          frequency: Number(match.schedule.frequency),
+          numCalls: match.schedule.numCalls ? Number(match.schedule.numCalls) : undefined,
+          schedulerGas: match.schedule.schedulerGas ? Number(match.schedule.schedulerGas) : undefined,
+          source: "saved",
+        });
+      }
+    } catch {
+      // ignore
+    }
+  }, [agentAddress]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const cache = JSON.parse(window.localStorage.getItem(PREPARED_KEY) || "{}");
+      const scanned = Object.values(cache || {}).find((record: any) => {
+        return String(record?.prepared?.harness || "").toLowerCase() === agentAddress.toLowerCase();
+      }) as any;
+      const schedule = scanned?.prepared?.schedule;
+      if (!schedule?.frequency) return;
+      setSavedSchedule((current) =>
+        current.source === "saved"
+          ? current
+          : {
+              frequency: Number(schedule.frequency),
+              numCalls: schedule.numCalls ? Number(schedule.numCalls) : undefined,
+              schedulerGas: schedule.schedulerGas ? Number(schedule.schedulerGas) : undefined,
+              source: "prepared",
+            },
+      );
     } catch {
       // ignore
     }
@@ -537,6 +607,21 @@ function AgentPage() {
           </div>
         )}
 
+        {schedulerWithoutCallback && (
+          <div className="border border-red-400/40 bg-red-500/10 p-5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-300" />
+              <div className="space-y-2">
+                <p className="font-mono text-sm uppercase tracking-wider text-red-200">Scheduler fired but TEE callback never landed</p>
+                <p className="text-sm leading-6 text-text-secondary">
+                  The schedule is spending escrow, but this monitor has not seen a Phase 2 callback from the TEE. Do not top up yet.
+                  Check HF/API/model settings and deploy a fresh agent if this stays unchanged after another wakeup.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-4 md:grid-cols-3">
           <StatusCard
             title="Status"
@@ -546,7 +631,7 @@ function AgentPage() {
           <StatusCard
             title="Escrow"
             value={verify ? `${verify.escrowRit} RIT` : "—"}
-            sub={wakeupsLeft !== null ? `~${wakeupsLeft.toLocaleString()} wakeups left` : ""}
+            sub={wakeupsLeft !== null ? `~${wakeupsLeft.toLocaleString()} wakeups at conservative ~0.02 RIT reserve` : ""}
             tone={verify && parseFloat(verify.escrowRit) < 0.02 ? "warn" : "good"}
           />
           <StatusCard
@@ -581,20 +666,18 @@ function AgentPage() {
               }
             />
             <Check
-              label="First wakeup ETA"
-              ok={Boolean(verify?.lastActivityBlock)}
+              label="Next wakeup ETA"
+              ok={Boolean(verify?.lastSchedulerBlock || verify?.lastActivityBlock)}
               detail={
-                verify?.lastActivityBlock
-                  ? "wakeup happened ✓"
-                  : verify?.wakeupAttempts
-                    ? "Phase 2 pending…"
-                    : "scheduler hasn't fired yet"
+                nextWakeup
+                  ? `${nextWakeup.label} (${nextWakeup.detail})`
+                  : "scheduler hasn't fired yet"
               }
             />
           </div>
           <p className="mt-3 text-xs text-text-secondary">
-            With the default schedule (frequency 2000), the first wakeup fires ~12 min after Tx 2. Phase 2 callback usually
-            settles a few seconds later. If wakeup count grows but Phase 2 stays 0, the executor is laggy — wait or refill escrow.
+            ETA updates from the latest RPC block every refresh. If wakeup attempts grow but Phase 2 stays 0, the scheduler is spending escrow but
+            the TEE callback is not landing. Do not top up until at least one Phase 2 callback succeeds.
           </p>
         </section>
 
@@ -616,9 +699,15 @@ function AgentPage() {
           </h2>
 
           <p className="text-sm text-text-secondary">
-            Each scheduled wakeup burns ~{COST_PER_WAKEUP_RIT} RIT from the harness escrow. When the escrow hits zero, the scheduler
-            stops and the agent eventually de-lists from the cache. Refill anytime to keep it alive.
+            Top-up only extends an agent that already receives Phase 2 callbacks. It cannot refund escrow, fix broken HF/API settings,
+            or retry a start call that was never armed. Conservative reserve estimate: ~{COST_PER_WAKEUP_RIT} RIT per successful wakeup/delivery.
           </p>
+
+          {topupPaused && (
+            <div className="mt-4 border border-amber-300/40 bg-amber-300/10 p-3 text-sm leading-6 text-amber-100">
+              Top-up is paused for this state. Adding escrow now can just feed a stuck schedule; fix/redeploy first.
+            </div>
+          )}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
             <div className="grid grid-cols-4 gap-2">
@@ -635,7 +724,7 @@ function AgentPage() {
               ))}
             </div>
             <div className="text-xs text-text-secondary">
-              +{Math.floor(parseFloat(topupAmount) / COST_PER_WAKEUP_RIT).toLocaleString()} wakeups
+              +~{Math.floor(parseFloat(topupAmount) / COST_PER_WAKEUP_RIT).toLocaleString()} wakeups
             </div>
           </div>
 
@@ -657,7 +746,7 @@ function AgentPage() {
             ) : (
               <button
                 onClick={topup}
-                disabled={!canTopup || busy === "topup"}
+                disabled={!canTopup || topupPaused || busy === "topup"}
                 className="inline-flex items-center justify-center gap-2 bg-accent px-5 py-3 font-mono text-xs uppercase tracking-wider text-black hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {busy === "topup" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}

@@ -225,7 +225,7 @@ function AgentRow({
   const statusColor =
     status === "active" ? "text-emerald-300" : status === "dormant" ? "text-amber-300" : status === "missing" ? "text-red-300" : "text-text-secondary";
   const statusLabel =
-    status === "active" ? "Listed" : status === "dormant" ? "Dormant" : status === "missing" ? "Not deployed" : "Checking…";
+    status === "active" ? "Agent Active" : status === "dormant" ? "Dormant / not listed" : status === "missing" ? "Not deployed" : "Checking...";
 
   return (
     <div className="grid gap-4 border border-white/5 bg-surface/40 backdrop-blur-md rounded-xl p-5 hover:border-accent/20 hover:shadow-[0_0_24px_rgba(255,215,0,0.03)] transition-all duration-300 md:grid-cols-[1fr_auto]">
@@ -234,12 +234,21 @@ function AgentRow({
           <Link href={`/agent/${record.address}`} className="font-display text-2xl text-accent hover:underline">
             {short(record.address)}
           </Link>
-          <span className={`inline-flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider ${statusColor}`}>
+          <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-mono text-xs uppercase tracking-wider ${
+            status === "active"
+              ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-200 shadow-[0_0_18px_rgba(52,211,153,0.12)]"
+              : status === "dormant"
+              ? "border-amber-400/40 bg-amber-400/10 text-amber-200"
+              : status === "missing"
+              ? "border-red-400/40 bg-red-400/10 text-red-200"
+              : `border-white/10 bg-white/5 ${statusColor}`
+          }`}>
             <span className={`w-2 h-2 rounded-full inline-block ${
               status === 'active' ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' :
               status === 'dormant' ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.5)] animate-pulse' :
               status === 'missing' ? 'bg-red-400' : 'bg-white/20 animate-pulse'
             }`} />
+            {status === "active" && <CheckCircle2 className="h-3.5 w-3.5" />}
             {statusLabel}
           </span>
         </div>

@@ -66,8 +66,8 @@ export default function DeployLanding() {
       "Type a chip below to simulate a command.",
     ],
     "deploy-cost": [
-      "Sovereign agent: ~0.002 RIT/wakeup × 5 wakeups = ~0.01 RIT + escrow buffer",
-      "Recommended escrow: 0.1 RIT (covers 5 full schedule cycles)",
+      "Sovereign agent: budget ~0.02 RIT per successful wakeup/delivery reserve",
+      "Start small: 0.1-0.2 RIT proves the flow; escrow cannot be withdrawn if callback fails",
       "Persistent agent: ~2.1 RIT minimum (official Ritual launcher)",
     ],
     "agent-types": [
@@ -78,7 +78,7 @@ export default function DeployLanding() {
       "Chain: Ritual Testnet (ID: 1979)",
       "Registry: 0x3B1...f7e4 — active",
       "TEE Executors online: 15/15",
-      "Avg block time: 0.35s · Avg gas: 0.0019 RIT/wakeup",
+      "Avg block time: 0.35s · delivery reserve can be much higher than actual gas",
     ],
   };
 
@@ -137,7 +137,7 @@ export default function DeployLanding() {
       "FACTORY: Predicted harness: 0x1da3...e122",
       "SMOKE-TEST: Running HF credentials validation...",
       "SMOKE-TEST: Credentials match, mock inference OK.",
-      "ESCROW: Expected schedule cost ~0.002 RIT per loop.",
+      "ESCROW: Budgeting ~0.02 RIT reserve per successful wakeup.",
       "ESCROW: Escrow threshold set to 0.1 RIT.",
       "SYSTEM: Awaiting wallet transaction signatures...",
       "SYSTEM: Active listening mode armed.",

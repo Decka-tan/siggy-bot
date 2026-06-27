@@ -94,9 +94,8 @@ const RPC_URL = "https://rpc.ritualfoundation.org";
 const DEFAULT_PROMPT =
   "You are Siggy, a scheduled sovereign Ritual agent. Give one short AI x crypto builder insight and confirm the scheduled sovereign agent executed successfully.";
 
-// Escrow is pre-charged schedulerGas × maxFeePerGas per wakeup (not actual gas used).
-// Default: 400k gas × 5 Gwei = 0.002 RIT/wakeup.
-const COST_PER_WAKEUP_RIT = 0.002;
+// Conservative product estimate. Ritual delivery can reserve far more than actual gas used.
+const COST_PER_WAKEUP_RIT = 0.02;
 
 const FREQUENCY_PRESETS = [
   { value: "3000",   label: "Every ~17 min",     desc: "High activity proof" },
@@ -214,7 +213,7 @@ function DeployPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [advFrequency, setAdvFrequency] = useState("2000"); // ~12 min: fast enough for listing proof
   const [advNumCalls, setAdvNumCalls] = useState("5");
-  const [advSchedulerGas, setAdvSchedulerGas] = useState("400000"); // 400k × 5 Gwei = 0.002 RIT/wakeup
+  const [advSchedulerGas, setAdvSchedulerGas] = useState("400000"); // Callback gas limit; escrow reserve is estimated conservatively in UI.
   const [advCliType, setAdvCliType] = useState("5");
   const [advSchedulerTtl, setAdvSchedulerTtl] = useState("500");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
@@ -822,6 +821,7 @@ function DeployPage() {
           deployTx: deployHash || undefined,
           configureTx: startHash || undefined,
           owner: prepared.owner,
+          schedule: prepared.schedule,
           createdAt: Date.now(),
         },
         ...(Array.isArray(list) ? list : []),
@@ -1358,7 +1358,7 @@ function DeployPage() {
               </div>
               <p className="mt-2 text-[10px] text-text-secondary">
                 With the default schedule (frequency 2,000 blocks = ~12 min), the first wakeup fires after roughly 12 minutes. Phase 2 callback usually
-                settles a few seconds later. If wakeup count grows but Phase 2 stays 0, the executor is laggy — wait or refill escrow.
+                settles a few seconds later. If wakeup count grows but Phase 2 stays 0, do not top up yet; check credentials or deploy fresh.
               </p>
             </Field>
             <Field label="Prompt">
@@ -1495,16 +1495,19 @@ function DeployPage() {
                   </p>
                 )}
                 <p>
-                  Escrow deducted per wakeup:{" "}
-                  <span className="font-mono text-text-primary">~{((schedGasNum * 5e-9)).toFixed(4)} RIT</span>
-                  <span className="text-text-secondary"> (schedulerGas × 5 Gwei)</span>
+                  Conservative escrow reserve per wakeup:{" "}
+                  <span className="font-mono text-text-primary">~{COST_PER_WAKEUP_RIT.toFixed(3)} RIT</span>
+                  <span className="text-text-secondary"> (actual gas can be lower, but delivery reserve is what drains escrow)</span>
                 </p>
                 <p className="mt-1 border border-emerald-400/30 bg-emerald-400/5 px-3 py-2">
                   <span className="text-emerald-300 font-semibold">{fundingRit} RIT escrow</span>
                   <span className="text-text-secondary"> → </span>
-                  <span className="font-mono text-text-primary">{escrowWakeups} wakeups</span>
+                  <span className="font-mono text-text-primary">~{escrowWakeups} wakeups</span>
                   <span className="text-text-secondary"> at this frequency = </span>
                   <span className="font-mono font-semibold text-emerald-300">{escrowDurationText} of escrow</span>
+                </p>
+                <p className="mt-1 border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-amber-100">
+                  Escrow is locked in the harness. Siggy cannot withdraw or refund it if the TEE callback never lands.
                 </p>
               </div>
             </details>

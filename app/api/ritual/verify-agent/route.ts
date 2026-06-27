@@ -8,6 +8,7 @@ const EXPLORER_CACHE = "https://explorer.ritualfoundation.org/api/agents/cache";
 const RITUAL_WALLET = "0x532f0df0896f353d8c3dd8cc134e8129da2a3948";
 
 type JsonRpc = { result?: string; error?: { message?: string } };
+type RpcLog = { blockNumber?: string };
 
 function padAddress(address: string) {
   return address.toLowerCase().replace(/^0x/, "").padStart(64, "0");
@@ -24,6 +25,11 @@ function formatEther(value: bigint) {
   const fraction = value % base;
   const trimmed = fraction.toString().padStart(18, "0").replace(/0+$/, "").slice(0, 6);
   return trimmed ? `${whole}.${trimmed}` : whole.toString();
+}
+
+function logBlockNumber(log: unknown) {
+  const blockNumber = (log as RpcLog | null)?.blockNumber;
+  return blockNumber ? Number(hexToBigInt(blockNumber)) : 0;
 }
 
 async function rpc(method: string, params: unknown[] = []) {
@@ -99,6 +105,9 @@ export async function GET(request: Request) {
     const blockHex = latestHex;
     const wakeupAttempts = Array.isArray(schedLogs) ? schedLogs.length : 0;
     const phase2Deliveries = Array.isArray(p2Logs) ? p2Logs.length : 0;
+    const lastSchedulerBlock = Array.isArray(schedLogs)
+      ? schedLogs.reduce<number>((max, log) => Math.max(max, logBlockNumber(log)), 0)
+      : 0;
 
     const sovereign = Array.isArray(cache?.sovereign) ? cache.sovereign : [];
     const hit = sovereign.find((item: { address?: string }) => item.address?.toLowerCase() === agent.toLowerCase());
@@ -120,6 +129,7 @@ export async function GET(request: Request) {
       explorerUrl: `https://explorer.ritualfoundation.org/agents/${agent}?type=sovereign`,
       wakeupAttempts,
       phase2Deliveries,
+      lastSchedulerBlock: lastSchedulerBlock || null,
     });
   } catch (error) {
     return NextResponse.json(
