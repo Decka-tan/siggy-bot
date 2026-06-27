@@ -219,9 +219,10 @@ function DeployPage() {
   const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [walletBalanceRit, setWalletBalanceRit] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [presetMode, setPresetMode] = useState<"responsive" | "uptime" | "custom">("responsive");
   const [advFrequency, setAdvFrequency] = useState("2000"); // ~12 min: fast enough for listing proof
   const [advNumCalls, setAdvNumCalls] = useState("5");
-  const [advSchedulerGas, setAdvSchedulerGas] = useState("400000"); // Callback gas limit; escrow reserve is estimated conservatively in UI.
+  const [advSchedulerGas, setAdvSchedulerGas] = useState("350000"); // Callback gas limit; escrow reserve is estimated conservatively in UI.
   const [advCliType, setAdvCliType] = useState("5");
   const [advSchedulerTtl, setAdvSchedulerTtl] = useState("500");
   const [executors, setExecutors] = useState<{ teeAddress: string; publicKey: string; endpoint: string }[]>([]);
@@ -499,6 +500,7 @@ function DeployPage() {
       if (typeof s.advSchedulerTtl === "string") {
         setAdvSchedulerTtl(parseInt(s.advSchedulerTtl, 10) > 500 ? "500" : s.advSchedulerTtl);
       }
+      if (typeof s.presetMode === "string") setPresetMode(s.presetMode as any);
       if (typeof s.chosenExecutor === "string") setChosenExecutor(s.chosenExecutor);
     } catch {
       // ignore corrupted state
@@ -512,12 +514,12 @@ function DeployPage() {
     try {
       window.localStorage.setItem(
         FORM_KEY,
-        JSON.stringify({ saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor }),
+        JSON.stringify({ saltLabel, hfRepoId, provider, model, prompt, fundingRit, presetMode, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor }),
       );
     } catch {
       // private window etc.
     }
-  }, [saltLabel, hfRepoId, provider, model, prompt, fundingRit, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor]);
+  }, [saltLabel, hfRepoId, provider, model, prompt, fundingRit, presetMode, advFrequency, advNumCalls, advSchedulerGas, advCliType, advSchedulerTtl, chosenExecutor]);
 
   // Resume step 3/4 after the user returns from the monitor with the same wallet + salt label.
   useEffect(() => {
@@ -533,6 +535,21 @@ function DeployPage() {
     verifyAgent(cached.prepared.harness);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account, saltLabel, prepared]);
+
+  function applyPreset(mode: "responsive" | "uptime" | "custom") {
+    setPresetMode(mode);
+    if (mode === "responsive") {
+      setAdvFrequency("2000");
+      setAdvNumCalls("5");
+      setAdvSchedulerGas("350000");
+      setAdvSchedulerTtl("500");
+    } else if (mode === "uptime") {
+      setAdvFrequency("9000");
+      setAdvNumCalls("2");
+      setAdvSchedulerGas("350000");
+      setAdvSchedulerTtl("500");
+    }
+  }
 
   // Collapse the form once prepare succeeds so the screen focuses on Preview + Monitor.
   useEffect(() => {
@@ -1401,16 +1418,54 @@ function DeployPage() {
               <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-wider text-accent">
                 Advanced: schedule + callback gas {showAdvanced ? "(open)" : "(safe defaults)"}
               </summary>
-              {!usesDefaultSchedule && (
+              <div className="mt-4 border-b border-white/5 pb-4">
+                <label className="mb-2 block font-mono text-[11px] uppercase tracking-wider text-text-secondary">Select Schedule Preset</label>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <button
+                    type="button"
+                    onClick={() => applyPreset("responsive")}
+                    className={`rounded-lg border p-4 text-left transition-all ${
+                      presetMode === "responsive" ? "border-accent bg-accent/5 text-accent" : "border-white/10 text-text-secondary hover:border-accent/40"
+                    }`}
+                  >
+                    <p className="font-mono text-xs font-semibold uppercase tracking-wider text-text-primary">⚡ Responsive</p>
+                    <p className="mt-1 text-[10px] text-text-secondary leading-5">Wakeup ~12 min. Best for quick tests and proof of work. 5 calls total.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyPreset("uptime")}
+                    className={`rounded-lg border p-4 text-left transition-all ${
+                      presetMode === "uptime" ? "border-accent bg-accent/5 text-accent" : "border-white/10 text-text-secondary hover:border-accent/40"
+                    }`}
+                  >
+                    <p className="font-mono text-xs font-semibold uppercase tracking-wider text-text-primary">🔋 Max Uptime</p>
+                    <p className="mt-1 text-[10px] text-text-secondary leading-5">Wakeup ~52 min. Best for longest active lifespan per RIT. 2 calls total.</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPresetMode("custom")}
+                    className={`rounded-lg border p-4 text-left transition-all ${
+                      presetMode === "custom" ? "border-accent bg-accent/5 text-accent" : "border-white/10 text-text-secondary hover:border-accent/40"
+                    }`}
+                  >
+                    <p className="font-mono text-xs font-semibold uppercase tracking-wider text-text-primary">⚙️ Custom</p>
+                    <p className="mt-1 text-[10px] text-text-secondary leading-5">Customize your own frequency, rolling calls, and gas limit manually.</p>
+                  </button>
+                </div>
+              </div>
+              {!usesDefaultSchedule && presetMode === "custom" && (
                 <div className="mt-4 rounded-lg border border-amber-300/30 bg-amber-300/10 p-3 text-xs leading-5 text-amber-100">
-                  Custom scheduler settings can delay the first TEE callback or make listing harder to verify. For a first deploy, use the defaults: 2000 blocks, 5 calls, 400k gas, TTL 500.
+                  Custom scheduler settings can delay the first TEE callback or make listing harder to verify. For a first deploy, use the defaults: 2000 blocks, 5 calls, 350k gas, TTL 500.
                 </div>
               )}
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <Field label="Wakeup frequency">
                   <select
                     value={isPresetFreq ? advFrequency : "custom"}
-                    onChange={(e) => { if (e.target.value !== "custom") setAdvFrequency(e.target.value); }}
+                    onChange={(e) => {
+                      setPresetMode("custom");
+                      if (e.target.value !== "custom") setAdvFrequency(e.target.value);
+                    }}
                     className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   >
                     {FREQUENCY_PRESETS.map((p) => (
@@ -1425,7 +1480,10 @@ function DeployPage() {
                   <input
                     type="number"
                     value={advFrequency}
-                    onChange={(e) => setAdvFrequency(e.target.value)}
+                    onChange={(e) => {
+                      setPresetMode("custom");
+                      setAdvFrequency(e.target.value);
+                    }}
                     min={100}
                     max={300000}
                     step={100}
@@ -1438,7 +1496,10 @@ function DeployPage() {
                   <input
                     type="number"
                     value={advNumCalls}
-                    onChange={(e) => setAdvNumCalls(e.target.value)}
+                    onChange={(e) => {
+                      setPresetMode("custom");
+                      setAdvNumCalls(e.target.value);
+                    }}
                     min={1}
                     max={100}
                     className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
@@ -1449,7 +1510,10 @@ function DeployPage() {
                   <input
                     type="number"
                     value={advSchedulerGas}
-                    onChange={(e) => setAdvSchedulerGas(e.target.value)}
+                    onChange={(e) => {
+                      setPresetMode("custom");
+                      setAdvSchedulerGas(e.target.value);
+                    }}
                     min={200000}
                     max={5000000}
                     step={50000}
@@ -1462,7 +1526,10 @@ function DeployPage() {
                 <Field label="CLI Type (Harness runtime)">
                   <select
                     value={advCliType}
-                    onChange={(e) => setAdvCliType(e.target.value)}
+                    onChange={(e) => {
+                      setPresetMode("custom");
+                      setAdvCliType(e.target.value);
+                    }}
                     className="w-full border border-white/10 bg-bg/40 focus:bg-bg/60 backdrop-blur-sm rounded-lg px-3 py-2 font-mono text-sm outline-none focus:border-accent transition-all"
                   >
                     <option value="5">5 — Crush (recommended)</option>
@@ -1474,7 +1541,10 @@ function DeployPage() {
                   <input
                     type="number"
                     value={advSchedulerTtl}
-                    onChange={(e) => setAdvSchedulerTtl(e.target.value)}
+                    onChange={(e) => {
+                      setPresetMode("custom");
+                      setAdvSchedulerTtl(e.target.value);
+                    }}
                     min={100}
                     max={500}
                     step={50}

@@ -10,9 +10,12 @@ const REGISTRY = "0x9644e8562cE0Fe12b4deeC4163c064A8862Bf47F";
 const DELIVERY_LOG = "0x5A16214fF555848411544b005f7Ac063742f39F6";
 const ASYNC_JOB_TRACKER = "0xC069FFCa0389f44eCA2C626e55491b0ab045AEF5";
 const TEMPLATE_BYTES = 10822;
-const MIN_FUNDING_WEI = 100_000_000_000_000_000n; // 0.1 RIT — low-fund sovereign start
-const DEFAULT_FUNDING_WEI = 100_000_000_000_000_000n; // 0.1 RIT
-const MIN_BALANCE_BUFFER_WEI = 50_000_000_000_000_000n; // 0.05 RIT — covers deploy + configure gas
+const MIN_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT practical minimum
+const DEFAULT_FUNDING_WEI = 200_000_000_000_000_000n; // 0.2 RIT
+const MIN_BALANCE_BUFFER_WEI = 50_000_000_000_000_000n; // 0.05 RIT - covers deploy + configure gas
+const TEE_MAX_GAS = 3_000_000;
+const TEE_MAX_FEE_PER_GAS = 10_000_000; // 0.01 gwei; avoids 0.29 RIT TEE fee caps on current testnet
+const TEE_MAX_PRIORITY_FEE_PER_GAS = 1_000_000; // 0.001 gwei
 
 const trackerInterface = new Interface([
   "function hasPendingJobForSender(address sender) view returns (bool)",
@@ -136,9 +139,9 @@ function buildCalldata({
     "SOVEREIGN_AGENT_TASK",
     harness,
     "0x8ca12055",
-    3000000,
-    10000000, // 0.01 Gwei (10,000,000 Wei)
-    1000000,  // 0.001 Gwei (1,000,000 Wei)
+    TEE_MAX_GAS,
+    TEE_MAX_FEE_PER_GAS,
+    TEE_MAX_PRIORITY_FEE_PER_GAS,
     cliType,
     prompt,
     encryptedSecrets,
@@ -204,7 +207,7 @@ export async function POST(request: Request) {
         throw new Error("fundingWei must be a bigint-coerceable string.");
       }
     }
-    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.1 RIT is too tight to reach MONITORED.");
+    if (fundingWei < MIN_FUNDING_WEI) throw new Error("Funding below 0.2 RIT is too tight for live executor conditions.");
     if (fundingWei > 5_000_000_000_000_000_000n) throw new Error("Funding above 5 RIT is wasteful for sovereign.");
 
     if (!isAddress(owner)) throw new Error("Connect a valid wallet first.");
