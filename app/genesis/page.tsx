@@ -482,7 +482,8 @@ export default function GenesisPage() {
   const [searchResult, setSearchResult] = useState<Holder | 'not-found' | 'idle'>('idle');
   const [activityByUser, setActivityByUser] = useState<Record<string, Activity> | null>(null);
   const [selected, setSelected] = useState<Holder | null>(null);
-  const [suggestions, setSuggestions] = useState<Holder[]>([]);
+  type Suggestion = { userId: string; username: string; displayName: string; avatarUrl?: string };
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const listRef = useRef<HTMLDivElement>(null);
@@ -559,37 +560,45 @@ export default function GenesisPage() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  function handleQueryChange(val: string) {
+  async function handleQueryChange(val: string) {
     setQuery(val);
     setSearchResult('idle');
-    if (!data || val.trim().length < 2) {
+    if (val.trim().length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
-    const needle = val.trim().toLowerCase().replace(/^@/, '');
-    const matches = data.holders
-      .filter(h => h.username.toLowerCase().includes(needle) || h.displayName.toLowerCase().includes(needle))
-      .slice(0, 6);
-    setSuggestions(matches);
-    setShowSuggestions(matches.length > 0);
+    try {
+      const res = await fetch(`/api/member?autocomplete=true&username=${encodeURIComponent(val.trim())}`);
+      const json = await res.json();
+      const results = ((json.members || json || []) as Suggestion[]).slice(0, 6);
+      setSuggestions(results);
+      setShowSuggestions(results.length > 0);
+    } catch {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
   }
 
-  function selectSuggestion(h: Holder) {
-    setQuery(h.username);
+  function resolveResult(usernameOrDisplay: string): Holder | 'not-found' {
+    if (!data) return 'not-found';
+    const q = usernameOrDisplay.trim().toLowerCase().replace(/^@/, '');
+    const h = data.holders.find(
+      x => x.username.toLowerCase() === q || x.displayName.toLowerCase() === q,
+    );
+    return h ?? 'not-found';
+  }
+
+  function selectSuggestion(s: Suggestion) {
+    setQuery(s.username);
     setShowSuggestions(false);
-    setSearchResult(h);
+    setSearchResult(resolveResult(s.username));
   }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!data) return;
-    const q = query.trim().toLowerCase().replace(/^@/, '');
-    if (!q) return;
-    const found = data.holders.find(
-      h => h.username.toLowerCase() === q || h.displayName.toLowerCase() === q,
-    );
-    setSearchResult(found ?? 'not-found');
+    if (!query.trim()) return;
+    setSearchResult(resolveResult(query));
   }
 
   function scrollToList() {
@@ -730,7 +739,7 @@ export default function GenesisPage() {
                     >
                       <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#222]">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={s.avatarUrl} alt={s.displayName} className="w-full h-full object-cover" />
+                        <img src={s.avatarUrl || `/api/avatar?id=${s.userId}`} alt={s.displayName} className="w-full h-full object-cover" />
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-semibold text-white truncate">{s.displayName}</div>
