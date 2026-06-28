@@ -601,13 +601,13 @@ export default function GenesisPage() {
           </p>
 
           <h1 className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-6">
-            Genesis
+            Are You
           </h1>
           <h1
-            className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-10"
+            className="hero-line opacity-0 font-display text-5xl md:text-7xl lg:text-[90px] uppercase tracking-tight leading-none mb-10"
             style={{ color: GOLD, WebkitTextStroke: `1px ${GOLD}` }}
           >
-            Holders
+            Genesis 1000<br />Holder?
           </h1>
 
           <p className="hero-line opacity-0 text-lg md:text-xl mb-10" style={{ color: '#888' }}>
