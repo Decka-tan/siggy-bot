@@ -304,15 +304,18 @@ function MemberModal({
             ✕
           </button>
 
-          <div className="relative w-full aspect-square">
+          <div className="relative w-full aspect-square overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
-            {/* Fully-solid bottom band so content area starts on solid color, not on a mid-fade pixel */}
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 50%, #0a0a0a 80%, #0a0a0a 100%)` }} />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 60%, ${color}10 100%)` }} />
+            {/* Bottom fade strip — finishes well before the avatar's bottom edge
+                so the seam between avatar and content panel is solid #0a0a0a. */}
+            <div
+              className="absolute bottom-0 inset-x-0 h-2/5 pointer-events-none"
+              style={{ background: 'linear-gradient(to bottom, transparent 0%, #0a0a0a 70%, #0a0a0a 100%)' }}
+            />
           </div>
 
-          <div className="px-5 pb-6 -mt-4 relative z-10">
+          <div className="px-5 pt-1 pb-6 relative z-10">
             <p className="font-display text-2xl uppercase tracking-tight text-white leading-tight mb-0.5">{holder.displayName}</p>
             <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{holder.username}</p>
 
