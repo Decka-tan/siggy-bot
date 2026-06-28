@@ -201,7 +201,7 @@ function ResultOverlay({
                   if (d === null) return null;
                   return (
                     <p className="text-sm leading-relaxed mb-3" style={{ color: '#888' }}>
-                      Locked in for <span className="font-bold" style={{ color }}>{formatDays(d)}</span> since joining Ritual. One of the first 1,000 to deploy a sovereign agent on testnet. 🔥
+                      Locked in for <span className="font-bold" style={{ color }}>{formatDays(d)}</span> since joining Ritual. Owns a Genesis NFT — one of the first 1,000 to deploy an agent on testnet. 🔥
                     </p>
                   );
                 })()}
@@ -243,7 +243,7 @@ function ResultOverlay({
                   This member isn&apos;t in the Genesis 1000 registry.
                 </p>
                 <p className="text-sm leading-relaxed" style={{ color: '#777' }}>
-                  Deploy a sovereign agent on testnet to lock in — slots fill fast. 🌱
+                  Deploy an agent on testnet to mint the Genesis NFT — slots fill fast. 🌱
                 </p>
               </div>
             </div>
@@ -597,17 +597,17 @@ export default function GenesisPage() {
 
         <div className="relative z-10 max-w-4xl mx-auto">
           <p className="hero-line opacity-0 font-mono text-xs tracking-[0.3em] uppercase mb-6" style={{ color: '#666' }}>
-            Prime Genesis · First 1,000 Sovereign Deployers
+            Prime Genesis · First 1,000 Agent Deployers
           </p>
 
           <h1 className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-6">
-            Are You
+            Genesis
           </h1>
           <h1
             className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-10"
             style={{ color: GOLD, WebkitTextStroke: `1px ${GOLD}` }}
           >
-            Genesis?
+            Holders
           </h1>
 
           <p className="hero-line opacity-0 text-lg md:text-xl mb-10" style={{ color: '#888' }}>

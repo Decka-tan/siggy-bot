@@ -795,7 +795,7 @@ export default function CommunityPage() {
         {data && !loading && (
           <div className="space-y-6">
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: Total Members */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -885,7 +885,7 @@ export default function CommunityPage() {
                   <CountUp value={(data?.stats?.badges?.find((b: any) => b.name === 'Genesis 1000')?.count) || 0} />
                 </p>
                 <div className="mt-1 flex items-center gap-1.5 text-[10px] text-amber-400/80 font-bold uppercase tracking-wider">
-                  <span>🎴 Sovereign deployers →</span>
+                  <span>🎴 NFT holders →</span>
                 </div>
               </motion.a>
             </div>
