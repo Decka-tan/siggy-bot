@@ -651,7 +651,7 @@ export default function GenesisPage() {
           result={searchResult}
           query={query}
           activity={
-            searchResult !== 'not-found' && searchResult !== 'idle'
+            searchResult !== 'not-found'
               ? activityByUser?.[(searchResult as Holder).userId] || null
               : null
           }
