@@ -795,7 +795,7 @@ export default function CommunityPage() {
         {data && !loading && (
           <div className="space-y-6">
             {/* KPI Cards Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Card 1: Total Members */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
@@ -869,6 +869,25 @@ export default function CommunityPage() {
                   <span>{regional.length > 0 ? (REGION_LABEL[regional[0].region]?.split(' ')[0] || '📍') : '📍'} Main demographic</span>
                 </div>
               </motion.div>
+
+              {/* Card 5: Genesis 1000 */}
+              <motion.a
+                href="/genesis"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -3 }}
+                transition={{ delay: 0.10 }}
+                className="rounded-2xl border border-white/5 p-5 relative overflow-hidden bg-black/45 backdrop-blur-xl shadow-lg group hover:border-amber-400/30 transition-colors duration-300 block"
+              >
+                <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-amber-400/30 to-transparent" />
+                <p className="font-mono text-[9px] uppercase tracking-wider text-[#555] font-bold">Genesis 1000</p>
+                <p className="font-display text-3xl md:text-4xl mt-2 font-black tracking-tight" style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                  <CountUp value={(data?.stats?.badges?.find((b: any) => b.name === 'Genesis 1000')?.count) || 0} />
+                </p>
+                <div className="mt-1 flex items-center gap-1.5 text-[10px] text-amber-400/80 font-bold uppercase tracking-wider">
+                  <span>🎴 Sovereign deployers →</span>
+                </div>
+              </motion.a>
             </div>
 
             <AnimatePresence mode="wait">

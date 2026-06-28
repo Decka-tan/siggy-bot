@@ -50,6 +50,11 @@ const STAFF_ROLES = new Set(['Mods', 'Moderator', 'Foundation Team', 'Event Mana
 // without a contributor role.
 const SPECIAL_ROLES = ['Blessed', 'Cursed', 'Harmonic'];
 
+// Badge roles — additive (orthogonal to the contributor ladder). A member can
+// hold a badge in addition to any tracked role. Used to surface special cohorts
+// (e.g. early-deployer registry) on /stats and as standalone /<badge> pages.
+const BADGE_ROLES = ['Genesis 1000'];
+
 // Regional community roles (for the Insights tab) — counted over ALL members
 const REGION_ROLES = [
   'Komunitas Indonesia', 'Viet Community', 'Chinese Community', 'Korean Community',
@@ -92,6 +97,8 @@ async function fetchAllMembers(rolesMap) {
   const allMemberIds = [];                 // every current (non-bot) member id — used to filter activity
   const staffIds = [];                     // members holding a staff/mod role — excluded from leaderboards
   const specialRoles = {};                 // userId -> Blessed/Cursed/Harmonic (for non-contributor label)
+  const badgeHolders = {};                 // badgeName -> [{ userId, username, displayName, avatarUrl, joinedAt, topRole }]
+  for (const b of BADGE_ROLES) badgeHolders[b] = [];
   // Insights over ALL members (not just ranked)
   let totalGuildMembers = 0;
   const joinByMonth = {};                 // 'YYYY-MM' -> count
@@ -130,10 +137,22 @@ async function fetchAllMembers(rolesMap) {
         else if (memberRegions.length > 1) multiRegion++;
 
         const tracked = roleNames.filter(r => TRACKED_ROLES.includes(r));
+        // top role = highest rank among tracked (may be null for badge-only / no-role members)
+        let top = tracked[0] || null;
+        for (const r of tracked) if (top && ROLE_RANK[r] > ROLE_RANK[top]) top = r;
+        // Badge holders — recorded even if member has no contributor role.
+        const memberBadges = roleNames.filter(rn => BADGE_ROLES.includes(rn));
+        for (const b of memberBadges) {
+          badgeHolders[b].push({
+            userId: m.user.id,
+            username: m.user.username,
+            displayName: m.nick || m.user.global_name || m.user.username,
+            avatarUrl: avatarProxy(m),
+            joinedAt: m.joined_at || null,
+            topRole: top,
+          });
+        }
         if (!tracked.length) continue;
-        // top role = highest rank among tracked
-        let top = tracked[0];
-        for (const r of tracked) if (ROLE_RANK[r] > ROLE_RANK[top]) top = r;
         // region × role: attribute contributor to EVERY region role they hold (by top tier)
         for (const rg of memberRegions) {
           regionTiers[rg][top] = (regionTiers[rg][top] || 0) + 1;
@@ -154,7 +173,7 @@ async function fetchAllMembers(rolesMap) {
       }
     },
   });
-  return { members, allMemberIds, staffIds, specialRoles, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
+  return { members, allMemberIds, staffIds, specialRoles, badgeHolders, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 
 function readJSON(file, fallback) {
@@ -176,7 +195,7 @@ async function main() {
   console.log(`[${new Date().toISOString()}] Fetching role stats...`);
 
   const rolesMap = await getRolesMap();
-  const { members, allMemberIds, staffIds, specialRoles, insights } = await fetchAllMembers(rolesMap);
+  const { members, allMemberIds, staffIds, specialRoles, badgeHolders, insights } = await fetchAllMembers(rolesMap);
   console.log(`  ${members.length} ranked / ${insights.totalGuildMembers} total members / ${staffIds.length} staff`);
 
   // Dump current member-id set so fetch-activity can exclude kicked/left users
@@ -243,11 +262,27 @@ async function main() {
   fs.writeFileSync(LOG_FILE, JSON.stringify(log, null, 2));
 
   // 4. Upload public outputs to R2
+  const badges = BADGE_ROLES.map(name => ({ name, count: badgeHolders[name].length }));
   await uploadR2('community/role-stats.json', {
     updatedAt: now,
     totalMembers: total,
     distribution,
+    badges,
   });
+  // Per-badge holder roster — used by standalone /<badge> pages.
+  for (const name of BADGE_ROLES) {
+    const slug = name.toLowerCase().replace(/\s+/g, '-'); // 'Genesis 1000' -> 'genesis-1000'
+    const holders = badgeHolders[name]
+      .slice()
+      .sort((a, b) => (a.joinedAt || '').localeCompare(b.joinedAt || ''));
+    await uploadR2(`community/badge-${slug}.json`, {
+      updatedAt: now,
+      badge: name,
+      count: holders.length,
+      holders,
+    });
+    console.log(`  badge ${name}: ${holders.length} holders`);
+  }
   await uploadR2('community/recent-upgrades.json', {
     updatedAt: now,
     windowDays: 14,
