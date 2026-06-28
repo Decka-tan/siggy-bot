@@ -307,18 +307,12 @@ function MemberModal({
           <div className="relative w-full aspect-square">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, #0a0a0a 100%)` }} />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, ${color}11 100%)` }} />
-
-            <div
-              className="absolute top-3 left-3 inline-block text-[10px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
-              style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)', color: '#0a0a0a' }}
-            >
-              🎴 Genesis 1000
-            </div>
+            {/* Fully-solid bottom band so content area starts on solid color, not on a mid-fade pixel */}
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 50%, #0a0a0a 80%, #0a0a0a 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 60%, ${color}10 100%)` }} />
           </div>
 
-          <div className="px-5 pb-6 -mt-10 relative z-10">
+          <div className="px-5 pb-6 -mt-4 relative z-10">
             <p className="font-display text-2xl uppercase tracking-tight text-white leading-tight mb-0.5">{holder.displayName}</p>
             <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{holder.username}</p>
 
@@ -392,12 +386,6 @@ function MemberCard({ holder, onClick }: { holder: Holder; onClick: () => void }
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 50%, #0a0a0a 100%)' }} />
-        <div
-          className="absolute top-2 left-2 inline-block text-[9px] font-mono font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
-          style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)', color: '#0a0a0a' }}
-        >
-          🎴 G1K
-        </div>
       </div>
 
       <div className="px-3 pb-3 -mt-4 relative z-10">
@@ -538,21 +526,30 @@ export default function GenesisPage() {
     listRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // Role filter pills — only roles that actually appear among holders.
-  const rolesPresent = useMemo(() => {
+  // Main roles get their own filter pill; the rest (Mage, Blessed, Cursed,
+  // Harmonic, no-role) collapse into a single "Other" bucket.
+  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Forerunner'];
+  const isMain = (r: string | null) => !!r && MAIN_ROLES.includes(r);
+
+  const mainPresent = useMemo(() => {
     if (!data) return [];
     const set = new Set<string>();
     for (const h of data.holders) {
       const r = displayRoleOf(h);
-      if (r) set.add(r);
+      if (r && isMain(r)) set.add(r);
     }
     return [...set].sort((a, b) => (ROLE_RANK[b] ?? -1) - (ROLE_RANK[a] ?? -1));
   }, [data]);
 
+  const otherCount = useMemo(
+    () => (data ? data.holders.filter(h => !isMain(displayRoleOf(h))).length : 0),
+    [data],
+  );
+
   const filtered = useMemo(() => {
     if (!data) return [];
     if (filter === 'all') return data.holders;
-    if (filter === 'no-role') return data.holders.filter(h => !displayRoleOf(h));
+    if (filter === 'other') return data.holders.filter(h => !isMain(displayRoleOf(h)));
     return data.holders.filter(h => displayRoleOf(h) === filter);
   }, [data, filter]);
 
@@ -564,8 +561,6 @@ export default function GenesisPage() {
       return (a.joinedAt || '').localeCompare(b.joinedAt || '');
     });
   }, [filtered]);
-
-  const hasNoRole = useMemo(() => !!data && data.holders.some(h => !displayRoleOf(h)), [data]);
 
   return (
     <div className="bg-[#050505] text-white">
@@ -691,9 +686,9 @@ export default function GenesisPage() {
 
         {data && (
           <>
-            {/* Per-role count tiles */}
+            {/* Per-role count tiles (main roles + Other bucket) */}
             <div className="flex flex-wrap justify-center gap-4 mb-14">
-              {rolesPresent.map(role => {
+              {mainPresent.map(role => {
                 const count = data.holders.filter(h => displayRoleOf(h) === role).length;
                 const color = ROLE_COLOR[role] || GOLD;
                 return (
@@ -711,20 +706,33 @@ export default function GenesisPage() {
                   </div>
                 );
               })}
+              {otherCount > 0 && (
+                <div
+                  className="relative rounded-2xl p-6 border overflow-hidden text-center"
+                  style={{ borderColor: '#33333355', backgroundColor: '#0a0a0a', minWidth: '140px' }}
+                >
+                  <div
+                    className="absolute inset-0 opacity-10"
+                    style={{ background: `radial-gradient(ellipse at 50% 100%, #888 0%, transparent 70%)` }}
+                  />
+                  <p className="relative text-4xl font-display" style={{ color: '#888' }}>{otherCount}</p>
+                  <p className="relative text-sm mt-1 font-mono" style={{ color: '#666' }}>Other</p>
+                </div>
+              )}
             </div>
 
             {/* Filter pills */}
             <div className="flex flex-wrap gap-2 mb-10 justify-center">
-              {(['all', ...rolesPresent, ...(hasNoRole ? ['no-role'] : [])] as string[]).map(role => {
+              {(['all', ...mainPresent, ...(otherCount > 0 ? ['other'] : [])] as string[]).map(role => {
                 const active = filter === role;
-                const color = role === 'all' ? '#fff' : role === 'no-role' ? '#555' : ROLE_COLOR[role] || GOLD;
+                const color = role === 'all' ? '#fff' : role === 'other' ? '#888' : ROLE_COLOR[role] || GOLD;
                 const count =
                   role === 'all'
                     ? data.holders.length
-                    : role === 'no-role'
-                    ? data.holders.filter(h => !displayRoleOf(h)).length
+                    : role === 'other'
+                    ? otherCount
                     : data.holders.filter(h => displayRoleOf(h) === role).length;
-                const label = role === 'all' ? 'All' : role === 'no-role' ? 'No Role' : role;
+                const label = role === 'all' ? 'All' : role === 'other' ? 'Other' : role;
                 return (
                   <button
                     key={role}
