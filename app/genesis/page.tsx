@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { animate, stagger } from 'animejs';
 
 type Holder = {
   userId: string;
@@ -21,10 +23,23 @@ type Payload = {
 };
 
 type Activity = {
-  userId: string;
   contributions?: number;
   eventsWon?: number;
   eventsHosted?: number;
+};
+
+// Order matters — drives filter-pill order and color lookup priority.
+const ROLE_RANK: Record<string, number> = {
+  'Radiant Ritualist': 9,
+  Zealot: 8,
+  Ritualist: 7,
+  Mage: 4,
+  ritty: 3,
+  bitty: 2,
+  Forerunner: 1,
+  Blessed: 0.3,
+  Harmonic: 0.2,
+  Cursed: 0.1,
 };
 
 const ROLE_COLOR: Record<string, string> = {
@@ -42,11 +57,8 @@ const ROLE_COLOR: Record<string, string> = {
 
 const GOLD = '#FFD700';
 
-function daysSince(iso: string | null): number | null {
-  if (!iso) return null;
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return null;
-  return Math.max(0, Math.floor((Date.now() - t) / 86400000));
+function displayRoleOf(h: Holder): string | null {
+  return h.topRole || h.fallbackRole || null;
 }
 
 function formatJoinDate(iso: string | null): string {
@@ -56,7 +68,193 @@ function formatJoinDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-function DetailOverlay({
+function daysSince(iso: string | null): number | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return null;
+  return Math.max(0, Math.floor((Date.now() - t) / 86400000));
+}
+
+function formatDays(days: number) {
+  if (days < 30) return `${days}d`;
+  if (days < 365) return `${Math.floor(days / 30)}mo`;
+  const y = Math.floor(days / 365);
+  const mo = Math.floor((days % 365) / 30);
+  return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
+}
+
+function RoleBadge({ role, size = 'sm' }: { role: string; size?: 'sm' | 'md' }) {
+  const color = ROLE_COLOR[role] || '#555';
+  return (
+    <span
+      className={`font-mono rounded-full border ${size === 'md' ? 'text-sm px-3 py-1' : 'text-xs px-2 py-0.5'}`}
+      style={{ color, borderColor: color, backgroundColor: `${color}20` }}
+    >
+      {role}
+    </span>
+  );
+}
+
+function ResultOverlay({
+  result,
+  query,
+  onClose,
+}: {
+  result: Holder | 'not-found';
+  query: string;
+  onClose: () => void;
+}) {
+  const isFound = result !== 'not-found';
+  const member = isFound ? (result as Holder) : null;
+  const role = member ? displayRoleOf(member) : null;
+  const color = role ? ROLE_COLOR[role] || GOLD : GOLD;
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-center justify-center"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 backdrop-blur-xl" style={{ backgroundColor: '#050505ee' }} />
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 24 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-3xl mx-4 rounded-3xl overflow-hidden border"
+          style={{
+            backgroundColor: '#0a0a0a',
+            borderColor: isFound ? `${color}44` : '#1a1a1a',
+            boxShadow: isFound ? `0 0 80px ${color}22` : 'none',
+          }}
+        >
+          <button
+            onClick={onClose}
+            className="absolute top-5 right-5 z-10 w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-white/10"
+            style={{ color: '#555' }}
+          >
+            ✕
+          </button>
+
+          {isFound && member ? (
+            <div className="relative min-h-[420px] flex flex-col md:flex-row">
+              <div
+                className="relative md:w-2/5 flex items-end justify-center pt-10 pb-0 overflow-hidden"
+                style={{ background: `linear-gradient(160deg, ${color}18 0%, ${color}08 60%, transparent 100%)` }}
+              >
+                <div
+                  className="absolute inset-0 opacity-[0.06]"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${color} 25%, transparent 25%, transparent 75%, ${color} 75%)`,
+                    backgroundSize: '40px 40px',
+                  }}
+                />
+                <div className="absolute top-0 right-0 w-px h-full opacity-20" style={{ background: `linear-gradient(to bottom, transparent, ${color}, transparent)` }} />
+                <Image
+                  src="/Siggy_01/Face/Girl/Girl_Happy.png"
+                  alt="Siggy happy"
+                  width={300}
+                  height={300}
+                  className="relative z-10 drop-shadow-2xl"
+                  unoptimized
+                />
+              </div>
+
+              <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
+                <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: `${color}99` }}>
+                  Prime Genesis · 1 of 1,000
+                </p>
+                <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-6" style={{ color }}>
+                  Genesis 🎴
+                </h2>
+
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0" style={{ boxShadow: `0 0 0 2px ${color}66` }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={member.avatarUrl} alt={member.displayName} className="w-full h-full object-cover" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white text-lg leading-tight">{member.displayName}</p>
+                    <p className="font-mono text-sm" style={{ color: '#555' }}>@{member.username}</p>
+                  </div>
+                </div>
+
+                {role && (
+                  <div className="flex items-center gap-3 mb-6">
+                    <RoleBadge role={role} size="md" />
+                  </div>
+                )}
+
+                {(() => {
+                  const d = daysSince(member.joinedAt);
+                  if (d === null) return null;
+                  return (
+                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#888' }}>
+                      Locked in for <span className="font-bold" style={{ color }}>{formatDays(d)}</span> since joining Ritual. One of the first 1,000 to deploy a sovereign agent on testnet. 🔥
+                    </p>
+                  );
+                })()}
+              </div>
+            </div>
+          ) : (
+            <div className="relative min-h-[400px] flex flex-col md:flex-row">
+              <div
+                className="relative md:w-2/5 flex items-end justify-center pt-10 overflow-hidden"
+                style={{ background: 'linear-gradient(160deg, #1a1a1a 0%, transparent 100%)' }}
+              >
+                <div
+                  className="absolute inset-0 opacity-[0.03]"
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, #fff 25%, transparent 25%, transparent 75%, #fff 75%)`,
+                    backgroundSize: '40px 40px',
+                  }}
+                />
+                <Image
+                  src="/Siggy_01/Face/Girl/Girl_Sad.png"
+                  alt="Siggy sad"
+                  width={280}
+                  height={280}
+                  className="relative z-10 drop-shadow-xl opacity-90"
+                  unoptimized
+                />
+              </div>
+
+              <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
+                <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: '#555' }}>
+                  Genesis 1000 Registry
+                </p>
+                <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-4" style={{ color: '#888' }}>
+                  Not on<br />the list…
+                </h2>
+                <p className="font-semibold text-white mb-1">@{query.replace(/^@/, '')}</p>
+                <div className="w-12 h-px mb-6" style={{ backgroundColor: '#333' }} />
+                <p className="text-sm leading-relaxed mb-2" style={{ color: '#aaa' }}>
+                  This member isn&apos;t in the Genesis 1000 registry.
+                </p>
+                <p className="text-sm leading-relaxed" style={{ color: '#777' }}>
+                  Deploy a sovereign agent on testnet to lock in — slots fill fast. 🌱
+                </p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function MemberModal({
   holder,
   activity,
   onClose,
@@ -65,12 +263,9 @@ function DetailOverlay({
   activity: Activity | null;
   onClose: () => void;
 }) {
-  const displayRole = holder.topRole || holder.fallbackRole || null;
-  const color = displayRole ? ROLE_COLOR[displayRole] || GOLD : GOLD;
+  const role = displayRoleOf(holder);
+  const color = role ? ROLE_COLOR[role] || GOLD : GOLD;
   const days = daysSince(holder.joinedAt);
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/genesis?u=${holder.username}` : '';
-  const tweet = `Check out ${holder.displayName} — Genesis 1000 holder on Ritual Chain.`;
-  const xHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}&url=${encodeURIComponent(shareUrl)}`;
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -82,162 +277,141 @@ function DetailOverlay({
     };
   }, [onClose]);
 
-  const copyLink = async () => {
-    try { await navigator.clipboard.writeText(shareUrl); } catch {}
-  };
-  const copyId = async () => {
-    try { await navigator.clipboard.writeText(holder.userId); } catch {}
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[200] flex items-center justify-center px-4"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 backdrop-blur-xl" style={{ backgroundColor: '#050505ee' }} />
-
+    <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 24 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.96, y: 24 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
-        onClick={e => e.stopPropagation()}
-        className="relative w-full max-w-2xl rounded-3xl overflow-hidden border"
-        style={{
-          backgroundColor: '#0a0a0a',
-          borderColor: `${color}44`,
-          boxShadow: `0 0 80px ${color}22`,
-        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        onClick={onClose}
       >
-        {/* Gold gradient top strip */}
-        <div
-          className="h-1.5 w-full"
-          style={{ background: `linear-gradient(135deg, ${GOLD} 0%, #FFA500 50%, #FF6B35 100%)` }}
-        />
-
-        {/* Header: avatar + identity */}
-        <div className="p-6 sm:p-8 border-b" style={{ borderColor: '#1a1a1a' }}>
-          <div className="flex items-start gap-5">
-            <img
-              src={holder.avatarUrl}
-              alt={holder.displayName}
-              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 shrink-0"
-              style={{ borderColor: `${color}88` }}
-            />
-            <div className="min-w-0 flex-1">
-              <div
-                className="inline-block text-[10px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-full mb-2"
-                style={{
-                  background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)',
-                  color: '#0a0a0a',
-                }}
-              >
-                🎴 Prime Genesis · Genesis 1000
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight truncate">{holder.displayName}</h2>
-              <p className="text-sm opacity-60 font-mono truncate">@{holder.username}</p>
-              <button
-                onClick={copyId}
-                title="Copy Discord ID"
-                className="mt-2 text-[10px] font-mono opacity-40 hover:opacity-80 transition cursor-pointer"
-              >
-                {holder.userId} · copy
-              </button>
-            </div>
-            <button
-              onClick={onClose}
-              className="text-2xl leading-none opacity-50 hover:opacity-100 transition shrink-0"
-              aria-label="Close"
-            >
-              ×
-            </button>
-          </div>
-
-          {/* Role + join date row */}
-          <div className="flex flex-wrap gap-2 mt-5">
-            {displayRole && (
-              <span
-                className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border"
-                style={{ color, borderColor: `${color}66`, backgroundColor: `${color}11` }}
-              >
-                {displayRole}
-              </span>
-            )}
-            <span
-              className="text-xs font-mono uppercase tracking-wider px-3 py-1 rounded-full border"
-              style={{ color: '#888', borderColor: '#222' }}
-            >
-              Joined {formatJoinDate(holder.joinedAt)}
-            </span>
-            {days !== null && (
-              <span
-                className="text-xs font-mono uppercase tracking-wider px-3 py-1 rounded-full border"
-                style={{ color: '#888', borderColor: '#222' }}
-              >
-                {days} days in
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Activity stats */}
-        <div className="p-6 sm:p-8 border-b" style={{ borderColor: '#1a1a1a' }}>
-          <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-50 mb-3">
-            Activity Metrics
-          </h3>
-          {activity ? (
-            <div className="grid grid-cols-3 gap-3">
-              <StatTile label="Contributions" value={activity.contributions ?? 0} accent="#22c55e" />
-              <StatTile label="Events Won" value={activity.eventsWon ?? 0} accent="#FFD700" />
-              <StatTile label="Hosted" value={activity.eventsHosted ?? 0} accent="#a855f7" />
-            </div>
-          ) : (
-            <p className="text-xs opacity-40 italic">No activity data yet.</p>
-          )}
-        </div>
-
-        {/* Footer actions */}
-        <div className="p-6 sm:p-8 flex flex-wrap gap-2 justify-end">
+        <div className="absolute inset-0 backdrop-blur-xl" style={{ backgroundColor: '#050505cc' }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-sm rounded-2xl border overflow-hidden"
+          style={{ backgroundColor: '#0a0a0a', borderColor: `${color}44`, boxShadow: `0 0 60px ${color}18` }}
+        >
           <button
-            onClick={copyLink}
-            className="px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider border transition"
-            style={{ borderColor: '#222', color: '#ccc' }}
+            onClick={onClose}
+            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm hover:bg-white/10 transition-all"
+            style={{ color: '#555' }}
           >
-            Copy link
+            ✕
           </button>
-          <a
-            href={`/stats?u=${encodeURIComponent(holder.username)}`}
-            className="px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider border transition"
-            style={{ borderColor: '#222', color: '#ccc' }}
-          >
-            View on /stats
-          </a>
-          <a
-            href={xHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition"
-            style={{
-              background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)',
-              color: '#0a0a0a',
-            }}
-          >
-            Share on X
-          </a>
-        </div>
+
+          <div className="relative w-full aspect-square">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, #0a0a0a 100%)` }} />
+            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, ${color}11 100%)` }} />
+
+            <div
+              className="absolute top-3 left-3 inline-block text-[10px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded-full"
+              style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)', color: '#0a0a0a' }}
+            >
+              🎴 Genesis 1000
+            </div>
+          </div>
+
+          <div className="px-5 pb-6 -mt-10 relative z-10">
+            <p className="font-display text-2xl uppercase tracking-tight text-white leading-tight mb-0.5">{holder.displayName}</p>
+            <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{holder.username}</p>
+
+            {role && (
+              <div className="flex items-center gap-2 mb-4">
+                <RoleBadge role={role} size="md" />
+              </div>
+            )}
+
+            {days !== null && (
+              <div className="rounded-xl p-3 border mb-3" style={{ borderColor: `${color}22`, backgroundColor: `${color}08` }}>
+                <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: `${color}88` }}>Locked in for</p>
+                <p className="text-2xl font-display" style={{ color }}>{formatDays(days)}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#444' }}>since joining · {formatJoinDate(holder.joinedAt)}</p>
+              </div>
+            )}
+
+            {activity && (activity.contributions || activity.eventsWon || activity.eventsHosted) && (
+              <div className="grid grid-cols-3 gap-2">
+                <ActivityTile label="Contrib" value={activity.contributions ?? 0} accent="#22c55e" />
+                <ActivityTile label="Won" value={activity.eventsWon ?? 0} accent={GOLD} />
+                <ActivityTile label="Host" value={activity.eventsHosted ?? 0} accent="#a855f7" />
+              </div>
+            )}
+
+            <div className="mt-4 flex gap-2">
+              <a
+                href={`/stats?u=${encodeURIComponent(holder.username)}`}
+                className="flex-1 text-center px-3 py-2 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider border transition"
+                style={{ borderColor: '#222', color: '#ccc' }}
+              >
+                View on /stats
+              </a>
+            </div>
+          </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </AnimatePresence>
   );
 }
 
-function StatTile({ label, value, accent }: { label: string; value: number; accent: string }) {
+function ActivityTile({ label, value, accent }: { label: string; value: number; accent: string }) {
   return (
-    <div className="rounded-xl p-4 border" style={{ backgroundColor: '#050505', borderColor: '#1a1a1a' }}>
-      <div className="text-[9px] font-mono font-bold uppercase tracking-widest opacity-50 mb-1.5">{label}</div>
-      <div className="text-2xl font-black font-mono" style={{ color: accent }}>{value.toLocaleString()}</div>
+    <div className="rounded-lg p-2 border text-center" style={{ borderColor: '#1a1a1a', backgroundColor: '#050505' }}>
+      <div className="text-[8px] font-mono uppercase tracking-widest opacity-50">{label}</div>
+      <div className="text-lg font-black font-mono" style={{ color: accent }}>{value.toLocaleString()}</div>
+    </div>
+  );
+}
+
+function MemberCard({ holder, onClick }: { holder: Holder; onClick: () => void }) {
+  const role = displayRoleOf(holder);
+  const color = role ? ROLE_COLOR[role] || GOLD : GOLD;
+  const days = daysSince(holder.joinedAt);
+
+  return (
+    <div
+      onClick={onClick}
+      className="genesis-card group relative flex flex-col rounded-xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+      style={{
+        backgroundColor: '#0a0a0a',
+        borderColor: `${color}55`,
+        boxShadow: `0 0 20px ${color}11`,
+      }}
+    >
+      <div className="relative w-full aspect-square overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={holder.avatarUrl}
+          alt={holder.displayName}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 50%, #0a0a0a 100%)' }} />
+        <div
+          className="absolute top-2 left-2 inline-block text-[9px] font-mono font-bold uppercase tracking-widest px-1.5 py-0.5 rounded-full"
+          style={{ background: 'linear-gradient(135deg, #FFD700 0%, #FF6B35 100%)', color: '#0a0a0a' }}
+        >
+          🎴 G1K
+        </div>
+      </div>
+
+      <div className="px-3 pb-3 -mt-4 relative z-10">
+        <p className="font-semibold text-sm truncate text-white leading-tight" title={holder.displayName}>
+          {holder.displayName}
+        </p>
+        <p className="text-xs truncate mb-2" style={{ color: '#555' }}>@{holder.username}</p>
+        <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+          {role ? <RoleBadge role={role} /> : <span className="text-[10px] font-mono" style={{ color: '#555' }}>No role</span>}
+        </div>
+        {days !== null && (
+          <p className="text-[10px] font-mono" style={{ color: '#444' }}>{formatDays(days)} since join</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -245,9 +419,18 @@ function StatTile({ label, value, accent }: { label: string; value: number; acce
 export default function GenesisPage() {
   const [data, setData] = useState<Payload | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [q, setQ] = useState('');
+  const [filter, setFilter] = useState<string>('all');
+  const [query, setQuery] = useState('');
+  const [searchResult, setSearchResult] = useState<Holder | 'not-found' | 'idle'>('idle');
   const [activityByUser, setActivityByUser] = useState<Record<string, Activity> | null>(null);
   const [selected, setSelected] = useState<Holder | null>(null);
+  const [suggestions, setSuggestions] = useState<Holder[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const suggestRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch('/api/badge/genesis-1000')
@@ -255,7 +438,6 @@ export default function GenesisPage() {
       .then(setData)
       .catch(e => setErr(`Failed to load (${e})`));
 
-    // Pull activity data once so the overlay can show metrics without a per-click round trip.
     fetch('/api/community')
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
@@ -264,114 +446,319 @@ export default function GenesisPage() {
       .catch(() => {});
   }, []);
 
-  // Deep-link: /genesis?u=username opens overlay on load.
+  // Deep-link: /genesis?u=username opens modal on load.
   useEffect(() => {
     if (!data) return;
     const u = new URLSearchParams(window.location.search).get('u');
     if (!u) return;
-    const target = data.holders.find(h => h.username.toLowerCase() === u.toLowerCase());
-    if (target) setSelected(target);
+    const t = data.holders.find(h => h.username.toLowerCase() === u.toLowerCase());
+    if (t) setSelected(t);
+  }, [data]);
+
+  // Hero entrance animation
+  useEffect(() => {
+    if (!heroRef.current) return;
+    animate('.hero-line', {
+      opacity: [0, 1],
+      translateY: [40, 0],
+      delay: stagger(120),
+      duration: 800,
+      easing: 'easeOutExpo',
+    });
+  }, []);
+
+  // Grid stagger when in view
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          animate('.genesis-card', {
+            opacity: [0, 1],
+            translateY: [30, 0],
+            scale: [0.95, 1],
+            delay: stagger(30),
+            duration: 500,
+            easing: 'easeOutExpo',
+          });
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.05 },
+    );
+    obs.observe(gridRef.current);
+    return () => obs.disconnect();
+  }, [filter, data]);
+
+  // Outside click for suggestions
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (suggestRef.current && !suggestRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  function handleQueryChange(val: string) {
+    setQuery(val);
+    setSearchResult('idle');
+    if (!data || val.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const needle = val.trim().toLowerCase().replace(/^@/, '');
+    const matches = data.holders
+      .filter(h => h.username.toLowerCase().includes(needle) || h.displayName.toLowerCase().includes(needle))
+      .slice(0, 6);
+    setSuggestions(matches);
+    setShowSuggestions(matches.length > 0);
+  }
+
+  function selectSuggestion(h: Holder) {
+    setQuery(h.username);
+    setShowSuggestions(false);
+    setSearchResult(h);
+  }
+
+  function handleSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!data) return;
+    const q = query.trim().toLowerCase().replace(/^@/, '');
+    if (!q) return;
+    const found = data.holders.find(
+      h => h.username.toLowerCase() === q || h.displayName.toLowerCase() === q,
+    );
+    setSearchResult(found ?? 'not-found');
+  }
+
+  function scrollToList() {
+    listRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Role filter pills — only roles that actually appear among holders.
+  const rolesPresent = useMemo(() => {
+    if (!data) return [];
+    const set = new Set<string>();
+    for (const h of data.holders) {
+      const r = displayRoleOf(h);
+      if (r) set.add(r);
+    }
+    return [...set].sort((a, b) => (ROLE_RANK[b] ?? -1) - (ROLE_RANK[a] ?? -1));
   }, [data]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
-    const needle = q.trim().toLowerCase();
-    if (!needle) return data.holders;
-    return data.holders.filter(
-      h =>
-        h.username.toLowerCase().includes(needle) ||
-        h.displayName.toLowerCase().includes(needle),
-    );
-  }, [data, q]);
+    if (filter === 'all') return data.holders;
+    if (filter === 'no-role') return data.holders.filter(h => !displayRoleOf(h));
+    return data.holders.filter(h => displayRoleOf(h) === filter);
+  }, [data, filter]);
+
+  const sorted = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      const ra = ROLE_RANK[displayRoleOf(a) || ''] ?? -1;
+      const rb = ROLE_RANK[displayRoleOf(b) || ''] ?? -1;
+      if (rb !== ra) return rb - ra;
+      return (a.joinedAt || '').localeCompare(b.joinedAt || '');
+    });
+  }, [filtered]);
+
+  const hasNoRole = useMemo(() => !!data && data.holders.some(h => !displayRoleOf(h)), [data]);
 
   return (
-    <main className="min-h-screen px-4 sm:px-6 py-12" style={{ backgroundColor: '#050505', color: '#e5e5e5' }}>
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-10 text-center">
-          <h1
-            className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-3"
-            style={{
-              background: 'linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF6B35 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}
-          >
-            Genesis 1000
-          </h1>
-          <p className="text-sm sm:text-base opacity-70">
-            Discord members holding the Genesis 1000 role — the first 1,000 to deploy a sovereign agent on testnet.
-          </p>
-          {data && (
-            <p className="text-xs opacity-50 mt-2">
-              {data.count} holders · updated {new Date(data.updatedAt).toLocaleString()}
-            </p>
-          )}
-        </header>
-
-        <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search by username or display name…"
-            value={q}
-            onChange={e => setQ(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl border outline-none focus:border-yellow-500/50 transition"
-            style={{ backgroundColor: '#0a0a0a', borderColor: '#1a1a1a', color: '#e5e5e5' }}
-          />
-        </div>
-
-        {err && <p className="text-center text-red-400">{err}</p>}
-        {!data && !err && <p className="text-center opacity-50">Loading…</p>}
-
-        {data && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {filtered.map(h => {
-              const displayRole = h.topRole || h.fallbackRole || null;
-              const color = displayRole ? ROLE_COLOR[displayRole] || GOLD : GOLD;
-              return (
-                <button
-                  key={h.userId}
-                  onClick={() => setSelected(h)}
-                  className="rounded-2xl border p-4 flex flex-col items-center text-center transition hover:scale-[1.02] cursor-pointer"
-                  style={{
-                    backgroundColor: '#0a0a0a',
-                    borderColor: `${color}33`,
-                    boxShadow: `0 0 24px ${color}11`,
-                  }}
-                >
-                  <img
-                    src={h.avatarUrl}
-                    alt={h.displayName}
-                    className="w-16 h-16 rounded-full mb-3 border-2"
-                    style={{ borderColor: `${color}66` }}
-                  />
-                  <div className="text-sm font-semibold truncate w-full">{h.displayName}</div>
-                  <div className="text-xs opacity-50 truncate w-full">@{h.username}</div>
-                  {displayRole && (
-                    <div className="text-xs mt-2 px-2 py-0.5 rounded-full border" style={{ color, borderColor: `${color}55` }}>
-                      {displayRole}
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {data && filtered.length === 0 && q && (
-          <p className="text-center opacity-50 mt-8">No holder matches “{q}”.</p>
-        )}
-      </div>
-
+    <div className="bg-[#050505] text-white">
+      {/* Card modal */}
       <AnimatePresence>
         {selected && (
-          <DetailOverlay
+          <MemberModal
             holder={selected}
             activity={activityByUser?.[selected.userId] || null}
             onClose={() => setSelected(null)}
           />
         )}
       </AnimatePresence>
-    </main>
+
+      {/* Search result overlay */}
+      {searchResult !== 'idle' && (
+        <ResultOverlay
+          result={searchResult}
+          query={query}
+          onClose={() => setSearchResult('idle')}
+        />
+      )}
+
+      {/* ── HERO ── */}
+      <section ref={heroRef} className="relative min-h-screen flex flex-col items-center justify-center px-6 text-center overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
+            backgroundSize: '60px 60px',
+          }}
+        />
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] opacity-20 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse, #FFD700 0%, transparent 70%)' }}
+        />
+
+        <div className="relative z-10 max-w-4xl mx-auto">
+          <p className="hero-line opacity-0 font-mono text-xs tracking-[0.3em] uppercase mb-6" style={{ color: '#666' }}>
+            Prime Genesis · First 1,000 Sovereign Deployers
+          </p>
+
+          <h1 className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-6">
+            Are You
+          </h1>
+          <h1
+            className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-10"
+            style={{ color: GOLD, WebkitTextStroke: `1px ${GOLD}` }}
+          >
+            Genesis?
+          </h1>
+
+          <p className="hero-line opacity-0 text-lg md:text-xl mb-10" style={{ color: '#888' }}>
+            {data ? `${data.count} members` : 'Loading…'} locked into the Genesis 1000 registry
+          </p>
+
+          <div className="hero-line opacity-0 w-full max-w-lg mx-auto mb-8">
+            <div ref={suggestRef} className="relative">
+              <form onSubmit={handleSearch} className="flex gap-2">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={e => handleQueryChange(e.target.value)}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Your Discord username..."
+                  className="flex-1 px-5 py-3.5 rounded-xl border text-white placeholder:text-[#444] outline-none transition-all"
+                  style={{ backgroundColor: '#111', borderColor: '#222', fontSize: 15 }}
+                  onFocusCapture={e => (e.target.style.borderColor = GOLD)}
+                  onBlurCapture={e => (e.target.style.borderColor = '#222')}
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  className="px-6 py-3.5 rounded-xl font-semibold text-sm transition-all hover:opacity-80 whitespace-nowrap"
+                  style={{ backgroundColor: GOLD, color: '#000' }}
+                >
+                  Check
+                </button>
+              </form>
+
+              {showSuggestions && suggestions.length > 0 && (
+                <div
+                  className="absolute left-0 right-0 top-full mt-1 rounded-xl border overflow-hidden z-50 text-left"
+                  style={{ backgroundColor: '#111', borderColor: '#222' }}
+                >
+                  {suggestions.map(s => (
+                    <button
+                      key={s.userId}
+                      onMouseDown={() => selectSuggestion(s)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors border-b last:border-0"
+                      style={{ borderColor: '#1a1a1a' }}
+                    >
+                      <div className="relative w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#222]">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={s.avatarUrl} alt={s.displayName} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-sm font-semibold text-white truncate">{s.displayName}</div>
+                        <div className="text-xs truncate" style={{ color: '#555' }}>@{s.username}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={scrollToList}
+            className="hero-line opacity-0 flex flex-col items-center gap-2 mx-auto transition-colors hover:opacity-70"
+            style={{ color: '#555' }}
+          >
+            <span className="font-mono text-xs tracking-[0.2em] uppercase">See the holders</span>
+            <span className="text-lg animate-bounce">↓</span>
+          </button>
+        </div>
+      </section>
+
+      {/* ── LIST ── */}
+      <div ref={listRef} className="max-w-7xl mx-auto px-4 pb-24 pt-12">
+        {err && <p className="text-center text-red-400 mb-8">{err}</p>}
+        {!data && !err && <p className="text-center opacity-50 mb-8">Loading registry…</p>}
+
+        {data && (
+          <>
+            {/* Per-role count tiles */}
+            <div className="flex flex-wrap justify-center gap-4 mb-14">
+              {rolesPresent.map(role => {
+                const count = data.holders.filter(h => displayRoleOf(h) === role).length;
+                const color = ROLE_COLOR[role] || GOLD;
+                return (
+                  <div
+                    key={role}
+                    className="relative rounded-2xl p-6 border overflow-hidden text-center"
+                    style={{ borderColor: `${color}33`, backgroundColor: '#0a0a0a', minWidth: '140px' }}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-10"
+                      style={{ background: `radial-gradient(ellipse at 50% 100%, ${color} 0%, transparent 70%)` }}
+                    />
+                    <p className="relative text-4xl font-display" style={{ color }}>{count}</p>
+                    <p className="relative text-sm mt-1 font-mono" style={{ color: '#666' }}>{role}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Filter pills */}
+            <div className="flex flex-wrap gap-2 mb-10 justify-center">
+              {(['all', ...rolesPresent, ...(hasNoRole ? ['no-role'] : [])] as string[]).map(role => {
+                const active = filter === role;
+                const color = role === 'all' ? '#fff' : role === 'no-role' ? '#555' : ROLE_COLOR[role] || GOLD;
+                const count =
+                  role === 'all'
+                    ? data.holders.length
+                    : role === 'no-role'
+                    ? data.holders.filter(h => !displayRoleOf(h)).length
+                    : data.holders.filter(h => displayRoleOf(h) === role).length;
+                const label = role === 'all' ? 'All' : role === 'no-role' ? 'No Role' : role;
+                return (
+                  <button
+                    key={role}
+                    onClick={() => setFilter(role)}
+                    className="px-5 py-2 rounded-full text-sm font-mono border transition-all"
+                    style={{
+                      borderColor: active ? color : '#222',
+                      backgroundColor: active ? color : 'transparent',
+                      color: active ? '#000' : '#555',
+                    }}
+                  >
+                    {label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Grid */}
+            <div ref={gridRef} className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {sorted.map(h => (
+                <MemberCard key={h.userId} holder={h} onClick={() => setSelected(h)} />
+              ))}
+            </div>
+
+            {sorted.length === 0 && (
+              <p className="text-center opacity-50 mt-8">No holders for this filter.</p>
+            )}
+
+            <p className="text-center text-xs opacity-30 mt-12 font-mono">
+              Updated {new Date(data.updatedAt).toLocaleString()}
+            </p>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
