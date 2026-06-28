@@ -95,19 +95,80 @@ function RoleBadge({ role, size = 'sm' }: { role: string; size?: 'sm' | 'md' }) 
   );
 }
 
+const FOUND_LINES = [
+  'nya~ found you!',
+  '*flicks tail* a real one',
+  '*purrs* certified Genesis',
+  'oooh prime Genesis spotted',
+  'diamond paws 💎 confirmed',
+  '*adjusts cat ears* respect',
+  'early bird gets the NFT 🎴',
+  '*tail wag* legend status',
+  'meow meow, holder detected',
+  'sigma Genesis behavior',
+];
+const NOT_FOUND_LINES = [
+  '*sad meow* not on the list',
+  'hmm... I don\'t see you nya',
+  '*flicks tail* better luck next time',
+  'you missed the mint 😿',
+  'not a holder... yet?',
+  '*ears droop* nope',
+  'who are you again? 🤔',
+  '*tilts head* nada',
+];
+
+function SpeechBubble({ text, color }: { text: string; color: string }) {
+  return (
+    <div
+      className="absolute z-20 px-4 py-2 rounded-2xl border font-mono text-xs whitespace-nowrap"
+      style={{
+        top: '8%',
+        left: '50%',
+        transform: 'translateX(-50%) rotate(-3deg)',
+        backgroundColor: '#fff',
+        color: '#0a0a0a',
+        borderColor: color,
+        boxShadow: `0 4px 18px ${color}44`,
+      }}
+    >
+      {text}
+      {/* tail */}
+      <span
+        className="absolute"
+        style={{
+          bottom: -8,
+          left: '40%',
+          width: 0,
+          height: 0,
+          borderLeft: '8px solid transparent',
+          borderRight: '8px solid transparent',
+          borderTop: `10px solid #fff`,
+        }}
+      />
+    </div>
+  );
+}
+
 function ResultOverlay({
   result,
   query,
+  activity,
   onClose,
 }: {
   result: Holder | 'not-found';
   query: string;
+  activity: Activity | null;
   onClose: () => void;
 }) {
   const isFound = result !== 'not-found';
   const member = isFound ? (result as Holder) : null;
   const role = member ? displayRoleOf(member) : null;
   const color = role ? ROLE_COLOR[role] || GOLD : GOLD;
+  const line = useMemo(
+    () => (isFound ? FOUND_LINES : NOT_FOUND_LINES)[Math.floor(Math.random() * (isFound ? FOUND_LINES : NOT_FOUND_LINES).length)],
+    [isFound],
+  );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -161,6 +222,7 @@ function ResultOverlay({
                   }}
                 />
                 <div className="absolute top-0 right-0 w-px h-full opacity-20" style={{ background: `linear-gradient(to bottom, transparent, ${color}, transparent)` }} />
+                <SpeechBubble text={line} color={color} />
                 <Image
                   src="/Siggy_01/Face/Girl/Girl_Happy.png"
                   alt="Siggy happy"
@@ -200,11 +262,19 @@ function ResultOverlay({
                   const d = daysSince(member.joinedAt);
                   if (d === null) return null;
                   return (
-                    <p className="text-sm leading-relaxed mb-3" style={{ color: '#888' }}>
+                    <p className="text-sm leading-relaxed mb-4" style={{ color: '#888' }}>
                       Locked in for <span className="font-bold" style={{ color }}>{formatDays(d)}</span> since joining Ritual. Owns a Genesis NFT — one of the first 1,000 to deploy an agent on testnet. 🔥
                     </p>
                   );
                 })()}
+
+                {activity && ((activity.contributions ?? 0) || (activity.eventsWon ?? 0) || (activity.eventsHosted ?? 0)) ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    <ActivityTile label="Contrib" value={activity.contributions ?? 0} accent="#22c55e" />
+                    <ActivityTile label="Won" value={activity.eventsWon ?? 0} accent={GOLD} />
+                    <ActivityTile label="Host" value={activity.eventsHosted ?? 0} accent="#a855f7" />
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : (
@@ -220,6 +290,7 @@ function ResultOverlay({
                     backgroundSize: '40px 40px',
                   }}
                 />
+                <SpeechBubble text={line} color="#666" />
                 <Image
                   src="/Siggy_01/Face/Girl/Girl_Sad.png"
                   alt="Siggy sad"
@@ -577,6 +648,11 @@ export default function GenesisPage() {
         <ResultOverlay
           result={searchResult}
           query={query}
+          activity={
+            searchResult !== 'not-found' && searchResult !== 'idle'
+              ? activityByUser?.[(searchResult as Holder).userId] || null
+              : null
+          }
           onClose={() => setSearchResult('idle')}
         />
       )}
