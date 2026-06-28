@@ -37,6 +37,7 @@ const ROLE_RANK: Record<string, number> = {
   ritty: 3,
   bitty: 2,
   Forerunner: 1,
+  Initiate: 0.5,
   Blessed: 0.3,
   Harmonic: 0.2,
   Cursed: 0.1,
@@ -50,6 +51,7 @@ const ROLE_COLOR: Record<string, string> = {
   ritty: '#a855f7',
   bitty: '#3b82f6',
   Forerunner: '#f59e0b',
+  Initiate: '#06b6d4',
   Blessed: '#fde68a',
   Cursed: '#9ca3af',
   Harmonic: '#60a5fa',
@@ -596,7 +598,7 @@ export default function GenesisPage() {
 
   // Main roles get their own filter pill; the rest (Mage, Blessed, Cursed,
   // Harmonic, no-role) collapse into a single "Other" bucket.
-  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Forerunner'];
+  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Forerunner', 'Initiate'];
   const isMain = (r: string | null) => !!r && MAIN_ROLES.includes(r);
 
   const mainPresent = useMemo(() => {
