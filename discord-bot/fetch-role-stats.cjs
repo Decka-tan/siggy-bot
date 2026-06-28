@@ -52,7 +52,7 @@ const SPECIAL_ROLES = ['Blessed', 'Cursed', 'Harmonic'];
 
 // Fallback role labels — shown on badge pages when a holder has no tracked
 // ladder role. Priority order matters (first match wins).
-const FALLBACK_ROLES = ['Forerunner', 'Initiate', 'Blessed', 'Cursed', 'Harmonic'];
+const FALLBACK_ROLES = ['Forerunner', 'Blessed', 'Harmonic', 'Cursed', 'Initiate'];
 
 // Badge roles — additive (orthogonal to the contributor ladder). A member can
 // hold a badge in addition to any tracked role. Used to surface special cohorts

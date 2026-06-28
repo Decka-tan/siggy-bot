@@ -598,7 +598,7 @@ export default function GenesisPage() {
 
   // Main roles get their own filter pill; the rest (Mage, Blessed, Cursed,
   // Harmonic, no-role) collapse into a single "Other" bucket.
-  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Forerunner', 'Initiate'];
+  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Forerunner'];
   const isMain = (r: string | null) => !!r && MAIN_ROLES.includes(r);
 
   const mainPresent = useMemo(() => {
@@ -678,14 +678,14 @@ export default function GenesisPage() {
             Prime Genesis · First 1,000 Agent Deployers
           </p>
 
-          <h1 className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-6">
+          <h1 className="hero-line opacity-0 font-display text-5xl md:text-7xl lg:text-8xl uppercase tracking-tight leading-[1.05] mb-2">
             Are You
           </h1>
           <h1
-            className="hero-line opacity-0 font-display text-5xl md:text-7xl lg:text-[90px] uppercase tracking-tight leading-none mb-10"
-            style={{ color: GOLD, WebkitTextStroke: `1px ${GOLD}` }}
+            className="hero-line opacity-0 font-display text-5xl md:text-7xl lg:text-8xl uppercase tracking-tight leading-[1.05] mb-10"
+            style={{ color: GOLD }}
           >
-            Genesis 1000<br />Holder?
+            Genesis 1000 Holder?
           </h1>
 
           <p className="hero-line opacity-0 text-lg md:text-xl mb-10" style={{ color: '#888' }}>
