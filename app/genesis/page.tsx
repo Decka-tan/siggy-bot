@@ -10,6 +10,7 @@ type Holder = {
   avatarUrl: string;
   joinedAt: string | null;
   topRole: string | null;
+  fallbackRole?: string | null;
 };
 
 type Payload = {
@@ -33,6 +34,10 @@ const ROLE_COLOR: Record<string, string> = {
   Mage: '#1ABC9C',
   ritty: '#a855f7',
   bitty: '#3b82f6',
+  Forerunner: '#f59e0b',
+  Blessed: '#fde68a',
+  Cursed: '#9ca3af',
+  Harmonic: '#60a5fa',
 };
 
 const GOLD = '#FFD700';
@@ -60,7 +65,8 @@ function DetailOverlay({
   activity: Activity | null;
   onClose: () => void;
 }) {
-  const color = holder.topRole ? ROLE_COLOR[holder.topRole] || GOLD : GOLD;
+  const displayRole = holder.topRole || holder.fallbackRole || null;
+  const color = displayRole ? ROLE_COLOR[displayRole] || GOLD : GOLD;
   const days = daysSince(holder.joinedAt);
   const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}/genesis?u=${holder.username}` : '';
   const tweet = `Check out ${holder.displayName} — Genesis 1000 holder on Ritual Chain.`;
@@ -152,12 +158,12 @@ function DetailOverlay({
 
           {/* Role + join date row */}
           <div className="flex flex-wrap gap-2 mt-5">
-            {holder.topRole && (
+            {displayRole && (
               <span
                 className="text-xs font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full border"
                 style={{ color, borderColor: `${color}66`, backgroundColor: `${color}11` }}
               >
-                {holder.topRole}
+                {displayRole}
               </span>
             )}
             <span
@@ -320,7 +326,8 @@ export default function GenesisPage() {
         {data && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filtered.map(h => {
-              const color = h.topRole ? ROLE_COLOR[h.topRole] || GOLD : GOLD;
+              const displayRole = h.topRole || h.fallbackRole || null;
+              const color = displayRole ? ROLE_COLOR[displayRole] || GOLD : GOLD;
               return (
                 <button
                   key={h.userId}
@@ -340,9 +347,9 @@ export default function GenesisPage() {
                   />
                   <div className="text-sm font-semibold truncate w-full">{h.displayName}</div>
                   <div className="text-xs opacity-50 truncate w-full">@{h.username}</div>
-                  {h.topRole && (
+                  {displayRole && (
                     <div className="text-xs mt-2 px-2 py-0.5 rounded-full border" style={{ color, borderColor: `${color}55` }}>
-                      {h.topRole}
+                      {displayRole}
                     </div>
                   )}
                 </button>

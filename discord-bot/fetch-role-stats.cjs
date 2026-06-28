@@ -50,6 +50,10 @@ const STAFF_ROLES = new Set(['Mods', 'Moderator', 'Foundation Team', 'Event Mana
 // without a contributor role.
 const SPECIAL_ROLES = ['Blessed', 'Cursed', 'Harmonic'];
 
+// Fallback role labels — shown on badge pages when a holder has no tracked
+// ladder role. Priority order matters (first match wins).
+const FALLBACK_ROLES = ['Forerunner', 'Blessed', 'Cursed', 'Harmonic'];
+
 // Badge roles — additive (orthogonal to the contributor ladder). A member can
 // hold a badge in addition to any tracked role. Used to surface special cohorts
 // (e.g. early-deployer registry) on /stats and as standalone /<badge> pages.
@@ -142,15 +146,20 @@ async function fetchAllMembers(rolesMap) {
         for (const r of tracked) if (top && ROLE_RANK[r] > ROLE_RANK[top]) top = r;
         // Badge holders — recorded even if member has no contributor role.
         const memberBadges = roleNames.filter(rn => BADGE_ROLES.includes(rn));
-        for (const b of memberBadges) {
-          badgeHolders[b].push({
-            userId: m.user.id,
-            username: m.user.username,
-            displayName: m.nick || m.user.global_name || m.user.username,
-            avatarUrl: avatarProxy(m),
-            joinedAt: m.joined_at || null,
-            topRole: top,
-          });
+        if (memberBadges.length) {
+          // Fallback role for non-contributors (no tracked ladder role).
+          const fallback = top ? null : (FALLBACK_ROLES.find(rn => roleNames.includes(rn)) || null);
+          for (const b of memberBadges) {
+            badgeHolders[b].push({
+              userId: m.user.id,
+              username: m.user.username,
+              displayName: m.nick || m.user.global_name || m.user.username,
+              avatarUrl: avatarProxy(m),
+              joinedAt: m.joined_at || null,
+              topRole: top,
+              fallbackRole: fallback,
+            });
+          }
         }
         if (!tracked.length) continue;
         // region × role: attribute contributor to EVERY region role they hold (by top tier)
