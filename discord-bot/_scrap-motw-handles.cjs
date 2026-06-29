@@ -89,9 +89,23 @@ function extractHandle(rawUrl) {
     let url = null, handle = null;
     if (last) {
       const fromContent = (last.content || '').match(URL_RE)?.[0];
-      const fromEmbed = last.embeds?.[0]?.url || last.embeds?.[0]?.author?.url;
-      url = fromContent || fromEmbed || null;
-      if (url) handle = extractHandle(url);
+      const embeds = last.embeds || [];
+      // Tries, in order: content URL → embed.author.url (real x.com/<handle> for
+      // tweets posted as i/status/N intent links) → embed.url. First one that
+      // yields a parseable handle wins.
+      const candidates = [fromContent, ...embeds.map(e => e?.author?.url), ...embeds.map(e => e?.url)].filter(Boolean);
+      for (const c of candidates) {
+        const h = extractHandle(c);
+        if (h) { url = c; handle = h; break; }
+      }
+      if (!handle && candidates.length) url = candidates[0];
+      // Last-resort: embed.author.name often contains "Display (@handle)"
+      if (!handle) {
+        for (const e of embeds) {
+          const m = (e?.author?.name || '').match(/@([A-Za-z0-9_]+)/);
+          if (m) { handle = `@${m[1]}  (x.com)`; break; }
+        }
+      }
     }
     console.log(handle ? handle : (url ? `URL=${url} (no handle parsed)` : 'no post found'));
     rows.push({ display: m.displayName, username: m.username, handle: handle || '—', url: url || '' });
