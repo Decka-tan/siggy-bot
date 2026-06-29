@@ -46,6 +46,18 @@ async function search(uid) {
 
 const URL_RE = /https?:\/\/\S+/i;
 
+// Resolve an x.com/twitter "i/status/<id>" intent URL to a real screen_name via
+// the public fxtwitter API. Returns null on any failure.
+async function resolveTweetHandle(tweetId) {
+  try {
+    const r = await fetch(`https://api.fxtwitter.com/status/${tweetId}`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    const name = j?.tweet?.author?.screen_name;
+    return name ? `@${name}  (x.com)` : null;
+  } catch { return null; }
+}
+
 // Pull a "handle" out of a URL. Knows x.com / twitter.com / instagram / tiktok / github /
 // medium / youtube; otherwise returns the bare hostname + first path segment.
 function extractHandle(rawUrl) {
@@ -105,6 +117,13 @@ function extractHandle(rawUrl) {
           const m = (e?.author?.name || '').match(/@([A-Za-z0-9_]+)/);
           if (m) { handle = `@${m[1]}  (x.com)`; break; }
         }
+      }
+      // Final fallback: if URL is an x.com 'i/status/<id>' intent link, ask the
+      // public fxtwitter API for the real author.screen_name.
+      if (!handle && url) {
+        const m = url.match(/(?:x|twitter)\.com\/i\/status\/(\d+)/i)
+              || url.match(/(?:x|twitter)\.com\/(?:[^/]+)\/status\/(\d+)/i);
+        if (m) handle = await resolveTweetHandle(m[1]);
       }
     }
     console.log(handle ? handle : (url ? `URL=${url} (no handle parsed)` : 'no post found'));
