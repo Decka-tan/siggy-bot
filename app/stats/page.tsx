@@ -2087,7 +2087,7 @@ export default function CommunityPage() {
                         Member of the Week · Week {wk.week}{range ? ` · ${range}` : ''}
                       </p>
                       <h2 className="font-display text-5xl sm:text-6xl md:text-7xl uppercase tracking-tight leading-none mb-5 tabular-nums" style={{ color: rc }}>
-                        #{rank} 🏆
+                        #{rank}
                       </h2>
                       <div className="flex items-center gap-4 mb-5">
                         <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0" style={{ boxShadow: `0 0 0 2px ${rc}66` }}>
@@ -2173,7 +2173,7 @@ export default function CommunityPage() {
                         Member of the Week · Week {wk.week}{range ? ` · ${range}` : ''}
                       </p>
                       <h2 style={{ fontSize: 96, fontWeight: 900, letterSpacing: -3, lineHeight: 1, margin: '14px 0 22px', color: rc, textTransform: 'uppercase' }}>
-                        #{rank} 🏆
+                        #{rank}
                       </h2>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
                         <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: `0 0 0 2px ${rc}66`, position: 'relative' }}>
