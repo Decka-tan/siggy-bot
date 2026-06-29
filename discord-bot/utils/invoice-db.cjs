@@ -470,6 +470,22 @@ function markParticipantPaid(invoiceId, userId, paid = true) {
 }
 
 /**
+ * Mark a specific participant entry (by array index) as paid. Used by the
+ * /bayar flow because participants can share the same userId (e.g. multiple
+ * "Cindy" bills); index is the only stable identifier.
+ */
+function markParticipantPaidByIndex(invoiceId, idx, paid = true) {
+  const db = readDB();
+  const invoice = db.invoices[invoiceId];
+  if (!invoice) return { success: false, error: 'Invoice not found' };
+  const participant = invoice.participants[idx];
+  if (!participant) return { success: false, error: 'Participant index out of range' };
+  participant.paid = paid;
+  writeDB(db);
+  return { success: true, invoice };
+}
+
+/**
  * Mark multiple participants as paid based on user inputs
  */
 function markMultiplePaid(invoiceId, paidUserIds) {
@@ -547,6 +563,7 @@ module.exports = {
   linkUserToName,
   addNameAlias,
   markParticipantPaid,
+  markParticipantPaidByIndex,
   markMultiplePaid,
   deleteInvoice,
   calculateTotalOwed,

@@ -15,6 +15,7 @@ const {
 const {
   getInvoice,
   markParticipantPaid,
+  markParticipantPaidByIndex,
 } = require('../utils/invoice-db.cjs');
 const {
   EmbedBuilder,
@@ -216,17 +217,29 @@ async function showPersonSelect(interaction, rawInvoiceId, useReply) {
     return respond({ content: '❌ Invoice tidak ditemukan.', components: [] });
   }
 
-  const unpaidParticipants = invoice.participants.filter(p => !p.paid);
-  if (unpaidParticipants.length === 0) {
+  // Build options keyed by participant INDEX (not userId) — multiple participants
+  // can share the same userId (e.g. several "Cindy" bills) which would otherwise
+  // crash with COMPONENT_OPTION_VALUE_DUPLICATED.
+  const unpaidWithIdx = invoice.participants
+    .map((p, idx) => ({ p, idx }))
+    .filter(({ p }) => !p.paid);
+  if (unpaidWithIdx.length === 0) {
     return respond({ content: '✅ Semua orang di invoice ini udah lunas!', components: [] });
   }
-
-  const options = unpaidParticipants.slice(0, 25).map(p =>
-    new StringSelectMenuOptionBuilder()
-      .setLabel(`${p.username} - Rp ${Number(p.amount).toLocaleString('id-ID')}`)
-      .setValue(p.userId)
-      .setDescription(`Rp ${Number(p.amount).toLocaleString('id-ID')}`)
-  );
+  // If a username repeats, suffix #N so the picker shows which entry is which.
+  const nameCount = new Map();
+  for (const { p } of unpaidWithIdx) nameCount.set(p.username, (nameCount.get(p.username) || 0) + 1);
+  const seenSoFar = new Map();
+  const options = unpaidWithIdx.slice(0, 25).map(({ p, idx }) => {
+    const total = nameCount.get(p.username) || 1;
+    const seq = (seenSoFar.get(p.username) || 0) + 1;
+    seenSoFar.set(p.username, seq);
+    const suffix = total > 1 ? ` #${seq}` : '';
+    return new StringSelectMenuOptionBuilder()
+      .setLabel(`${p.username}${suffix} - Rp ${Number(p.amount).toLocaleString('id-ID')}`)
+      .setValue(`p_${idx}`)
+      .setDescription(`Rp ${Number(p.amount).toLocaleString('id-ID')}`);
+  });
 
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`bayar_select_person_${invoiceId}`)
@@ -249,7 +262,10 @@ async function showPersonSelect(interaction, rawInvoiceId, useReply) {
 async function handleBayarSelectPerson(interaction) {
   const customId = interaction.customId;
   const invoiceId = customId.replace('bayar_select_person_', '');
-  const participantUserId = interaction.values[0];
+  const raw = interaction.values[0];
+  // New encoding: "p_<idx>". Fallback: legacy userId-encoded value.
+  const idxMatch = /^p_(\d+)$/.exec(raw);
+  const participantIdx = idxMatch ? Number(idxMatch[1]) : null;
 
   const invoice = getInvoice(invoiceId);
   if (!invoice) {
@@ -259,13 +275,16 @@ async function handleBayarSelectPerson(interaction) {
     });
   }
 
-  const participant = invoice.participants.find(p => p.userId === participantUserId);
+  const participant = participantIdx !== null
+    ? invoice.participants[participantIdx]
+    : invoice.participants.find(p => p.userId === raw);
   if (!participant) {
     return interaction.update({
       content: '❌ Participant tidak ditemukan.',
       components: []
     });
   }
+  const participantUserId = participant.userId;
 
   // Get creator's payment info
   const creatorPaymentInfo = getPaymentInfo(invoice.creator.id);
@@ -274,6 +293,7 @@ async function handleBayarSelectPerson(interaction) {
   const claimData = {
     invoiceId,
     participantUserId,
+    participantIdx: participantIdx !== null ? participantIdx : invoice.participants.indexOf(participant),
     participantName: participant.username,
     amount: participant.amount,
     creatorId: invoice.creator.id,
@@ -387,14 +407,17 @@ async function handlePaymentProofDM(message, client) {
   proofContent += `💰 Jumlah: Rp ${Number(pending.amount).toLocaleString('id-ID')}\n`;
   proofContent += `📋 Invoice: ${invoice.title || 'Untitled'} (${invoice.date})\n\n`;
 
-  // Build confirm/reject buttons
+  // Build confirm/reject buttons. We embed both the userId (for back-compat /
+  // logging) and the array index (the only stable identifier when participants
+  // share a userId), separated by ':'.
+  const idxToken = pending.participantIdx !== undefined ? `${pending.participantUserId}:${pending.participantIdx}` : pending.participantUserId;
   const confirmButton = new ButtonBuilder()
-    .setCustomId(`payment_confirm|${pending.invoiceId}|${pending.participantUserId}|${message.author.id}`)
+    .setCustomId(`payment_confirm|${pending.invoiceId}|${idxToken}|${message.author.id}`)
     .setLabel('✅ Confirm & Lunasi')
     .setStyle(ButtonStyle.Success);
 
   const rejectButton = new ButtonBuilder()
-    .setCustomId(`payment_reject|${pending.invoiceId}|${pending.participantUserId}|${message.author.id}`)
+    .setCustomId(`payment_reject|${pending.invoiceId}|${idxToken}|${message.author.id}`)
     .setLabel('❌ Reject')
     .setStyle(ButtonStyle.Danger);
 
@@ -446,13 +469,16 @@ async function handlePaymentProofDM(message, client) {
  */
 async function handlePaymentConfirm(interaction, action) {
   const customId = interaction.customId;
-  // Format: payment_confirm|invoiceId|participantUserId|payerId
+  // Format: payment_confirm|invoiceId|<userId or userId:idx>|payerId
   const parts = customId.split('|');
   const invoiceId = parts[1];
-  const participantUserId = parts[2];
+  const tokenRaw = parts[2] || '';
+  const colon = tokenRaw.lastIndexOf(':');
+  const participantUserId = colon >= 0 ? tokenRaw.slice(0, colon) : tokenRaw;
+  const participantIdx = colon >= 0 ? Number(tokenRaw.slice(colon + 1)) : null;
   const payerId = parts[3];
 
-  console.log(`[Payment Confirm] action=${action}, invoiceId=${invoiceId}, participant=${participantUserId}, payer=${payerId}`);
+  console.log(`[Payment Confirm] action=${action}, invoiceId=${invoiceId}, participant=${participantUserId} (idx=${participantIdx}), payer=${payerId}`);
 
   const invoice = getInvoice(invoiceId);
   if (!invoice) {
@@ -462,7 +488,9 @@ async function handlePaymentConfirm(interaction, action) {
     });
   }
 
-  const participant = invoice.participants.find(p => p.userId === participantUserId);
+  const participant = (participantIdx !== null && !Number.isNaN(participantIdx))
+    ? invoice.participants[participantIdx]
+    : invoice.participants.find(p => p.userId === participantUserId);
   if (!participant) {
     return interaction.reply({
       content: '❌ Participant tidak ditemukan.',
@@ -471,8 +499,12 @@ async function handlePaymentConfirm(interaction, action) {
   }
 
   if (action === 'confirm') {
-    // Mark as paid
-    markParticipantPaid(invoiceId, participantUserId);
+    // Mark as paid — prefer index (handles duplicate userIds correctly).
+    if (participantIdx !== null && !Number.isNaN(participantIdx)) {
+      markParticipantPaidByIndex(invoiceId, participantIdx);
+    } else {
+      markParticipantPaid(invoiceId, participantUserId);
+    }
 
     // Get updated invoice
     const updatedInvoice = getInvoice(invoiceId);
