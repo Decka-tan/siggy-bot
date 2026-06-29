@@ -469,9 +469,10 @@ export default function CommunityPage() {
   const [lbWindow, setLbWindow] = useState<'all' | '30d' | '7d'>('all');
   const [motwInfo, setMotwInfo] = useState(false);
   const [motwWeekSel, setMotwWeekSel] = useState<number | null>(null); // null = latest
-  const [motwSpotlight, setMotwSpotlight] = useState<{ week: any; member: any; rank: number } | null>(null);
+  const [motwSpotlight, setMotwSpotlight] = useState<{ week: any; member: any; rank: number; periodLabel?: string; isMonth?: boolean } | null>(null);
   const [motwSavingCard, setMotwSavingCard] = useState(false);
   const motwShareRef = useRef<HTMLDivElement>(null);
+  const [motmMonthSel, setMotmMonthSel] = useState<string | null>(null); // null = latest
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -1729,6 +1730,81 @@ export default function CommunityPage() {
                     </div>
                     );
                   })()}
+
+                  {/* ── Members of the Month ── */}
+                  {(() => {
+                    const months: any[] = (data.activity?.motwMonths?.length ? data.activity.motwMonths : []).slice().sort((a: any, b: any) => a.month.localeCompare(b.month));
+                    if (!months.length) return null;
+                    const latest = months[months.length - 1].month;
+                    const selKey = motmMonthSel ?? latest;
+                    const idx = Math.max(0, months.findIndex((m: any) => m.month === selKey));
+                    const mo = months[idx] || months[months.length - 1];
+                    const members: any[] = mo.members || [];
+                    const monthLabel = new Date(mo.startTs).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                    const go = (k: string) => setMotmMonthSel(k === latest ? null : k);
+                    return (
+                      <div className="rounded-2xl border border-white/5 p-6 sm:p-8 bg-black/45 backdrop-blur-xl shadow-lg relative overflow-hidden">
+                        <div className="mb-7 border-b border-white/[0.03] pb-5">
+                          <h2 className="font-display text-2xl uppercase tracking-wider text-white/95">Members of the Month</h2>
+                          <p className="text-[10px] font-mono text-[#555] uppercase tracking-wider mt-1">Top 15 by full-month activity · same weights as MotW</p>
+                        </div>
+                        <div className="flex items-center justify-center gap-3 mb-7">
+                          <button
+                            onClick={() => go(months[idx - 1].month)}
+                            disabled={idx === 0}
+                            className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/70 disabled:opacity-25 disabled:cursor-not-allowed hover:border-white/25 transition-colors"
+                            aria-label="Previous month"
+                          >‹</button>
+                          <div className="text-center min-w-[9rem]">
+                            <p className="font-display text-sm uppercase tracking-wider text-white/90">{monthLabel}</p>
+                            <p className="text-[10px] font-mono text-[#666] mt-0.5">
+                              <span className={mo.frozen ? 'text-[#666]' : 'text-emerald-400'}>{mo.frozen ? 'final' : 'live'}</span>
+                            </p>
+                            {!mo.frozen && (
+                              <p className="flex items-center justify-center gap-1 text-[9px] font-mono text-emerald-400/70 mt-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> live · synced daily
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => go(months[idx + 1].month)}
+                            disabled={idx >= months.length - 1}
+                            className="w-8 h-8 flex items-center justify-center rounded-full border border-white/10 bg-black/40 text-white/70 disabled:opacity-25 disabled:cursor-not-allowed hover:border-white/25 transition-colors"
+                            aria-label="Next month"
+                          >›</button>
+                        </div>
+                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
+                          {members.map((m, mi) => {
+                            const rc = m.role ? color(m.role) : '#888';
+                            const shareable = !!mo.frozen;
+                            const Tag: any = shareable ? 'button' : 'div';
+                            const interactive = shareable
+                              ? 'group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 transition-transform hover:-translate-y-0.5'
+                              : '';
+                            return (
+                              <Tag
+                                key={m.userId}
+                                {...(shareable && {
+                                  onClick: () => setMotwSpotlight({ week: mo, member: m, rank: mi + 1, periodLabel: monthLabel, isMonth: true }),
+                                  'aria-label': `View achievement card for ${m.displayName}`,
+                                })}
+                                className={`flex flex-col items-center text-center min-w-0 rounded-lg p-1 -m-1 ${interactive}`}
+                              >
+                                <div className={`relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10 ${shareable ? 'group-hover:ring-2 group-hover:ring-white/30' : ''} transition-all`}>
+                                  <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
+                                </div>
+                                <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.displayName}</p>
+                                <p className="text-[9px] sm:text-[10px] font-mono text-[#555] truncate max-w-full px-1">@{m.username}</p>
+                                {m.role && (
+                                  <span className="mt-1.5 text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full truncate max-w-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
+                                )}
+                              </Tag>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </motion.div>
               )}
 
@@ -2035,9 +2111,13 @@ export default function CommunityPage() {
           const m = motwSpotlight.member;
           const wk = motwSpotlight.week;
           const rank = motwSpotlight.rank;
+          const isMonth = !!motwSpotlight.isMonth;
           const rc = m.role ? color(m.role) : '#d4af37';
           const fmtD = (ts: number) => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           const range = wk.startTs ? `${fmtD(wk.startTs)} – ${fmtD(wk.endTs - 86400000)}` : '';
+          const periodTitle = isMonth ? 'Member of the Month' : 'Member of the Week';
+          const periodSub = isMonth ? (motwSpotlight.periodLabel || '') : `Week ${wk.week}${range ? ` · ${range}` : ''}`;
+          const periodInline = isMonth ? (motwSpotlight.periodLabel || '') : `Week ${wk.week}`;
           const bubble = rank === 1 ? "you're #1! 👑" : rank <= 3 ? 'top 3! 🔥' : 'made it! 🎉';
           return (
             <motion.div
@@ -2093,7 +2173,7 @@ export default function CommunityPage() {
                     {/* RIGHT: editorial content */}
                     <div className="md:w-3/5 flex flex-col justify-center px-6 sm:px-8 py-8 md:py-10">
                       <p className="font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase mb-3" style={{ color: `${rc}cc` }}>
-                        Member of the Week · Week {wk.week}{range ? ` · ${range}` : ''}
+                        {periodTitle} · {periodSub}
                       </p>
                       <h2 className="font-display text-5xl sm:text-6xl md:text-7xl uppercase tracking-tight leading-none mb-5 tabular-nums" style={{ color: rc }}>
                         #{rank}
@@ -2111,7 +2191,7 @@ export default function CommunityPage() {
                         )}
                       </div>
                       <p className="text-sm leading-relaxed mb-5 text-[#999]">
-                        Locked it in for <span className="font-bold" style={{ color: rc }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span className="text-white font-bold">{m.score} pts</span> on the Ritual MotW board.
+                        Locked it in for <span className="font-bold" style={{ color: rc }}>{periodInline}</span>. One of the top 15 contributors this {isMonth ? 'month' : 'week'} — earning <span className="text-white font-bold">{m.score} pts</span> on the Ritual {isMonth ? 'MotM' : 'MotW'} board.
                       </p>
                       <div className="grid grid-cols-4 gap-2">
                         {[
@@ -2179,7 +2259,7 @@ export default function CommunityPage() {
                     {/* RIGHT */}
                     <div style={{ width: 540, padding: '52px 44px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <p style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 6, textTransform: 'uppercase', color: `${rc}cc`, margin: 0 }}>
-                        Member of the Week · Week {wk.week}{range ? ` · ${range}` : ''}
+                        {periodTitle} · {periodSub}
                       </p>
                       <h2 style={{ fontSize: 96, fontWeight: 900, letterSpacing: -3, lineHeight: 1, margin: '14px 0 22px', color: rc, textTransform: 'uppercase' }}>
                         #{rank}
@@ -2197,7 +2277,7 @@ export default function CommunityPage() {
                         )}
                       </div>
                       <p style={{ fontSize: 15, lineHeight: 1.55, color: '#999', margin: '0 0 22px' }}>
-                        Locked it in for <span style={{ color: rc, fontWeight: 700 }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span style={{ color: '#fff', fontWeight: 700 }}>{m.score} pts</span> on the Ritual MotW board.
+                        Locked it in for <span style={{ color: rc, fontWeight: 700 }}>{periodInline}</span>. One of the top 15 contributors this {isMonth ? 'month' : 'week'} — earning <span style={{ color: '#fff', fontWeight: 700 }}>{m.score} pts</span> on the Ritual {isMonth ? 'MotM' : 'MotW'} board.
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                         {[

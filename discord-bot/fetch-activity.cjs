@@ -284,6 +284,25 @@ async function main() {
   for (const wb of weekBounds) { cW[wb.w] = {}; wW[wb.w] = {}; hW[wb.w] = {}; }
   const weekOf = (id) => { const b = BigInt(id); for (const wb of weekBounds) if (b >= wb.sfStart && b < wb.sfEnd) return wb.w; return null; };
 
+  // ── Calendar-month bounds (for Member of the Month). Months covered: every
+  // month touched by the 30-day scan range. Key is `YYYY-MM`.
+  const monthKey = (ts) => { const d = new Date(ts); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
+  const monthBoundsList = [];
+  {
+    const earliest = now - 30 * 86400000;
+    let cursor = new Date(Date.UTC(new Date(earliest).getUTCFullYear(), new Date(earliest).getUTCMonth(), 1));
+    while (cursor.getTime() <= now) {
+      const startTs = cursor.getTime();
+      const endTs = Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1);
+      monthBoundsList.push({ key: monthKey(startTs), startTs, endTs, sfStart: BigInt(snowflakeForMs(startTs)), sfEnd: BigInt(snowflakeForMs(endTs)) });
+      cursor = new Date(endTs);
+    }
+  }
+  const cM = {}, wM = {}, hM = {};                 // cM["2026-06"] = { uid: count }
+  for (const mb of monthBoundsList) { cM[mb.key] = {}; wM[mb.key] = {}; hM[mb.key] = {}; }
+  const monthOf = (id) => { const b = BigInt(id); for (const mb of monthBoundsList) if (b >= mb.sfStart && b < mb.sfEnd) return mb.key; return null; };
+  const curMonth = monthKey(now);
+
   // 2b. Rolling windows: scan once from the 30-day cutoff and split out 7-day
   // (recent messages only, recomputed each run; not persisted). Same pass also
   // buckets each message into its exact week for the weekly Members of the Week.
@@ -295,16 +314,18 @@ async function main() {
     bump(c30, msg.author.id);
     if (BigInt(msg.id) >= sf7) bump(c7, msg.author.id);
     const wk = weekOf(msg.id); if (wk) bump(cW[wk], msg.author.id);
+    const mo = monthOf(msg.id); if (mo) bump(cM[mo], msg.author.id);
   });
   await scanChannel(EVENTS_CHANNEL_ID, sf30, (msg) => {
     const { hosts, winners } = classifyEventMentions(msg, hostSignalRoleIds);
     const byId = new Map((msg.mentions || []).map((u) => [u.id, u]));
     const within7 = BigInt(msg.id) >= sf7;
     const wk = weekOf(msg.id);
-    for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(h30, id); if (within7) bump(h7, id); if (wk) bump(hW[wk], id); } }
-    for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(w30, id); if (within7) bump(w7, id); if (wk) bump(wW[wk], id); } }
+    const mo = monthOf(msg.id);
+    for (const id of hosts)   { const u = byId.get(id); if (u && !u.bot) { bump(h30, id); if (within7) bump(h7, id); if (wk) bump(hW[wk], id); if (mo) bump(hM[mo], id); } }
+    for (const id of winners) { const u = byId.get(id); if (u && !u.bot) { bump(w30, id); if (within7) bump(w7, id); if (wk) bump(wW[wk], id); if (mo) bump(wM[mo], id); } }
   });
-  console.log(`  windows: 30d ${Object.keys(c30).length} contrib · 7d ${Object.keys(c7).length} contrib · weeks ${weekBounds.length}`);
+  console.log(`  windows: 30d ${Object.keys(c30).length} contrib · 7d ${Object.keys(c7).length} contrib · weeks ${weekBounds.length} · months ${monthBoundsList.length}`);
 
   // 3. Build leaderboards, full rankings, and per-user map.
   const enrich = (uid, count) => {
@@ -425,10 +446,15 @@ async function main() {
   for (const wk of store.weeks || []) byNum[wk.week] = wk;
 
   const RETENTION = now - 30 * 86400000;
-  const excluded = new Set();
+  // Cross-week de-duplication RESETS each calendar month — so July's week 1
+  // pool is fresh and Jun's MotW members can show up again.
+  let excluded = new Set();
+  let excludedMonth = null;
   const weeksOut = [];
   for (const wb of weekBounds) {
     const w = wb.w;
+    const wkMonth = monthKey(wb.startTs);
+    if (wkMonth !== excludedMonth) { excluded = new Set(); excludedMonth = wkMonth; }
     const recomputable = wb.startTs >= RETENTION;     // still within channel-scan range
     let members;
     if (!recomputable && byNum[w]) {
@@ -456,6 +482,58 @@ async function main() {
   const motw = weeksOut[weeksOut.length - 1].members; // current week (backward compat)
   console.log(`  members of the week: week ${curWeek}, ${motw.length} shown · ${weeksOut.length} weeks total`);
 
+  // ── Members of the Month (top 15, NO cross-month dedup) ──
+  // Uses monthly buckets from this run (cM/wM/hM) + per-month chat aggregated
+  // from chat-weeks (weeks falling inside the month). Past months freeze in
+  // community/motw-months.json once they're out of the 30-day scan range.
+  const chatByMonth = {};                              // {monthKey: {uid: total}}
+  for (const wb of weekBounds) {
+    const mk = monthKey(wb.startTs);
+    chatByMonth[mk] = chatByMonth[mk] || {};
+    const wkChat = chatWeeks[wb.w] || {};
+    for (const uid in wkChat) chatByMonth[mk][uid] = (chatByMonth[mk][uid] || 0) + wkChat[uid];
+  }
+
+  // Publish per-month candidate IDs (so backfill can also do real per-month
+  // chat searches later if we want extra precision — for now we sum weekly).
+  const candMonths = {};
+  for (const mb of monthBoundsList) {
+    const ids = [...new Set([...Object.keys(cM[mb.key] || {}), ...Object.keys(wM[mb.key] || {}), ...Object.keys(hM[mb.key] || {})])].filter(eligible);
+    candMonths[mb.key] = { startTs: mb.startTs, endTs: mb.endTs, ids };
+  }
+  await uploadR2('community/motm-candidates.json', { updatedAt: now, months: candMonths });
+
+  const monthStore = (await getR2('community/motw-months.json')) || { months: [] };
+  const byMonth = {};
+  for (const mo of monthStore.months || []) byMonth[mo.month] = mo;
+
+  const monthsOut = [];
+  for (const mb of monthBoundsList) {
+    const recomputable = mb.startTs >= RETENTION;
+    let members;
+    if (!recomputable && byMonth[mb.key]) {
+      members = byMonth[mb.key].members;
+    } else {
+      const cc = cM[mb.key] || {}, ww = wM[mb.key] || {}, hh = hM[mb.key] || {}, chm = chatByMonth[mb.key] || {};
+      const ids = new Set([...Object.keys(cc), ...Object.keys(ww), ...Object.keys(hh), ...Object.keys(chm)]);
+      members = [...ids]
+        .filter((uid) => eligible(uid))
+        .map((uid) => {
+          const c = cc[uid] || 0, wn = ww[uid] || 0, h = hh[uid] || 0, ch = chm[uid] || 0;
+          const score = c * POINTS.contribution + wn * POINTS.won + h * POINTS.hosted + ch * POINTS.chat;
+          return { uid, c, w: wn, h, ch, score };
+        })
+        .filter((m) => m.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 15)
+        .map(projectMember);
+    }
+    monthsOut.push({ month: mb.key, startTs: mb.startTs, endTs: mb.endTs, frozen: mb.key < curMonth, updatedAt: now, members });
+  }
+  await uploadR2('community/motw-months.json', { months: monthsOut, updatedAt: now });
+  const motm = monthsOut[monthsOut.length - 1].members;
+  console.log(`  members of the month: ${curMonth}, ${motm.length} shown · ${monthsOut.length} months total`);
+
   await uploadR2('community/member-activity.json', {
     updatedAt: now,
     contributions: contrib.out,
@@ -467,6 +545,8 @@ async function main() {
     totals: { contributions: contrib.total, eventsWon: won.total, eventsHosted: hosted.total },
     membersOfWeek: motw,
     motwWeeks: weeksOut,
+    membersOfMonth: motm,
+    motwMonths: monthsOut,
     byUser,
   });
 
