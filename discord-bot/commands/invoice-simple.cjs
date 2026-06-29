@@ -158,7 +158,9 @@ async function processInvoiceCreateModal(interaction) {
         const isPaid = /lunas|paid|bayar/i.test(notes);
 
         participants.push({
-          userId: finalUserId || `unknown_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          // Include participants.length so multiple "unknown" entries added in
+          // the same millisecond can't collide (Date.now() alone isn't enough).
+          userId: finalUserId || `unknown_${Date.now()}_${participants.length}_${Math.random().toString(36).slice(2, 5)}`,
           username: finalUsername,
           amount: amount,
           notes: notes || null,

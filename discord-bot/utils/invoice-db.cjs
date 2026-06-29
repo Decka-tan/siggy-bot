@@ -144,10 +144,13 @@ function addParticipants(invoiceId, participants) {
     return { success: false, error: 'No valid participants to add' };
   }
 
-  // Add new participants with validated amounts
+  // Add new participants with validated amounts. We seed the generated userId
+  // with the current participants.length (after each push) so that several
+  // "unknown" entries added in the same millisecond stay unique — Date.now() +
+  // Math.random alone can collide and break the Bayar SelectMenu.
   validParticipants.forEach(p => {
     invoice.participants.push({
-      userId: p.userId || `unknown_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      userId: p.userId || `unknown_${Date.now()}_${invoice.participants.length}_${Math.random().toString(36).slice(2, 5)}`,
       username: p.username,
       amount: Number(p.amount), // Ensure it's a number
       paid: p.paid || false,
