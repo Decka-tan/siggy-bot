@@ -469,6 +469,9 @@ export default function CommunityPage() {
   const [lbWindow, setLbWindow] = useState<'all' | '30d' | '7d'>('all');
   const [motwInfo, setMotwInfo] = useState(false);
   const [motwWeekSel, setMotwWeekSel] = useState<number | null>(null); // null = latest
+  const [motwSpotlight, setMotwSpotlight] = useState<{ week: any; member: any; rank: number } | null>(null);
+  const [motwSavingCard, setMotwSavingCard] = useState(false);
+  const motwShareRef = useRef<HTMLDivElement>(null);
   const [distMode, setDistMode] = useState<'all' | 'pure'>('all');
   const [regionMode, setRegionMode] = useState<'pure' | 'all'>('pure');
   const [tierFilter, setTierFilter] = useState<string>('all');
@@ -612,6 +615,45 @@ export default function CommunityPage() {
     } finally {
       imgs.forEach((img, i) => { img.src = originals[i]; }); // restore proxied srcs
       setSavingCard(false);
+    }
+  };
+
+  // Export the MotW achievement card (same image-inlining + html-to-image
+  // pattern as exportCard above). `share` toggles native share vs. download.
+  const exportMotwCard = async (share: boolean) => {
+    const node = motwShareRef.current;
+    if (!node || motwSavingCard || !motwSpotlight) return;
+    setMotwSavingCard(true);
+    const imgs = Array.from(node.querySelectorAll('img'));
+    const originals = imgs.map((i) => i.src);
+    try {
+      await Promise.all(imgs.map(async (img) => {
+        try {
+          const r = await fetch(img.src, { cache: 'force-cache' });
+          const blob = await r.blob();
+          const durl = await new Promise<string>((res) => { const fr = new FileReader(); fr.onload = () => res(fr.result as string); fr.readAsDataURL(blob); });
+          img.src = durl;
+          await img.decode().catch(() => {});
+        } catch {}
+      }));
+      const opts = { pixelRatio: 2, cacheBust: true, backgroundColor: '#0a0a0a', skipFonts: true, width: 900, height: node.offsetHeight };
+      await htmlToImage.toPng(node, opts);
+      const fname = `${motwSpotlight.member.username || 'motw'}-week${motwSpotlight.week.week}.png`;
+      if (share && typeof navigator !== 'undefined' && navigator.share) {
+        const blob = await htmlToImage.toBlob(node, opts);
+        const file = blob && new File([blob], fname, { type: 'image/png' });
+        if (file && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: `${motwSpotlight.member.displayName} · Member of the Week` });
+          return;
+        }
+      }
+      const dataUrl = await htmlToImage.toPng(node, opts);
+      const a = document.createElement('a'); a.href = dataUrl; a.download = fname; a.click();
+    } catch (e) {
+      console.error('[motw card export]', e);
+    } finally {
+      imgs.forEach((img, i) => { img.src = originals[i]; });
+      setMotwSavingCard(false);
     }
   };
 
@@ -1641,11 +1683,16 @@ export default function CommunityPage() {
                         >›</button>
                       </div>
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
-                        {members.map((m) => {
+                        {members.map((m, mi) => {
                           const rc = m.role ? color(m.role) : '#888';
                           return (
-                            <div key={m.userId} className="flex flex-col items-center text-center min-w-0">
-                              <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10">
+                            <button
+                              key={m.userId}
+                              onClick={() => setMotwSpotlight({ week: wk, member: m, rank: mi + 1 })}
+                              className="flex flex-col items-center text-center min-w-0 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-lg p-1 -m-1 transition-transform hover:-translate-y-0.5"
+                              aria-label={`View achievement card for ${m.displayName}`}
+                            >
+                              <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10 group-hover:ring-2 group-hover:ring-white/30 transition-all">
                                 <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
                               </div>
                               <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.displayName}</p>
@@ -1666,7 +1713,7 @@ export default function CommunityPage() {
                                   </p>
                                 </div>
                               )}
-                            </div>
+                            </button>
                           );
                         })}
                       </div>
@@ -1971,6 +2018,157 @@ export default function CommunityPage() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* ── Members of the Week · Achievement Spotlight ── */}
+      <AnimatePresence>
+        {motwSpotlight && (() => {
+          const m = motwSpotlight.member;
+          const wk = motwSpotlight.week;
+          const rank = motwSpotlight.rank;
+          const rc = m.role ? color(m.role) : '#d4af37';
+          const fmtD = (ts: number) => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const range = wk.startTs ? `${fmtD(wk.startTs)} – ${fmtD(wk.endTs - 86400000)}` : '';
+          return (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
+              onClick={() => setMotwSpotlight(null)}
+            >
+              <motion.div
+                initial={{ scale: 0.94, y: 14, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.94, y: 14, opacity: 0 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+                className="relative w-full max-w-[480px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* The shareable card itself (also rendered off-screen at 900px for export). */}
+                <div className="rounded-3xl border bg-[#0a0a0a] overflow-hidden relative" style={{ borderColor: `${rc}55` }}>
+                  <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, ${rc}, transparent)` }} />
+                  <div className="p-7 sm:p-9 text-center relative">
+                    <p className="font-mono text-[9px] tracking-[0.3em] uppercase" style={{ color: rc }}>Member of the Week</p>
+                    <p className="font-mono text-[10px] text-[#666] mt-1.5">Week {wk.week}{range ? ` · ${range}` : ''}</p>
+
+                    <div className="mt-6 flex flex-col items-center">
+                      <div className="relative">
+                        <div className="absolute -inset-2 rounded-full opacity-30 blur-2xl" style={{ background: rc }} />
+                        <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-[#141414] ring-2" style={{ ringColor: rc } as any}>
+                          <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full font-display text-sm font-black tabular-nums" style={{ background: rc, color: '#000' }}>
+                          #{rank}
+                        </div>
+                      </div>
+                      <p className="mt-4 font-display text-2xl sm:text-3xl text-white font-black tracking-tight">{m.displayName}</p>
+                      <p className="text-[10px] sm:text-xs font-mono text-[#666] mt-0.5">@{m.username}</p>
+                      {m.role && (
+                        <span className="mt-2 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
+                      )}
+                    </div>
+
+                    <p className="mt-6 text-sm sm:text-base text-white/90 leading-relaxed max-w-xs mx-auto">
+                      Congratulations! You made it to <span className="font-bold" style={{ color: rc }}>Member of the Week</span> (Week {wk.week}).
+                    </p>
+
+                    <div className="mt-6 grid grid-cols-4 gap-2">
+                      {[
+                        ['c', m.contributions || 0, 'Contrib'],
+                        ['w', m.eventsWon || 0, 'Won'],
+                        ['h', m.eventsHosted || 0, 'Hosted'],
+                        ['💬', m.chat || 0, 'Chat'],
+                      ].map(([_, v, lbl]) => (
+                        <div key={lbl as string} className="rounded-lg border border-white/5 bg-black/40 px-2 py-2">
+                          <p className="font-display text-base sm:text-lg text-white font-black tabular-nums leading-none">
+                            {(v as number) >= 1000 ? ((v as number) / 1000).toFixed(1) + 'k' : v}
+                          </p>
+                          <p className="text-[8px] font-mono uppercase tracking-wider text-[#666] mt-1">{lbl as string}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-black/40">
+                      <span className="font-display text-base text-white font-black">{m.score}</span>
+                      <span className="font-mono text-[9px] text-[#666] uppercase tracking-wider">total pts</span>
+                    </div>
+
+                    <p className="mt-7 text-[9px] font-mono text-[#444] uppercase tracking-[0.25em]">
+                      by Decka Chan · Powered by Siggy
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action row */}
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    onClick={() => exportMotwCard(true)}
+                    disabled={motwSavingCard}
+                    className="px-4 py-2 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider bg-white text-black hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    {motwSavingCard ? 'Saving…' : 'Share'}
+                  </button>
+                  <button
+                    onClick={() => exportMotwCard(false)}
+                    disabled={motwSavingCard}
+                    className="px-4 py-2 rounded-full text-[11px] font-mono font-bold uppercase tracking-wider border border-white/15 bg-black/50 text-white hover:bg-white/10 disabled:opacity-50 transition-colors"
+                  >
+                    Save PNG
+                  </button>
+                  <button
+                    onClick={() => setMotwSpotlight(null)}
+                    className="px-4 py-2 rounded-full text-[11px] font-mono uppercase tracking-wider text-[#888] hover:text-white transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* Off-screen 900px export template (keeps the export pixel-perfect). */}
+              <div style={{ position: 'fixed', pointerEvents: 'none', top: 0, left: '-99999px', opacity: 0 }} aria-hidden="true">
+                <div ref={motwShareRef} style={{ position: 'relative', width: 900, padding: 56, background: `radial-gradient(circle at 75% 15%, ${rc}22, transparent 55%), #0a0a0a`, border: `2px solid ${rc}`, borderRadius: 28, boxSizing: 'border-box', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 6, textTransform: 'uppercase', color: rc, margin: 0 }}>Member of the Week</p>
+                    <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#777', marginTop: 8 }}>Week {wk.week}{range ? ` · ${range}` : ''}</p>
+                    <div style={{ position: 'relative', display: 'inline-block', marginTop: 36 }}>
+                      <div style={{ width: 200, height: 200, borderRadius: '50%', overflow: 'hidden', background: '#141414', border: `3px solid ${rc}`, position: 'relative' }}>
+                        <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} crossOrigin="anonymous" />
+                      </div>
+                      <div style={{ position: 'absolute', bottom: -6, right: -6, padding: '4px 14px', borderRadius: 999, background: rc, color: '#000', fontWeight: 900, fontSize: 22 }}>#{rank}</div>
+                    </div>
+                    <p style={{ fontSize: 44, fontWeight: 900, marginTop: 22, letterSpacing: -1, lineHeight: 1.05 }}>{m.displayName}</p>
+                    <p style={{ fontFamily: 'monospace', fontSize: 14, color: '#777', marginTop: 6 }}>@{m.username}</p>
+                    {m.role && (
+                      <span style={{ display: 'inline-block', marginTop: 12, padding: '4px 14px', borderRadius: 999, fontFamily: 'monospace', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: rc, background: `${rc}1f` }}>{m.role}</span>
+                    )}
+                    <p style={{ fontSize: 20, marginTop: 36, lineHeight: 1.45, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto', color: '#e5e5e5' }}>
+                      Congratulations! You made it to <span style={{ color: rc, fontWeight: 700 }}>Member of the Week</span> (Week {wk.week}).
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 36 }}>
+                      {[
+                        ['Contrib', m.contributions || 0],
+                        ['Won', m.eventsWon || 0],
+                        ['Hosted', m.eventsHosted || 0],
+                        ['Chat', m.chat || 0],
+                      ].map(([lbl, v]) => (
+                        <div key={lbl as string} style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.4)', borderRadius: 14, padding: '14px 8px' }}>
+                          <p style={{ fontSize: 32, fontWeight: 900, margin: 0, lineHeight: 1 }}>{(v as number) >= 1000 ? ((v as number) / 1000).toFixed(1) + 'k' : v}</p>
+                          <p style={{ fontFamily: 'monospace', fontSize: 11, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginTop: 8 }}>{lbl as string}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 28, padding: '8px 18px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.4)' }}>
+                      <span style={{ fontSize: 24, fontWeight: 900 }}>{m.score}</span>
+                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#777', letterSpacing: 2, textTransform: 'uppercase' }}>total pts</span>
+                    </div>
+                    <p style={{ marginTop: 40, fontFamily: 'monospace', fontSize: 11, color: '#555', letterSpacing: 4, textTransform: 'uppercase' }}>by Decka Chan · Powered by Siggy</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })()}
       </AnimatePresence>
       </div>
     </div>
