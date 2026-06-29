@@ -1685,14 +1685,23 @@ export default function CommunityPage() {
                       <div className="grid grid-cols-3 sm:grid-cols-5 gap-x-3 gap-y-7">
                         {members.map((m, mi) => {
                           const rc = m.role ? color(m.role) : '#888';
+                          // Only frozen (final) weeks can produce a shareable card —
+                          // live-week rankings can still change so it'd be misleading.
+                          const shareable = !!wk.frozen;
+                          const Tag: any = shareable ? 'button' : 'div';
+                          const interactive = shareable
+                            ? 'group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 transition-transform hover:-translate-y-0.5'
+                            : '';
                           return (
-                            <button
+                            <Tag
                               key={m.userId}
-                              onClick={() => setMotwSpotlight({ week: wk, member: m, rank: mi + 1 })}
-                              className="flex flex-col items-center text-center min-w-0 group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30 rounded-lg p-1 -m-1 transition-transform hover:-translate-y-0.5"
-                              aria-label={`View achievement card for ${m.displayName}`}
+                              {...(shareable && {
+                                onClick: () => setMotwSpotlight({ week: wk, member: m, rank: mi + 1 }),
+                                'aria-label': `View achievement card for ${m.displayName}`,
+                              })}
+                              className={`flex flex-col items-center text-center min-w-0 rounded-lg p-1 -m-1 ${interactive}`}
                             >
-                              <div className="relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10 group-hover:ring-2 group-hover:ring-white/30 transition-all">
+                              <div className={`relative w-16 h-16 sm:w-[5.5rem] sm:h-[5.5rem] rounded-full overflow-hidden bg-[#141414] ring-1 ring-white/10 ${shareable ? 'group-hover:ring-2 group-hover:ring-white/30' : ''} transition-all`}>
                                 <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
                               </div>
                               <p className="mt-2.5 text-xs sm:text-sm font-bold text-white/90 truncate max-w-full px-1">{m.displayName}</p>
@@ -1713,7 +1722,7 @@ export default function CommunityPage() {
                                   </p>
                                 </div>
                               )}
-                            </button>
+                            </Tag>
                           );
                         })}
                       </div>
