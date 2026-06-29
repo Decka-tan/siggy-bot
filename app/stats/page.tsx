@@ -2102,7 +2102,7 @@ export default function CommunityPage() {
                         )}
                       </div>
                       <p className="text-sm leading-relaxed mb-5 text-[#999]">
-                        Locked it in for <span className="font-bold" style={{ color: rc }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span className="text-white font-bold">{m.score} pts</span> on the Ritual MotW board. 🔥
+                        Locked it in for <span className="font-bold" style={{ color: rc }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span className="text-white font-bold">{m.score} pts</span> on the Ritual MotW board.
                       </p>
                       <div className="grid grid-cols-4 gap-2">
                         {[
@@ -2188,7 +2188,7 @@ export default function CommunityPage() {
                         )}
                       </div>
                       <p style={{ fontSize: 15, lineHeight: 1.55, color: '#999', margin: '0 0 22px' }}>
-                        Locked it in for <span style={{ color: rc, fontWeight: 700 }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span style={{ color: '#fff', fontWeight: 700 }}>{m.score} pts</span> on the Ritual MotW board. 🔥
+                        Locked it in for <span style={{ color: rc, fontWeight: 700 }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span style={{ color: '#fff', fontWeight: 700 }}>{m.score} pts</span> on the Ritual MotW board.
                       </p>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
                         {[
