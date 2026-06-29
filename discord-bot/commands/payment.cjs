@@ -31,6 +31,25 @@ const {
 
 // Pending payment claims: userId -> { invoiceId, participantName, timestamp }
 const pendingClaims = new Map();
+// Confirm tokens for proof-of-payment buttons. Used because customId has a
+// 100-char limit and can't fit a long list of participant indices. Map of
+// token -> { invoiceId, indices, payerId, participantName, amount }.
+const confirmStore = new Map();
+
+// Group all UNPAID participants by case-insensitive username. Returns
+// [{ username, total, indices: [int,...] }, ...]
+function groupUnpaidByName(participants) {
+  const byKey = new Map();
+  participants.forEach((p, idx) => {
+    if (p.paid) return;
+    const key = (p.username || '').toLowerCase().trim();
+    if (!byKey.has(key)) byKey.set(key, { username: p.username, total: 0, indices: [] });
+    const g = byKey.get(key);
+    g.total += Number(p.amount) || 0;
+    g.indices.push(idx);
+  });
+  return [...byKey.values()];
+}
 const CLAIM_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -217,28 +236,19 @@ async function showPersonSelect(interaction, rawInvoiceId, useReply) {
     return respond({ content: '❌ Invoice tidak ditemukan.', components: [] });
   }
 
-  // Build options keyed by participant INDEX (not userId) — multiple participants
-  // can share the same userId (e.g. several "Cindy" bills) which would otherwise
-  // crash with COMPONENT_OPTION_VALUE_DUPLICATED.
-  const unpaidWithIdx = invoice.participants
-    .map((p, idx) => ({ p, idx }))
-    .filter(({ p }) => !p.paid);
-  if (unpaidWithIdx.length === 0) {
+  // Group unpaid participants by name (case-insensitive). Multiple bills under
+  // the same name -> one row, summed amount, all underlying indices remembered.
+  const groups = groupUnpaidByName(invoice.participants);
+  if (groups.length === 0) {
     return respond({ content: '✅ Semua orang di invoice ini udah lunas!', components: [] });
   }
-  // If a username repeats, suffix #N so the picker shows which entry is which.
-  const nameCount = new Map();
-  for (const { p } of unpaidWithIdx) nameCount.set(p.username, (nameCount.get(p.username) || 0) + 1);
-  const seenSoFar = new Map();
-  const options = unpaidWithIdx.slice(0, 25).map(({ p, idx }) => {
-    const total = nameCount.get(p.username) || 1;
-    const seq = (seenSoFar.get(p.username) || 0) + 1;
-    seenSoFar.set(p.username, seq);
-    const suffix = total > 1 ? ` #${seq}` : '';
+  const options = groups.slice(0, 25).map((g, gi) => {
+    const fmt = `Rp ${g.total.toLocaleString('id-ID')}`;
+    const desc = g.indices.length > 1 ? `${fmt} · ${g.indices.length} bills` : fmt;
     return new StringSelectMenuOptionBuilder()
-      .setLabel(`${p.username}${suffix} - Rp ${Number(p.amount).toLocaleString('id-ID')}`)
-      .setValue(`p_${idx}`)
-      .setDescription(`Rp ${Number(p.amount).toLocaleString('id-ID')}`);
+      .setLabel(`${g.username} - ${fmt}`)
+      .setValue(`g_${gi}`)
+      .setDescription(desc);
   });
 
   const selectMenu = new StringSelectMenuBuilder()
@@ -263,9 +273,6 @@ async function handleBayarSelectPerson(interaction) {
   const customId = interaction.customId;
   const invoiceId = customId.replace('bayar_select_person_', '');
   const raw = interaction.values[0];
-  // New encoding: "p_<idx>". Fallback: legacy userId-encoded value.
-  const idxMatch = /^p_(\d+)$/.exec(raw);
-  const participantIdx = idxMatch ? Number(idxMatch[1]) : null;
 
   const invoice = getInvoice(invoiceId);
   if (!invoice) {
@@ -275,16 +282,33 @@ async function handleBayarSelectPerson(interaction) {
     });
   }
 
-  const participant = participantIdx !== null
-    ? invoice.participants[participantIdx]
-    : invoice.participants.find(p => p.userId === raw);
-  if (!participant) {
-    return interaction.update({
-      content: '❌ Participant tidak ditemukan.',
-      components: []
-    });
+  // Resolve selection — three encodings supported:
+  //  g_<i>  → new grouped value (auto-sums all bills for that name)
+  //  p_<i>  → previous index-based value
+  //  <uid>  → legacy userId
+  let groupIndices = null, groupTotal = 0, groupName = '';
+  const gMatch = /^g_(\d+)$/.exec(raw);
+  const pMatch = /^p_(\d+)$/.exec(raw);
+  if (gMatch) {
+    const g = groupUnpaidByName(invoice.participants)[Number(gMatch[1])];
+    if (!g) return interaction.update({ content: '❌ Group tidak ditemukan.', components: [] });
+    groupIndices = g.indices;
+    groupTotal = g.total;
+    groupName = g.username;
+  } else {
+    const idx = pMatch
+      ? Number(pMatch[1])
+      : invoice.participants.findIndex(p => p.userId === raw);
+    const p = idx >= 0 ? invoice.participants[idx] : null;
+    if (!p) return interaction.update({ content: '❌ Participant tidak ditemukan.', components: [] });
+    groupIndices = [idx];
+    groupTotal = Number(p.amount) || 0;
+    groupName = p.username;
   }
+
+  const participant = invoice.participants[groupIndices[0]];
   const participantUserId = participant.userId;
+  const participantIdx = groupIndices[0];
 
   // Get creator's payment info
   const creatorPaymentInfo = getPaymentInfo(invoice.creator.id);
@@ -293,9 +317,10 @@ async function handleBayarSelectPerson(interaction) {
   const claimData = {
     invoiceId,
     participantUserId,
-    participantIdx: participantIdx !== null ? participantIdx : invoice.participants.indexOf(participant),
-    participantName: participant.username,
-    amount: participant.amount,
+    participantIdx,
+    participantIndices: groupIndices,                  // all bills under this name
+    participantName: groupName,
+    amount: groupTotal,                                // summed across the group
     creatorId: invoice.creator.id,
     timestamp: Date.now()
   };
@@ -303,8 +328,10 @@ async function handleBayarSelectPerson(interaction) {
   console.log(`[Payment] Pending claim SET for ${interaction.user.id}:`, claimData);
 
   // Build payment info message
-  let description = `💵 **Bayar untuk: ${participant.username}**\n`;
-  description += `💰 Jumlah: Rp ${Number(participant.amount).toLocaleString('id-ID')}\n`;
+  let description = `💵 **Bayar untuk: ${groupName}**\n`;
+  description += `💰 Jumlah: Rp ${groupTotal.toLocaleString('id-ID')}`;
+  if (groupIndices.length > 1) description += ` _(gabungan ${groupIndices.length} bill)_`;
+  description += `\n`;
   description += `📋 Invoice: ${invoice.title || 'Untitled'} (${invoice.date})\n\n`;
 
   description += `🏦 **Transfer ke:**\n`;
@@ -407,17 +434,27 @@ async function handlePaymentProofDM(message, client) {
   proofContent += `💰 Jumlah: Rp ${Number(pending.amount).toLocaleString('id-ID')}\n`;
   proofContent += `📋 Invoice: ${invoice.title || 'Untitled'} (${invoice.date})\n\n`;
 
-  // Build confirm/reject buttons. We embed both the userId (for back-compat /
-  // logging) and the array index (the only stable identifier when participants
-  // share a userId), separated by ':'.
-  const idxToken = pending.participantIdx !== undefined ? `${pending.participantUserId}:${pending.participantIdx}` : pending.participantUserId;
+  // Build confirm/reject buttons. customId has a 100-char limit so we can't put
+  // a long list of indices in there — instead we save the claim into an
+  // in-memory store keyed by a short token and embed that.
+  const token = Math.random().toString(36).slice(2, 10);
+  confirmStore.set(token, {
+    invoiceId: pending.invoiceId,
+    indices: pending.participantIndices || (pending.participantIdx !== undefined ? [pending.participantIdx] : []),
+    participantUserId: pending.participantUserId,
+    participantName: pending.participantName,
+    amount: pending.amount,
+    payerId: message.author.id,
+    timestamp: Date.now(),
+  });
+
   const confirmButton = new ButtonBuilder()
-    .setCustomId(`payment_confirm|${pending.invoiceId}|${idxToken}|${message.author.id}`)
+    .setCustomId(`payment_confirm|${token}`)
     .setLabel('✅ Confirm & Lunasi')
     .setStyle(ButtonStyle.Success);
 
   const rejectButton = new ButtonBuilder()
-    .setCustomId(`payment_reject|${pending.invoiceId}|${idxToken}|${message.author.id}`)
+    .setCustomId(`payment_reject|${token}`)
     .setLabel('❌ Reject')
     .setStyle(ButtonStyle.Danger);
 
@@ -469,16 +506,34 @@ async function handlePaymentProofDM(message, client) {
  */
 async function handlePaymentConfirm(interaction, action) {
   const customId = interaction.customId;
-  // Format: payment_confirm|invoiceId|<userId or userId:idx>|payerId
+  // Modern format: payment_confirm|<token>  (token resolves to confirmStore)
+  // Legacy:        payment_confirm|<invoiceId>|<userId[:idx]>|<payerId>
   const parts = customId.split('|');
-  const invoiceId = parts[1];
-  const tokenRaw = parts[2] || '';
-  const colon = tokenRaw.lastIndexOf(':');
-  const participantUserId = colon >= 0 ? tokenRaw.slice(0, colon) : tokenRaw;
-  const participantIdx = colon >= 0 ? Number(tokenRaw.slice(colon + 1)) : null;
-  const payerId = parts[3];
+  let invoiceId, participantUserId, participantIdx = null, participantIndices = null, payerId, participantName, amount;
 
-  console.log(`[Payment Confirm] action=${action}, invoiceId=${invoiceId}, participant=${participantUserId} (idx=${participantIdx}), payer=${payerId}`);
+  if (parts.length === 2) {
+    const stored = confirmStore.get(parts[1]);
+    if (!stored) {
+      return interaction.reply({ content: '❌ Confirmation expired atau sudah diproses.', ephemeral: true });
+    }
+    invoiceId = stored.invoiceId;
+    participantIndices = stored.indices || [];
+    participantIdx = participantIndices[0] ?? null;
+    participantUserId = stored.participantUserId;
+    participantName = stored.participantName;
+    amount = stored.amount;
+    payerId = stored.payerId;
+  } else {
+    invoiceId = parts[1];
+    const tokenRaw = parts[2] || '';
+    const colon = tokenRaw.lastIndexOf(':');
+    participantUserId = colon >= 0 ? tokenRaw.slice(0, colon) : tokenRaw;
+    participantIdx = colon >= 0 ? Number(tokenRaw.slice(colon + 1)) : null;
+    payerId = parts[3];
+    participantIndices = participantIdx !== null && !Number.isNaN(participantIdx) ? [participantIdx] : null;
+  }
+
+  console.log(`[Payment Confirm] action=${action}, invoiceId=${invoiceId}, indices=${JSON.stringify(participantIndices)}, payer=${payerId}`);
 
   const invoice = getInvoice(invoiceId);
   if (!invoice) {
@@ -488,8 +543,8 @@ async function handlePaymentConfirm(interaction, action) {
     });
   }
 
-  const participant = (participantIdx !== null && !Number.isNaN(participantIdx))
-    ? invoice.participants[participantIdx]
+  const participant = participantIndices && participantIndices.length
+    ? invoice.participants[participantIndices[0]]
     : invoice.participants.find(p => p.userId === participantUserId);
   if (!participant) {
     return interaction.reply({
@@ -499,12 +554,14 @@ async function handlePaymentConfirm(interaction, action) {
   }
 
   if (action === 'confirm') {
-    // Mark as paid — prefer index (handles duplicate userIds correctly).
-    if (participantIdx !== null && !Number.isNaN(participantIdx)) {
-      markParticipantPaidByIndex(invoiceId, participantIdx);
+    // Mark every bill in the group as paid (one user can have multiple bills).
+    if (participantIndices && participantIndices.length) {
+      for (const i of participantIndices) markParticipantPaidByIndex(invoiceId, i);
     } else {
       markParticipantPaid(invoiceId, participantUserId);
     }
+    // Free the token (one-shot).
+    if (parts.length === 2) confirmStore.delete(parts[1]);
 
     // Get updated invoice
     const updatedInvoice = getInvoice(invoiceId);
@@ -540,9 +597,11 @@ async function handlePaymentConfirm(interaction, action) {
 
     console.log(`[Payment] New invoice message sent: ${newMessage.id}`);
 
+    const totalLunas = amount || (participantIndices ? participantIndices.reduce((s, i) => s + (Number(invoice.participants[i]?.amount) || 0), 0) : Number(participant.amount) || 0);
+    const billCount = participantIndices ? participantIndices.length : 1;
     await interaction.update({
       content: `✅ Pembayaran dikonfirmasi!\n\n` +
-        `👤 ${participant.username} - Rp ${Number(participant.amount).toLocaleString('id-ID')} → LUNAS`,
+        `👤 ${participantName || participant.username} - Rp ${totalLunas.toLocaleString('id-ID')} → LUNAS${billCount > 1 ? ` _(gabungan ${billCount} bill)_` : ''}`,
       components: []
     });
 
@@ -568,10 +627,13 @@ async function handlePaymentConfirm(interaction, action) {
     }
 
   } else {
-    // Reject
+    // Reject — clear the one-shot confirm token.
+    if (parts.length === 2) confirmStore.delete(parts[1]);
+    const totalGroup = amount || (participantIndices ? participantIndices.reduce((s, i) => s + (Number(invoice.participants[i]?.amount) || 0), 0) : Number(participant.amount) || 0);
+    const billCount = participantIndices ? participantIndices.length : 1;
     await interaction.update({
       content: `❌ Pembayaran ditolak.\n\n` +
-        `👤 ${participant.username} - Rp ${Number(participant.amount).toLocaleString('id-ID')} → BELUM LUNAS`,
+        `👤 ${participantName || participant.username} - Rp ${totalGroup.toLocaleString('id-ID')} → BELUM LUNAS${billCount > 1 ? ` _(${billCount} bill)_` : ''}`,
       components: []
     });
 
