@@ -98,33 +98,40 @@ function extractHandle(rawUrl) {
     const body = await search(m.userId);
     const messages = body?.messages?.[0] || []; // search returns nested arrays
     const last = messages[0];
+    // Try the user's most recent message first; if it doesn't yield an x.com
+    // handle (e.g. cura.network link), step back to earlier posts until we find
+    // one that does. Cap at 10 to keep this cheap.
     let url = null, handle = null;
-    if (last) {
-      const fromContent = (last.content || '').match(URL_RE)?.[0];
-      const embeds = last.embeds || [];
-      // Tries, in order: content URL → embed.author.url (real x.com/<handle> for
-      // tweets posted as i/status/N intent links) → embed.url. First one that
-      // yields a parseable handle wins.
+    for (const msg of messages.slice(0, 10)) {
+      const fromContent = (msg.content || '').match(URL_RE)?.[0];
+      const embeds = msg.embeds || [];
       const candidates = [fromContent, ...embeds.map(e => e?.author?.url), ...embeds.map(e => e?.url)].filter(Boolean);
+      let tryUrl = null, tryHandle = null;
       for (const c of candidates) {
         const h = extractHandle(c);
-        if (h) { url = c; handle = h; break; }
+        if (h) { tryUrl = c; tryHandle = h; break; }
       }
-      if (!handle && candidates.length) url = candidates[0];
-      // Last-resort: embed.author.name often contains "Display (@handle)"
-      if (!handle) {
+      if (!tryHandle) {
         for (const e of embeds) {
           const m = (e?.author?.name || '').match(/@([A-Za-z0-9_]+)/);
-          if (m) { handle = `@${m[1]}  (x.com)`; break; }
+          if (m) { tryHandle = `@${m[1]}  (x.com)`; break; }
         }
       }
-      // Final fallback: if URL is an x.com 'i/status/<id>' intent link, ask the
-      // public fxtwitter API for the real author.screen_name.
-      if (!handle && url) {
-        const m = url.match(/(?:x|twitter)\.com\/i\/status\/(\d+)/i)
-              || url.match(/(?:x|twitter)\.com\/(?:[^/]+)\/status\/(\d+)/i);
-        if (m) handle = await resolveTweetHandle(m[1]);
+      if (!tryHandle && candidates.length) {
+        const first = candidates[0];
+        const m = first.match(/(?:x|twitter)\.com\/i\/status\/(\d+)/i)
+              || first.match(/(?:x|twitter)\.com\/(?:[^/]+)\/status\/(\d+)/i);
+        if (m) { tryHandle = await resolveTweetHandle(m[1]); tryUrl = first; }
       }
+      // Keep first non-x.com fallback so we can still report SOMETHING if no
+      // tweets are found in the user's last 10 posts.
+      if (!url && candidates.length) url = candidates[0];
+      if (tryHandle && /x\.com|twitter\.com/i.test(tryUrl || '')) {
+        url = tryUrl;
+        handle = tryHandle;
+        break;
+      }
+      if (tryHandle && !handle) handle = tryHandle; // non-x.com handle as a backup
     }
     console.log(handle ? handle : (url ? `URL=${url} (no handle parsed)` : 'no post found'));
     rows.push({ display: m.displayName, username: m.username, handle: handle || '—', url: url || '' });
