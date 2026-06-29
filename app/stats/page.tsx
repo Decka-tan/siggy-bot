@@ -2020,7 +2020,7 @@ export default function CommunityPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Members of the Week · Achievement Spotlight ── */}
+      {/* ── Members of the Week · Achievement Spotlight (genesis-style) ── */}
       <AnimatePresence>
         {motwSpotlight && (() => {
           const m = motwSpotlight.member;
@@ -2029,6 +2029,7 @@ export default function CommunityPage() {
           const rc = m.role ? color(m.role) : '#d4af37';
           const fmtD = (ts: number) => new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           const range = wk.startTs ? `${fmtD(wk.startTs)} – ${fmtD(wk.endTs - 86400000)}` : '';
+          const bubble = rank === 1 ? "you're #1! 👑" : rank <= 3 ? 'top 3! 🔥' : 'made it! 🎉';
           return (
             <motion.div
               initial={{ opacity: 0 }}
@@ -2042,61 +2043,86 @@ export default function CommunityPage() {
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0.94, y: 14, opacity: 0 }}
                 transition={{ type: 'spring', damping: 22, stiffness: 260 }}
-                className="relative w-full max-w-[480px]"
+                className="relative w-full max-w-[860px]"
                 onClick={(e) => e.stopPropagation()}
               >
-                {/* The shareable card itself (also rendered off-screen at 900px for export). */}
-                <div className="rounded-3xl border bg-[#0a0a0a] overflow-hidden relative" style={{ borderColor: `${rc}55` }}>
-                  <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, transparent, ${rc}, transparent)` }} />
-                  <div className="p-7 sm:p-9 text-center relative">
-                    <p className="font-mono text-[9px] tracking-[0.3em] uppercase" style={{ color: rc }}>Member of the Week</p>
-                    <p className="font-mono text-[10px] text-[#666] mt-1.5">Week {wk.week}{range ? ` · ${range}` : ''}</p>
+                {/* The on-screen card — same look as /genesis Prime Genesis card. */}
+                <div className="rounded-2xl border overflow-hidden relative bg-[#0a0a0a]" style={{ borderColor: `${rc}55` }}>
+                  <div className="flex flex-col md:flex-row min-h-[440px]">
+                    {/* LEFT: Siggy character + diagonal stripes + role gradient + speech bubble */}
+                    <div
+                      className="relative md:w-2/5 flex items-end justify-center pt-12 pb-0 overflow-hidden min-h-[300px]"
+                      style={{ background: `linear-gradient(160deg, ${rc}22 0%, ${rc}0a 60%, transparent 100%)` }}
+                    >
+                      <div
+                        className="absolute inset-0 opacity-[0.07]"
+                        style={{
+                          backgroundImage: `linear-gradient(135deg, ${rc} 25%, transparent 25%, transparent 75%, ${rc} 75%)`,
+                          backgroundSize: '40px 40px',
+                        }}
+                      />
+                      <div className="absolute top-0 right-0 w-px h-full opacity-25" style={{ background: `linear-gradient(to bottom, transparent, ${rc}, transparent)` }} />
+                      {/* speech bubble */}
+                      <div
+                        className="absolute z-20 px-4 py-2 rounded-2xl border font-mono text-xs whitespace-nowrap"
+                        style={{ top: '8%', left: '50%', transform: 'translateX(-50%) rotate(-3deg)', backgroundColor: '#fff', color: '#0a0a0a', borderColor: rc, boxShadow: `0 4px 18px ${rc}44` }}
+                      >
+                        {bubble}
+                        <span className="absolute" style={{ bottom: -8, left: '40%', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: `8px solid #fff` }} />
+                      </div>
+                      <Image
+                        src="/Siggy_01/Face/Girl/Girl_Happy.png"
+                        alt="Siggy celebrating"
+                        width={300}
+                        height={300}
+                        className="relative z-10 drop-shadow-2xl select-none"
+                        unoptimized
+                        draggable={false}
+                      />
+                    </div>
 
-                    <div className="mt-6 flex flex-col items-center">
-                      <div className="relative">
-                        <div className="absolute -inset-2 rounded-full opacity-30 blur-2xl" style={{ background: rc }} />
-                        <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden bg-[#141414] ring-2" style={{ ringColor: rc } as any}>
+                    {/* RIGHT: editorial content */}
+                    <div className="md:w-3/5 flex flex-col justify-center px-6 sm:px-8 py-8 md:py-10">
+                      <p className="font-mono text-[10px] sm:text-xs tracking-[0.3em] uppercase mb-3" style={{ color: `${rc}cc` }}>
+                        Member of the Week · Week {wk.week}{range ? ` · ${range}` : ''}
+                      </p>
+                      <h2 className="font-display text-5xl sm:text-6xl md:text-7xl uppercase tracking-tight leading-none mb-5 tabular-nums" style={{ color: rc }}>
+                        #{rank} 🏆
+                      </h2>
+                      <div className="flex items-center gap-4 mb-5">
+                        <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0" style={{ boxShadow: `0 0 0 2px ${rc}66` }}>
                           <Image src={m.avatarUrl} alt={m.displayName} fill className="object-cover" unoptimized />
                         </div>
-                        <div className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full font-display text-sm font-black tabular-nums" style={{ background: rc, color: '#000' }}>
-                          #{rank}
+                        <div className="min-w-0">
+                          <p className="font-semibold text-white text-lg leading-tight truncate">{m.displayName}</p>
+                          <p className="font-mono text-sm text-[#555] truncate">@{m.username}</p>
                         </div>
+                        {m.role && (
+                          <span className="ml-auto text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-full shrink-0" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
+                        )}
                       </div>
-                      <p className="mt-4 font-display text-2xl sm:text-3xl text-white font-black tracking-tight">{m.displayName}</p>
-                      <p className="text-[10px] sm:text-xs font-mono text-[#666] mt-0.5">@{m.username}</p>
-                      {m.role && (
-                        <span className="mt-2 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full" style={{ color: rc, backgroundColor: `${rc}1f` }}>{m.role}</span>
-                      )}
+                      <p className="text-sm leading-relaxed mb-5 text-[#999]">
+                        Locked it in for <span className="font-bold" style={{ color: rc }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span className="text-white font-bold">{m.score} pts</span> on the Ritual MotW board. 🔥
+                      </p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {[
+                          ['Contrib', m.contributions || 0, '#22c55e'],
+                          ['Won',     m.eventsWon || 0,     '#facc15'],
+                          ['Host',    m.eventsHosted || 0,  '#a855f7'],
+                          ['Chat',    m.chat || 0,          '#60a5fa'],
+                        ].map(([lbl, v, ac]) => (
+                          <div key={lbl as string} className="rounded-lg p-2 border text-center" style={{ borderColor: '#1a1a1a', backgroundColor: '#050505' }}>
+                            <div className="text-[8px] font-mono uppercase tracking-widest opacity-50">{lbl as string}</div>
+                            <div className="text-lg font-black font-mono" style={{ color: ac as string }}>
+                              {(v as number) >= 1000 ? ((v as number) / 1000).toFixed(1) + 'k' : (v as number).toLocaleString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="mt-5 text-[9px] font-mono text-[#444] uppercase tracking-[0.25em]">
+                        by Decka Chan · Powered by Siggy
+                      </p>
                     </div>
-
-                    <p className="mt-6 text-sm sm:text-base text-white/90 leading-relaxed max-w-xs mx-auto">
-                      Congratulations! You made it to <span className="font-bold" style={{ color: rc }}>Member of the Week</span> (Week {wk.week}).
-                    </p>
-
-                    <div className="mt-6 grid grid-cols-4 gap-2">
-                      {[
-                        ['c', m.contributions || 0, 'Contrib'],
-                        ['w', m.eventsWon || 0, 'Won'],
-                        ['h', m.eventsHosted || 0, 'Hosted'],
-                        ['💬', m.chat || 0, 'Chat'],
-                      ].map(([_, v, lbl]) => (
-                        <div key={lbl as string} className="rounded-lg border border-white/5 bg-black/40 px-2 py-2">
-                          <p className="font-display text-base sm:text-lg text-white font-black tabular-nums leading-none">
-                            {(v as number) >= 1000 ? ((v as number) / 1000).toFixed(1) + 'k' : v}
-                          </p>
-                          <p className="text-[8px] font-mono uppercase tracking-wider text-[#666] mt-1">{lbl as string}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-black/40">
-                      <span className="font-display text-base text-white font-black">{m.score}</span>
-                      <span className="font-mono text-[9px] text-[#666] uppercase tracking-wider">total pts</span>
-                    </div>
-
-                    <p className="mt-7 text-[9px] font-mono text-[#444] uppercase tracking-[0.25em]">
-                      by Decka Chan · Powered by Siggy
-                    </p>
                   </div>
                 </div>
 
@@ -2125,44 +2151,64 @@ export default function CommunityPage() {
                 </div>
               </motion.div>
 
-              {/* Off-screen 900px export template (keeps the export pixel-perfect). */}
+              {/* Off-screen 900px export template (pixel-perfect, no media queries). */}
               <div style={{ position: 'fixed', pointerEvents: 'none', top: 0, left: '-99999px', opacity: 0 }} aria-hidden="true">
-                <div ref={motwShareRef} style={{ position: 'relative', width: 900, padding: 56, background: `radial-gradient(circle at 75% 15%, ${rc}22, transparent 55%), #0a0a0a`, border: `2px solid ${rc}`, borderRadius: 28, boxSizing: 'border-box', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}>
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 6, textTransform: 'uppercase', color: rc, margin: 0 }}>Member of the Week</p>
-                    <p style={{ fontFamily: 'monospace', fontSize: 13, color: '#777', marginTop: 8 }}>Week {wk.week}{range ? ` · ${range}` : ''}</p>
-                    <div style={{ position: 'relative', display: 'inline-block', marginTop: 36 }}>
-                      <div style={{ width: 200, height: 200, borderRadius: '50%', overflow: 'hidden', background: '#141414', border: `3px solid ${rc}`, position: 'relative' }}>
-                        <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} crossOrigin="anonymous" />
+                <div
+                  ref={motwShareRef}
+                  style={{ position: 'relative', width: 900, background: '#0a0a0a', border: `1px solid ${rc}55`, borderRadius: 24, overflow: 'hidden', boxSizing: 'border-box', color: '#fff', fontFamily: 'Inter, system-ui, sans-serif' }}
+                >
+                  <div style={{ display: 'flex', minHeight: 480 }}>
+                    {/* LEFT */}
+                    <div style={{ position: 'relative', width: 360, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingTop: 48, overflow: 'hidden', background: `linear-gradient(160deg, ${rc}22 0%, ${rc}0a 60%, transparent 100%)` }}>
+                      <div style={{ position: 'absolute', inset: 0, opacity: 0.07, backgroundImage: `linear-gradient(135deg, ${rc} 25%, transparent 25%, transparent 75%, ${rc} 75%)`, backgroundSize: '40px 40px' }} />
+                      <div style={{ position: 'absolute', top: 0, right: 0, width: 1, height: '100%', opacity: 0.25, background: `linear-gradient(to bottom, transparent, ${rc}, transparent)` }} />
+                      <div style={{ position: 'absolute', zIndex: 20, padding: '8px 16px', borderRadius: 16, border: `1px solid ${rc}`, fontFamily: 'monospace', fontSize: 13, whiteSpace: 'nowrap', top: '8%', left: '50%', transform: 'translateX(-50%) rotate(-3deg)', backgroundColor: '#fff', color: '#0a0a0a', boxShadow: `0 4px 18px ${rc}44` }}>
+                        {bubble}
                       </div>
-                      <div style={{ position: 'absolute', bottom: -6, right: -6, padding: '4px 14px', borderRadius: 999, background: rc, color: '#000', fontWeight: 900, fontSize: 22 }}>#{rank}</div>
+                      <img src="/Siggy_01/Face/Girl/Girl_Happy.png" alt="" width={300} height={300} style={{ position: 'relative', zIndex: 10, display: 'block' }} crossOrigin="anonymous" />
                     </div>
-                    <p style={{ fontSize: 44, fontWeight: 900, marginTop: 22, letterSpacing: -1, lineHeight: 1.05 }}>{m.displayName}</p>
-                    <p style={{ fontFamily: 'monospace', fontSize: 14, color: '#777', marginTop: 6 }}>@{m.username}</p>
-                    {m.role && (
-                      <span style={{ display: 'inline-block', marginTop: 12, padding: '4px 14px', borderRadius: 999, fontFamily: 'monospace', fontSize: 12, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: rc, background: `${rc}1f` }}>{m.role}</span>
-                    )}
-                    <p style={{ fontSize: 20, marginTop: 36, lineHeight: 1.45, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto', color: '#e5e5e5' }}>
-                      Congratulations! You made it to <span style={{ color: rc, fontWeight: 700 }}>Member of the Week</span> (Week {wk.week}).
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 36 }}>
-                      {[
-                        ['Contrib', m.contributions || 0],
-                        ['Won', m.eventsWon || 0],
-                        ['Hosted', m.eventsHosted || 0],
-                        ['Chat', m.chat || 0],
-                      ].map(([lbl, v]) => (
-                        <div key={lbl as string} style={{ border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.4)', borderRadius: 14, padding: '14px 8px' }}>
-                          <p style={{ fontSize: 32, fontWeight: 900, margin: 0, lineHeight: 1 }}>{(v as number) >= 1000 ? ((v as number) / 1000).toFixed(1) + 'k' : v}</p>
-                          <p style={{ fontFamily: 'monospace', fontSize: 11, color: '#666', letterSpacing: 2, textTransform: 'uppercase', marginTop: 8 }}>{lbl as string}</p>
+                    {/* RIGHT */}
+                    <div style={{ width: 540, padding: '52px 44px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <p style={{ fontFamily: 'monospace', fontSize: 12, letterSpacing: 6, textTransform: 'uppercase', color: `${rc}cc`, margin: 0 }}>
+                        Member of the Week · Week {wk.week}{range ? ` · ${range}` : ''}
+                      </p>
+                      <h2 style={{ fontSize: 96, fontWeight: 900, letterSpacing: -3, lineHeight: 1, margin: '14px 0 22px', color: rc, textTransform: 'uppercase' }}>
+                        #{rank} 🏆
+                      </h2>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+                        <div style={{ width: 56, height: 56, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, boxShadow: `0 0 0 2px ${rc}66`, position: 'relative' }}>
+                          <img src={m.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} crossOrigin="anonymous" />
                         </div>
-                      ))}
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <p style={{ fontWeight: 600, fontSize: 20, color: '#fff', lineHeight: 1.1, margin: 0 }}>{m.displayName}</p>
+                          <p style={{ fontFamily: 'monospace', fontSize: 14, color: '#555', margin: '4px 0 0' }}>@{m.username}</p>
+                        </div>
+                        {m.role && (
+                          <span style={{ marginLeft: 'auto', fontSize: 11, fontFamily: 'monospace', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', padding: '5px 12px', borderRadius: 999, color: rc, backgroundColor: `${rc}1f`, flexShrink: 0 }}>{m.role}</span>
+                        )}
+                      </div>
+                      <p style={{ fontSize: 15, lineHeight: 1.55, color: '#999', margin: '0 0 22px' }}>
+                        Locked it in for <span style={{ color: rc, fontWeight: 700 }}>Week {wk.week}</span>. One of the top 15 contributors this week — earning <span style={{ color: '#fff', fontWeight: 700 }}>{m.score} pts</span> on the Ritual MotW board. 🔥
+                      </p>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                        {[
+                          ['Contrib', m.contributions || 0, '#22c55e'],
+                          ['Won',     m.eventsWon || 0,     '#facc15'],
+                          ['Host',    m.eventsHosted || 0,  '#a855f7'],
+                          ['Chat',    m.chat || 0,          '#60a5fa'],
+                        ].map(([lbl, v, ac]) => (
+                          <div key={lbl as string} style={{ border: '1px solid #1a1a1a', backgroundColor: '#050505', borderRadius: 10, padding: '10px 4px', textAlign: 'center' }}>
+                            <div style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: 3, textTransform: 'uppercase', opacity: 0.5 }}>{lbl as string}</div>
+                            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: 'monospace', color: ac as string, marginTop: 4 }}>
+                              {(v as number) >= 1000 ? ((v as number) / 1000).toFixed(1) + 'k' : (v as number).toLocaleString()}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <p style={{ marginTop: 24, fontFamily: 'monospace', fontSize: 11, color: '#444', letterSpacing: 4, textTransform: 'uppercase' }}>
+                        by Decka Chan · Powered by Siggy
+                      </p>
                     </div>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 28, padding: '8px 18px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.4)' }}>
-                      <span style={{ fontSize: 24, fontWeight: 900 }}>{m.score}</span>
-                      <span style={{ fontFamily: 'monospace', fontSize: 11, color: '#777', letterSpacing: 2, textTransform: 'uppercase' }}>total pts</span>
-                    </div>
-                    <p style={{ marginTop: 40, fontFamily: 'monospace', fontSize: 11, color: '#555', letterSpacing: 4, textTransform: 'uppercase' }}>by Decka Chan · Powered by Siggy</p>
                   </div>
                 </div>
               </div>
