@@ -285,7 +285,9 @@ async function main() {
   const weekOf = (id) => { const b = BigInt(id); for (const wb of weekBounds) if (b >= wb.sfStart && b < wb.sfEnd) return wb.w; return null; };
 
   // ── Calendar-month bounds (for Member of the Month). Months covered: every
-  // month touched by the 30-day scan range. Key is `YYYY-MM`.
+  // month touched by the 30-day scan range, but never earlier than MONTH_EPOCH
+  // (Jun 2026 — when the MotM feature went live). Key is `YYYY-MM`.
+  const MONTH_EPOCH = '2026-06';
   const monthKey = (ts) => { const d = new Date(ts); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
   const monthBoundsList = [];
   {
@@ -294,7 +296,10 @@ async function main() {
     while (cursor.getTime() <= now) {
       const startTs = cursor.getTime();
       const endTs = Date.UTC(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1, 1);
-      monthBoundsList.push({ key: monthKey(startTs), startTs, endTs, sfStart: BigInt(snowflakeForMs(startTs)), sfEnd: BigInt(snowflakeForMs(endTs)) });
+      const key = monthKey(startTs);
+      if (key >= MONTH_EPOCH) {
+        monthBoundsList.push({ key, startTs, endTs, sfStart: BigInt(snowflakeForMs(startTs)), sfEnd: BigInt(snowflakeForMs(endTs)) });
+      }
       cursor = new Date(endTs);
     }
   }
