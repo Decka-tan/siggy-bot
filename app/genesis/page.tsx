@@ -605,9 +605,10 @@ export default function GenesisPage() {
     listRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  // Main roles get their own filter pill; the rest (Mage, Blessed, Cursed,
-  // Harmonic, no-role) collapse into a single "Other" bucket.
-  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Forerunner'];
+  // Main roles get their own filter pill; the rest (Mage, Forerunner, Blessed,
+  // Cursed, Harmonic, no-role) collapse into a single "Other" bucket. Labels
+  // on individual holder cards still show the actual role (e.g. Forerunner).
+  const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty'];
   const isMain = (r: string | null) => !!r && MAIN_ROLES.includes(r);
 
   const mainPresent = useMemo(() => {
