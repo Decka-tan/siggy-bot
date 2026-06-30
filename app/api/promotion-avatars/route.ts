@@ -45,5 +45,7 @@ export async function GET() {
     if (members.length < 1000) break;
   }
 
-  return NextResponse.json(avatars);
+  return NextResponse.json(avatars, {
+    headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+  });
 }

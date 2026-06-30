@@ -323,6 +323,12 @@ function saveConnectedMember(member: { userId: string; username: string; display
   }
 }
 
+// Edge cache: per-user member payload changes slowly. 5 min fresh, 1 h SWR
+// keeps repeat hits off the function (was the top CPU spender on Vercel).
+const MEMBER_CACHE = { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600' };
+const AUTOCOMPLETE_CACHE = { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' };
+const NO_CACHE = { 'Cache-Control': 'no-store' };
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const username = searchParams.get('username') || '';
@@ -331,7 +337,7 @@ export async function GET(req: NextRequest) {
   const xHandle = searchParams.get('xHandle') || '';
 
   if (!username && !userId) {
-    return NextResponse.json({ error: 'username or userId required' }, { status: 400 });
+    return NextResponse.json({ error: 'username or userId required' }, { status: 400, headers: NO_CACHE });
   }
 
   try {
@@ -343,7 +349,7 @@ export async function GET(req: NextRequest) {
         `${DISCORD_API}/guilds/${GUILD_ID}/members/search?query=${encodeURIComponent(username)}&limit=8`,
         { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
       );
-      if (!res.ok) return NextResponse.json({ members: [] });
+      if (!res.ok) return NextResponse.json({ members: [] }, { headers: NO_CACHE });
       const members: any[] = await res.json();
 
       const results = members.map((m) => {
@@ -361,7 +367,7 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      return NextResponse.json({ members: results });
+      return NextResponse.json({ members: results }, { headers: AUTOCOMPLETE_CACHE });
     }
 
     // Single member lookup
@@ -389,7 +395,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (!member) {
-      return NextResponse.json({ error: 'Member not found in Ritual server' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Member not found in Ritual server' },
+        { status: 404, headers: { 'Cache-Control': 'public, s-maxage=300' } },
+      );
     }
 
     const roleNames = (member.roles || []).map((id: string) => rolesMap.get(id) || id);
@@ -462,9 +471,9 @@ export async function GET(req: NextRequest) {
     // Persist connected member details for external usage
     saveConnectedMember(cardData);
 
-    return NextResponse.json({ success: true, member: cardData });
+    return NextResponse.json({ success: true, member: cardData }, { headers: MEMBER_CACHE });
   } catch (e: any) {
     console.error('[Member API]', e.message);
-    return NextResponse.json({ error: 'Discord API error: ' + e.message }, { status: 500 });
+    return NextResponse.json({ error: 'Discord API error: ' + e.message }, { status: 500, headers: NO_CACHE });
   }
 }

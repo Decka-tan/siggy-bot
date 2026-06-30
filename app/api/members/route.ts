@@ -72,6 +72,11 @@ async function writeRedisCache(members: ContributorMember[]) {
   }
 }
 
+// Edge cache: serve from Vercel CDN for 6h, revalidate up to 24h stale.
+// Matches MEM_TTL / AUTO_STALE so the function is rarely invoked.
+const EDGE_CACHE = { 'Cache-Control': 'public, s-maxage=21600, stale-while-revalidate=86400' };
+const NO_CACHE   = { 'Cache-Control': 'no-store' };
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function getRolesMap(): Promise<Map<string, string>> {
@@ -185,9 +190,11 @@ async function fetchContributors(): Promise<ContributorMember[]> {
 export async function GET(req: NextRequest) {
   const force = new URL(req.url).searchParams.get('force') === 'true';
 
+  const cacheHeaders = force ? NO_CACHE : EDGE_CACHE;
+
   // 1. In-memory hit (fastest — same warm instance, no force)
   if (!force && memCache && Date.now() < memExpiry) {
-    return NextResponse.json({ members: memCache, source: 'memory' });
+    return NextResponse.json({ members: memCache, source: 'memory' }, { headers: cacheHeaders });
   }
 
   // 2. Redis hit (survives cold starts, redeploys, cross-device)
@@ -207,14 +214,14 @@ export async function GET(req: NextRequest) {
           .finally(() => { loading = false; });
       }
 
-      return NextResponse.json({ members: cached.members, source: 'redis', savedAt: cached.savedAt });
+      return NextResponse.json({ members: cached.members, source: 'redis', savedAt: cached.savedAt }, { headers: cacheHeaders });
     }
   }
 
   // 3. Another request already fetching — return best available stale data
   if (loading) {
     const cached = await readRedisCache();
-    return NextResponse.json({ members: memCache ?? cached?.members ?? [], source: 'stale', loading: true });
+    return NextResponse.json({ members: memCache ?? cached?.members ?? [], source: 'stale', loading: true }, { headers: NO_CACHE });
   }
 
   // 4. Full Discord fetch
@@ -224,14 +231,14 @@ export async function GET(req: NextRequest) {
     memCache      = fresh;
     memExpiry     = Date.now() + MEM_TTL;
     await writeRedisCache(fresh);
-    return NextResponse.json({ members: fresh, source: 'discord', count: fresh.length });
+    return NextResponse.json({ members: fresh, source: 'discord', count: fresh.length }, { headers: cacheHeaders });
   } catch (e: any) {
     // On error, fall back to stale Redis cache rather than returning empty
     const cached = await readRedisCache();
     if (cached) {
-      return NextResponse.json({ members: cached.members, source: 'redis-fallback', error: e.message });
+      return NextResponse.json({ members: cached.members, source: 'redis-fallback', error: e.message }, { headers: NO_CACHE });
     }
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    return NextResponse.json({ error: e.message }, { status: 500, headers: NO_CACHE });
   } finally {
     loading = false;
   }
