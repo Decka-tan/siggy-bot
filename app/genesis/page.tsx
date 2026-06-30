@@ -13,6 +13,7 @@ type Holder = {
   joinedAt: string | null;
   topRole: string | null;
   fallbackRole?: string | null;
+  contributorRole?: string | null;   // top contributor-ladder role (or null) — used for filter bucketing
 };
 
 type Payload = {
@@ -61,6 +62,13 @@ const GOLD = '#FFD700';
 
 function displayRoleOf(h: Holder): string | null {
   return h.topRole || h.fallbackRole || null;
+}
+
+// Bucket the holder by their CONTRIBUTOR-ladder role (or null = 'Other').
+// This is what the filter chips & KPI cards use, so Mage+ritty members land
+// in the 'ritty' bucket even though their displayed label is still 'Mage'.
+function bucketRoleOf(h: Holder): string | null {
+  return h.contributorRole ?? null;
 }
 
 function formatJoinDate(iso: string | null): string {
@@ -615,22 +623,22 @@ export default function GenesisPage() {
     if (!data) return [];
     const set = new Set<string>();
     for (const h of data.holders) {
-      const r = displayRoleOf(h);
+      const r = bucketRoleOf(h);
       if (r && isMain(r)) set.add(r);
     }
     return [...set].sort((a, b) => (ROLE_RANK[b] ?? -1) - (ROLE_RANK[a] ?? -1));
   }, [data]);
 
   const otherCount = useMemo(
-    () => (data ? data.holders.filter(h => !isMain(displayRoleOf(h))).length : 0),
+    () => (data ? data.holders.filter(h => !isMain(bucketRoleOf(h))).length : 0),
     [data],
   );
 
   const filtered = useMemo(() => {
     if (!data) return [];
     if (filter === 'all') return data.holders;
-    if (filter === 'other') return data.holders.filter(h => !isMain(displayRoleOf(h)));
-    return data.holders.filter(h => displayRoleOf(h) === filter);
+    if (filter === 'other') return data.holders.filter(h => !isMain(bucketRoleOf(h)));
+    return data.holders.filter(h => bucketRoleOf(h) === filter);
   }, [data, filter]);
 
   const sorted = useMemo(() => {

@@ -147,6 +147,11 @@ async function fetchAllMembers(rolesMap) {
         // top role = highest rank among tracked (may be null for badge-only / no-role members)
         let top = tracked[0] || null;
         for (const r of tracked) if (top && ROLE_RANK[r] > ROLE_RANK[top]) top = r;
+        // Contributor-only top: ignores Mage/Forerunner so a Mage+ritty member
+        // is bucketed as 'ritty' (even though their displayed label stays 'Mage').
+        const contributorTracked = roleNames.filter(r => CONTRIBUTOR_LADDER.has(r));
+        let topContributor = contributorTracked[0] || null;
+        for (const r of contributorTracked) if (topContributor && CONTRIBUTOR_RANK[r] > CONTRIBUTOR_RANK[topContributor]) topContributor = r;
         // Badge holders — recorded even if member has no contributor role.
         const memberBadges = roleNames.filter(rn => BADGE_ROLES.includes(rn));
         if (memberBadges.length) {
@@ -159,7 +164,8 @@ async function fetchAllMembers(rolesMap) {
               displayName: m.nick || m.user.global_name || m.user.username,
               avatarUrl: avatarProxy(m),
               joinedAt: m.joined_at || null,
-              topRole: top,
+              topRole: top,                       // full top (Mage/Forerunner allowed) — used for the displayed label
+              contributorRole: topContributor,    // contributor-ladder top — used for filter bucketing
               fallbackRole: fallback,
             });
           }
@@ -169,9 +175,6 @@ async function fetchAllMembers(rolesMap) {
         // by their actual top role like Mage/Forerunner elsewhere). This applies
         // to ALL regional members, not just contributor-role holders, so the
         // 'Other' column reflects the rest of the community accurately.
-        const contributorTracked = roleNames.filter(r => CONTRIBUTOR_LADDER.has(r));
-        let topContributor = contributorTracked[0] || null;
-        for (const r of contributorTracked) if (topContributor && CONTRIBUTOR_RANK[r] > CONTRIBUTOR_RANK[topContributor]) topContributor = r;
         const tierBucket = topContributor || 'Other';
         for (const rg of memberRegions) {
           regionTiers[rg][tierBucket] = (regionTiers[rg][tierBucket] || 0) + 1;
