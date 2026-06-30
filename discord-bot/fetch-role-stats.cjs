@@ -39,8 +39,11 @@ const ROLE_RANK = {
 };
 const TRACKED_ROLES = Object.keys(ROLE_RANK);
 
-// Roles that count as the "contributor ladder" (used for the page's contributor-only filter)
-const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Radiant Ritualist']);
+// Roles that count as the "contributor ladder" (used for the page's contributor-only filter).
+// Mage/Forerunner are tracked + labeled but DO NOT have their own tier bucket — members
+// holding them fall into their contributor role's bucket (or 'Other' if none).
+const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Zealot', 'Radiant Ritualist']);
+const CONTRIBUTOR_RANK = { 'Radiant Ritualist': 5, 'Zealot': 4, 'Ritualist': 3, 'ritty': 2, 'bitty': 1 };
 
 // Staff/mod roles — excluded from activity leaderboards (they post in those
 // channels as part of their role, not as community contributors).
@@ -161,15 +164,24 @@ async function fetchAllMembers(rolesMap) {
             });
           }
         }
-        if (!tracked.length) continue;
-        // region × role: attribute contributor to EVERY region role they hold (by top tier)
+        // region × role bucket: members are slotted into their highest CONTRIBUTOR
+        // ladder role; if they hold none, they fall into 'Other' (still labeled
+        // by their actual top role like Mage/Forerunner elsewhere). This applies
+        // to ALL regional members, not just contributor-role holders, so the
+        // 'Other' column reflects the rest of the community accurately.
+        const contributorTracked = roleNames.filter(r => CONTRIBUTOR_LADDER.has(r));
+        let topContributor = contributorTracked[0] || null;
+        for (const r of contributorTracked) if (topContributor && CONTRIBUTOR_RANK[r] > CONTRIBUTOR_RANK[topContributor]) topContributor = r;
+        const tierBucket = topContributor || 'Other';
         for (const rg of memberRegions) {
-          regionTiers[rg][top] = (regionTiers[rg][top] || 0) + 1;
+          regionTiers[rg][tierBucket] = (regionTiers[rg][tierBucket] || 0) + 1;
         }
         if (memberRegions.length === 1) {
           const rg = memberRegions[0];
-          regionTiersPure[rg][top] = (regionTiersPure[rg][top] || 0) + 1;
+          regionTiersPure[rg][tierBucket] = (regionTiersPure[rg][tierBucket] || 0) + 1;
         }
+        // Member registry below is contributor-only (skip if no tracked role at all).
+        if (!tracked.length) continue;
         members.push({
           userId: m.user.id,
           username: m.user.username,
@@ -314,7 +326,8 @@ async function main() {
   const regionRoles = Object.keys(insights.regionTiers)
     .map(region => {
       const tiers = insights.regionTiers[region];
-      const contributors = Object.values(tiers).reduce((s, n) => s + n, 0);
+      // 'Other' bucket is non-contributor — exclude from the contributors total.
+      const contributors = Object.entries(tiers).reduce((s, [k, n]) => k === 'Other' ? s : s + n, 0);
       const members = insights.regional[region] || 0; // any-region members (matches crosstab)
       return {
         region,
@@ -324,14 +337,15 @@ async function main() {
         tiers,                                     // { role: count }
       };
     })
-    .filter(r => r.contributors > 0)
+    .filter(r => r.contributors > 0 || (r.tiers && r.tiers.Other > 0))
     .sort((a, b) => b.contributors - a.contributors);
 
   // Region × Role (Pure): per region, contributor breakdown by top tier (pure single-region members)
   const regionRolesPure = Object.keys(insights.regionTiersPure)
     .map(region => {
       const tiers = insights.regionTiersPure[region];
-      const contributors = Object.values(tiers).reduce((s, n) => s + n, 0);
+      // 'Other' bucket is non-contributor — exclude from the contributors total.
+      const contributors = Object.entries(tiers).reduce((s, [k, n]) => k === 'Other' ? s : s + n, 0);
       const members = insights.regionalPure[region] || 0; // pure single-region members
       return {
         region,
@@ -341,7 +355,7 @@ async function main() {
         tiers,                                     // { role: count }
       };
     })
-    .filter(r => r.contributors > 0)
+    .filter(r => r.contributors > 0 || (r.tiers && r.tiers.Other > 0))
     .sort((a, b) => b.contributors - a.contributors);
 
   await uploadR2('community/insights.json', {

@@ -13,6 +13,7 @@ const ROLE_COLOR: Record<string, string> = {
   'Mage': '#b059bc',
   'ritty': '#826bc2',
   'bitty': '#3498db',
+  'Other': '#6b7280',
   'Siggy Soulsmith': '#f59e0b',
   'Siggy Architect': '#f59e0b',
   'Foundation Team': '#ed4245',
@@ -717,7 +718,9 @@ export default function CommunityPage() {
   const regionRoles: RegionRoleRow[] = regionRoleMode === 'pure'
     ? (data?.insights?.regionRolesPure ?? data?.insights?.regionRoles ?? [])
     : (data?.insights?.regionRoles ?? []);
-  const TIER_ORDER = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'Mage', 'ritty', 'bitty'];
+  // Mage/Forerunner aren't filter chips on their own — members with those roles
+  // are bucketed under their contributor role (or Other if they have none).
+  const TIER_ORDER = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty', 'Other'];
   const rrSorted = [...regionRoles].sort((a, b) => {
     if (tierFilter === 'all' && rrSortMode === 'rate') {
       return b.rate - a.rate;
