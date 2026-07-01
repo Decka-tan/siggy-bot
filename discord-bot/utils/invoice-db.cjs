@@ -380,17 +380,21 @@ function getAllDebtors(guildId = null) {
       if (p.paid) return;
 
       const canonical = getCanonicalName(p.username, db);
-      const key = (p.userId || canonical).toLowerCase().trim();
+      const key = canonical.toLowerCase().trim();
+      const isSnowflake = p.userId && /^\d{17,20}$/.test(p.userId);
 
       if (!debtorMap.has(key)) {
         debtorMap.set(key, {
           username: p.username,
-          userId: p.userId,
+          userId: isSnowflake ? p.userId : null,
           guildId: inv.guildId, // TAMBAHIN INI BOS
           canonical: canonical,
           totalDebt: 0,
           invoices: []
         });
+      } else if (isSnowflake && !debtorMap.get(key).userId) {
+        // Upgrade to a real snowflake if a later invoice has one
+        debtorMap.get(key).userId = p.userId;
       }
 
       const stats = debtorMap.get(key);
