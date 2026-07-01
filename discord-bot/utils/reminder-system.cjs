@@ -26,28 +26,17 @@ async function sendAllReminders(client, guildId = null) {
       discordId = resolveName(debtor.canonical);
     }
 
-    // NEW: If we have a username but no ID, try to find the ID globally across all guilds
+    // If still no ID, try Discord member search — but ONLY within the guild the
+    // command was invoked in. Searching across every guild the bot is in caused
+    // wrong-user DMs (e.g. a same-named member in the Ritual server got billed).
     if (!discordId && debtor.username) {
-      try {
-        // 1. Try the specific guild first
-        if (debtor.guildId) {
-          const members = await client.guilds.cache.get(debtor.guildId)?.members.fetch({ query: debtor.username, limit: 1 });
+      const searchGuildId = guildId || debtor.guildId;
+      if (searchGuildId) {
+        try {
+          const members = await client.guilds.cache.get(searchGuildId)?.members.fetch({ query: debtor.username, limit: 1 });
           discordId = members?.first()?.id;
-        }
-        
-        // 2. Fallback: Search ALL guilds the bot is in
-        if (!discordId) {
-          for (const [_, guild] of client.guilds.cache) {
-            try {
-              const members = await guild.members.fetch({ query: debtor.username, limit: 1 });
-              if (members.first()) {
-                discordId = members.first().id;
-                break;
-              }
-            } catch (e) {}
-          }
-        }
-      } catch (e) {}
+        } catch (e) {}
+      }
     }
 
     // VALIDASI: Hanya proses kalo ID-nya beneran angka (Snowflake)
