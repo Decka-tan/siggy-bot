@@ -1705,18 +1705,24 @@ client.on('interactionCreate', async (interaction) => {
           const remindResult = await sendAllReminders(interaction.client);
           
           const skippedCount = remindResult.results.filter(r => r.status === 'skipped').length;
-          
+          const sentList = remindResult.results.filter(r => r.status === 'sent');
+
           let reportMsg = `✅ Berhasil: **${remindResult.sentCount}**\n❌ Gagal: **${remindResult.failCount}**\n⚠️ Tanpa Link: **${skippedCount}**`;
-          
+
+          if (sentList.length > 0) {
+            const sent = sentList.map(r => `• ${r.name}`).join('\n');
+            reportMsg += `\n\n**Dikirim ke:**\n${sent.length > 900 ? sent.substring(0, 900) + '... (dan lainnya)' : sent}`;
+          }
+
           if (remindResult.failCount > 0 || skippedCount > 0) {
             const issues = remindResult.results
               .filter(r => r.status !== 'sent')
               .map(r => `• ${r.name} (${r.status === 'skipped' ? 'Belum ada Link ID' : (r.reason || r.error || 'Unknown error')})`)
               .join('\n');
-            
-            reportMsg += `\n\n**Daftar Masalah:**\n${issues.length > 1800 ? issues.substring(0, 1800) + '... (dan lainnya)' : issues}`;
+
+            reportMsg += `\n\n**Daftar Masalah:**\n${issues.length > 900 ? issues.substring(0, 900) + '... (dan lainnya)' : issues}`;
           }
-          
+
           await interaction.editReply(reportMsg);
           break;
         case 'ask-siggy': await handleAskSiggy(interaction); break;

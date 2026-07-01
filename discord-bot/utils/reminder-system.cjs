@@ -18,9 +18,12 @@ async function sendAllReminders(client, guildId = null) {
 
   for (const debtor of debtors) {
     // Try to resolve Discord ID if not already in debtor info
-    let discordId = debtor.userId;
+    let discordId = debtor.userId && /^\d{17,20}$/.test(debtor.userId) ? debtor.userId : null;
     if (!discordId) {
       discordId = resolveName(debtor.username);
+    }
+    if (!discordId && debtor.canonical) {
+      discordId = resolveName(debtor.canonical);
     }
 
     // NEW: If we have a username but no ID, try to find the ID globally across all guilds
