@@ -1702,7 +1702,7 @@ client.on('interactionCreate', async (interaction) => {
         case 'invoice-link': await handleInvoiceLink(interaction); break;
         case 'invoice-remind':
           await interaction.deferReply({ ephemeral: true });
-          const remindResult = await sendAllReminders(interaction.client);
+          const remindResult = await sendAllReminders(interaction.client, interaction.guildId);
           
           const skippedCount = remindResult.results.filter(r => r.status === 'skipped').length;
           const sentList = remindResult.results.filter(r => r.status === 'sent');

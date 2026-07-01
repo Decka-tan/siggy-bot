@@ -8,6 +8,26 @@ const fs = require('fs');
 const path = require('path');
 
 const DB_FILE = process.env.INVOICE_DB_PATH || path.join(__dirname, '../data/invoices.json');
+const PAYMENT_DB_FILE = path.join(__dirname, '../data/payment-info.json');
+
+function resolveUserIdFromName(username) {
+  try {
+    if (!fs.existsSync(PAYMENT_DB_FILE)) return null;
+    const pDb = JSON.parse(fs.readFileSync(PAYMENT_DB_FILE, 'utf8'));
+    const links = pDb.nameLinks || {};
+    const key = username.toLowerCase().trim();
+    if (links[key]?.discordId) return links[key].discordId;
+
+    // Try via canonical name (alias resolution)
+    const iDb = readDB();
+    const canonical = getCanonicalName(username, iDb).toLowerCase().trim();
+    if (canonical !== key && links[canonical]?.discordId) return links[canonical].discordId;
+
+    return null;
+  } catch (e) {
+    return null;
+  }
+}
 
 // Simple in-memory lock for write operations
 let writeLock = false;
@@ -150,7 +170,7 @@ function addParticipants(invoiceId, participants) {
   // Math.random alone can collide and break the Bayar SelectMenu.
   validParticipants.forEach(p => {
     invoice.participants.push({
-      userId: p.userId || `unknown_${Date.now()}_${invoice.participants.length}_${Math.random().toString(36).slice(2, 5)}`,
+      userId: p.userId || resolveUserIdFromName(p.username) || `unknown_${Date.now()}_${invoice.participants.length}_${Math.random().toString(36).slice(2, 5)}`,
       username: p.username,
       amount: Number(p.amount), // Ensure it's a number
       paid: p.paid || false,
