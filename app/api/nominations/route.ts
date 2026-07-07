@@ -364,14 +364,9 @@ function signalSummary(params: {
   return pieces.join(', ') + '.';
 }
 
-export async function GET(req: NextRequest) {
-  const includeArchive = new URL(req.url).searchParams.get('archive') === '1';
-
+export async function buildNominationsPayload(includeArchive = false) {
   if (nominationsCache && nominationsCache.expires > Date.now()) {
-    const payload = includeArchive ? withArchive(nominationsCache.payload) : nominationsCache.payload;
-    return NextResponse.json(payload, {
-      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' },
-    });
+    return includeArchive ? withArchive(nominationsCache.payload) : nominationsCache.payload;
   }
 
   const index = buildIndex();
@@ -483,7 +478,13 @@ export async function GET(req: NextRequest) {
 
   nominationsCache = { expires: Date.now() + 60 * 1000, payload };
 
-  return NextResponse.json(includeArchive ? withArchive(payload) : payload, {
+  return includeArchive ? withArchive(payload) : payload;
+}
+
+export async function GET(req: NextRequest) {
+  const includeArchive = new URL(req.url).searchParams.get('archive') === '1';
+  const payload = await buildNominationsPayload(includeArchive);
+  return NextResponse.json(payload, {
     headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=600' },
   });
 }
