@@ -364,14 +364,19 @@ function signalSummary(params: {
   return pieces.join(', ') + '.';
 }
 
-export async function buildNominationsPayload(includeArchive = false) {
+type BuildOptions = {
+  skipRedis?: boolean;
+  skipR2?: boolean;
+};
+
+export async function buildNominationsPayload(includeArchive = false, options: BuildOptions = {}) {
   if (nominationsCache && nominationsCache.expires > Date.now()) {
     return includeArchive ? withArchive(nominationsCache.payload) : nominationsCache.payload;
   }
 
   const index = buildIndex();
-  const memberRegistryAvailable = await addCachedMembersToIndex(index);
-  const activity = await getR2Activity();
+  const memberRegistryAvailable = options.skipRedis ? false : await addCachedMembersToIndex(index);
+  const activity = options.skipR2 ? null : await getR2Activity();
 
   const nominees = nominationSeed.map((seed) => {
     const indexedMember = findMember(index, seed.username, seed.discordId);

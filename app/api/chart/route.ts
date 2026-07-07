@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Get OHLC candlestick data from Binance for charting
  * GET /api/chart?coin=btc&interval=15m&limit=96
