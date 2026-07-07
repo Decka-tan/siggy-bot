@@ -17,7 +17,8 @@
     "extract:contributions": "tsx scripts/extract-contributions.ts",
     "extract:users": "tsx scripts/extract-discord-users.ts",
     "extract:events": "tsx scripts/extract-discord-events.ts",
-    "extract:events:v2": "tsx scripts/extract-discord-events-v2.ts"
+    "extract:events:v2": "tsx scripts/extract-discord-events-v2.ts",
+    "refresh:nominations": "node scripts/refresh-nomination-cache.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1058.0",
