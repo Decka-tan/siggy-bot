@@ -523,7 +523,9 @@ function MiniFeature({ nominee }: { nominee: Nominee }) {
 function NomineeCard({ nominee, onSelect }: { nominee: Nominee; onSelect: (nominee: Nominee) => void }) {
   const accent = targetColor(nominee.targetRole);
   return (
-    <button onClick={() => onSelect(nominee)} className="group rounded-2xl border border-white/10 bg-[#0b0b0b] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#ffd700]/40 hover:bg-[#101010]">
+    <button onClick={() => onSelect(nominee)} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0b0b0b] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#ffd700]/40 hover:bg-[#101010]">
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100" style={{ background: `radial-gradient(circle at 88% 0%, ${accent}18, transparent 36%)` }} />
+      <div className="relative">
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-start gap-3 min-w-0">
           <Avatar nominee={nominee} size="md" />
@@ -538,28 +540,25 @@ function NomineeCard({ nominee, onSelect }: { nominee: Nominee; onSelect: (nomin
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 min-h-[30px]">
         <RolePath nominee={nominee} />
       </div>
 
-      <div className="mt-5 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
-        <div className="min-w-0">
-          <div className="font-mono text-[10px] uppercase tracking-wider text-[#777]">Vote signal</div>
-          <div className="mt-1 text-sm text-white">
-            {nominee.nominations} nom · {nominee.upvotes} up · {nominee.downvotes} down
-          </div>
-        </div>
-        <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-[#aaa]">{confidenceLabel(nominee.confidence)}</span>
+      <div className="mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4">
+        <SignalChip label="Nominations" value={nominee.nominations} tone={accent} />
+        <SignalChip label="Upvotes" value={nominee.upvotes} tone="#35d07f" />
+        <SignalChip label="Downvotes" value={nominee.downvotes} tone={nominee.downvotes > 0 ? '#fb7185' : '#777'} />
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <span className="font-mono text-[11px] uppercase tracking-wider text-[#888]">
-          Score {fmt(nominee.score)}
+      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
+        <span className="font-mono text-[10px] uppercase tracking-wider text-[#888]">
+          Vote score <span className="text-white">{fmt(nominee.score)}</span>
         </span>
-        <span className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-wider text-[#ffd700]">
+        <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-[#ffd700]">
           View stats
           <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
         </span>
+      </div>
       </div>
     </button>
   );
@@ -579,6 +578,15 @@ function SmallStat({ label, value }: { label: string; value: number }) {
     <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
       <div className="truncate text-sm font-semibold text-white">{fmt(value)}</div>
       <div className="mt-0.5 font-mono text-[9px] uppercase tracking-wider text-[#777]">{label}</div>
+    </div>
+  );
+}
+
+function SignalChip({ label, value, tone }: { label: string; value: number; tone: string }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+      <div className="text-base font-semibold" style={{ color: tone }}>{fmt(value)}</div>
+      <div className="mt-0.5 truncate font-mono text-[9px] uppercase tracking-wider text-[#777]">{label}</div>
     </div>
   );
 }
