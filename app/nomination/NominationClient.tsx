@@ -473,54 +473,8 @@ export default function NominationClient({ initialData }: { initialData: ApiData
             The Next Role?
           </h1>
           <p className="nomination-hero-line mx-auto mb-10 max-w-[330px] text-base leading-7 text-[#888] sm:max-w-2xl md:text-lg">
-            Search nominees, compare their role path, and copy the exact vote steps before opening Discord.
+            Compare nominee role paths, Discord context, and vote signals before opening Discord.
           </p>
-
-          <div className="nomination-hero-line mx-auto mb-8 max-w-[calc(100vw-32px)] sm:max-w-2xl">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#555]" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search Discord username, display name, or role..."
-                className="w-full rounded-xl border border-[#222] bg-[#111] py-4 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-[#444] focus:border-[#FFD700]"
-              />
-            </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-              <select
-                value={sort}
-                onChange={(event) => setSort(event.target.value as SortMode)}
-                className="rounded-xl border border-[#222] bg-[#111] px-4 py-3 font-mono text-xs uppercase tracking-wider text-white outline-none transition focus:border-[#FFD700]"
-              >
-                {SORTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-              <button onClick={scrollToList} className="rounded-xl px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black transition hover:opacity-85" style={{ backgroundColor: GOLD }}>
-                View list
-              </button>
-            </div>
-          </div>
-
-          <div className="nomination-hero-line -mx-4 mb-10 flex max-w-[100vw] flex-nowrap justify-start gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0">
-            {TARGETS.map((item) => {
-              const active = target === item;
-              const color = item === 'All' ? GOLD : targetColor(item);
-              const count = item === 'All' ? nominees.length : nominees.filter((nominee) => nominee.targetRole === item).length;
-              return (
-                <button
-                  key={item}
-                  onClick={() => setTarget(item)}
-                  className="rounded-full border px-5 py-2 font-mono text-sm transition-all"
-                  style={{
-                    borderColor: active ? color : '#222',
-                    backgroundColor: active ? color : 'transparent',
-                    color: active ? '#000' : '#666',
-                  }}
-                >
-                  {item} ({count})
-                </button>
-              );
-            })}
-          </div>
 
           <button
             onClick={scrollToList}
@@ -554,6 +508,49 @@ export default function NominationClient({ initialData }: { initialData: ApiData
               </button>
             );
           })}
+        </div>
+
+        <div className="mb-8 rounded-2xl border border-[#171717] bg-[#080808] p-4">
+          <div className="-mx-1 mb-4 flex max-w-[calc(100vw-32px)] flex-nowrap gap-2 overflow-x-auto px-1 pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            {TARGETS.map((item) => {
+              const active = target === item;
+              const color = item === 'All' ? GOLD : targetColor(item);
+              const count = item === 'All' ? nominees.length : nominees.filter((nominee) => nominee.targetRole === item).length;
+              return (
+                <button
+                  key={item}
+                  onClick={() => setTarget(item)}
+                  className="whitespace-nowrap rounded-full border px-4 py-2 font-mono text-xs transition-all"
+                  style={{
+                    borderColor: active ? color : '#222',
+                    backgroundColor: active ? color : 'transparent',
+                    color: active ? '#000' : '#777',
+                  }}
+                >
+                  {item} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_220px]">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#555]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search Discord username, display name, or role..."
+                className="h-12 w-full rounded-xl border border-[#222] bg-[#111] py-3 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-[#444] focus:border-[#FFD700]"
+              />
+            </div>
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as SortMode)}
+              className="h-12 rounded-xl border border-[#222] bg-[#111] px-4 font-mono text-xs uppercase tracking-wider text-white outline-none transition focus:border-[#FFD700]"
+            >
+              {SORTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </select>
+          </div>
         </div>
 
         <div className="mb-8 flex flex-col gap-4 text-center md:flex-row md:items-end md:justify-between md:text-left">

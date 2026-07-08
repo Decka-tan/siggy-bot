@@ -6,10 +6,10 @@
  *
  * Required env:
  *   DISCORD_BOT_TOKEN
- *   REDIS_URL
  *
  * Optional env:
  *   DISCORD_SERVER_ID
+ *   REDIS_URL
  */
 
 const fs = require('fs');
@@ -31,14 +31,10 @@ const GUILD_ID = process.env.DISCORD_SERVER_ID || process.env.DISCORD_GUILD_ID |
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const REDIS_URL = process.env.REDIS_URL;
 const REDIS_KEY = 'ritual:nomination-members:v1';
+const FILE_CACHE_PATH = path.join(process.cwd(), 'extracted-data', 'nomination-members-cache.json');
 
 if (!BOT_TOKEN) {
   console.error('Missing DISCORD_BOT_TOKEN');
-  process.exit(1);
-}
-
-if (!REDIS_URL) {
-  console.error('Missing REDIS_URL');
   process.exit(1);
 }
 
@@ -61,6 +57,32 @@ const CONTRIBUTOR_RANK = {
 
 const TRACKED_ROLES = new Set(Object.keys(ROLE_RANK));
 const CONTRIBUTOR_LADDER = new Set(Object.keys(CONTRIBUTOR_RANK));
+
+function normalize(value) {
+  return String(value || '').toLowerCase().replace(/^@/, '').trim();
+}
+
+function loadNominationSeeds() {
+  const filePath = path.join(process.cwd(), 'lib', 'nomination-data.ts');
+  if (!fs.existsSync(filePath)) return [];
+
+  const source = fs.readFileSync(filePath, 'utf8');
+  const seeds = [];
+  const rowPattern = /\['([^']+)',\s*(\d+),\s*'([^']+)',\s*'([^']+)',\s*\d+,\s*\d+,\s*\d+\]/g;
+  let match;
+
+  while ((match = rowPattern.exec(source))) {
+    const [, tier, rank, username, displayName] = match;
+    seeds.push({
+      tier,
+      rank: Number(rank),
+      username,
+      discordId: displayName.match(/^<@!?(\d+)>$/)?.[1] || null,
+    });
+  }
+
+  return seeds;
+}
 
 async function discordGet(url) {
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -148,13 +170,41 @@ async function main() {
 
   process.stdout.write('\n');
 
-  const redis = createClient({ url: REDIS_URL });
-  redis.on('error', (err) => console.error('[nomination-cache] redis error', err));
-  await redis.connect();
-  await redis.set(REDIS_KEY, JSON.stringify({ savedAt: Date.now(), members }));
-  await redis.quit();
+  const payload = { savedAt: Date.now(), guildId: GUILD_ID, members };
+  fs.mkdirSync(path.dirname(FILE_CACHE_PATH), { recursive: true });
+  fs.writeFileSync(FILE_CACHE_PATH, JSON.stringify(payload, null, 2));
+  console.log(`[nomination-cache] saved ${members.length} members to ${path.relative(process.cwd(), FILE_CACHE_PATH)}`);
 
-  console.log(`[nomination-cache] saved ${members.length} members to ${REDIS_KEY}`);
+  if (REDIS_URL) {
+    const redis = createClient({ url: REDIS_URL });
+    redis.on('error', (err) => console.error('[nomination-cache] redis error', err));
+    await redis.connect();
+    await redis.set(REDIS_KEY, JSON.stringify(payload));
+    await redis.quit();
+    console.log(`[nomination-cache] saved ${members.length} members to ${REDIS_KEY}`);
+  } else {
+    console.log('[nomination-cache] REDIS_URL not set; skipped Redis write');
+  }
+
+  const nominees = loadNominationSeeds();
+  if (nominees.length) {
+    const byId = new Map(members.map((member) => [member.userId, member]));
+    const byUsername = new Map(members.map((member) => [normalize(member.username), member]));
+    const missing = nominees.filter((nominee) => {
+      const member = (nominee.discordId && byId.get(nominee.discordId)) || byUsername.get(normalize(nominee.username));
+      return !member || !member.avatarUrl;
+    });
+
+    console.log(`[nomination-cache] nominee avatars matched=${nominees.length - missing.length}/${nominees.length}`);
+    if (missing.length) {
+      console.log('[nomination-cache] missing nominee avatars:');
+      for (const nominee of missing.slice(0, 30)) {
+        console.log(`  - ${nominee.tier} #${nominee.rank} @${nominee.username}${nominee.discordId ? ` (${nominee.discordId})` : ''}`);
+      }
+      if (missing.length > 30) console.log(`  ... ${missing.length - 30} more`);
+    }
+  }
+
   console.log('[nomination-cache] done');
 }
 
