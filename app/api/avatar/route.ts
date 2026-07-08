@@ -56,10 +56,11 @@ export async function GET(req: NextRequest) {
 
     if (!member || !userId) throw new Error('member not found');
 
-    const hash = member.avatar || member.user?.avatar;
-    const avatarUrl = hash
-      ? `https://cdn.discordapp.com/avatars/${userId}/${hash}.${hash.startsWith('a_') ? 'gif' : 'png'}?size=128`
-      : defaultAvatar(userId);
+    const avatarUrl = member.avatar
+      ? `https://cdn.discordapp.com/guilds/${GUILD_ID}/users/${userId}/avatars/${member.avatar}.${member.avatar.startsWith('a_') ? 'gif' : 'png'}?size=128`
+      : member.user?.avatar
+        ? `https://cdn.discordapp.com/avatars/${userId}/${member.user.avatar}.${member.user.avatar.startsWith('a_') ? 'gif' : 'png'}?size=128`
+        : defaultAvatar(userId);
 
     const img = await fetch(avatarUrl);
     if (!img.ok) throw new Error('cdn 404');

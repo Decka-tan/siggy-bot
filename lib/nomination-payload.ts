@@ -51,6 +51,10 @@ type ActivityDoc = {
   totals?: { contributions: number; eventsWon: number; eventsHosted: number };
 };
 
+type GlobalMessagesDoc = {
+  users?: Record<string, { globalMessages?: number }>;
+};
+
 type DiscordMember = {
   user?: {
     id: string;
@@ -95,6 +99,7 @@ const TARGET_LEVEL: Record<NominationTier, number> = {
 let rolesCache: { expires: number; roles: Map<string, string> } | null = null;
 let guildMembersCache: { expires: number; members: DiscordMember[] } | null = null;
 let activityCache: { expires: number; doc: ActivityDoc | null } | null = null;
+let globalMessagesCache: { expires: number; doc: GlobalMessagesDoc | null } | null = null;
 let nominationsCache: { expires: number; payload: JsonObject } | null = null;
 
 function readJson(relativePath: string): JsonObject {
@@ -165,29 +170,48 @@ function buildIndex() {
   return index;
 }
 
+function addMembersToIndex(index: Map<string, LocalMember>, members: any[]) {
+  for (const member of members) {
+    addToIndex(index, {
+      userId: member.userId,
+      username: member.username,
+      displayName: member.displayName,
+      avatar: member.avatarUrl || member.avatar,
+      contributorRole: member.contributorRole || null,
+      topRole: member.topRole || member.contributorRole || null,
+      roleNames: member.roles || member.roleNames || [],
+      roles: member.roles || member.roleNames || [],
+      joinedAt: member.joinedAt || null,
+      contributionsCount: member.contributionsCount || member.contributions || 0,
+      eventsCount: member.eventsCount || 0,
+      globalMessages: member.globalMessages || 0,
+      count: member.count || 0,
+    });
+  }
+}
+
 async function addCachedMembersToIndex(index: Map<string, LocalMember>) {
-  if (!process.env.REDIS_URL) return false;
+  let found = false;
+
+  const fileCache = readJson('extracted-data/nomination-members-cache.json');
+  const fileMembers = Array.isArray(fileCache?.members) ? fileCache.members : [];
+  if (fileMembers.length) {
+    addMembersToIndex(index, fileMembers);
+    found = true;
+  }
+
+  if (!process.env.REDIS_URL) return found;
+
   try {
     const redis = await getRedis();
     const raw = await redis.get('ritual:nomination-members:v1') || await redis.get('ritual:members:v1');
-    if (!raw) return false;
+    if (!raw) return found;
     const cached = JSON.parse(raw as string);
     const members = Array.isArray(cached?.members) ? cached.members : [];
-    for (const member of members) {
-      addToIndex(index, {
-        userId: member.userId,
-        username: member.username,
-        displayName: member.displayName,
-        avatar: member.avatarUrl,
-        contributorRole: member.contributorRole || null,
-        topRole: member.topRole || member.contributorRole || null,
-        roleNames: member.roles || [],
-        roles: member.roles || [],
-      });
-    }
-    return members.length > 0;
+    addMembersToIndex(index, members);
+    return found || members.length > 0;
   } catch {
-    return false;
+    return found;
   }
 }
 
@@ -200,6 +224,19 @@ async function getR2Activity() {
     return doc;
   } catch {
     activityCache = { expires: Date.now() + 60 * 1000, doc: null };
+    return null;
+  }
+}
+
+async function getR2GlobalMessages() {
+  if (!HAS_R2_ENV) return null;
+  if (globalMessagesCache && globalMessagesCache.expires > Date.now()) return globalMessagesCache.doc;
+  try {
+    const doc = await r2GetObject<GlobalMessagesDoc>('community/global-messages.json');
+    globalMessagesCache = { expires: Date.now() + 5 * 60 * 1000, doc };
+    return doc;
+  } catch {
+    globalMessagesCache = { expires: Date.now() + 60 * 1000, doc: null };
     return null;
   }
 }
@@ -229,6 +266,11 @@ function discordAvatar(member: DiscordMember | null) {
   if (member?.avatar) return `https://cdn.discordapp.com/guilds/${GUILD_ID}/users/${uid}/avatars/${member.avatar}.png?size=256`;
   if (member.user?.avatar) return `https://cdn.discordapp.com/avatars/${uid}/${member.user.avatar}.png?size=256`;
   return `https://cdn.discordapp.com/embed/avatars/${Number(uid.slice(-1)) % 5}.png`;
+}
+
+function proxiedDiscordAvatar(member: DiscordMember | null) {
+  const avatar = discordAvatar(member);
+  return avatar ? `/api/proxy-avatar?url=${encodeURIComponent(avatar)}` : null;
 }
 
 function defaultDiscordAvatar(userId?: string | null) {
@@ -289,6 +331,23 @@ function findDiscordMember(
     if (exact) return exact;
   }
   return null;
+}
+
+function memberFromDiscord(member: DiscordMember | null, rolesMap: Map<string, string>): LocalMember | null {
+  if (!member?.user?.id) return null;
+  const roleNames = (member.roles || [])
+    .map((id) => rolesMap.get(id))
+    .filter((role): role is string => Boolean(role) && role !== '@everyone' && !/^\d+$/.test(role));
+
+  return {
+    userId: member.user.id,
+    username: member.user.username,
+    displayName: member.nick || member.user.global_name || member.user.username,
+    avatar: discordAvatar(member) || undefined,
+    roleNames,
+    roles: roleNames,
+    joinedAt: member.joined_at || undefined,
+  };
 }
 
 async function searchDiscordMember(query: string, expectedUsername: string, expectedDisplayName?: string | null) {
@@ -409,12 +468,14 @@ export async function buildNominationsPayload(includeArchive = false, options: B
   const index = buildIndex();
   const memberRegistryAvailable = options.skipRedis ? false : await addCachedMembersToIndex(index);
   const activity = options.skipR2 ? null : await getR2Activity();
+  const globalMessagesDoc = options.skipR2 ? null : await getR2GlobalMessages();
   const discordMembers = options.skipDiscord ? [] : await fetchGuildMembers();
   const discordIndex = buildDiscordIndex(discordMembers);
+  const discordRolesMap = discordMembers.length ? await getDiscordRoleMap() : new Map<string, string>();
 
   const nominees = await Promise.all(nominationSeed.map(async (seed) => {
     const indexedMember = findMember(index, seed.username, seed.discordId);
-    const member: LocalMember | null = indexedMember || null;
+    let member: LocalMember | null = indexedMember || null;
     let discordMember = options.skipDiscord ? null : findDiscordMember(discordIndex, {
       userId: member?.userId || seed.discordId || null,
       username: seed.username,
@@ -424,6 +485,9 @@ export async function buildNominationsPayload(includeArchive = false, options: B
     if (!discordMember && !options.skipDiscord && needsDiscordSearch) {
       discordMember = await resolveDiscordMember(seed);
     }
+    const liveMember = memberFromDiscord(discordMember, discordRolesMap);
+    if (member && liveMember) member = mergeMember(member, liveMember);
+    else if (!member && liveMember) member = liveMember;
 
     const roles = rolesOf(member);
     const currentRole = trackCurrentRole(currentRoleOf(member, roles), seed.tier);
@@ -431,10 +495,14 @@ export async function buildNominationsPayload(includeArchive = false, options: B
     const netVotes = seed.upvotes - seed.downvotes;
     const targetRole = targetRoleLabel(seed.tier);
     const eligibilityStatus = eligibility(currentRole, seed.tier);
-    const activityStats = member?.userId ? activity?.byUser?.[member.userId] : undefined;
+    const resolvedUserId = member?.userId || discordMember?.user?.id || seed.discordId || null;
+    const activityStats = resolvedUserId ? activity?.byUser?.[resolvedUserId] : undefined;
     const contributionsCount = Math.max(member?.contributionsCount || 0, member?.count || 0, activityStats?.contributions || 0);
     const eventsCount = member?.eventsCount || 0;
-    const globalMessages = member?.globalMessages || 0;
+    const globalMessages = Math.max(
+      member?.globalMessages || 0,
+      resolvedUserId ? globalMessagesDoc?.users?.[resolvedUserId]?.globalMessages || 0 : 0,
+    );
     const eventsWonCount = activityStats?.eventsWon ?? null;
     const eventsHostedCount = activityStats?.eventsHosted ?? null;
     const discordStatsScore =
@@ -442,13 +510,13 @@ export async function buildNominationsPayload(includeArchive = false, options: B
       (eventsWonCount || 0) * 5 +
       (eventsHostedCount || 0) * 10 +
       globalMessages * 0.02;
-    const userId = member?.userId || discordMember?.user?.id || seed.discordId || null;
+    const userId = resolvedUserId;
     const discordDisplayName = discordMember?.nick || discordMember?.user?.global_name || discordMember?.user?.username || null;
     const displayName =
       !member?.displayName || member.displayName === 'Discord member'
         ? (discordDisplayName || seed.displayName)
         : member.displayName;
-    const avatar = member?.avatar || member?.avatarUrl || discordAvatar(discordMember || null) || defaultDiscordAvatar(userId);
+    const avatar = member?.avatar || member?.avatarUrl || proxiedDiscordAvatar(discordMember || null) || defaultDiscordAvatar(userId);
 
     return {
       id: `${seed.tier}:${seed.username}`,
