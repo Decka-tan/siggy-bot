@@ -11,19 +11,51 @@ function defaultAvatar(userId: string) {
   return `https://cdn.discordapp.com/embed/avatars/${idx}.png`;
 }
 
-export async function GET(req: NextRequest) {
-  const userId = new URL(req.url).searchParams.get('id');
-  if (!userId) return new NextResponse('Missing id', { status: 400 });
+function normalize(value?: string | null) {
+  return (value || '').toLowerCase().replace(/^@/, '').trim();
+}
 
-  try {
-    const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${userId}`, {
+async function findMemberByUsername(username: string) {
+  if (!BOT_TOKEN || !username) return null;
+  const q = normalize(username);
+  const res = await fetch(
+    `${DISCORD_API}/guilds/${GUILD_ID}/members/search?query=${encodeURIComponent(username)}&limit=8`,
+    {
       headers: { Authorization: `Bot ${BOT_TOKEN}` },
       next: { revalidate: 86400 },
-    } as RequestInit);
+    } as RequestInit,
+  );
+  if (!res.ok) return null;
+  const members = await res.json();
+  return members.find((m: any) =>
+    normalize(m.user?.username) === q ||
+    normalize(m.nick) === q ||
+    normalize(m.user?.global_name) === q
+  ) || null;
+}
 
-    if (!res.ok) throw new Error('member not found');
+export async function GET(req: NextRequest) {
+  const searchParams = new URL(req.url).searchParams;
+  let userId = searchParams.get('id');
+  const username = searchParams.get('username');
+  if (!userId && !username) return new NextResponse('Missing id or username', { status: 400 });
 
-    const member = await res.json();
+  try {
+    let member: any = null;
+
+    if (userId) {
+      const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${userId}`, {
+        headers: { Authorization: `Bot ${BOT_TOKEN}` },
+        next: { revalidate: 86400 },
+      } as RequestInit);
+      if (res.ok) member = await res.json();
+    } else if (username) {
+      member = await findMemberByUsername(username);
+      userId = member?.user?.id || null;
+    }
+
+    if (!member || !userId) throw new Error('member not found');
+
     const hash = member.avatar || member.user?.avatar;
     const avatarUrl = hash
       ? `https://cdn.discordapp.com/avatars/${userId}/${hash}.${hash.startsWith('a_') ? 'gif' : 'png'}?size=128`
@@ -40,6 +72,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch {
+    if (!userId) return new NextResponse('Member not found', { status: 404, headers: { 'Cache-Control': 'public, max-age=300' } });
     const fallback = await fetch(defaultAvatar(userId));
     const buf = await fallback.arrayBuffer();
     return new NextResponse(buf, {

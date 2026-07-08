@@ -1,9 +1,9 @@
 import NominationClient from './NominationClient';
-import { buildNominationsPayload } from '@/app/api/nominations/route';
+import { buildNominationsPayload } from '@/lib/nomination-payload';
 
 export const revalidate = 60;
 
 export default async function NominationPage() {
-  const data = await buildNominationsPayload(false, { skipRedis: true, skipR2: true });
+  const data = await buildNominationsPayload(false, { skipRedis: true, skipR2: true, skipDiscord: true });
   return <NominationClient initialData={data as any} />;
 }

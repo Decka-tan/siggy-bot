@@ -1,23 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { animate, stagger } from 'animejs';
 import {
   Activity,
-  ArrowRight,
   CalendarDays,
   Check,
-  ChevronRight,
   Clipboard,
   Crown,
-  Filter,
   Flame,
-  MessageCircle,
   Search,
-  ShieldCheck,
-  Sparkles,
-  Target,
   Trophy,
-  Users,
   X,
 } from 'lucide-react';
 
@@ -84,27 +78,29 @@ const SORTS: Array<{ value: SortMode; label: string }> = [
   { value: 'score', label: 'Vote score' },
   { value: 'discordStats', label: 'Discord stats' },
   { value: 'rank', label: 'Board rank' },
-  { value: 'votes', label: 'Votes' },
+  { value: 'votes', label: 'Net votes' },
 ];
 
+const GOLD = '#FFD700';
 const TARGET_COLOR: Record<string, string> = {
-  Ritualist: '#35d07f',
-  Ritty: '#a78bfa',
-  'Ritty Bitty': '#38bdf8',
+  Ritualist: '#22c55e',
+  Ritty: '#a855f7',
+  'Ritty Bitty': '#3b82f6',
 };
-
 const ROLE_COLOR: Record<string, string> = {
-  'Radiant Ritualist': '#ffd76a',
-  Zealot: '#f87171',
-  Ritualist: '#35d07f',
-  Mage: '#2dd4bf',
+  'Radiant Ritualist': '#FFD700',
+  Zealot: '#ef4444',
+  Ritualist: '#22c55e',
+  Mage: '#1ABC9C',
   'Siggy Soulsmith': '#f59e0b',
   'Siggy Architect': '#f59e0b',
-  ritty: '#a78bfa',
-  bitty: '#38bdf8',
-  Forerunner: '#fbbf24',
-  Initiate: '#67e8f9',
-  Unranked: '#8a8a8a',
+  ritty: '#a855f7',
+  bitty: '#3b82f6',
+  Ritty: '#a855f7',
+  'Ritty Bitty': '#3b82f6',
+  Forerunner: '#f59e0b',
+  Initiate: '#06b6d4',
+  Unranked: '#666',
 };
 
 function fmt(n: number) {
@@ -113,8 +109,17 @@ function fmt(n: number) {
   return n.toLocaleString();
 }
 
-function initials(name: string) {
-  return name.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || 'SG';
+function roleColor(role: string) {
+  return ROLE_COLOR[role] || '#888';
+}
+
+function targetColor(role: string) {
+  return TARGET_COLOR[role] || GOLD;
+}
+
+function targetBadgeLabel(role: string) {
+  if (role === 'Ritty Bitty') return 'Bitty';
+  return role;
 }
 
 function joinDate(value: string | null) {
@@ -124,47 +129,255 @@ function joinDate(value: string | null) {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function confidenceLabel(value: Nominee['confidence']) {
-  if (value === 'strong') return 'Strong';
-  if (value === 'solid') return 'Solid';
-  if (value === 'watch') return 'Watch';
-  return 'Early';
+function avatarCandidates(nominee: Nominee) {
+  return [
+    nominee.avatar,
+    nominee.userId ? `/api/avatar?id=${encodeURIComponent(nominee.userId)}` : null,
+    nominee.username ? `/api/avatar?username=${encodeURIComponent(nominee.username)}` : null,
+  ].filter((src, index, list): src is string => Boolean(src) && list.indexOf(src) === index);
 }
 
-function eligibilityCopy(value: Nominee['eligibility']) {
-  if (value === 'promotion-candidate') return 'Needs push';
-  if (value === 'already-at-or-above-target') return 'Role check';
-  return 'Review role';
+function sortNominees(rows: Nominee[], sort: SortMode) {
+  return [...rows].sort((a, b) => {
+    if (sort === 'rank') return a.leaderboardRank - b.leaderboardRank;
+    if (sort === 'votes') return b.netVotes - a.netVotes || b.score - a.score;
+    if (sort === 'discordStats') return b.discordStatsScore - a.discordStatsScore || b.score - a.score;
+    return b.score - a.score;
+  });
 }
 
-function roleColor(role: string) {
-  return ROLE_COLOR[role] || '#8a8a8a';
+function Avatar({ nominee, size = 'md' }: { nominee: Nominee; size?: 'sm' | 'md' | 'lg' }) {
+  const classes = {
+    sm: 'h-9 w-9 text-sm',
+    md: 'h-14 w-14 text-xl',
+    lg: 'h-20 w-20 text-3xl',
+  };
+  const sources = avatarCandidates(nominee);
+  const [srcIndex, setSrcIndex] = useState(0);
+  const src = sources[srcIndex];
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={nominee.displayName}
+        className={`${classes[size]} shrink-0 rounded-full border border-[#1a1a1a] object-cover`}
+        onError={() => setSrcIndex((index) => index + 1)}
+      />
+    );
+  }
+
+  return (
+    <div className={`${classes[size]} shrink-0 rounded-full border border-[#1a1a1a] bg-[#111]`} aria-label="Discord avatar unavailable" />
+  );
 }
 
-function targetColor(role: string) {
-  return TARGET_COLOR[role] || '#ffd700';
+function SquareAvatar({ nominee }: { nominee: Nominee }) {
+  const sources = avatarCandidates(nominee);
+  const [srcIndex, setSrcIndex] = useState(0);
+  const src = sources[srcIndex];
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={src}
+        alt={nominee.displayName}
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        onError={() => setSrcIndex((index) => index + 1)}
+      />
+    );
+  }
+
+  return (
+    <div className="h-full w-full bg-[#111]" aria-label="Discord avatar unavailable" />
+  );
+}
+
+function RoleBadge({ role, label }: { role: string; label?: string }) {
+  const color = roleColor(role);
+  return (
+    <span
+      className="inline-flex max-w-full items-center rounded-full px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider"
+      style={{ color, backgroundColor: role === 'Unranked' ? '#141414' : `${color}18` }}
+    >
+      <span className="truncate">{label || role}</span>
+    </span>
+  );
+}
+
+function StatTile({ label, value, icon, accent = GOLD }: { label: string; value: number; icon?: React.ReactNode; accent?: string }) {
+  return (
+    <div className="rounded-xl border border-[#171717] bg-[#050505] p-3 text-left">
+      <div className="flex items-center gap-2">
+        {icon ? <span style={{ color: accent }}>{icon}</span> : null}
+        <span className="font-display text-2xl leading-none" style={{ color: accent }}>{fmt(value)}</span>
+      </div>
+      <p className="mt-1 truncate font-mono text-[9px] uppercase tracking-wider text-[#666]">{label}</p>
+    </div>
+  );
+}
+
+function NomineeCard({ nominee, onSelect }: { nominee: Nominee; onSelect: (nominee: Nominee) => void }) {
+  const accent = targetColor(nominee.targetRole);
+
+  return (
+    <button
+      onClick={() => onSelect(nominee)}
+      className="nomination-card group relative flex flex-col overflow-hidden rounded-xl border text-left transition-all duration-300 hover:-translate-y-1"
+      style={{
+        backgroundColor: '#0a0a0a',
+        borderColor: '#151515',
+        boxShadow: `0 0 20px ${accent}11`,
+      }}
+    >
+      <div className="relative aspect-square w-full overflow-hidden bg-[#111]">
+        <SquareAvatar nominee={nominee} />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 48%, #0a0a0a 100%)' }} />
+        <div className="absolute left-3 top-3 rounded-full bg-black/65 px-2.5 py-1 font-display text-xl leading-none backdrop-blur" style={{ color: accent }}>
+          #{nominee.leaderboardRank}
+        </div>
+      </div>
+
+      <div className="relative z-10 -mt-5 px-3 pb-3">
+        <h3 className="truncate text-sm font-semibold leading-tight text-white" title={nominee.displayName}>{nominee.displayName}</h3>
+        <p className="mt-0.5 truncate font-mono text-xs text-[#555]">@{nominee.username}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <RoleBadge role={nominee.currentRole || 'Unranked'} />
+          <span className="self-center font-mono text-[10px] uppercase tracking-wider text-[#555]">to</span>
+          <RoleBadge role={nominee.targetRole} label={targetBadgeLabel(nominee.targetRole)} />
+        </div>
+        <div className="mt-2 grid grid-cols-3 gap-1.5">
+          <MiniMetric label="Contrib" value={nominee.contributionsCount} accent="#22c55e" />
+          <MiniMetric label="Won/Host" value={(nominee.eventsWonCount || 0) + (nominee.eventsHostedCount || 0)} accent="#a855f7" />
+          <MiniMetric label="Chat" value={nominee.globalMessages} accent="#60a5fa" />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function MiniMetric({ label, value, accent }: { label: string; value: number; accent: string }) {
+  return (
+    <div className="rounded-lg border border-[#151515] bg-[#050505] px-2 py-1.5">
+      <div className="truncate font-mono text-sm font-black leading-none" style={{ color: accent }}>{fmt(value)}</div>
+      <div className="mt-1 truncate font-mono text-[8px] uppercase tracking-wider text-[#555]">{label}</div>
+    </div>
+  );
+}
+
+function DetailModal({ nominee, onClose, onCopy, copied }: { nominee: Nominee; onClose: () => void; onCopy: (nominee?: Nominee) => void; copied: boolean }) {
+  const accent = targetColor(nominee.targetRole);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-center justify-center overflow-y-auto bg-black/85 p-4 backdrop-blur-xl"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 18 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 18 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+        onClick={(event) => event.stopPropagation()}
+        className="relative w-full max-w-4xl overflow-hidden rounded-3xl border bg-[#0a0a0a]"
+        style={{ borderColor: `${accent}55`, boxShadow: `0 0 80px ${accent}18` }}
+      >
+        <button onClick={onClose} className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-[#777] transition hover:text-white" aria-label="Close nomination detail">
+          <X className="h-5 w-5" />
+        </button>
+
+        <div className="grid md:grid-cols-[0.42fr_0.58fr]">
+          <div className="relative flex min-h-[300px] items-end justify-center overflow-hidden p-8" style={{ background: `linear-gradient(160deg, ${accent}22 0%, ${accent}08 62%, transparent 100%)` }}>
+            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: `linear-gradient(135deg, ${accent} 25%, transparent 25%, transparent 75%, ${accent} 75%)`, backgroundSize: '40px 40px' }} />
+            <div className="relative z-10 flex flex-col items-center text-center">
+              <Avatar nominee={nominee} size="lg" />
+              <h2 className="mt-5 max-w-full break-words font-display text-5xl uppercase leading-none text-white">{nominee.displayName}</h2>
+              <p className="mt-2 font-mono text-sm text-[#666]">@{nominee.username}</p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <RoleBadge role={nominee.currentRole || 'Unranked'} />
+                <span className="self-center font-mono text-[10px] uppercase tracking-wider text-[#555]">to</span>
+                <RoleBadge role={nominee.targetRole} label={targetBadgeLabel(nominee.targetRole)} />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6 sm:p-8">
+            <p className="font-mono text-xs uppercase tracking-[0.3em]" style={{ color: `${accent}bb` }}>
+              Vote profile
+            </p>
+            <p className="mt-4 text-sm leading-6 text-[#aaa]">{nominee.signalSummary}</p>
+
+            <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <StatTile label="Score" value={nominee.score} icon={<Trophy className="h-4 w-4" />} accent={accent} />
+              <StatTile label="Nominations" value={nominee.nominations} icon={<Crown className="h-4 w-4" />} accent={GOLD} />
+              <StatTile label="Upvotes" value={nominee.upvotes} icon={<Flame className="h-4 w-4" />} accent="#22c55e" />
+              <StatTile label="Downvotes" value={nominee.downvotes} accent="#ef4444" />
+              <StatTile label="Contrib" value={nominee.contributionsCount} icon={<Activity className="h-4 w-4" />} accent="#60a5fa" />
+              <StatTile label="Events" value={nominee.eventsCount} icon={<CalendarDays className="h-4 w-4" />} accent="#a855f7" />
+              <StatTile label="Won" value={nominee.eventsWonCount || 0} icon={<Trophy className="h-4 w-4" />} accent="#f59e0b" />
+              <StatTile label="Hosted" value={nominee.eventsHostedCount || 0} icon={<CalendarDays className="h-4 w-4" />} accent="#38bdf8" />
+            </div>
+
+            <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: `${accent}30`, backgroundColor: `${accent}10` }}>
+              <p className="font-mono text-[10px] uppercase tracking-widest" style={{ color: accent }}>How to vote</p>
+              <p className="mt-2 text-sm leading-6 text-white">{nominee.voteInstructions}</p>
+              <button onClick={() => onCopy(nominee)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black transition hover:opacity-85" style={{ backgroundColor: accent }}>
+                {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+                {copied ? 'Copied' : 'Copy vote steps'}
+              </button>
+            </div>
+
+            <div className="mt-5 grid gap-2">
+              <Info label="Joined" value={joinDate(nominee.joinedAt)} />
+              <Info label="Discord ID" value={nominee.userId || nominee.source.discordMentionId || 'Unknown'} />
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-[#171717] bg-white/[0.025] px-4 py-3">
+      <span className="shrink-0 text-sm text-[#777]">{label}</span>
+      <span className="min-w-0 truncate text-right text-sm font-medium text-white">{value}</span>
+    </div>
+  );
 }
 
 export default function NominationClient({ initialData }: { initialData: ApiData }) {
-  const [data] = useState<ApiData | null>(initialData);
+  const [data, setData] = useState<ApiData>(initialData);
   const [query, setQuery] = useState('');
   const [target, setTarget] = useState<TargetRole>('All');
   const [sort, setSort] = useState<SortMode>('score');
   const [selected, setSelected] = useState<Nominee | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const heroRef = useRef<HTMLElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setSelected(initialData.nominees.slice().sort((a, b) => b.score - a.score)[0] || null);
-    setLoading(false);
-  }, [initialData]);
-
-  const nominees = data?.nominees || [];
+  const nominees = data.nominees || [];
 
   const filtered = useMemo(() => {
-    const q = query.toLowerCase().trim();
-    return nominees
+    const q = query.toLowerCase().trim().replace(/^@/, '');
+    const rows = nominees
       .filter((nominee) => target === 'All' || nominee.targetRole === target)
       .filter((nominee) => {
         if (!q) return true;
@@ -174,510 +387,210 @@ export default function NominationClient({ initialData }: { initialData: ApiData
           nominee.currentRole.toLowerCase().includes(q) ||
           nominee.roles.some((role) => role.toLowerCase().includes(q))
         );
-      })
-      .sort((a, b) => {
-        if (sort === 'rank') return a.leaderboardRank - b.leaderboardRank;
-        if (sort === 'votes') return b.netVotes - a.netVotes || b.score - a.score;
-        if (sort === 'discordStats') return b.discordStatsScore - a.discordStatsScore || b.score - a.score;
-        return b.score - a.score;
       });
+    return sortNominees(rows, sort);
   }, [nominees, query, sort, target]);
 
-  const totals = useMemo(() => {
-    return {
-      nominees: nominees.length,
-      nominations: nominees.reduce((sum, row) => sum + row.nominations, 0),
-      upvotes: nominees.reduce((sum, row) => sum + row.upvotes, 0),
-      enriched: nominees.filter((row) => row.source.localDiscordData).length,
-    };
+  const topNominee = useMemo(() => sortNominees(nominees, 'score')[0] || null, [nominees]);
+
+  const totals = useMemo(() => ({
+    nominees: nominees.length,
+  }), [nominees]);
+
+  const targetStats = useMemo(() => {
+    return (['Ritualist', 'Ritty', 'Ritty Bitty'] as const).map((role) => {
+      const rows = nominees.filter((nominee) => nominee.targetRole === role);
+      return {
+        role,
+        count: rows.length,
+      };
+    });
   }, [nominees]);
 
-  const featured = selected || filtered[0] || nominees[0] || null;
-  const topByTarget = useMemo(() => {
-    return (['Ritualist', 'Ritty', 'Ritty Bitty'] as const)
-      .map((role) => nominees.filter((nominee) => nominee.targetRole === role).sort((a, b) => b.score - a.score)[0])
-      .filter(Boolean) as Nominee[];
-  }, [nominees]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/nominations')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((payload: ApiData | null) => {
+        if (!cancelled && payload?.nominees?.length) setData(payload);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
-  async function copyVoteSteps(nominee = featured) {
+  useEffect(() => {
+    if (!heroRef.current) return;
+    animate('.nomination-hero-line', {
+      translateY: [18, 0],
+      delay: stagger(110),
+      duration: 800,
+      easing: 'easeOutExpo',
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      animate('.nomination-card', {
+        translateY: [12, 0],
+        scale: [0.985, 1],
+        delay: stagger(28),
+        duration: 520,
+        easing: 'easeOutExpo',
+      });
+      observer.disconnect();
+    }, { threshold: 0.05 });
+    observer.observe(gridRef.current);
+    return () => observer.disconnect();
+  }, [filtered.length, target, sort]);
+
+  async function copyVoteSteps(nominee = filtered[0] || topNominee) {
     if (!nominee) return;
     await navigator.clipboard.writeText(nominee.voteInstructions);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1300);
   }
 
+  function scrollToList() {
+    listRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   return (
-    <main className="min-h-[100dvh] bg-[#050505] text-white">
-      <section className="relative min-h-[100dvh] overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(255,215,0,0.16),transparent_28%),radial-gradient(circle_at_18%_86%,rgba(56,189,248,0.12),transparent_30%),linear-gradient(180deg,#050505,#0b0b0b_52%,#050505)]" />
-        <div className="absolute inset-0 opacity-[0.09]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '72px 72px' }} />
+    <main className="min-h-[100dvh] overflow-x-hidden bg-[#050505] text-white">
+      <section ref={heroRef} className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-4 py-16 text-center">
+        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[400px] w-[800px] -translate-x-1/2 opacity-20" style={{ background: `radial-gradient(ellipse, ${GOLD} 0%, transparent 70%)` }} />
 
-        <div className="relative mx-auto grid min-h-[100dvh] max-w-[1500px] grid-rows-[auto_1fr] px-4 pb-8 pt-5 sm:px-6 lg:px-8">
-          <header className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#ffd700]/30 bg-[#ffd700]/10 text-[#ffd700]">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[#a8a8a8]">Siggy Bot</p>
-                <p className="text-sm font-medium text-white">Nomination intelligence</p>
-              </div>
+        <div className="relative z-10 mx-auto w-full max-w-5xl">
+          <p className="nomination-hero-line mb-6 font-mono text-xs uppercase tracking-[0.3em] text-[#666]">
+            {initialData.round || 'July 2026 nomination round'}
+          </p>
+          <h1 className="nomination-hero-line font-display text-[42px] uppercase leading-[1.02] sm:text-5xl md:text-7xl lg:text-8xl">
+            Who Deserves
+          </h1>
+          <h1 className="nomination-hero-line mb-8 font-display text-[42px] uppercase leading-[1.02] sm:text-5xl md:text-7xl lg:text-8xl" style={{ color: GOLD }}>
+            The Next Role?
+          </h1>
+          <p className="nomination-hero-line mx-auto mb-10 max-w-[330px] text-base leading-7 text-[#888] sm:max-w-2xl md:text-lg">
+            Search nominees, compare their role path, and copy the exact vote steps before opening Discord.
+          </p>
+
+          <div className="nomination-hero-line mx-auto mb-8 max-w-[calc(100vw-32px)] sm:max-w-2xl">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#555]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search Discord username, display name, or role..."
+                className="w-full rounded-xl border border-[#222] bg-[#111] py-4 pl-12 pr-4 text-sm text-white outline-none transition placeholder:text-[#444] focus:border-[#FFD700]"
+              />
             </div>
-            <button
-              onClick={() => copyVoteSteps()}
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#ffd700] px-4 font-mono text-xs font-bold uppercase tracking-wider text-black transition hover:bg-[#ffe66d] active:translate-y-px"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-              Vote steps
-            </button>
-          </header>
-
-          <div className="grid items-center gap-8 py-8 lg:grid-cols-[0.85fr_1.15fr] lg:py-10">
-            <div className="max-w-3xl">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#ffd700]">
-                <Target className="h-4 w-4" />
-                July 2026 nomination round
-              </div>
-              <h1 className="font-display text-5xl uppercase leading-[0.9] tracking-wide text-[#ffd700] sm:text-7xl xl:text-8xl">
-                Vote with context.
-              </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-[#b8b8b8] sm:text-lg">
-                Review each nominee by target role, Discord profile, current role, contribution count, event activity, and vote signal before spending a vote.
-              </p>
-
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                <label className="relative block">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#777]" />
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search nominee, role, display name"
-                    className="h-13 w-full rounded-2xl border border-white/10 bg-black/45 py-4 pl-12 pr-4 text-sm outline-none placeholder:text-[#777] focus:border-[#ffd700]/70"
-                  />
-                </label>
-                <div className="grid grid-cols-[1fr_auto] gap-3">
-                  <select
-                    value={sort}
-                    onChange={(event) => setSort(event.target.value as SortMode)}
-                    className="h-13 rounded-2xl border border-white/10 bg-black/45 px-4 py-4 font-mono text-xs uppercase tracking-wider text-white outline-none focus:border-[#ffd700]/70"
-                  >
-                    {SORTS.map((item) => (
-                      <option key={item.value} value={item.value}>{item.label}</option>
-                    ))}
-                  </select>
-                  <a
-                    href="#nominees"
-                    className="inline-flex h-13 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.05] px-4 text-[#ffd700] transition hover:border-[#ffd700]/50 active:translate-y-px"
-                    aria-label="Open nominees"
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </a>
-                </div>
-              </div>
-
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
-                {TARGETS.map((item) => {
-                  const active = target === item;
-                  return (
-                    <button
-                      key={item}
-                      onClick={() => setTarget(item)}
-                      className={`whitespace-nowrap rounded-full border px-4 py-2 font-mono text-[11px] uppercase tracking-wider transition active:translate-y-px ${
-                        active ? 'border-[#ffd700] bg-[#ffd700] text-black' : 'border-white/10 bg-white/[0.04] text-[#b8b8b8] hover:border-[#ffd700]/50 hover:text-[#ffd700]'
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <HeroStat label="Nominees" value={totals.nominees} icon={<Users className="h-4 w-4" />} />
-                <HeroStat label="Nominations" value={totals.nominations} icon={<Crown className="h-4 w-4" />} />
-                <HeroStat label="Upvotes" value={totals.upvotes} icon={<Flame className="h-4 w-4" />} />
-                <HeroStat label="Profiles" value={totals.enriched} icon={<ShieldCheck className="h-4 w-4" />} />
-              </div>
-            </div>
-
-            <div className="min-w-0">
-              {loading ? <FeaturedSkeleton /> : error ? <ErrorPanel message={error} /> : featured ? (
-                <FeaturedNominee nominee={featured} onInspect={setSelected} onCopy={copyVoteSteps} copied={copied} />
-              ) : null}
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortMode)}
+                className="rounded-xl border border-[#222] bg-[#111] px-4 py-3 font-mono text-xs uppercase tracking-wider text-white outline-none transition focus:border-[#FFD700]"
+              >
+                {SORTS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+              </select>
+              <button onClick={scrollToList} className="rounded-xl px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black transition hover:opacity-85" style={{ backgroundColor: GOLD }}>
+                View list
+              </button>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="border-y border-white/10 bg-[#090909]" aria-label="Vote instructions">
-        <div className="mx-auto flex max-w-[1500px] flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#ffd700]">How voting works</p>
-            <p className="mt-1 text-sm text-[#cfcfcf]">Run <span className="font-mono text-white">/leaderboard_nomination</span>, scroll until you find the nominee, click <span className="font-mono text-white">My votes</span>, then vote.</p>
+          <div className="nomination-hero-line -mx-4 mb-10 flex max-w-[100vw] flex-nowrap justify-start gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0">
+            {TARGETS.map((item) => {
+              const active = target === item;
+              const color = item === 'All' ? GOLD : targetColor(item);
+              const count = item === 'All' ? nominees.length : nominees.filter((nominee) => nominee.targetRole === item).length;
+              return (
+                <button
+                  key={item}
+                  onClick={() => setTarget(item)}
+                  className="rounded-full border px-5 py-2 font-mono text-sm transition-all"
+                  style={{
+                    borderColor: active ? color : '#222',
+                    backgroundColor: active ? color : 'transparent',
+                    color: active ? '#000' : '#666',
+                  }}
+                >
+                  {item} ({count})
+                </button>
+              );
+            })}
           </div>
+
           <button
-            onClick={() => copyVoteSteps()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#ffd700]/30 bg-[#ffd700]/10 px-4 py-3 font-mono text-xs font-bold uppercase tracking-wider text-[#ffd700] transition hover:bg-[#ffd700]/15 active:translate-y-px"
+            onClick={scrollToList}
+            className="nomination-hero-line mx-auto flex flex-col items-center gap-2 text-[#555] transition-colors hover:text-[#888]"
           >
-            {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-            Copy exact steps
+            <span className="font-mono text-xs uppercase tracking-[0.2em]">See all nominees</span>
+            <span className="text-lg animate-bounce">v</span>
           </button>
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1500px] px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#ffd700]">Featured by target</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-white">Highest signal candidates</h2>
+      <section id="nominees" ref={listRef} className="mx-auto max-w-7xl px-4 pb-24 pt-12">
+        <div className="mb-14 flex flex-wrap justify-center gap-4">
+          <div className="relative min-w-[140px] overflow-hidden rounded-2xl border border-[#FFD700]/30 bg-[#0a0a0a] p-6 text-center">
+            <div className="absolute inset-0 opacity-10" style={{ background: `radial-gradient(ellipse at 50% 100%, ${GOLD} 0%, transparent 70%)` }} />
+            <p className="relative font-display text-4xl leading-none" style={{ color: GOLD }}>{totals.nominees}</p>
+            <p className="relative mt-1 font-mono text-sm text-[#666]">All nominees</p>
           </div>
-          <p className="max-w-xl text-sm leading-6 text-[#9a9a9a]">
-            Target role is the leaderboard category. Current role is pulled from local Discord role data when available.
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-3">
-          {topByTarget.map((nominee) => (
-            <button key={nominee.id} onClick={() => setSelected(nominee)} className="text-left">
-              <MiniFeature nominee={nominee} />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section id="nominees" className="mx-auto max-w-[1500px] px-4 pb-12 sm:px-6 lg:px-8">
-        <div className="mb-5 flex flex-col gap-3 border-t border-white/10 pt-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 text-sm text-[#b8b8b8]">
-            <Filter className="h-4 w-4 text-[#ffd700]" />
-            Showing {filtered.length.toLocaleString()} of {nominees.length.toLocaleString()} nominees
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {TARGETS.map((item) => (
+          {targetStats.map((item) => {
+            const color = targetColor(item.role);
+            return (
               <button
-                key={item}
-                onClick={() => setTarget(item)}
-                className={`whitespace-nowrap rounded-full border px-3 py-2 font-mono text-[11px] uppercase tracking-wider transition ${
-                  target === item ? 'border-[#ffd700] bg-[#ffd700] text-black' : 'border-white/10 bg-white/[0.03] text-[#aaa] hover:border-[#ffd700]/40'
-                }`}
+                key={item.role}
+                onClick={() => setTarget(item.role)}
+                className="relative min-w-[140px] overflow-hidden rounded-2xl border bg-[#0a0a0a] p-6 text-center transition hover:-translate-y-0.5"
+                style={{ borderColor: `${color}33` }}
               >
-                {item}
+                <div className="absolute inset-0 opacity-10" style={{ background: `radial-gradient(ellipse at 50% 100%, ${color} 0%, transparent 70%)` }} />
+                <p className="relative font-display text-4xl leading-none" style={{ color }}>{item.count}</p>
+                <p className="relative mt-1 font-mono text-sm text-[#666]">{item.role}</p>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 9 }).map((_, index) => <CardSkeleton key={index} />)}
+        <div className="mb-8 flex flex-col gap-4 text-center md:flex-row md:items-end md:justify-between md:text-left">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#666]">Candidate board</p>
+            <h2 className="mt-2 font-display text-4xl uppercase leading-none text-white md:text-5xl">
+              {filtered.length.toLocaleString()} nominees
+            </h2>
           </div>
-        ) : error ? (
-          <ErrorPanel message={error} />
-        ) : filtered.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <button onClick={() => copyVoteSteps()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1a1a1a] px-4 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white transition hover:bg-white/5">
+            {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
+            Copy top vote steps
+          </button>
+        </div>
+
+        {filtered.length ? (
+          <div ref={gridRef} className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {filtered.map((nominee) => (
               <NomineeCard key={nominee.id} nominee={nominee} onSelect={setSelected} />
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-8 text-center text-[#aaa]">No nominees match this search.</div>
+          <div className="rounded-2xl border border-[#1a1a1a] bg-[#0a0a0a] p-10 text-center text-[#777]">
+            No nominees match this search.
+          </div>
         )}
+
+        <p className="mt-12 text-center font-mono text-xs uppercase tracking-[0.25em] text-[#333]">
+          Generated {new Date(initialData.generatedAt).toLocaleString()}
+        </p>
       </section>
 
-      {selected ? <DetailDrawer nominee={selected} onClose={() => setSelected(null)} onCopy={copyVoteSteps} copied={copied} /> : null}
+      <AnimatePresence>
+        {selected ? (
+          <DetailModal nominee={selected} onClose={() => setSelected(null)} onCopy={copyVoteSteps} copied={copied} />
+        ) : null}
+      </AnimatePresence>
     </main>
-  );
-}
-
-function HeroStat({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur">
-      <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-[#ffd700]/10 text-[#ffd700]">{icon}</div>
-      <div className="text-2xl font-semibold text-white">{fmt(value)}</div>
-      <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-[#888]">{label}</div>
-    </div>
-  );
-}
-
-function Avatar({ nominee, size = 'lg' }: { nominee: Nominee; size?: 'sm' | 'md' | 'lg' | 'xl' }) {
-  const sizes = {
-    sm: 'h-11 w-11 rounded-xl text-base',
-    md: 'h-14 w-14 rounded-2xl text-xl',
-    lg: 'h-20 w-20 rounded-3xl text-2xl',
-    xl: 'h-28 w-28 rounded-[28px] text-4xl',
-  };
-  if (nominee.avatar) {
-    return <img src={nominee.avatar} alt="" className={`${sizes[size]} border border-white/10 object-cover`} />;
-  }
-  return (
-    <div className={`${sizes[size]} flex items-center justify-center border border-white/10 bg-[#111] font-display text-[#ffd700]`}>
-      {initials(nominee.displayName || nominee.username)}
-    </div>
-  );
-}
-
-function RolePath({ nominee }: { nominee: Nominee }) {
-  const current = nominee.currentRole || 'Unranked';
-  const target = nominee.targetRole;
-  return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <span className="rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider" style={{ color: roleColor(current), borderColor: `${roleColor(current)}66`, backgroundColor: `${roleColor(current)}16` }}>
-        Current: {current}
-      </span>
-      <ArrowRight className="h-4 w-4 shrink-0 text-[#777]" />
-      <span className="rounded-full border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider" style={{ color: targetColor(target), borderColor: `${targetColor(target)}66`, backgroundColor: `${targetColor(target)}16` }}>
-        Nominated for: {target}
-      </span>
-    </div>
-  );
-}
-
-function FeaturedNominee({ nominee, onInspect, onCopy, copied }: { nominee: Nominee; onInspect: (nominee: Nominee) => void; onCopy: (nominee?: Nominee) => void; copied: boolean }) {
-  const accent = targetColor(nominee.targetRole);
-  return (
-    <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0d0d0d]/90 shadow-2xl shadow-black/50">
-      <div className="absolute inset-0 opacity-70" style={{ background: `radial-gradient(circle at 80% 0%, ${accent}24, transparent 34%), linear-gradient(135deg, rgba(255,255,255,0.08), transparent 45%)` }} />
-      <div className="relative grid gap-6 p-5 sm:p-7 xl:grid-cols-[auto_1fr]">
-        <div className="flex flex-col items-start">
-          <Avatar nominee={nominee} size="xl" />
-          <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 px-4 py-3">
-            <div className="font-mono text-[10px] uppercase tracking-wider text-[#888]">Leaderboard rank</div>
-            <div className="mt-1 text-3xl font-semibold" style={{ color: accent }}>#{nominee.leaderboardRank}</div>
-          </div>
-        </div>
-        <div className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-[#ffd700]/30 bg-[#ffd700]/10 px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-[#ffd700]">
-              {confidenceLabel(nominee.confidence)} signal
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-[#bbb]">
-              {eligibilityCopy(nominee.eligibility)}
-            </span>
-          </div>
-          <h2 className="truncate text-4xl font-semibold tracking-tight text-white sm:text-5xl">{nominee.displayName}</h2>
-          <p className="mt-2 truncate text-lg text-[#b8b8b8]">@{nominee.username}</p>
-          <div className="mt-4">
-            <RolePath nominee={nominee} />
-          </div>
-          <p className="mt-5 line-clamp-3 max-w-2xl text-sm leading-6 text-[#b8b8b8]">{nominee.signalSummary}</p>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Metric label="Score" value={nominee.score} icon={<Trophy className="h-4 w-4" />} />
-            <Metric label="Net votes" value={nominee.netVotes} icon={<Flame className="h-4 w-4" />} />
-            <Metric label="Contrib" value={nominee.contributionsCount} icon={<Activity className="h-4 w-4" />} />
-            <Metric label="Events" value={nominee.eventsCount} icon={<CalendarDays className="h-4 w-4" />} />
-          </div>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button onClick={() => onInspect(nominee)} className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#ffd700] px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black transition hover:bg-[#ffe66d] active:translate-y-px">
-              Inspect profile
-              <ArrowRight className="h-4 w-4" />
-            </button>
-            <button onClick={() => onCopy(nominee)} className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] px-5 py-3 font-mono text-xs font-bold uppercase tracking-wider text-white transition hover:border-[#ffd700]/50 hover:text-[#ffd700] active:translate-y-px">
-              {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-              Copy vote steps
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MiniFeature({ nominee }: { nominee: Nominee }) {
-  const accent = targetColor(nominee.targetRole);
-  return (
-    <div className="group rounded-2xl border border-white/10 bg-white/[0.035] p-4 transition hover:border-[#ffd700]/40 hover:bg-white/[0.055]">
-      <div className="flex items-start gap-3">
-        <Avatar nominee={nominee} size="md" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="truncate text-lg font-semibold">{nominee.displayName}</h3>
-            <span className="font-mono text-sm" style={{ color: accent }}>#{nominee.leaderboardRank}</span>
-          </div>
-          <p className="truncate text-sm text-[#9a9a9a]">@{nominee.username}</p>
-          <div className="mt-3">
-            <RolePath nominee={nominee} />
-          </div>
-        </div>
-      </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <SmallStat label="Score" value={nominee.score} />
-        <SmallStat label="Up" value={nominee.upvotes} />
-        <SmallStat label="Act" value={nominee.contributionsCount + nominee.eventsCount} />
-      </div>
-    </div>
-  );
-}
-
-function NomineeCard({ nominee, onSelect }: { nominee: Nominee; onSelect: (nominee: Nominee) => void }) {
-  const accent = targetColor(nominee.targetRole);
-  return (
-    <button onClick={() => onSelect(nominee)} className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#0b0b0b] p-4 text-left transition hover:-translate-y-0.5 hover:border-[#ffd700]/40 hover:bg-[#101010]">
-      <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100" style={{ background: `radial-gradient(circle at 88% 0%, ${accent}18, transparent 36%)` }} />
-      <div className="relative">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3 min-w-0">
-          <Avatar nominee={nominee} size="md" />
-          <div className="min-w-0">
-            <h3 className="truncate text-xl font-semibold text-white">{nominee.displayName}</h3>
-            <p className="mt-1 truncate text-sm text-[#9a9a9a]">@{nominee.username}</p>
-          </div>
-        </div>
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-right">
-          <div className="font-mono text-[10px] uppercase tracking-wider text-[#777]">Rank</div>
-          <div className="text-lg font-semibold" style={{ color: accent }}>#{nominee.leaderboardRank}</div>
-        </div>
-      </div>
-
-      <div className="mt-4 min-h-[30px]">
-        <RolePath nominee={nominee} />
-      </div>
-
-      <div className="mt-5 grid grid-cols-3 gap-2 border-t border-white/10 pt-4">
-        <SignalChip label="Nominations" value={nominee.nominations} tone={accent} />
-        <SignalChip label="Upvotes" value={nominee.upvotes} tone="#35d07f" />
-        <SignalChip label="Downvotes" value={nominee.downvotes} tone={nominee.downvotes > 0 ? '#fb7185' : '#777'} />
-      </div>
-
-      <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-[#888]">
-          Vote score <span className="text-white">{fmt(nominee.score)}</span>
-        </span>
-        <span className="inline-flex items-center gap-1 font-mono text-[10px] uppercase tracking-wider text-[#ffd700]">
-          View stats
-          <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
-        </span>
-      </div>
-      </div>
-    </button>
-  );
-}
-
-function Metric({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-3">
-      <div className="flex items-center gap-2 text-[#ffd700]">{icon}<span className="text-xl font-semibold text-white">{fmt(value)}</span></div>
-      <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-[#888]">{label}</div>
-    </div>
-  );
-}
-
-function SmallStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2">
-      <div className="truncate text-sm font-semibold text-white">{fmt(value)}</div>
-      <div className="mt-0.5 font-mono text-[9px] uppercase tracking-wider text-[#777]">{label}</div>
-    </div>
-  );
-}
-
-function SignalChip({ label, value, tone }: { label: string; value: number; tone: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2">
-      <div className="text-base font-semibold" style={{ color: tone }}>{fmt(value)}</div>
-      <div className="mt-0.5 truncate font-mono text-[9px] uppercase tracking-wider text-[#777]">{label}</div>
-    </div>
-  );
-}
-
-function DetailDrawer({ nominee, onClose, onCopy, copied }: { nominee: Nominee; onClose: () => void; onCopy: (nominee?: Nominee) => void; copied: boolean }) {
-  const accent = targetColor(nominee.targetRole);
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <button className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} aria-label="Close nominee details" />
-      <aside className="relative h-full w-full max-w-xl overflow-y-auto border-l border-white/10 bg-[#080808] p-5 shadow-2xl shadow-black sm:p-7">
-        <button onClick={onClose} className="absolute right-5 top-5 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-[#aaa] transition hover:text-white">
-          <X className="h-5 w-5" />
-        </button>
-
-        <div className="pr-12">
-          <Avatar nominee={nominee} size="xl" />
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border px-3 py-1 font-mono text-[10px] uppercase tracking-wider" style={{ color: accent, borderColor: `${accent}66`, backgroundColor: `${accent}16` }}>
-              Nominated for {nominee.targetRole}
-            </span>
-            <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[10px] uppercase tracking-wider text-[#aaa]">
-              {eligibilityCopy(nominee.eligibility)}
-            </span>
-          </div>
-          <h2 className="mt-4 break-words text-4xl font-semibold tracking-tight">{nominee.displayName}</h2>
-          <p className="mt-2 break-words text-lg text-[#b8b8b8]">@{nominee.username}</p>
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-[#ffd700]/20 bg-[#ffd700]/10 p-4">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-[#ffd700]">Vote flow</p>
-          <p className="mt-2 text-sm leading-6 text-white">{nominee.voteInstructions}</p>
-          <button onClick={() => onCopy(nominee)} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffd700] px-4 py-3 font-mono text-xs font-bold uppercase tracking-wider text-black transition hover:bg-[#ffe66d] active:translate-y-px">
-            {copied ? <Check className="h-4 w-4" /> : <Clipboard className="h-4 w-4" />}
-            {copied ? 'Copied' : 'Copy steps'}
-          </button>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <Metric label="Vote score" value={nominee.score} icon={<Trophy className="h-4 w-4" />} />
-          <Metric label="Discord score" value={nominee.discordStatsScore} icon={<ShieldCheck className="h-4 w-4" />} />
-          <Metric label="Net votes" value={nominee.netVotes} icon={<Flame className="h-4 w-4" />} />
-          <Metric label="Contributions" value={nominee.contributionsCount} icon={<Activity className="h-4 w-4" />} />
-          <Metric label="Events won" value={nominee.eventsWonCount || 0} icon={<Trophy className="h-4 w-4" />} />
-          <Metric label="Events hosted" value={nominee.eventsHostedCount || 0} icon={<CalendarDays className="h-4 w-4" />} />
-          <Metric label="Messages" value={nominee.globalMessages} icon={<MessageCircle className="h-4 w-4" />} />
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-          <p className="font-mono text-[11px] uppercase tracking-wider text-[#ffd700]">Role path</p>
-          <div className="mt-3">
-            <RolePath nominee={nominee} />
-          </div>
-          <p className="mt-4 text-sm leading-6 text-[#aaa]">{nominee.signalSummary}</p>
-        </div>
-
-        <div className="mt-6 grid gap-3">
-          <Info label="Leaderboard target" value={nominee.targetRole} />
-          <Info label="Current role" value={nominee.currentRole} />
-          <Info label="Nominations" value={nominee.nominations.toLocaleString()} />
-          <Info label="Upvotes / Downvotes" value={`${nominee.upvotes.toLocaleString()} / ${nominee.downvotes.toLocaleString()}`} />
-          <Info label="Vote score formula" value={nominee.scoreFormula} />
-          <Info label="Discord score formula" value={nominee.discordStatsFormula} />
-          <Info label="Event participation" value={nominee.eventsCount.toLocaleString()} />
-          <Info label="Events won" value={nominee.eventsWonCount == null ? 'Waiting for hourly stats' : nominee.eventsWonCount.toLocaleString()} />
-          <Info label="Events hosted" value={nominee.eventsHostedCount == null ? 'Waiting for hourly stats' : nominee.eventsHostedCount.toLocaleString()} />
-          <Info label="Joined" value={joinDate(nominee.joinedAt)} />
-          <Info label="Discord ID" value={nominee.userId || nominee.source.discordMentionId || 'Unknown'} />
-        </div>
-
-        <div className="mt-6">
-          <p className="mb-3 font-mono text-[11px] uppercase tracking-wider text-[#888]">Discord roles</p>
-          <div className="flex flex-wrap gap-2">
-            {(nominee.roles.length ? nominee.roles : ['No role data']).slice(0, 18).map((role) => (
-              <span key={role} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-[#cfcfcf]">{role}</span>
-            ))}
-          </div>
-        </div>
-      </aside>
-    </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-white/[0.035] px-4 py-3">
-      <span className="text-sm text-[#8a8a8a]">{label}</span>
-      <span className="max-w-[62%] truncate text-right text-sm font-medium text-white">{value}</span>
-    </div>
-  );
-}
-
-function FeaturedSkeleton() {
-  return (
-    <div className="min-h-[420px] animate-pulse rounded-[28px] border border-white/10 bg-white/[0.04]" />
-  );
-}
-
-function CardSkeleton() {
-  return <div className="h-[210px] animate-pulse rounded-2xl border border-white/10 bg-white/[0.04]" />;
-}
-
-function ErrorPanel({ message }: { message: string }) {
-  return (
-    <div className="rounded-2xl border border-red-400/30 bg-red-400/10 p-5 text-red-100">
-      {message}
-    </div>
   );
 }
