@@ -101,6 +101,7 @@ let guildMembersCache: { expires: number; members: DiscordMember[] } | null = nu
 let activityCache: { expires: number; doc: ActivityDoc | null } | null = null;
 let globalMessagesCache: { expires: number; doc: GlobalMessagesDoc | null } | null = null;
 let nominationsCache: { expires: number; payload: JsonObject } | null = null;
+const discordMemberCache = new Map<string, { expires: number; member: DiscordMember | null }>();
 
 function readJson(relativePath: string): JsonObject {
   try {
@@ -333,6 +334,26 @@ function findDiscordMember(
   return null;
 }
 
+async function fetchDiscordMemberById(userId?: string | null) {
+  if (!BOT_TOKEN || !userId) return null;
+  const cacheKey = `id:${userId}`;
+  const cached = discordMemberCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return cached.member;
+
+  try {
+    const res = await fetch(`${DISCORD_API}/guilds/${GUILD_ID}/members/${userId}`, {
+      headers: { Authorization: `Bot ${BOT_TOKEN}` },
+      cache: 'no-store',
+    });
+    const member = res.ok ? ((await res.json()) as DiscordMember) : null;
+    discordMemberCache.set(cacheKey, { expires: Date.now() + 10 * 60 * 1000, member });
+    return member;
+  } catch {
+    discordMemberCache.set(cacheKey, { expires: Date.now() + 60 * 1000, member: null });
+    return null;
+  }
+}
+
 function memberFromDiscord(member: DiscordMember | null, rolesMap: Map<string, string>): LocalMember | null {
   if (!member?.user?.id) return null;
   const roleNames = (member.roles || [])
@@ -352,6 +373,10 @@ function memberFromDiscord(member: DiscordMember | null, rolesMap: Map<string, s
 
 async function searchDiscordMember(query: string, expectedUsername: string, expectedDisplayName?: string | null) {
   if (!BOT_TOKEN || !query) return null;
+  const cacheKey = `search:${normalize(query)}:${normalize(expectedUsername)}:${normalize(expectedDisplayName)}`;
+  const cached = discordMemberCache.get(cacheKey);
+  if (cached && cached.expires > Date.now()) return cached.member;
+
   try {
     const res = await fetch(
       `${DISCORD_API}/guilds/${GUILD_ID}/members/search?query=${encodeURIComponent(query)}&limit=8`,
@@ -362,7 +387,7 @@ async function searchDiscordMember(query: string, expectedUsername: string, expe
     const wantedUsername = normalize(expectedUsername);
     const wantedDisplay = normalize(expectedDisplayName);
     const wantedQuery = normalize(query);
-    return (
+    const member = (
       members.find((member) =>
         normalize(member.user?.username) === wantedUsername ||
         normalize(member.nick) === wantedDisplay ||
@@ -372,16 +397,35 @@ async function searchDiscordMember(query: string, expectedUsername: string, expe
         normalize(member.user?.global_name) === wantedQuery
       ) || null
     );
+    discordMemberCache.set(cacheKey, { expires: Date.now() + 10 * 60 * 1000, member });
+    return member;
   } catch {
+    discordMemberCache.set(cacheKey, { expires: Date.now() + 60 * 1000, member: null });
     return null;
   }
 }
 
-async function resolveDiscordMember(seed: { username: string; displayName?: string | null }) {
+async function resolveDiscordMember(seed: { username: string; displayName?: string | null; discordId?: string | null }) {
   return (
+    await fetchDiscordMemberById(seed.discordId) ||
     await searchDiscordMember(seed.username, seed.username, seed.displayName) ||
     await searchDiscordMember(seed.displayName || '', seed.username, seed.displayName)
   );
+}
+
+async function mapLimit<T, R>(items: T[], limit: number, mapper: (item: T) => Promise<R>) {
+  const results = new Array<R>(items.length);
+  let next = 0;
+
+  async function worker() {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await mapper(items[index]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
 }
 
 function findMember(index: Map<string, LocalMember>, username: string, discordId?: string) {
@@ -469,18 +513,12 @@ export async function buildNominationsPayload(includeArchive = false, options: B
   const memberRegistryAvailable = options.skipRedis ? false : await addCachedMembersToIndex(index);
   const activity = options.skipR2 ? null : await getR2Activity();
   const globalMessagesDoc = options.skipR2 ? null : await getR2GlobalMessages();
-  const discordMembers = options.skipDiscord ? [] : await fetchGuildMembers();
-  const discordIndex = buildDiscordIndex(discordMembers);
-  const discordRolesMap = discordMembers.length ? await getDiscordRoleMap() : new Map<string, string>();
+  const discordRolesMap = options.skipDiscord ? new Map<string, string>() : await getDiscordRoleMap();
 
-  const nominees = await Promise.all(nominationSeed.map(async (seed) => {
+  const nominees = await mapLimit(nominationSeed, 8, async (seed) => {
     const indexedMember = findMember(index, seed.username, seed.discordId);
     let member: LocalMember | null = indexedMember || null;
-    let discordMember = options.skipDiscord ? null : findDiscordMember(discordIndex, {
-      userId: member?.userId || seed.discordId || null,
-      username: seed.username,
-      displayName: member?.displayName || seed.displayName,
-    });
+    let discordMember = options.skipDiscord ? null : await fetchDiscordMemberById(member?.userId || seed.discordId || null);
     const needsDiscordSearch = !member?.userId || !(member?.avatar || member?.avatarUrl);
     if (!discordMember && !options.skipDiscord && needsDiscordSearch) {
       discordMember = await resolveDiscordMember(seed);
@@ -575,7 +613,7 @@ export async function buildNominationsPayload(includeArchive = false, options: B
         discordMentionId: seed.discordId || null,
       },
     };
-  }));
+  });
 
   const targets = (['Ritualist', 'Ritty', 'Ritty Bitty'] as NominationTier[]).map((targetRole) => {
     const rows = nominees.filter((nominee) => nominee.targetRole === targetRole);
