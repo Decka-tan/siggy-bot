@@ -230,6 +230,15 @@ function loadBaselineRoles() {
   return new Map();
 }
 
+function topContributorFromRoles(roles) {
+  let top = null;
+  for (const role of roles || []) {
+    if (!CONTRIBUTOR_LADDER.has(role)) continue;
+    if (!top || CONTRIBUTOR_RANK[role] > CONTRIBUTOR_RANK[top]) top = role;
+  }
+  return top;
+}
+
 function logRole(role) {
   return role === NO_ROLE || role == null ? 'No Role' : String(role);
 }
@@ -319,6 +328,7 @@ async function main() {
 
   // 2. Detect upgrades vs previous snapshot
   const prevSnapshot = readJSON(SNAPSHOT_FILE, {});
+  const baselineRoles = loadBaselineRoles();
   const isFirstRun = Object.keys(prevSnapshot).length === 0;
   let log = dedupeUpgradeLog(readJSON(LOG_FILE, []));
   const existingUpgrades = new Set(log.map(upgradeKey));
@@ -326,7 +336,8 @@ async function main() {
   for (const m of members) {
     const prev = prevSnapshot[m.userId];
     const currentRole = m.contributorRole || NO_ROLE;
-    const previousRole = CONTRIBUTOR_LADDER.has(prev) ? prev : null;
+    const baselineRole = topContributorFromRoles(baselineRoles.get(String(m.userId)));
+    const previousRole = CONTRIBUTOR_LADDER.has(prev) ? prev : baselineRole;
     const isKnownNoRole = prev === NO_ROLE || prev === null;
     const isFirstTrackedRole = isKnownNoRole && currentRole !== NO_ROLE;
     const isUpgrade = previousRole && previousRole !== currentRole && ROLE_RANK[currentRole] > ROLE_RANK[previousRole];
@@ -357,7 +368,6 @@ async function main() {
     ...entry,
     roles: rolesByUser.get(entry.userId) || entry.roles || [],
   }));
-  const baselineRoles = loadBaselineRoles();
   if (baselineRoles.size) {
     const before = log.length;
     log = log.filter(entry => {

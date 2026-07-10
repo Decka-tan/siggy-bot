@@ -412,7 +412,7 @@ function transitionKey(fromRole: string, toRole: string) {
 }
 
 function isGenuinePromotion(member: PromotionMember) {
-  return VALID_TRANSITIONS.has(transitionKey(member.fromRole, member.toRole));
+  return (ROLE_RANK[roleKey(member.toRole)] ?? 0) > (ROLE_RANK[roleKey(member.fromRole)] ?? 0);
 }
 
 export default function PromotionPage() {
