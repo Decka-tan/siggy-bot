@@ -84,7 +84,11 @@ function ResultOverlay({ result, query, onClose, periodLabel }: {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
   }, [onClose]);
 
   return (
@@ -267,7 +271,11 @@ function MemberModal({ member, avatarUrl, onClose }: {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
   }, [onClose]);
 
   return (
@@ -293,29 +301,37 @@ function MemberModal({ member, avatarUrl, onClose }: {
             className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm hover:bg-white/10 transition-all"
             style={{ color: '#555' }}>✕</button>
 
-          {/* Avatar */}
-          <div className="relative w-full aspect-square">
+          <div className="relative w-full aspect-square overflow-hidden">
             <Image src={src} alt={member.displayName} fill className="object-cover" onError={() => setImgError(true)} unoptimized />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, #0a0a0a 100%)` }} />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, transparent 40%, ${color}11 100%)` }} />
           </div>
 
-          {/* Info */}
-          <div className="px-5 pb-6 -mt-10 relative z-10">
+          <div className="px-5 pt-5 pb-6 relative z-10">
             <p className="font-display text-2xl uppercase tracking-tight text-white leading-tight mb-0.5">{member.displayName}</p>
             <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{member.username}</p>
 
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 flex-wrap mb-4">
+              <RoleBadge role={member.fromRole} size="md" />
+              <span className="text-[#333] text-sm">→</span>
               <RoleBadge role={member.toRole} size="md" />
             </div>
 
             {daysToPromo != null && (
-              <div className="rounded-xl p-3 border" style={{ borderColor: `${color}22`, backgroundColor: `${color}08` }}>
+              <div className="rounded-xl p-3 border mb-3" style={{ borderColor: `${color}22`, backgroundColor: `${color}08` }}>
                 <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: `${color}88` }}>Time to earn this role</p>
                 <p className="text-2xl font-display" style={{ color }}>{formatDays(daysToPromo)}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#444' }}>since joining Ritual</p>
               </div>
             )}
+
+            <div className="mt-4 flex gap-2">
+              <a
+                href={`/stats?u=${encodeURIComponent(member.username)}`}
+                className="flex-1 text-center px-3 py-2 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider border transition"
+                style={{ borderColor: '#222', color: '#ccc' }}
+              >
+                View on /stats
+              </a>
+            </div>
           </div>
         </motion.div>
       </motion.div>
@@ -394,23 +410,6 @@ function transitionKey(fromRole: string, toRole: string) {
   return `${roleKey(fromRole)}->${roleKey(toRole)}`;
 }
 
-function contributorFromRole(member: PromotionMember) {
-  const from = roleKey(member.fromRole);
-  const to = roleKey(member.toRole);
-  if ((from === 'Zealot' || from === 'mage') && to === 'radiant-ritualist') return 'ritualist';
-  if ((from === 'Zealot' || from === 'mage') && to === 'ritualist') return 'ritty';
-  return from;
-}
-
-function normalizePromotion(member: PromotionMember): PromotionMember {
-  const from = contributorFromRole(member);
-  if (from === roleKey(member.fromRole)) return member;
-  return {
-    ...member,
-    fromRole: ROLE_LABEL[from] || from,
-  };
-}
-
 export default function PromotionPage() {
   const [round, setRound] = useState<RoundKey>('june');
   const [julyPromotions, setJulyPromotions] = useState<PromotionMember[]>([]);
@@ -428,8 +427,7 @@ export default function PromotionPage() {
 
   const roundMeta = ROUND_META[round];
   const activePromotions = round === 'june' ? promotions : julyPromotions;
-  const normalizedPromotions = activePromotions.map(normalizePromotion);
-  const GENUINE_PROMOS = normalizedPromotions.filter(
+  const GENUINE_PROMOS = activePromotions.filter(
     m => VALID_TRANSITIONS.has(transitionKey(m.fromRole, m.toRole))
   );
   const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => roleKey(m.toRole)))]

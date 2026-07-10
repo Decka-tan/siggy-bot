@@ -149,12 +149,12 @@ async function fetchAllMembers(rolesMap) {
         // top role = highest rank among tracked (may be null for badge-only / no-role members)
         let top = tracked[0] || null;
         for (const r of tracked) if (top && ROLE_RANK[r] > ROLE_RANK[top]) top = r;
-        roleSnapshot[m.user.id] = top || NO_ROLE;
         // Contributor-only top: ignores Mage/Forerunner so a Mage+ritty member
         // is bucketed as 'ritty' (even though their displayed label stays 'Mage').
         const contributorTracked = roleNames.filter(r => CONTRIBUTOR_LADDER.has(r));
         let topContributor = contributorTracked[0] || null;
         for (const r of contributorTracked) if (topContributor && CONTRIBUTOR_RANK[r] > CONTRIBUTOR_RANK[topContributor]) topContributor = r;
+        roleSnapshot[m.user.id] = topContributor || NO_ROLE;
         // Badge holders — recorded even if member has no contributor role.
         const memberBadges = roleNames.filter(rn => BADGE_ROLES.includes(rn));
         if (memberBadges.length) {
@@ -245,14 +245,6 @@ function dedupeUpgradeLog(log) {
   return Array.from(byKey.values()).sort((a, b) => (a.at || 0) - (b.at || 0));
 }
 
-function normalizeContributorFromRole(fromRole, toRole) {
-  const from = logRole(fromRole);
-  const to = logRole(toRole);
-  if ((from === 'Zealot' || from === 'Mage') && to === 'Radiant Ritualist') return 'Ritualist';
-  if ((from === 'Zealot' || from === 'Mage') && to === 'Ritualist') return 'ritty';
-  return from;
-}
-
 async function uploadR2(key, obj) {
   await s3.send(new PutObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
@@ -312,10 +304,10 @@ async function main() {
   for (const m of members) {
     const prev = prevSnapshot[m.userId];
     const currentRole = m.contributorRole || NO_ROLE;
-    const previousRole = normalizeContributorFromRole(prev, currentRole);
+    const previousRole = CONTRIBUTOR_LADDER.has(prev) ? prev : null;
     const isKnownNoRole = prev === NO_ROLE || prev === null;
     const isFirstTrackedRole = isKnownNoRole && currentRole !== NO_ROLE;
-    const isUpgrade = prev && previousRole !== currentRole && ROLE_RANK[currentRole] > ROLE_RANK[previousRole];
+    const isUpgrade = previousRole && previousRole !== currentRole && ROLE_RANK[currentRole] > ROLE_RANK[previousRole];
     if (isFirstTrackedRole || isUpgrade) {
       const entry = {
         userId: m.userId,
