@@ -256,24 +256,27 @@ async function main() {
 
   // 2. Detect upgrades vs previous snapshot
   const prevSnapshot = readJSON(SNAPSHOT_FILE, {});
+  const isFirstRun = Object.keys(prevSnapshot).length === 0;
   const newSnapshot = {};
   let log = readJSON(LOG_FILE, []);
 
   for (const m of members) {
     newSnapshot[m.userId] = m.topRole;
     const prev = prevSnapshot[m.userId];
-    if (prev && prev !== m.topRole && ROLE_RANK[m.topRole] > ROLE_RANK[prev]) {
+    const isNewTrackedMember = !prev && !isFirstRun;
+    const isUpgrade = prev && prev !== m.topRole && ROLE_RANK[m.topRole] > ROLE_RANK[prev];
+    if (isNewTrackedMember || isUpgrade) {
       log.push({
         userId: m.userId,
         username: m.username,
         displayName: m.displayName,
-        fromRole: prev,
+        fromRole: prev || 'No Role',
         toRole: m.topRole,
         avatarUrl: m.avatarUrl,
         daysToPromo: m.joinedAt ? Math.max(0, Math.floor((now - Date.parse(m.joinedAt)) / 86400000)) : null,
         at: now,
       });
-      console.log(`  ⬆ ${m.displayName}: ${prev} → ${m.topRole}`);
+      console.log(`  ⬆ ${m.displayName}: ${prev || 'No Role'} → ${m.topRole}`);
     }
   }
 
@@ -371,7 +374,6 @@ async function main() {
     regionRolesPure,
   });
 
-  const isFirstRun = Object.keys(prevSnapshot).length === 0;
   console.log(`✅ Done. ${log.length} upgrades in last 14d${isFirstRun ? ' (first run — baseline snapshot saved, upgrades start tracking next run)' : ''}`);
 }
 
