@@ -4,9 +4,33 @@ import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { animate, stagger } from 'animejs';
-import promotions from '@/lib/promotions-june-2026.json';
+import junePromotions from '@/lib/promotions-june-2026.json';
 import promotionAvatars from '@/lib/promotion-avatars.json';
 import joinDates from '@/lib/promotion-join-dates.json';
+
+type PromotionMember = (typeof junePromotions)[0] & {
+  avatarUrl?: string;
+  daysToPromo?: number | null;
+};
+
+const promotions = junePromotions as PromotionMember[];
+
+type RoundKey = 'june' | 'july';
+
+const ROUND_META: Record<RoundKey, { label: string; period: string; result: string; source: string }> = {
+  june: {
+    label: 'June Promotion',
+    period: 'May 2026 Nomination Period',
+    result: 'Results June 1, 2026',
+    source: 'Static promotion archive',
+  },
+  july: {
+    label: 'July Promotion',
+    period: 'July 2026 Nomination Period',
+    result: 'Live role upgrades',
+    source: 'Recently upgraded feed',
+  },
+};
 
 const ROLE_RANK: Record<string, number> = {
   'radiant-ritualist': 9, ritualist: 7, soulsmith: 6, architect: 5, mage: 4,
@@ -31,19 +55,30 @@ const ROLE_COLOR: Record<string, string> = {
   contributor: '#555',
 };
 
-type FilterType = 'all' | string;
-type SearchResult = typeof promotions[0] | 'not-found' | 'idle';
+function roleKey(role: string) {
+  const normalized = String(role || '').trim();
+  if (normalized === 'No Role') return 'contributor';
+  if (normalized === 'Radiant Ritualist') return 'radiant-ritualist';
+  if (normalized === 'Ritualist') return 'ritualist';
+  if (normalized === 'Mage') return 'mage';
+  if (normalized === 'Forerunner') return 'forerunner';
+  return normalized;
+}
 
-function ResultOverlay({ result, query, onClose }: {
+type FilterType = 'all' | string;
+type SearchResult = PromotionMember | 'not-found' | 'idle';
+
+function ResultOverlay({ result, query, onClose, periodLabel }: {
   result: SearchResult;
   query: string;
   onClose: () => void;
+  periodLabel: string;
 }) {
   const isFound = result !== 'not-found' && result !== 'idle';
-  const member = isFound ? result as typeof promotions[0] : null;
-  const color = member ? ROLE_COLOR[member.toRole] : '#333';
+  const member = isFound ? result as PromotionMember : null;
+  const color = member ? ROLE_COLOR[roleKey(member.toRole)] : '#333';
   const avatarUrl = member
-    ? (promotionAvatars as Record<string, string>)[member.userId] || getDiscordAvatar(member.userId)
+    ? member.avatarUrl || (promotionAvatars as Record<string, string>)[member.userId] || getDiscordAvatar(member.userId)
     : null;
 
   useEffect(() => {
@@ -111,7 +146,7 @@ function ResultOverlay({ result, query, onClose }: {
               {/* Right — content */}
               <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
                 <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: `${color}99` }}>
-                  May 2026 Nomination Period
+                  {periodLabel}
                 </p>
                 <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-6"
                   style={{ color }}>
@@ -140,11 +175,11 @@ function ResultOverlay({ result, query, onClose }: {
                 </div>
 
                 {(() => {
-                  const info = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
-                  return info ? (
+                  const daysToPromo = member.daysToPromo ?? (joinDates as Record<string, { daysToPromo: number }>)[member.userId]?.daysToPromo;
+                  return daysToPromo != null ? (
                     <p className="text-sm leading-relaxed mb-3" style={{ color: '#888' }}>
                       It took you{' '}
-                      <span className="font-bold" style={{ color }}>{formatDays(info.daysToPromo)}</span>
+                      <span className="font-bold" style={{ color }}>{formatDays(daysToPromo)}</span>
                       {' '}since joining Ritual to earn this role. Worth the grind. 🔥
                     </p>
                   ) : null;
@@ -178,7 +213,7 @@ function ResultOverlay({ result, query, onClose }: {
               {/* Right */}
               <div className="md:w-3/5 flex flex-col justify-center px-8 py-10">
                 <p className="font-mono text-xs tracking-[0.3em] uppercase mb-4" style={{ color: '#555' }}>
-                  May 2026 Nomination Period
+                  {periodLabel}
                 </p>
                 <h2 className="font-display text-5xl md:text-6xl uppercase tracking-tight leading-none mb-4" style={{ color: '#888' }}>
                   Not This<br />Time...
@@ -206,27 +241,28 @@ function getDiscordAvatar(userId: string) {
 }
 
 function RoleBadge({ role, size = 'sm' }: { role: string; size?: 'sm' | 'md' }) {
-  const color = ROLE_COLOR[role] || '#555';
+  const key = roleKey(role);
+  const color = ROLE_COLOR[key] || '#555';
   return (
     <span
       className={`font-mono rounded-full border ${size === 'md' ? 'text-sm px-3 py-1' : 'text-xs px-2 py-0.5'}`}
       style={{ color, borderColor: color, backgroundColor: `${color}20` }}
     >
-      {ROLE_LABEL[role] || role}
+      {ROLE_LABEL[key] || role}
     </span>
   );
 }
 
 function MemberModal({ member, avatarUrl, onClose }: {
-  member: typeof promotions[0];
+  member: PromotionMember;
   avatarUrl?: string;
   onClose: () => void;
 }) {
-  const color = ROLE_COLOR[member.toRole] || '#fff';
-  const joinInfo = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
+  const color = ROLE_COLOR[roleKey(member.toRole)] || '#fff';
+  const daysToPromo = member.daysToPromo ?? (joinDates as Record<string, { daysToPromo: number }>)[member.userId]?.daysToPromo;
   const fallback = `/api/avatar?id=${member.userId}`;
   const [imgError, setImgError] = useState(false);
-  const src = imgError ? fallback : (avatarUrl || fallback);
+  const src = imgError ? fallback : (avatarUrl || member.avatarUrl || fallback);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -273,10 +309,10 @@ function MemberModal({ member, avatarUrl, onClose }: {
               <RoleBadge role={member.toRole} size="md" />
             </div>
 
-            {joinInfo && (
+            {daysToPromo != null && (
               <div className="rounded-xl p-3 border" style={{ borderColor: `${color}22`, backgroundColor: `${color}08` }}>
                 <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: `${color}88` }}>Time to earn this role</p>
-                <p className="text-2xl font-display" style={{ color }}>{formatDays(joinInfo.daysToPromo)}</p>
+                <p className="text-2xl font-display" style={{ color }}>{formatDays(daysToPromo)}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#444' }}>since joining Ritual</p>
               </div>
             )}
@@ -295,12 +331,12 @@ function formatDays(days: number) {
   return mo > 0 ? `${y}y ${mo}mo` : `${y}y`;
 }
 
-function MemberCard({ member, avatarUrl: avatarFromApi, onClick }: { member: typeof promotions[0]; avatarUrl?: string; onClick: () => void }) {
+function MemberCard({ member, avatarUrl: avatarFromApi, onClick }: { member: PromotionMember; avatarUrl?: string; onClick: () => void }) {
   const [imgError, setImgError] = useState(false);
   const fallback = `/api/avatar?id=${member.userId}`;
-  const avatarUrl = imgError ? fallback : (avatarFromApi || fallback);
-  const color = ROLE_COLOR[member.toRole] || '#fff';
-  const joinInfo = (joinDates as Record<string, { daysToPromo: number }>)[member.userId];
+  const avatarUrl = imgError ? fallback : (avatarFromApi || member.avatarUrl || fallback);
+  const color = ROLE_COLOR[roleKey(member.toRole)] || '#fff';
+  const daysToPromo = member.daysToPromo ?? (joinDates as Record<string, { daysToPromo: number }>)[member.userId]?.daysToPromo;
 
   return (
     <div
@@ -337,9 +373,9 @@ function MemberCard({ member, avatarUrl: avatarFromApi, onClick }: { member: typ
           <span className="text-[#333] text-xs">→</span>
           <RoleBadge role={member.toRole} />
         </div>
-        {joinInfo && (
+        {daysToPromo != null && (
           <p className="text-[10px] font-mono" style={{ color: '#444' }}>
-            {formatDays(joinInfo.daysToPromo)} since join
+            {formatDays(daysToPromo)} since join
           </p>
         )}
       </div>
@@ -348,25 +384,24 @@ function MemberCard({ member, avatarUrl: avatarFromApi, onClick }: { member: typ
 }
 
 const VALID_TRANSITIONS = new Set([
-  'contributor→bitty',
-  'bitty→ritty',
-  'ritty→ritualist',
-  'ritualist→radiant-ritualist',
+  'contributor->bitty',
+  'bitty->ritty',
+  'ritty->ritualist',
+  'ritualist->radiant-ritualist',
 ]);
 
-const GENUINE_PROMOS = promotions.filter(
-  m => VALID_TRANSITIONS.has(`${m.fromRole}→${m.toRole}`)
-);
-
-const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => m.toRole))]
-  .sort((a, b) => ROLE_RANK[b] - ROLE_RANK[a]);
+function transitionKey(fromRole: string, toRole: string) {
+  return `${roleKey(fromRole)}->${roleKey(toRole)}`;
+}
 
 export default function PromotionPage() {
+  const [round, setRound] = useState<RoundKey>('june');
+  const [julyPromotions, setJulyPromotions] = useState<PromotionMember[]>([]);
   const [filter, setFilter] = useState<FilterType>('all');
   const [query, setQuery] = useState('');
   const [searchResult, setSearchResult] = useState<SearchResult>('idle');
   const [avatars, setAvatars] = useState<Record<string, string>>({});
-  const [selectedMember, setSelectedMember] = useState<typeof promotions[0] | null>(null);
+  const [selectedMember, setSelectedMember] = useState<PromotionMember | null>(null);
   const [suggestions, setSuggestions] = useState<{userId:string;username:string;displayName:string}[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -374,9 +409,49 @@ export default function PromotionPage() {
   const heroRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
+  const roundMeta = ROUND_META[round];
+  const activePromotions = round === 'june' ? promotions : julyPromotions;
+  const GENUINE_PROMOS = activePromotions.filter(
+    m => VALID_TRANSITIONS.has(transitionKey(m.fromRole, m.toRole))
+  );
+  const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => roleKey(m.toRole)))]
+    .sort((a, b) => (ROLE_RANK[b] ?? 0) - (ROLE_RANK[a] ?? 0));
+  const activeAvatars = round === 'june'
+    ? avatars
+    : Object.fromEntries(julyPromotions.map(m => [m.userId, m.avatarUrl || `/api/avatar?id=${m.userId}`]));
+
   useEffect(() => {
     setAvatars(promotionAvatars as Record<string, string>);
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/community')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(payload => {
+        if (cancelled) return;
+        const upgrades = (payload?.upgrades?.upgrades || []) as any[];
+        setJulyPromotions(upgrades.map(u => ({
+          userId: String(u.userId || ''),
+          username: String(u.username || ''),
+          displayName: String(u.displayName || u.username || u.userId || ''),
+          fromRole: String(u.fromRole || ''),
+          toRole: String(u.toRole || ''),
+          avatarUrl: u.avatarUrl || undefined,
+          daysToPromo: u.daysToPromo ?? null,
+        })).filter(u => u.userId && u.toRole));
+      })
+      .catch(() => {
+        if (!cancelled) setJulyPromotions([]);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    setFilter('all');
+    setSearchResult('idle');
+    setSelectedMember(null);
+  }, [round]);
 
   // Close suggestions on outside click
   useEffect(() => {
@@ -455,10 +530,10 @@ export default function PromotionPage() {
     listRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const filtered = (filter === 'all' ? promotions : promotions.filter(m => m.toRole === filter))
-    .filter(m => (ROLE_RANK[m.toRole] ?? 0) > (ROLE_RANK[m.fromRole] ?? 0));
+  const filtered = (filter === 'all' ? activePromotions : activePromotions.filter(m => roleKey(m.toRole) === filter))
+    .filter(m => (ROLE_RANK[roleKey(m.toRole)] ?? 0) > (ROLE_RANK[roleKey(m.fromRole)] ?? 0));
 
-  const sorted = [...filtered].sort((a, b) => (ROLE_RANK[b.toRole] ?? 0) - (ROLE_RANK[a.toRole] ?? 0));
+  const sorted = [...filtered].sort((a, b) => (ROLE_RANK[roleKey(b.toRole)] ?? 0) - (ROLE_RANK[roleKey(a.toRole)] ?? 0));
 
   return (
     <div className="bg-[#050505] text-white">
@@ -466,7 +541,7 @@ export default function PromotionPage() {
       {selectedMember && (
         <MemberModal
           member={selectedMember}
-          avatarUrl={avatars[selectedMember.userId]}
+          avatarUrl={activeAvatars[selectedMember.userId]}
           onClose={() => setSelectedMember(null)}
         />
       )}
@@ -476,6 +551,7 @@ export default function PromotionPage() {
         <ResultOverlay
           result={searchResult}
           query={query}
+          periodLabel={roundMeta.period}
           onClose={() => setSearchResult('idle')}
         />
       )}
@@ -497,7 +573,7 @@ export default function PromotionPage() {
         <div className="relative z-10 max-w-4xl mx-auto">
           <p className="hero-line opacity-0 font-mono text-xs tracking-[0.3em] uppercase mb-6"
             style={{ color: '#666' }}>
-            May 2026 Nomination Period · Results June 1, 2026
+            {roundMeta.period} · {roundMeta.result}
           </p>
 
           <h1 className="hero-line opacity-0 font-display text-6xl md:text-8xl lg:text-[110px] uppercase tracking-tight leading-none mb-6">
@@ -510,8 +586,28 @@ export default function PromotionPage() {
 
           <p className="hero-line opacity-0 text-lg md:text-xl mb-10"
             style={{ color: '#888' }}>
-            {GENUINE_PROMOS.length} members promoted in the May 2026 Nomination Period
+            {GENUINE_PROMOS.length} members promoted in the {roundMeta.label}
           </p>
+
+          <div className="hero-line opacity-0 inline-flex rounded-full border border-white/10 bg-black/40 p-1 mb-8">
+            {(['june', 'july'] as RoundKey[]).map(key => {
+              const active = round === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setRound(key)}
+                  className="px-4 py-2 rounded-full font-mono text-xs uppercase tracking-widest transition-all"
+                  style={{
+                    backgroundColor: active ? '#FFD700' : 'transparent',
+                    color: active ? '#000' : '#777',
+                  }}
+                >
+                  {ROUND_META[key].label}
+                </button>
+              );
+            })}
+          </div>
 
           {/* Search */}
           <div className="hero-line opacity-0 w-full max-w-lg mx-auto mb-8">
@@ -580,15 +676,15 @@ export default function PromotionPage() {
         {/* Stats */}
         <div className="flex flex-wrap justify-center gap-4 mb-14">
           {ALL_TO_ROLES.map(role => {
-            const count = GENUINE_PROMOS.filter(m => m.toRole === role).length;
-            const color = ROLE_COLOR[role];
+            const count = GENUINE_PROMOS.filter(m => roleKey(m.toRole) === role).length;
+            const color = ROLE_COLOR[role] || '#555';
             return (
               <div key={role} className="relative rounded-2xl p-6 border overflow-hidden text-center"
                 style={{ borderColor: `${color}33`, backgroundColor: '#0a0a0a', minWidth: '140px' }}>
                 <div className="absolute inset-0 opacity-10"
                   style={{ background: `radial-gradient(ellipse at 50% 100%, ${color} 0%, transparent 70%)` }} />
                 <p className="relative text-4xl font-display" style={{ color }}>{count}</p>
-                <p className="relative text-sm mt-1 font-mono" style={{ color: '#666' }}>{ROLE_LABEL[role]}</p>
+                <p className="relative text-sm mt-1 font-mono" style={{ color: '#666' }}>{ROLE_LABEL[role] || role}</p>
               </div>
             );
           })}
@@ -598,8 +694,8 @@ export default function PromotionPage() {
         <div className="flex flex-wrap gap-2 mb-10 justify-center">
           {(['all', ...ALL_TO_ROLES] as string[]).map(role => {
             const active = filter === role;
-            const color = role === 'all' ? '#fff' : ROLE_COLOR[role];
-            const count = role === 'all' ? GENUINE_PROMOS.length : GENUINE_PROMOS.filter(m => m.toRole === role).length;
+            const color = role === 'all' ? '#fff' : (ROLE_COLOR[role] || '#555');
+            const count = role === 'all' ? GENUINE_PROMOS.length : GENUINE_PROMOS.filter(m => roleKey(m.toRole) === role).length;
             return (
               <button key={role} onClick={() => setFilter(role)}
                 className="px-5 py-2 rounded-full text-sm font-mono border transition-all"
@@ -608,7 +704,7 @@ export default function PromotionPage() {
                   backgroundColor: active ? color : 'transparent',
                   color: active ? '#000' : '#555',
                 }}>
-                {role === 'all' ? 'All' : ROLE_LABEL[role]} ({count})
+                {role === 'all' ? 'All' : (ROLE_LABEL[role] || role)} ({count})
               </button>
             );
           })}
@@ -618,7 +714,7 @@ export default function PromotionPage() {
         <div ref={gridRef}
           className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
           {sorted.map(member => (
-            <MemberCard key={member.userId} member={member} avatarUrl={avatars[member.userId]} onClick={() => setSelectedMember(member)} />
+            <MemberCard key={member.userId} member={member} avatarUrl={activeAvatars[member.userId]} onClick={() => setSelectedMember(member)} />
           ))}
         </div>
       </div>
