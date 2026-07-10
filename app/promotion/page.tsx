@@ -394,6 +394,23 @@ function transitionKey(fromRole: string, toRole: string) {
   return `${roleKey(fromRole)}->${roleKey(toRole)}`;
 }
 
+function contributorFromRole(member: PromotionMember) {
+  const from = roleKey(member.fromRole);
+  const to = roleKey(member.toRole);
+  if ((from === 'Zealot' || from === 'mage') && to === 'radiant-ritualist') return 'ritualist';
+  if ((from === 'Zealot' || from === 'mage') && to === 'ritualist') return 'ritty';
+  return from;
+}
+
+function normalizePromotion(member: PromotionMember): PromotionMember {
+  const from = contributorFromRole(member);
+  if (from === roleKey(member.fromRole)) return member;
+  return {
+    ...member,
+    fromRole: ROLE_LABEL[from] || from,
+  };
+}
+
 export default function PromotionPage() {
   const [round, setRound] = useState<RoundKey>('june');
   const [julyPromotions, setJulyPromotions] = useState<PromotionMember[]>([]);
@@ -411,7 +428,8 @@ export default function PromotionPage() {
 
   const roundMeta = ROUND_META[round];
   const activePromotions = round === 'june' ? promotions : julyPromotions;
-  const GENUINE_PROMOS = activePromotions.filter(
+  const normalizedPromotions = activePromotions.map(normalizePromotion);
+  const GENUINE_PROMOS = normalizedPromotions.filter(
     m => VALID_TRANSITIONS.has(transitionKey(m.fromRole, m.toRole))
   );
   const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => roleKey(m.toRole)))]
@@ -530,8 +548,9 @@ export default function PromotionPage() {
     listRef.current?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const filtered = (filter === 'all' ? activePromotions : activePromotions.filter(m => roleKey(m.toRole) === filter))
-    .filter(m => (ROLE_RANK[roleKey(m.toRole)] ?? 0) > (ROLE_RANK[roleKey(m.fromRole)] ?? 0));
+  const filtered = filter === 'all'
+    ? GENUINE_PROMOS
+    : GENUINE_PROMOS.filter(m => roleKey(m.toRole) === filter);
 
   const sorted = [...filtered].sort((a, b) => (ROLE_RANK[roleKey(b.toRole)] ?? 0) - (ROLE_RANK[roleKey(a.toRole)] ?? 0));
 

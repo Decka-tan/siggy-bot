@@ -41,10 +41,10 @@ const ROLE_RANK = {
 const TRACKED_ROLES = Object.keys(ROLE_RANK);
 
 // Roles that count as the "contributor ladder" (used for the page's contributor-only filter).
-// Mage/Forerunner are tracked + labeled but DO NOT have their own tier bucket — members
-// holding them fall into their contributor role's bucket (or 'Other' if none).
-const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Zealot', 'Radiant Ritualist']);
-const CONTRIBUTOR_RANK = { 'Radiant Ritualist': 5, 'Zealot': 4, 'Ritualist': 3, 'ritty': 2, 'bitty': 1 };
+// Zealot/Mage/Forerunner are tracked + labeled but DO NOT have their own tier bucket.
+// Members holding them fall into their contributor role's bucket (or 'Other' if none).
+const CONTRIBUTOR_LADDER = new Set(['bitty', 'ritty', 'Ritualist', 'Radiant Ritualist']);
+const CONTRIBUTOR_RANK = { 'Radiant Ritualist': 4, 'Ritualist': 3, 'ritty': 2, 'bitty': 1 };
 
 // Staff/mod roles — excluded from activity leaderboards (they post in those
 // channels as part of their role, not as community contributors).
@@ -193,6 +193,7 @@ async function fetchAllMembers(rolesMap) {
           username: m.user.username,
           displayName: m.nick || m.user.global_name || m.user.username,
           topRole: top,            // for upgrade detection only
+          contributorRole: topContributor,
           roles: tracked,          // ALL tracked roles this member has (counted independently)
           avatarUrl: avatarProxy(m),
           joinedAt: m.joined_at || null,
@@ -242,6 +243,14 @@ function dedupeUpgradeLog(log) {
     byKey.set(key, byKey.has(key) ? mergeUpgradeEntry(byKey.get(key), entry) : entry);
   }
   return Array.from(byKey.values()).sort((a, b) => (a.at || 0) - (b.at || 0));
+}
+
+function normalizeContributorFromRole(fromRole, toRole) {
+  const from = logRole(fromRole);
+  const to = logRole(toRole);
+  if ((from === 'Zealot' || from === 'Mage') && to === 'Radiant Ritualist') return 'Ritualist';
+  if ((from === 'Zealot' || from === 'Mage') && to === 'Ritualist') return 'ritty';
+  return from;
 }
 
 async function uploadR2(key, obj) {
@@ -302,16 +311,18 @@ async function main() {
 
   for (const m of members) {
     const prev = prevSnapshot[m.userId];
+    const currentRole = m.contributorRole || NO_ROLE;
+    const previousRole = normalizeContributorFromRole(prev, currentRole);
     const isKnownNoRole = prev === NO_ROLE || prev === null;
-    const isFirstTrackedRole = isKnownNoRole && m.topRole;
-    const isUpgrade = prev && prev !== m.topRole && ROLE_RANK[m.topRole] > ROLE_RANK[prev];
+    const isFirstTrackedRole = isKnownNoRole && currentRole !== NO_ROLE;
+    const isUpgrade = prev && previousRole !== currentRole && ROLE_RANK[currentRole] > ROLE_RANK[previousRole];
     if (isFirstTrackedRole || isUpgrade) {
       const entry = {
         userId: m.userId,
         username: m.username,
         displayName: m.displayName,
-        fromRole: isFirstTrackedRole ? 'No Role' : prev,
-        toRole: m.topRole,
+        fromRole: isFirstTrackedRole ? 'No Role' : previousRole,
+        toRole: currentRole,
         avatarUrl: m.avatarUrl,
         daysToPromo: m.joinedAt ? Math.max(0, Math.floor((now - Date.parse(m.joinedAt)) / 86400000)) : null,
         at: now,
