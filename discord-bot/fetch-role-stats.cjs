@@ -287,6 +287,12 @@ async function main() {
 
   // Persist state locally
   fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (fs.existsSync(SNAPSHOT_FILE)) {
+    const snapshotDir = path.join(DATA_DIR, 'role-snapshots');
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    fs.mkdirSync(snapshotDir, { recursive: true });
+    fs.copyFileSync(SNAPSHOT_FILE, path.join(snapshotDir, `role-snapshot.before-${stamp}.json`));
+  }
   fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(roleSnapshot));
   fs.writeFileSync(LOG_FILE, JSON.stringify(log, null, 2));
 

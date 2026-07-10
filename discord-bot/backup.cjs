@@ -5,7 +5,17 @@ const path = require('path');
 const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
 
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
-const FILES = ['siggy-db.json', 'invoices.json', 'payment-info.json', 'leaderboards.json'];
+const FILES = [
+  'siggy-db.json',
+  'invoices.json',
+  'payment-info.json',
+  'leaderboards.json',
+  'role-snapshot.json',
+  'upgrade-log.json',
+  'member-ids.json',
+  'staff-ids.json',
+  'special-roles.json',
+];
 
 const s3 = new S3Client({
   region: 'auto',
