@@ -11,6 +11,7 @@ import joinDates from '@/lib/promotion-join-dates.json';
 type PromotionMember = (typeof junePromotions)[0] & {
   avatarUrl?: string;
   daysToPromo?: number | null;
+  roles?: string[];
 };
 
 const promotions = junePromotions as PromotionMember[];
@@ -410,6 +411,12 @@ function transitionKey(fromRole: string, toRole: string) {
   return `${roleKey(fromRole)}->${roleKey(toRole)}`;
 }
 
+function isGenuinePromotion(member: PromotionMember) {
+  const roles = new Set((member.roles || []).map(role => roleKey(role)));
+  if (roles.has('Zealot') || roles.has('mage')) return false;
+  return VALID_TRANSITIONS.has(transitionKey(member.fromRole, member.toRole));
+}
+
 export default function PromotionPage() {
   const [round, setRound] = useState<RoundKey>('june');
   const [julyPromotions, setJulyPromotions] = useState<PromotionMember[]>([]);
@@ -427,9 +434,7 @@ export default function PromotionPage() {
 
   const roundMeta = ROUND_META[round];
   const activePromotions = round === 'june' ? promotions : julyPromotions;
-  const GENUINE_PROMOS = activePromotions.filter(
-    m => VALID_TRANSITIONS.has(transitionKey(m.fromRole, m.toRole))
-  );
+  const GENUINE_PROMOS = activePromotions.filter(isGenuinePromotion);
   const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => roleKey(m.toRole)))]
     .sort((a, b) => (ROLE_RANK[b] ?? 0) - (ROLE_RANK[a] ?? 0));
   const activeAvatars = round === 'june'
@@ -455,6 +460,7 @@ export default function PromotionPage() {
           toRole: String(u.toRole || ''),
           avatarUrl: u.avatarUrl || undefined,
           daysToPromo: u.daysToPromo ?? null,
+          roles: Array.isArray(u.roles) ? u.roles.map(String) : [],
         })).filter(u => u.userId && u.toRole));
       })
       .catch(() => {

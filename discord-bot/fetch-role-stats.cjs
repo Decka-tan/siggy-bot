@@ -315,6 +315,7 @@ async function main() {
         displayName: m.displayName,
         fromRole: isFirstTrackedRole ? 'No Role' : previousRole,
         toRole: currentRole,
+        roles: m.roles,
         avatarUrl: m.avatarUrl,
         daysToPromo: m.joinedAt ? Math.max(0, Math.floor((now - Date.parse(m.joinedAt)) / 86400000)) : null,
         at: now,
@@ -329,6 +330,11 @@ async function main() {
 
   // 3. Prune log older than 14 days
   log = dedupeUpgradeLog(log).filter(e => now - e.at <= RETENTION_MS);
+  const rolesByUser = new Map(members.map(m => [m.userId, m.roles]));
+  log = log.map(entry => ({
+    ...entry,
+    roles: rolesByUser.get(entry.userId) || entry.roles || [],
+  }));
 
   // Persist state locally
   fs.mkdirSync(DATA_DIR, { recursive: true });
