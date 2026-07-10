@@ -412,8 +412,6 @@ function transitionKey(fromRole: string, toRole: string) {
 }
 
 function isGenuinePromotion(member: PromotionMember) {
-  const roles = new Set((member.roles || []).map(role => roleKey(role)));
-  if (roles.has('Zealot') || roles.has('mage')) return false;
   return VALID_TRANSITIONS.has(transitionKey(member.fromRole, member.toRole));
 }
 

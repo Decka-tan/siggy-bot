@@ -208,6 +208,28 @@ function readJSON(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
 }
 
+function loadBaselineRoles() {
+  const candidates = [
+    path.join(__dirname, '..', 'extracted-data', 'role-snapshots', 'roles-2026-03-24T16-21-55-843Z.json'),
+    path.join(__dirname, '..', 'extracted-data', 'complete-guild-members-enriched.json'),
+  ];
+  for (const file of candidates) {
+    const payload = readJSON(file, null);
+    const rows = Array.isArray(payload) ? payload : payload?.members;
+    if (!Array.isArray(rows)) continue;
+    const byUser = new Map();
+    for (const member of rows) {
+      if (!member?.userId) continue;
+      const roles = member.roleNames || member.roles || [];
+      byUser.set(String(member.userId), new Set(roles.map(String)));
+    }
+    console.log(`  loaded baseline roles from ${path.relative(process.cwd(), file)} (${byUser.size} members)`);
+    return byUser;
+  }
+  console.log('  no baseline role snapshot found; keeping upgrade log as-is');
+  return new Map();
+}
+
 function logRole(role) {
   return role === NO_ROLE || role == null ? 'No Role' : String(role);
 }
@@ -335,6 +357,16 @@ async function main() {
     ...entry,
     roles: rolesByUser.get(entry.userId) || entry.roles || [],
   }));
+  const baselineRoles = loadBaselineRoles();
+  if (baselineRoles.size) {
+    const before = log.length;
+    log = log.filter(entry => {
+      const roles = baselineRoles.get(String(entry.userId));
+      return !roles?.has(logRole(entry.toRole));
+    });
+    const removed = before - log.length;
+    if (removed) console.log(`  removed ${removed} stale upgrades already present in baseline snapshot`);
+  }
 
   // Persist state locally
   fs.mkdirSync(DATA_DIR, { recursive: true });
