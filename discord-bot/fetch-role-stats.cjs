@@ -26,6 +26,7 @@ const DATA_DIR   = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SNAPSHOT_FILE = path.join(DATA_DIR, 'role-snapshot.json');
 const LOG_FILE      = path.join(DATA_DIR, 'upgrade-log.json');
 const RETENTION_MS  = 14 * 24 * 60 * 60 * 1000; // 14 days
+const NO_ROLE       = '__NO_TRACKED_ROLE__';
 
 // Roles shown in the distribution chart (display name -> rank).
 // Higher rank = higher tier. Used to pick each member's "top" role and to detect upgrades.
@@ -102,6 +103,7 @@ async function fetchAllMembers(rolesMap) {
 
   const members = [];
   const allMemberIds = [];                 // every current (non-bot) member id — used to filter activity
+  const roleSnapshot = {};                 // every current (non-bot) member id -> top tracked role or NO_ROLE
   const staffIds = [];                     // members holding a staff/mod role — excluded from leaderboards
   const specialRoles = {};                 // userId -> Blessed/Cursed/Harmonic (for non-contributor label)
   const badgeHolders = {};                 // badgeName -> [{ userId, username, displayName, avatarUrl, joinedAt, topRole }]
@@ -147,6 +149,7 @@ async function fetchAllMembers(rolesMap) {
         // top role = highest rank among tracked (may be null for badge-only / no-role members)
         let top = tracked[0] || null;
         for (const r of tracked) if (top && ROLE_RANK[r] > ROLE_RANK[top]) top = r;
+        roleSnapshot[m.user.id] = top || NO_ROLE;
         // Contributor-only top: ignores Mage/Forerunner so a Mage+ritty member
         // is bucketed as 'ritty' (even though their displayed label stays 'Mage').
         const contributorTracked = roleNames.filter(r => CONTRIBUTOR_LADDER.has(r));
@@ -197,7 +200,7 @@ async function fetchAllMembers(rolesMap) {
       }
     },
   });
-  return { members, allMemberIds, staffIds, specialRoles, badgeHolders, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
+  return { members, allMemberIds, roleSnapshot, staffIds, specialRoles, badgeHolders, insights: { totalGuildMembers, joinByMonth, regional, regionalPure, multiRegion, regionTiers, regionTiersPure } };
 }
 
 function readJSON(file, fallback) {
@@ -219,7 +222,7 @@ async function main() {
   console.log(`[${new Date().toISOString()}] Fetching role stats...`);
 
   const rolesMap = await getRolesMap();
-  const { members, allMemberIds, staffIds, specialRoles, badgeHolders, insights } = await fetchAllMembers(rolesMap);
+  const { members, allMemberIds, roleSnapshot, staffIds, specialRoles, badgeHolders, insights } = await fetchAllMembers(rolesMap);
   console.log(`  ${members.length} ranked / ${insights.totalGuildMembers} total members / ${staffIds.length} staff`);
 
   // Dump current member-id set so fetch-activity can exclude kicked/left users
@@ -257,26 +260,25 @@ async function main() {
   // 2. Detect upgrades vs previous snapshot
   const prevSnapshot = readJSON(SNAPSHOT_FILE, {});
   const isFirstRun = Object.keys(prevSnapshot).length === 0;
-  const newSnapshot = {};
   let log = readJSON(LOG_FILE, []);
 
   for (const m of members) {
-    newSnapshot[m.userId] = m.topRole;
     const prev = prevSnapshot[m.userId];
-    const isNewTrackedMember = !prev && !isFirstRun;
+    const isKnownNoRole = prev === NO_ROLE || prev === null;
+    const isFirstTrackedRole = isKnownNoRole && m.topRole;
     const isUpgrade = prev && prev !== m.topRole && ROLE_RANK[m.topRole] > ROLE_RANK[prev];
-    if (isNewTrackedMember || isUpgrade) {
+    if (isFirstTrackedRole || isUpgrade) {
       log.push({
         userId: m.userId,
         username: m.username,
         displayName: m.displayName,
-        fromRole: prev || 'No Role',
+        fromRole: isFirstTrackedRole ? 'No Role' : prev,
         toRole: m.topRole,
         avatarUrl: m.avatarUrl,
         daysToPromo: m.joinedAt ? Math.max(0, Math.floor((now - Date.parse(m.joinedAt)) / 86400000)) : null,
         at: now,
       });
-      console.log(`  ⬆ ${m.displayName}: ${prev || 'No Role'} → ${m.topRole}`);
+      console.log(`  ⬆ ${m.displayName}: ${isFirstTrackedRole ? 'No Role' : prev} → ${m.topRole}`);
     }
   }
 
@@ -285,7 +287,7 @@ async function main() {
 
   // Persist state locally
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(newSnapshot));
+  fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(roleSnapshot));
   fs.writeFileSync(LOG_FILE, JSON.stringify(log, null, 2));
 
   // 4. Upload public outputs to R2
