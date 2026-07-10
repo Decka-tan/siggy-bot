@@ -172,6 +172,121 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 /* ── SVG Donut ─────────────────────────────────────── */
+function ProfileModal({
+  member,
+  accent,
+  onClose,
+  onChange,
+}: {
+  member: any;
+  accent: string | null;
+  onClose: () => void;
+  onChange: () => void;
+}) {
+  const c = accent || topAchievement(member)?.color || '#FFD700';
+  const top = topAchievement(member);
+  const stats = (['contributions', 'eventsWon', 'eventsHosted', 'globalMessages'] as StatKey[])
+    .filter(k => k !== 'globalMessages' || member.globalMessagesAvailable)
+    .map(k => statDef(k, member))
+    .filter(s => s.value > 0)
+    .slice(0, 4);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', handler);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handler);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+        onClick={onClose}
+      >
+        <div className="absolute inset-0 backdrop-blur-xl" style={{ backgroundColor: '#050505cc' }} />
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+          onClick={e => e.stopPropagation()}
+          className="relative w-full max-w-sm rounded-2xl border overflow-hidden"
+          style={{ backgroundColor: '#0a0a0a', borderColor: `${c}44`, boxShadow: `0 0 60px ${c}18` }}
+        >
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full flex items-center justify-center text-sm hover:bg-white/10 transition-all"
+            style={{ color: '#555' }}
+          >
+            ✕
+          </button>
+
+          <div className="relative w-full aspect-square overflow-hidden bg-[#141414]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={member.pfpUrl} alt={member.displayName} className="w-full h-full object-cover" />
+            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0a0a0a] to-transparent" />
+          </div>
+
+          <div className="px-5 pt-5 pb-6 relative z-10">
+            <p className="font-display text-2xl uppercase tracking-tight text-white leading-tight mb-0.5">{member.displayName}</p>
+            <p className="text-sm font-mono mb-4" style={{ color: '#555' }}>@{member.username}</p>
+
+            {top && (
+              <div className="rounded-xl p-3 border mb-3" style={{ borderColor: `${top.color}22`, backgroundColor: `${top.color}08` }}>
+                <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: `${top.color}88` }}>Top achievement</p>
+                <p className="text-lg font-display uppercase tracking-tight" style={{ color: top.color }}>
+                  {top.medal ? `${top.medal} place · ${top.label}` : `Top ${top.pct}% · ${top.label}`}
+                </p>
+              </div>
+            )}
+
+            <div className="rounded-xl p-3 border mb-3" style={{ borderColor: `${c}22`, backgroundColor: `${c}08` }}>
+              <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: `${c}88` }}>Active member for</p>
+              <p className="text-2xl font-display" style={{ color: c }}>{fmtDays(member.days) || `${member.days || 0}d`}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#444' }}>since joining · {member.joinDate}</p>
+            </div>
+
+            {stats.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mb-4">
+                {stats.map(s => (
+                  <div key={s.label} className="rounded-xl p-3 border border-white/[0.03] bg-white/[0.02]">
+                    <p className="text-[9px] font-mono uppercase tracking-wider text-[#555] font-bold truncate">{s.label}</p>
+                    <p className="text-lg font-mono font-black" style={{ color: s.color }}>{fmtStat(s.value)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto pr-1">
+              {(member.roles || []).map((r: string) => <RoleBadge key={r} role={r} />)}
+              {(!member.roles || member.roles.length === 0) && (
+                <span className="text-[#444] text-xs font-mono uppercase tracking-wider">No roles assigned</span>
+              )}
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={onChange}
+                className="flex-1 text-center px-3 py-2 rounded-xl text-[11px] font-mono font-bold uppercase tracking-wider border transition"
+                style={{ borderColor: '#222', color: '#ccc' }}
+              >
+                Change Profile
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function Donut({ rows, sum, centerValue }: { rows: DistRow[]; sum: number; centerValue: number }) {
   const size = 240, stroke = 24, r = (size - stroke) / 2, circ = 2 * Math.PI * r;
   const [hovered, setHovered] = useState<DistRow | null>(null);
@@ -491,6 +606,7 @@ export default function CommunityPage() {
   const shareRef = useRef<HTMLDivElement>(null);
   const [searchError, setSearchError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isAutocompleting, setIsAutocompleting] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
@@ -738,6 +854,23 @@ export default function CommunityPage() {
 
   return (
     <div className="min-h-screen bg-[#030303] text-white relative overflow-hidden selection:bg-amber-400 selection:text-black">
+      <AnimatePresence>
+        {profileModalOpen && memberProfile && (
+          <ProfileModal
+            member={memberProfile}
+            accent={cardAccent}
+            onClose={() => setProfileModalOpen(false)}
+            onChange={() => {
+              setProfileModalOpen(false);
+              setSearchQuery('');
+              setSearchResults([]);
+              setShowAutocomplete(false);
+              setIsModalOpen(true);
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Neon/Mesh Glows */}
       <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-amber-500/[0.03] blur-[150px] pointer-events-none" />
       <div className="absolute top-[30%] right-[-10%] w-[60%] h-[70%] rounded-full bg-violet-600/[0.02] blur-[180px] pointer-events-none" />
@@ -768,6 +901,10 @@ export default function CommunityPage() {
           <div className="shrink-0 flex items-center gap-3">
             <button
               onClick={() => {
+                if (memberProfile) {
+                  setProfileModalOpen(true);
+                  return;
+                }
                 setSearchQuery('');
                 setSearchResults([]);
                 setShowAutocomplete(false);
