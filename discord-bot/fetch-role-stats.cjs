@@ -207,6 +207,43 @@ function readJSON(file, fallback) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch { return fallback; }
 }
 
+function logRole(role) {
+  return role === NO_ROLE || role == null ? 'No Role' : String(role);
+}
+
+function upgradeKey(entry) {
+  return `${entry.userId}:${logRole(entry.fromRole)}:${logRole(entry.toRole)}`;
+}
+
+function mergeUpgradeEntry(current, next) {
+  return {
+    ...current,
+    username: next.username || current.username,
+    displayName: next.displayName || current.displayName,
+    avatarUrl: current.avatarUrl || next.avatarUrl || null,
+    daysToPromo: current.daysToPromo ?? next.daysToPromo ?? null,
+    at: Math.min(
+      Number(current.at) || Number(next.at) || Date.now(),
+      Number(next.at) || Number(current.at) || Date.now()
+    ),
+  };
+}
+
+function dedupeUpgradeLog(log) {
+  const byKey = new Map();
+  for (const raw of Array.isArray(log) ? log : []) {
+    if (!raw || !raw.userId || !raw.toRole) continue;
+    const entry = {
+      ...raw,
+      fromRole: logRole(raw.fromRole),
+      toRole: logRole(raw.toRole),
+    };
+    const key = upgradeKey(entry);
+    byKey.set(key, byKey.has(key) ? mergeUpgradeEntry(byKey.get(key), entry) : entry);
+  }
+  return Array.from(byKey.values()).sort((a, b) => (a.at || 0) - (b.at || 0));
+}
+
 async function uploadR2(key, obj) {
   await s3.send(new PutObjectCommand({
     Bucket: process.env.R2_BUCKET_NAME,
@@ -260,7 +297,8 @@ async function main() {
   // 2. Detect upgrades vs previous snapshot
   const prevSnapshot = readJSON(SNAPSHOT_FILE, {});
   const isFirstRun = Object.keys(prevSnapshot).length === 0;
-  let log = readJSON(LOG_FILE, []);
+  let log = dedupeUpgradeLog(readJSON(LOG_FILE, []));
+  const existingUpgrades = new Set(log.map(upgradeKey));
 
   for (const m of members) {
     const prev = prevSnapshot[m.userId];
@@ -268,7 +306,7 @@ async function main() {
     const isFirstTrackedRole = isKnownNoRole && m.topRole;
     const isUpgrade = prev && prev !== m.topRole && ROLE_RANK[m.topRole] > ROLE_RANK[prev];
     if (isFirstTrackedRole || isUpgrade) {
-      log.push({
+      const entry = {
         userId: m.userId,
         username: m.username,
         displayName: m.displayName,
@@ -277,13 +315,17 @@ async function main() {
         avatarUrl: m.avatarUrl,
         daysToPromo: m.joinedAt ? Math.max(0, Math.floor((now - Date.parse(m.joinedAt)) / 86400000)) : null,
         at: now,
-      });
+      };
+      const key = upgradeKey(entry);
+      if (existingUpgrades.has(key)) continue;
+      log.push(entry);
+      existingUpgrades.add(key);
       console.log(`  ⬆ ${m.displayName}: ${isFirstTrackedRole ? 'No Role' : prev} → ${m.topRole}`);
     }
   }
 
   // 3. Prune log older than 14 days
-  log = log.filter(e => now - e.at <= RETENTION_MS);
+  log = dedupeUpgradeLog(log).filter(e => now - e.at <= RETENTION_MS);
 
   // Persist state locally
   fs.mkdirSync(DATA_DIR, { recursive: true });

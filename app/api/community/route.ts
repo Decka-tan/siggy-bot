@@ -62,6 +62,45 @@ async function getObject(key: string): Promise<any | null> {
   return res.json();
 }
 
+function upgradeRole(role: unknown) {
+  return role == null ? 'No Role' : String(role);
+}
+
+function upgradeKey(entry: any) {
+  return `${entry?.userId || ''}:${upgradeRole(entry?.fromRole)}:${upgradeRole(entry?.toRole)}`;
+}
+
+function dedupeUpgrades(upgrades: any) {
+  const rows = Array.isArray(upgrades?.upgrades) ? upgrades.upgrades : [];
+  const byKey = new Map<string, any>();
+  for (const raw of rows) {
+    if (!raw?.userId || !raw?.toRole) continue;
+    const entry = {
+      ...raw,
+      fromRole: upgradeRole(raw.fromRole),
+      toRole: upgradeRole(raw.toRole),
+    };
+    const key = upgradeKey(entry);
+    const current = byKey.get(key);
+    if (!current) {
+      byKey.set(key, entry);
+      continue;
+    }
+    byKey.set(key, {
+      ...current,
+      username: entry.username || current.username,
+      displayName: entry.displayName || current.displayName,
+      avatarUrl: current.avatarUrl || entry.avatarUrl || null,
+      daysToPromo: current.daysToPromo ?? entry.daysToPromo ?? null,
+      at: Math.min(Number(current.at) || Number(entry.at) || Date.now(), Number(entry.at) || Number(current.at) || Date.now()),
+    });
+  }
+  return {
+    ...(upgrades ?? {}),
+    upgrades: Array.from(byKey.values()).sort((a, b) => (b.at || 0) - (a.at || 0)),
+  };
+}
+
 export async function GET() {
   try {
     const [stats, upgrades, insights, activity, globalMsg] = await Promise.all([
@@ -89,7 +128,7 @@ export async function GET() {
 
     return NextResponse.json({
       stats,
-      upgrades: upgrades ?? { upgrades: [], windowDays: 14, updatedAt: stats.updatedAt },
+      upgrades: dedupeUpgrades(upgrades ?? { upgrades: [], windowDays: 14, updatedAt: stats.updatedAt }),
       insights: insights ?? null,
       activity: activity ? { ...activity, chat } : (chat ? { chat } : null),
     });
