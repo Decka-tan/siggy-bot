@@ -377,6 +377,12 @@ async function main() {
     const removed = before - log.length;
     if (removed) console.log(`  removed ${removed} stale upgrades already present in baseline snapshot`);
   }
+  {
+    const before = log.length;
+    log = log.filter(entry => CONTRIBUTOR_LADDER.has(logRole(entry.toRole)));
+    const removed = before - log.length;
+    if (removed) console.log(`  removed ${removed} non-contributor promotion entries`);
+  }
 
   // Persist state locally
   fs.mkdirSync(DATA_DIR, { recursive: true });

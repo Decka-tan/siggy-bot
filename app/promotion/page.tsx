@@ -407,12 +407,16 @@ const VALID_TRANSITIONS = new Set([
   'ritualist->radiant-ritualist',
 ]);
 
+const VALID_TO_ROLES = new Set(['bitty', 'ritty', 'ritualist', 'radiant-ritualist']);
+
 function transitionKey(fromRole: string, toRole: string) {
   return `${roleKey(fromRole)}->${roleKey(toRole)}`;
 }
 
 function isGenuinePromotion(member: PromotionMember) {
-  return (ROLE_RANK[roleKey(member.toRole)] ?? 0) > (ROLE_RANK[roleKey(member.fromRole)] ?? 0);
+  const from = roleKey(member.fromRole);
+  const to = roleKey(member.toRole);
+  return VALID_TO_ROLES.has(to) && (ROLE_RANK[to] ?? 0) > (ROLE_RANK[from] ?? 0);
 }
 
 export default function PromotionPage() {
