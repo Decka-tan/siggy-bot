@@ -12,6 +12,7 @@ type PromotionMember = (typeof junePromotions)[0] & {
   avatarUrl?: string;
   daysToPromo?: number | null;
   roles?: string[];
+  at?: number;
 };
 
 const promotions = junePromotions as PromotionMember[];
@@ -419,6 +420,26 @@ function isGenuinePromotion(member: PromotionMember) {
   return VALID_TO_ROLES.has(to) && (ROLE_RANK[to] ?? 0) > (ROLE_RANK[from] ?? 0);
 }
 
+function betterPromotion(a: PromotionMember, b: PromotionMember) {
+  const toDelta = (ROLE_RANK[roleKey(b.toRole)] ?? 0) - (ROLE_RANK[roleKey(a.toRole)] ?? 0);
+  if (toDelta !== 0) return toDelta > 0 ? b : a;
+  const bAt = b.at ?? 0;
+  const aAt = a.at ?? 0;
+  if (bAt !== aAt) return bAt > aAt ? b : a;
+  const fromDelta = (ROLE_RANK[roleKey(a.fromRole)] ?? 0) - (ROLE_RANK[roleKey(b.fromRole)] ?? 0);
+  return fromDelta > 0 ? b : a;
+}
+
+function uniquePromotions(rows: PromotionMember[]) {
+  const byUser = new Map<string, PromotionMember>();
+  for (const row of rows) {
+    if (!row.userId || !isGenuinePromotion(row)) continue;
+    const current = byUser.get(row.userId);
+    byUser.set(row.userId, current ? betterPromotion(current, row) : row);
+  }
+  return Array.from(byUser.values());
+}
+
 export default function PromotionPage() {
   const [round, setRound] = useState<RoundKey>('june');
   const [julyPromotions, setJulyPromotions] = useState<PromotionMember[]>([]);
@@ -436,7 +457,7 @@ export default function PromotionPage() {
 
   const roundMeta = ROUND_META[round];
   const activePromotions = round === 'june' ? promotions : julyPromotions;
-  const GENUINE_PROMOS = activePromotions.filter(isGenuinePromotion);
+  const GENUINE_PROMOS = uniquePromotions(activePromotions);
   const ALL_TO_ROLES = [...new Set(GENUINE_PROMOS.map(m => roleKey(m.toRole)))]
     .sort((a, b) => (ROLE_RANK[b] ?? 0) - (ROLE_RANK[a] ?? 0));
   const activeAvatars = round === 'june'
@@ -454,7 +475,7 @@ export default function PromotionPage() {
       .then(payload => {
         if (cancelled) return;
         const upgrades = (payload?.upgrades?.upgrades || []) as any[];
-        setJulyPromotions(upgrades.map(u => ({
+        setJulyPromotions(uniquePromotions(upgrades.map(u => ({
           userId: String(u.userId || ''),
           username: String(u.username || ''),
           displayName: String(u.displayName || u.username || u.userId || ''),
@@ -463,7 +484,8 @@ export default function PromotionPage() {
           avatarUrl: u.avatarUrl || undefined,
           daysToPromo: u.daysToPromo ?? null,
           roles: Array.isArray(u.roles) ? u.roles.map(String) : [],
-        })).filter(u => u.userId && u.toRole));
+          at: Number(u.at) || undefined,
+        })).filter(u => u.userId && u.toRole)));
       })
       .catch(() => {
         if (!cancelled) setJulyPromotions([]);
