@@ -516,7 +516,7 @@ function trackCommandAsMessage(userId, userName, commandName, guildId = null) {
 // Leave empty Set() to allow all channels in that server
 const SERVER_ALLOWED_CHANNELS = {
   // Ritual server - Siggy only reacts in this channel
-  '1210468736205852672': new Set(['1311152558122864720', '1488582144443027618', '1311057291834818630']),
+  '1210468736205852672': new Set(['1529520113550626866']),
 
   // Other servers can be added here with their own channel restrictions
   // 'OTHER_GUILD_ID': new Set(['their_channel_id']),
