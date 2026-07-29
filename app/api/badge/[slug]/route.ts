@@ -61,7 +61,7 @@ async function getObject(key: string): Promise<any | null> {
   return res.json();
 }
 
-const ALLOWED = new Set(['genesis-1000']);
+const ALLOWED = new Set(['genesis-1000', 'ploplo-holder']);
 
 export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
