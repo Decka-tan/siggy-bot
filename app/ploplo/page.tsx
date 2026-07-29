@@ -917,11 +917,14 @@ export default function PloPloPage() {
       />
 
       {/* ── page nav (the global Siggy header is suppressed here) ── */}
+      {/* centring lives on this wrapper: framer-motion owns `transform` on the
+          header itself, so a Tailwind -translate-x-1/2 there would be wiped */}
+      <div className="fixed top-3 inset-x-0 z-[280] flex justify-center px-2 pointer-events-none">
       <motion.header
         initial={{ opacity: 0, y: -14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.15 }}
-        className="fixed top-3 left-1/2 -translate-x-1/2 z-[280] px-2"
+        className="pointer-events-auto"
       >
         <nav
           className="flex items-center gap-1 px-2 py-1.5 rounded-full"
@@ -969,6 +972,7 @@ export default function PloPloPage() {
           </a>
         </nav>
       </motion.header>
+      </div>
 
       <AnimatePresence>
         {selected && (
