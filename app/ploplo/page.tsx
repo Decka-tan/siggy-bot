@@ -287,6 +287,39 @@ function useAvatarColor(src: string) {
   return color;
 }
 
+/* Wall of PloPlos used as a section background: 7 across, every other row
+   crawling the opposite way, then buried under a heavy scrim so it never
+   competes with the content sitting on top. */
+function PloPloWall({ rows = 6, scrim = 0.9 }: { rows?: number; scrim?: number }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+      <div className="absolute inset-0 flex flex-col justify-center gap-[2vw]">
+        {Array.from({ length: rows }, (_, r) => {
+          const toLeft = r % 2 === 1;
+          // Two copies of the strip so the loop is seamless.
+          const strip = [...NFTS, ...NFTS, ...NFTS].slice(0, 21);
+          return (
+            <motion.div
+              key={r}
+              className="flex gap-[2vw] w-max"
+              animate={{ x: toLeft ? ['0%', '-33.333%'] : ['-33.333%', '0%'] }}
+              transition={{ duration: 52 + r * 9, repeat: Infinity, ease: 'linear' }}
+            >
+              {strip.map((src, i) => (
+                <div key={`${r}-${i}`} className="w-[13vw] aspect-square rounded-2xl overflow-hidden shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                </div>
+              ))}
+            </motion.div>
+          );
+        })}
+      </div>
+      <div className="absolute inset-0" style={{ background: `rgba(14,19,48,${scrim})` }} />
+    </div>
+  );
+}
+
 function CountUp({ to, duration = 1100 }: { to: number; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
@@ -335,30 +368,32 @@ function HolderCard({ holder, index, onClick }: { holder: Holder; index: number;
       transition={{ duration: 0.45, delay: Math.min(index, 14) * 0.02, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -6, transition: { duration: 0.15 } }}
       className="group text-left rounded-3xl overflow-hidden"
-      style={{ background: DEEP, border: `1px solid ${INDIGO}`, fontFamily: BODY }}
+      style={{ background: DEEP, border: `1px solid ${c}66`, fontFamily: BODY }}
     >
+      {/* the whole tile takes the member's own colour — the grid reads as a
+          mosaic of PFP palettes rather than a wall of navy */}
       <div className="relative aspect-square flex items-center justify-center p-4">
         <div
           className="absolute inset-0 transition-colors duration-700"
-          style={{ background: `radial-gradient(circle at 50% 42%, ${c}3D 0%, ${c}14 45%, ${DEEP} 78%)` }}
+          style={{ background: `radial-gradient(circle at 50% 34%, ${c} 0%, ${c} 42%, ${c}C4 78%, ${c}8A 100%)` }}
         />
         <div
           className="relative w-full aspect-square rounded-full overflow-hidden transition-transform duration-500 group-hover:scale-[1.05]"
-          style={{ boxShadow: `0 0 0 2px ${c}99, 0 0 32px -6px ${c}80, 0 14px 34px -12px ${NIGHT}` }}
+          style={{ boxShadow: `0 0 0 3px rgba(255,255,255,.55), 0 16px 34px -12px rgba(14,19,48,.85)` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
         </div>
         <div
           className="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full overflow-hidden"
-          style={{ boxShadow: `0 0 0 2px ${DEEP}` }}
+          style={{ boxShadow: `0 0 0 2px rgba(255,255,255,.75)` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={nftFor(holder.userId)} alt="" className="w-full h-full object-cover" loading="lazy" />
         </div>
       </div>
 
-      <div className="px-3.5 pt-3 pb-3.5" style={{ borderTop: `1px solid ${INDIGO}` }}>
+      <div className="px-3.5 pt-3 pb-3.5" style={{ borderTop: `2px solid ${c}` }}>
         <p className="font-semibold text-[15px] leading-tight truncate" style={{ color: MIST }} title={holder.displayName}>
           {holder.displayName}
         </p>
@@ -718,8 +753,13 @@ export default function PloPloPage() {
 
   /* A PloPlo cut into a circle and lit from one side, so it reads as
      a planet sitting on the orbit line. `ring` adds a Saturn band. */
-  const planet = (src: string, ring?: string) => (
-    <div className="relative w-full aspect-square">
+  const planet = (src: string, ring?: string, drift = 0) => (
+    // idle bob, independent of the scroll-driven y on the wrapper
+    <motion.div
+      className="relative w-full aspect-square"
+      animate={{ y: [0, -10 - drift, 0], rotate: [0, drift > 2 ? 3 : -2, 0] }}
+      transition={{ duration: 7 + drift, repeat: Infinity, ease: 'easeInOut' }}
+    >
       {ring && (
         <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
@@ -741,7 +781,7 @@ export default function PloPloPage() {
           style={{ background: `linear-gradient(120deg, rgba(14,19,48,0) 38%, rgba(14,19,48,.72) 100%)` }}
         />
       </div>
-    </div>
+    </motion.div>
   );
 
   // No overflow-x-hidden on the root — it would break the sticky filter bar.
@@ -751,6 +791,60 @@ export default function PloPloPage() {
         className="fixed top-0 left-0 right-0 h-[4px] z-[300] origin-left"
         style={{ scaleX: progress, background: PEACH }}
       />
+
+      {/* ── page nav (the global Siggy header is suppressed here) ── */}
+      <motion.header
+        initial={{ opacity: 0, y: -14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="fixed top-3 left-1/2 -translate-x-1/2 z-[280] px-2"
+      >
+        <nav
+          className="flex items-center gap-1 px-2 py-1.5 rounded-full"
+          style={{
+            background: 'rgba(14,19,48,.72)',
+            border: `1px solid ${INDIGO}`,
+            backdropFilter: 'blur(14px)',
+          }}
+        >
+          <a
+            href="/"
+            className="px-3.5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors hover:text-white"
+            style={{ color: LAVENDER }}
+          >
+            Siggy
+          </a>
+          <a
+            href="/genesis"
+            className="px-3.5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors hover:text-white"
+            style={{ color: LAVENDER }}
+          >
+            Genesis
+          </a>
+          <span
+            className="px-3.5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.1em]"
+            style={{ background: PEACH, color: NIGHT }}
+          >
+            PloPlo
+          </span>
+          <a
+            href="/stats"
+            className="px-3.5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors hover:text-white"
+            style={{ color: LAVENDER }}
+          >
+            Stats
+          </a>
+          <a
+            href={OPENSEA}
+            target="_blank"
+            rel="noreferrer"
+            className="hidden sm:block px-3.5 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.1em] transition-colors hover:text-white"
+            style={{ color: LAVENDER }}
+          >
+            OpenSea ↗
+          </a>
+        </nav>
+      </motion.header>
 
       <AnimatePresence>
         {selected && (
@@ -782,27 +876,28 @@ export default function PloPloPage() {
             <div
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(180deg, rgba(14,19,48,.62) 0%, rgba(14,19,48,.38) 38%, rgba(14,19,48,.55) 72%, rgba(14,19,48,.85) 100%)`,
+                background: `linear-gradient(180deg, rgba(14,19,48,.45) 0%, rgba(14,19,48,.18) 34%, rgba(14,19,48,.30) 68%, rgba(14,19,48,.72) 100%)`,
               }}
             />
           </>
         )}
 
-        {/* planets on the orbits */}
-        <motion.div style={{ y: planetFar }} className="absolute left-[4%] top-[9%] w-24 md:w-36 lg:w-44 opacity-95">
-          {planet(NFTS[0])}
+        {/* PloPlo planets, sat on the artwork's own orbit arcs and empty sky */}
+        <motion.div style={{ y: planetFar }} className="absolute left-[4%] top-[8%] w-24 md:w-32 lg:w-40 opacity-95">
+          {planet(NFTS[0], undefined, 1)}
         </motion.div>
-        <motion.div style={{ y: planetMid }} className="absolute right-[5%] top-[26%] w-28 md:w-40 lg:w-52">
-          {planet(NFTS[1], PEACH)}
+        <motion.div style={{ y: planetMid }} className="absolute right-[9%] top-[15%] w-24 md:w-32 lg:w-40">
+          {planet(NFTS[1], PEACH, 3)}
         </motion.div>
-        <motion.div style={{ y: planetFar }} className="absolute right-[24%] top-[8%] w-12 md:w-16 lg:w-20 opacity-90">
-          {planet(NFTS[2])}
+        <motion.div style={{ y: planetFar }} className="hidden md:block absolute left-[25%] top-[6%] w-11 lg:w-14 opacity-90">
+          {planet(NFTS[2], undefined, 4)}
         </motion.div>
-        <motion.div style={{ y: planetNear }} className="absolute left-[13%] bottom-[16%] w-20 md:w-28 lg:w-36">
-          {planet(NFTS[3])}
+        {/* these two ride the lower arcs painted into the scene */}
+        <motion.div style={{ y: planetNear }} className="absolute left-[11%] bottom-[16%] w-16 md:w-24 lg:w-28">
+          {planet(NFTS[3], undefined, 2)}
         </motion.div>
-        <motion.div style={{ y: planetMid }} className="hidden md:block absolute left-[27%] top-[6%] w-10 lg:w-14 opacity-90">
-          {planet(NFTS[4])}
+        <motion.div style={{ y: planetMid }} className="hidden md:block absolute right-[34%] bottom-[27%] w-10 lg:w-12 opacity-90">
+          {planet(NFTS[4], undefined, 5)}
         </motion.div>
 
         {/* copy */}
@@ -961,6 +1056,7 @@ export default function PloPloPage() {
 
       {/* ══ 3. STATS ══ */}
       <section className="relative min-h-screen flex flex-col justify-center px-5 py-24" style={{ background: DEEP }}>
+        <PloPloWall rows={6} scrim={0.9} />
         <StarField stars={PAGE_STARS} />
         <div className="relative max-w-5xl mx-auto w-full">
           <motion.h2
@@ -1028,7 +1124,10 @@ export default function PloPloPage() {
       </section>
 
       {/* ══ 4. ROSTER ══ */}
-      <section className="relative px-4 pb-28" style={{ background: NIGHT }}>
+      <section className="relative px-4 pb-28 overflow-hidden" style={{ background: NIGHT }}>
+        <div className="absolute inset-x-0 top-0 h-[70vh]">
+          <PloPloWall rows={4} scrim={0.93} />
+        </div>
         <StarField stars={PAGE_STARS} />
         <div className="relative max-w-7xl mx-auto pt-16">
           <motion.h2
@@ -1054,7 +1153,8 @@ export default function PloPloPage() {
 
           {data && (
             <>
-              <div className="sticky top-4 z-30 mb-10">
+              {/* clears the fixed page nav above it */}
+              <div className="sticky top-[74px] z-30 mb-10">
                 <div
                   className="flex flex-wrap gap-1.5 justify-center p-2 rounded-full mx-auto w-max max-w-full"
                   style={{ background: 'rgba(26,33,80,.92)', border: `1px solid ${INDIGO}`, backdropFilter: 'blur(8px)' }}
