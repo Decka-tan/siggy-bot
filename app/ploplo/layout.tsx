@@ -1,17 +1,18 @@
 import type { Metadata } from 'next';
-import { Bricolage_Grotesque, Plus_Jakarta_Sans } from 'next/font/google';
+import { Baloo_2, Fredoka } from 'next/font/google';
 
-// This route runs its own type system — the global Anton/Inter pairing is
-// too flat next to the PloPlo art.
-const display = Bricolage_Grotesque({
+// Rounded, chunky type — it echoes the shape language of the PloPlo
+// characters (soft 3D stars). A neutral grotesk fights the artwork.
+const display = Baloo_2({
   subsets: ['latin'],
+  weight: ['700', '800'],
   display: 'swap',
   variable: '--ploplo-display',
 });
 
-const body = Plus_Jakarta_Sans({
+const body = Fredoka({
   subsets: ['latin'],
-  weight: ['400', '500', '700', '800'],
+  weight: ['400', '500', '600'],
   display: 'swap',
   variable: '--ploplo-body',
 });
