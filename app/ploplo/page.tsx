@@ -154,6 +154,139 @@ function StarField({ stars, className = '' }: { stars: ReturnType<typeof makeSta
   );
 }
 
+/* The hand-built CSS/SVG version of the scene. Kept as an alternative
+   to the painted background — open /ploplo?scene=css to compare. */
+function GeneratedScene({
+  starsY,
+  discScale,
+  hillsY,
+}: {
+  starsY: ReturnType<typeof useTransform>;
+  discScale: ReturnType<typeof useTransform>;
+  hillsY: ReturnType<typeof useTransform>;
+}) {
+  return (
+    <>
+      <div
+        className="absolute inset-0"
+        style={{ background: `linear-gradient(180deg, ${NIGHT} 0%, #171E45 42%, #2A2F63 72%, #4A4A85 100%)` }}
+      />
+      <motion.div style={{ y: starsY }} className="absolute inset-0">
+        <StarField stars={HERO_STARS} />
+      </motion.div>
+
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden preserveAspectRatio="none">
+        <line x1="-5%" y1="34%" x2="105%" y2="16%" stroke={LAVENDER} strokeWidth="1" opacity="0.28" />
+        <line x1="-5%" y1="58%" x2="105%" y2="30%" stroke={LAVENDER} strokeWidth="1" opacity="0.2" />
+        <line x1="-5%" y1="12%" x2="105%" y2="46%" stroke={LAVENDER} strokeWidth="1" opacity="0.16" />
+      </svg>
+
+      <motion.div
+        style={{ scale: discScale }}
+        className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-[62%] rounded-full"
+      >
+        <div
+          className="rounded-full"
+          style={{
+            width: 'min(56vw, 440px)',
+            height: 'min(56vw, 440px)',
+            background: `radial-gradient(circle at 50% 34%, #C9CBEC 0%, #8E93C8 46%, #5C63A6 78%, #3C4285 100%)`,
+            boxShadow: `0 0 0 10px rgba(255,255,255,.92), 0 0 150px 45px rgba(255,255,255,.4)`,
+          }}
+        />
+      </motion.div>
+
+      <motion.div style={{ y: hillsY }} className="absolute inset-x-0 bottom-0 h-[38%]">
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden>
+          <path
+            d="M0 190 C 190 120, 330 205, 520 175 C 700 145, 850 210, 1030 180 C 1200 150, 1330 200, 1440 175 L1440 400 L0 400 Z"
+            fill="#5C5F94"
+            opacity="0.85"
+          />
+          <path
+            d="M0 250 C 210 195, 380 265, 560 240 C 760 210, 900 275, 1090 245 C 1250 220, 1350 265, 1440 245 L1440 400 L0 400 Z"
+            fill="#3B3E73"
+          />
+          <path
+            d="M0 315 C 240 275, 420 335, 640 312 C 860 288, 1010 340, 1200 318 C 1320 305, 1390 325, 1440 315 L1440 400 L0 400 Z"
+            fill="#232750"
+          />
+        </svg>
+      </motion.div>
+    </>
+  );
+}
+
+/* Pull a dominant colour out of a member's avatar so each card is lit by
+   their own PFP. Avatars are served through /api/proxy-avatar, i.e. same
+   origin, so the canvas never taints. Falls back to the role colour. */
+function useAvatarColor(src: string) {
+  const [color, setColor] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = src;
+
+    img.onload = () => {
+      if (cancelled) return;
+      try {
+        const N = 16;
+        const cv = document.createElement('canvas');
+        cv.width = N;
+        cv.height = N;
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, N, N);
+        const { data } = ctx.getImageData(0, 0, N, N);
+
+        // Weight each pixel by how colourful it is, so a grey background
+        // doesn't drown out the subject.
+        let r = 0;
+        let g = 0;
+        let b = 0;
+        let w = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          if (data[i + 3] < 128) continue;
+          const [pr, pg, pb] = [data[i], data[i + 1], data[i + 2]];
+          const max = Math.max(pr, pg, pb);
+          const min = Math.min(pr, pg, pb);
+          const weight = (max - min) / 255 + 0.12;
+          r += pr * weight;
+          g += pg * weight;
+          b += pb * weight;
+          w += weight;
+        }
+        if (!w) return;
+        r /= w;
+        g /= w;
+        b /= w;
+
+        // Push it toward a usable tint: keep the hue, force enough
+        // lightness/saturation to read against the night background.
+        const max = Math.max(r, g, b) / 255;
+        const min = Math.min(r, g, b) / 255;
+        const l = (max + min) / 2;
+        const scale = l < 0.42 ? 0.42 / Math.max(l, 0.06) : l > 0.78 ? 0.78 / l : 1;
+        const hex = (v: number) =>
+          Math.round(Math.min(255, Math.max(0, v * scale)))
+            .toString(16)
+            .padStart(2, '0');
+        if (!cancelled) setColor(`#${hex(r)}${hex(g)}${hex(b)}`);
+      } catch {
+        /* canvas unavailable — keep the role colour */
+      }
+    };
+
+    return () => {
+      cancelled = true;
+    };
+  }, [src]);
+
+  return color;
+}
+
 function CountUp({ to, duration = 1100 }: { to: number; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
@@ -190,7 +323,8 @@ function RoleChip({ role, big = false }: { role: string; big?: boolean }) {
 function HolderCard({ holder, index, onClick }: { holder: Holder; index: number; onClick: () => void }) {
   const role = displayRoleOf(holder);
   const days = daysSince(holder.joinedAt);
-  const c = colorFor(role);
+  const pfp = useAvatarColor(holder.avatarUrl);
+  const c = pfp ?? colorFor(role);
 
   return (
     <motion.button
@@ -204,10 +338,13 @@ function HolderCard({ holder, index, onClick }: { holder: Holder; index: number;
       style={{ background: DEEP, border: `1px solid ${INDIGO}`, fontFamily: BODY }}
     >
       <div className="relative aspect-square flex items-center justify-center p-4">
-        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 42%, ${INDIGO} 0%, ${DEEP} 68%)` }} />
+        <div
+          className="absolute inset-0 transition-colors duration-700"
+          style={{ background: `radial-gradient(circle at 50% 42%, ${c}3D 0%, ${c}14 45%, ${DEEP} 78%)` }}
+        />
         <div
           className="relative w-full aspect-square rounded-full overflow-hidden transition-transform duration-500 group-hover:scale-[1.05]"
-          style={{ boxShadow: `0 0 0 2px ${c}55, 0 14px 34px -12px ${NIGHT}` }}
+          style={{ boxShadow: `0 0 0 2px ${c}99, 0 0 32px -6px ${c}80, 0 14px 34px -12px ${NIGHT}` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
@@ -425,8 +562,15 @@ function Verdict({ result, query, onClose }: { result: Holder | 'not-found'; que
               Not in orbit
             </p>
             <p className="font-semibold">@{query.replace(/^@/, '')}</p>
-            <p className="text-sm mt-3" style={{ color: HAZE }}>
-              No PloPlo Holder badge on this account yet.
+            <p className="text-sm mt-3" style={{ color: LAVENDER }}>
+              This account doesn&apos;t carry the PloPlo Holder role yet. Did you mint?
+            </p>
+            <p className="text-sm mt-2" style={{ color: HAZE }}>
+              If you already own one, the role only lands once your wallet is linked. Drop it in{' '}
+              <span className="font-semibold" style={{ color: PEACH }}>
+                #wallet-connection
+              </span>{' '}
+              on the Ritual Discord and you&apos;ll show up here on the next scan.
             </p>
           </div>
         )}
@@ -454,6 +598,8 @@ export default function PloPloPage() {
   type Suggestion = { userId: string; username: string; displayName: string; avatarUrl?: string };
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  // /ploplo?scene=css renders the hand-built CSS/SVG sky instead of the painting.
+  const [cssScene, setCssScene] = useState(false);
 
   const heroRef = useRef<HTMLDivElement>(null);
   const bandRef = useRef<HTMLDivElement>(null);
@@ -490,6 +636,10 @@ export default function PloPloPage() {
         if (d?.activity?.byUser) setActivityByUser(d.activity.byUser);
       })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setCssScene(new URLSearchParams(window.location.search).get('scene') === 'css');
   }, []);
 
   useEffect(() => {
@@ -615,38 +765,28 @@ export default function PloPloPage() {
         {verdict !== 'idle' && <Verdict result={verdict} query={query} onClose={() => setVerdict('idle')} />}
       </AnimatePresence>
 
-      {/* ══ 1. HERO — cosmic scene ══ */}
-      <section
-        ref={heroRef}
-        className="relative h-screen min-h-[680px] overflow-hidden"
-        style={{ background: `linear-gradient(180deg, ${NIGHT} 0%, #171E45 42%, #2A2F63 72%, #4A4A85 100%)` }}
-      >
-        <motion.div style={{ y: starsY }} className="absolute inset-0">
-          <StarField stars={HERO_STARS} />
-        </motion.div>
-
-        {/* orbit lines */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden preserveAspectRatio="none">
-          <line x1="-5%" y1="34%" x2="105%" y2="16%" stroke={LAVENDER} strokeWidth="1" opacity="0.28" />
-          <line x1="-5%" y1="58%" x2="105%" y2="30%" stroke={LAVENDER} strokeWidth="1" opacity="0.2" />
-          <line x1="-5%" y1="12%" x2="105%" y2="46%" stroke={LAVENDER} strokeWidth="1" opacity="0.16" />
-        </svg>
-
-        {/* the glowing disc — a moon rising behind the hills */}
-        <motion.div
-          style={{ scale: discScale }}
-          className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-[62%] rounded-full"
-        >
-          <div
-            className="rounded-full"
-            style={{
-              width: 'min(56vw, 440px)',
-              height: 'min(56vw, 440px)',
-              background: `radial-gradient(circle at 50% 34%, #C9CBEC 0%, #8E93C8 46%, #5C63A6 78%, #3C4285 100%)`,
-              boxShadow: `0 0 0 10px rgba(255,255,255,.92), 0 0 150px 45px rgba(255,255,255,.4)`,
-            }}
-          />
-        </motion.div>
+      {/* ══ 1. HERO ══ */}
+      <section ref={heroRef} className="relative h-screen min-h-[680px] overflow-hidden" style={{ background: NIGHT }}>
+        {cssScene ? (
+          <GeneratedScene starsY={starsY} discScale={discScale} hillsY={hillsY} />
+        ) : (
+          <>
+            {/* The scene is the artwork; it drifts slightly on scroll. */}
+            <motion.div style={{ scale: discScale, y: starsY }} className="absolute inset-0" aria-hidden>
+              <div
+                className="absolute inset-[-4%]"
+                style={{ background: `url(/ploplo/hero.webp) center 42% / cover no-repeat` }}
+              />
+            </motion.div>
+            {/* scrim: keeps type readable and hides the upscale softness */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(180deg, rgba(14,19,48,.62) 0%, rgba(14,19,48,.38) 38%, rgba(14,19,48,.55) 72%, rgba(14,19,48,.85) 100%)`,
+              }}
+            />
+          </>
+        )}
 
         {/* planets on the orbits */}
         <motion.div style={{ y: planetFar }} className="absolute left-[4%] top-[9%] w-24 md:w-36 lg:w-44 opacity-95">
@@ -665,19 +805,10 @@ export default function PloPloPage() {
           {planet(NFTS[4])}
         </motion.div>
 
-        {/* layered hills */}
-        <motion.div style={{ y: hillsY }} className="absolute inset-x-0 bottom-0 h-[38%]">
-          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden>
-            <path d="M0 190 C 190 120, 330 205, 520 175 C 700 145, 850 210, 1030 180 C 1200 150, 1330 200, 1440 175 L1440 400 L0 400 Z" fill="#5C5F94" opacity="0.85" />
-            <path d="M0 250 C 210 195, 380 265, 560 240 C 760 210, 900 275, 1090 245 C 1250 220, 1350 265, 1440 245 L1440 400 L0 400 Z" fill="#3B3E73" />
-            <path d="M0 315 C 240 275, 420 335, 640 312 C 860 288, 1010 340, 1200 318 C 1320 305, 1390 325, 1440 315 L1440 400 L0 400 Z" fill="#232750" />
-          </svg>
-        </motion.div>
-
         {/* copy */}
         <motion.div
           style={{ y: heroTitleY, opacity: heroFade }}
-          className="relative z-10 h-full flex flex-col items-center px-5 text-center pt-[13vh]"
+          className="relative z-10 h-full flex flex-col items-center justify-center px-5 text-center"
         >
           <motion.span
             initial={{ opacity: 0, y: 12 }}
@@ -968,6 +1099,38 @@ export default function PloPloPage() {
               </p>
             </>
           )}
+
+          {/* ── how to get listed ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5 }}
+            className="relative mt-20 mx-auto max-w-3xl rounded-[28px] px-7 py-10 md:px-12 md:py-12 text-center overflow-hidden"
+            style={{ background: DEEP, border: `1px solid ${INDIGO}` }}
+          >
+            <StarField stars={PAGE_STARS} />
+            <div className="relative">
+              <p className="uppercase text-4xl md:text-5xl leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800, color: MIST }}>
+                Not seeing yours?
+              </p>
+              <p className="mt-5 text-sm md:text-base leading-relaxed" style={{ color: LAVENDER }}>
+                Siggy only picks up holders who have linked their wallet to Discord. If your PloPlo
+                isn&apos;t up here, the mint is fine — the link is what&apos;s missing.
+              </p>
+              <p className="mt-4 text-sm md:text-base leading-relaxed" style={{ color: HAZE }}>
+                Head to the Ritual Discord, post your wallet in{' '}
+                <span
+                  className="inline-block px-2.5 py-1 rounded-full font-semibold align-middle"
+                  style={{ background: INDIGO, color: PEACH }}
+                >
+                  #wallet-connection
+                </span>{' '}
+                and once the PloPlo Holder role lands you&apos;ll be highlighted here on the next
+                hourly scan.
+              </p>
+            </div>
+          </motion.div>
         </div>
       </section>
 
