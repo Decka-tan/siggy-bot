@@ -144,13 +144,132 @@ function makeStars(count: number, seed: number) {
 const HERO_STARS = makeStars(150, 7);
 const PAGE_STARS = makeStars(90, 21);
 
-function StarField({ stars, className = '' }: { stars: ReturnType<typeof makeStars>; className?: string }) {
+function StarField({
+  stars,
+  className = '',
+  twinkle = false,
+}: {
+  stars: ReturnType<typeof makeStars>;
+  className?: string;
+  twinkle?: boolean;
+}) {
   return (
     <svg className={`absolute inset-0 w-full h-full pointer-events-none ${className}`} aria-hidden>
+      {twinkle && (
+        <style>{`
+          @keyframes ploplo-twinkle {
+            0%, 100% { opacity: var(--o); transform: scale(1); }
+            50%      { opacity: calc(var(--o) * 0.18); transform: scale(0.7); }
+          }
+          .ploplo-star { animation: ploplo-twinkle var(--d) ease-in-out infinite; animation-delay: var(--t); transform-box: fill-box; transform-origin: center; }
+          @media (prefers-reduced-motion: reduce) { .ploplo-star { animation: none; } }
+        `}</style>
+      )}
       {stars.map((st, i) => (
-        <circle key={i} cx={`${st.x}%`} cy={`${st.y}%`} r={st.r} fill="#fff" opacity={st.o} />
+        <circle
+          key={i}
+          className={twinkle ? 'ploplo-star' : undefined}
+          cx={`${st.x}%`}
+          cy={`${st.y}%`}
+          r={st.r}
+          fill="#fff"
+          opacity={st.o}
+          style={
+            twinkle
+              ? ({
+                  ['--o' as string]: st.o,
+                  ['--d' as string]: `${2.4 + (i % 7) * 0.9}s`,
+                  ['--t' as string]: `${(i % 13) * 0.37}s`,
+                } as React.CSSProperties)
+              : undefined
+          }
+        />
       ))}
     </svg>
+  );
+}
+
+/* Occasional shooting star for the roster's night sky. */
+function ShootingStars() {
+  const shots = [
+    { top: '12%', left: '8%', delay: 0, dur: 2.2, gap: 11 },
+    { top: '34%', left: '58%', delay: 5.5, dur: 2.6, gap: 14 },
+    { top: '68%', left: '26%', delay: 9, dur: 2.4, gap: 17 },
+  ];
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
+      {shots.map((s, i) => (
+        <motion.div
+          key={i}
+          className="absolute h-px"
+          style={{
+            top: s.top,
+            left: s.left,
+            width: 160,
+            background: `linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.9))`,
+            rotate: '18deg',
+          }}
+          initial={{ opacity: 0, x: -60 }}
+          animate={{ opacity: [0, 1, 0], x: [-60, 260] }}
+          transition={{ duration: s.dur, repeat: Infinity, repeatDelay: s.gap, delay: s.delay, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* Small decorative planets drifting behind the roster grid. Pure shapes
+   in the page palette — colour and motion without more imagery. */
+function DriftingPlanets() {
+  const bodies = [
+    { c: '#F5C9A8', size: 74, top: '6%', left: '4%', dur: 15, ring: true },
+    { c: '#E98BA0', size: 40, top: '22%', right: '7%', dur: 19 },
+    { c: '#8FD3C8', size: 26, top: '48%', left: '9%', dur: 13 },
+    { c: '#A9A5E4', size: 58, top: '63%', right: '5%', dur: 17, ring: true },
+    { c: '#7C86D6', size: 32, top: '82%', left: '6%', dur: 21 },
+    { c: '#9FD5E8', size: 20, top: '36%', right: '18%', dur: 12 },
+  ];
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block" aria-hidden>
+      {bodies.map((b, i) => (
+        <motion.div
+          key={i}
+          className="absolute"
+          style={{ top: b.top, left: b.left, right: b.right, width: b.size, height: b.size }}
+          animate={{ y: [0, -18, 0], x: [0, i % 2 ? 10 : -10, 0] }}
+          transition={{ duration: b.dur, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <div
+            className="w-full h-full rounded-full"
+            style={{ background: b.c, opacity: 0.5, boxShadow: `0 0 40px -6px ${b.c}` }}
+          />
+          {b.ring && (
+            <div
+              className="absolute left-1/2 top-1/2 rounded-[50%]"
+              style={{
+                width: '180%',
+                height: '44%',
+                border: `2px solid ${b.c}`,
+                opacity: 0.4,
+                transform: 'translate(-50%,-50%) rotate(-20deg)',
+              }}
+            />
+          )}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+/* Soft colour transition so neighbouring sections don't hard-cut. */
+function Seam({ from, to, height = 'h-24 md:h-32' }: { from: string; to: string; height?: string }) {
+  return (
+    <div className={`relative w-full ${height}`} style={{ background: `linear-gradient(180deg, ${from} 0%, ${to} 100%)` }}>
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-px w-40"
+        style={{ background: `linear-gradient(90deg, transparent, ${HAZE}, transparent)`, opacity: 0.5 }}
+      />
+    </div>
   );
 }
 
@@ -319,6 +438,11 @@ function PloPloWall({ rows = 6, scrim = 0.9 }: { rows?: number; scrim?: number }
     </div>
   );
 }
+
+// The wall is masked at top and bottom so it dissolves into the section
+// edges instead of ending on a hard line.
+const WALL_MASK =
+  'linear-gradient(180deg, transparent 0%, #000 16%, #000 84%, transparent 100%)';
 
 function CountUp({ to, duration = 1100 }: { to: number; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -1018,6 +1142,8 @@ export default function PloPloPage() {
         </motion.button>
       </section>
 
+      <Seam from="rgba(14,19,48,0)" to={NIGHT} height="h-16 md:h-20" />
+
       {/* ══ 2. MARQUEE BAND ══ */}
       <section
         ref={bandRef}
@@ -1054,9 +1180,13 @@ export default function PloPloPage() {
         </motion.div>
       </section>
 
+      <Seam from={NIGHT} to={DEEP} />
+
       {/* ══ 3. STATS ══ */}
-      <section className="relative min-h-screen flex flex-col justify-center px-5 py-24" style={{ background: DEEP }}>
-        <PloPloWall rows={6} scrim={0.9} />
+      <section className="relative min-h-screen flex flex-col justify-center px-5 py-24 overflow-hidden" style={{ background: DEEP }}>
+        <div className="absolute inset-0" style={{ maskImage: WALL_MASK, WebkitMaskImage: WALL_MASK }}>
+          <PloPloWall rows={6} scrim={0.9} />
+        </div>
         <StarField stars={PAGE_STARS} />
         <div className="relative max-w-5xl mx-auto w-full">
           <motion.h2
@@ -1123,12 +1253,15 @@ export default function PloPloPage() {
         </div>
       </section>
 
+      <Seam from={DEEP} to={NIGHT} />
+
       {/* ══ 4. ROSTER ══ */}
-      <section className="relative px-4 pb-28 overflow-hidden" style={{ background: NIGHT }}>
-        <div className="absolute inset-x-0 top-0 h-[70vh]">
-          <PloPloWall rows={4} scrim={0.93} />
-        </div>
-        <StarField stars={PAGE_STARS} />
+      {/* deliberately quiet: just a night sky, so the colour-filled tiles carry it */}
+      {/* no overflow-hidden here: it clips the sticky filter bar */}
+      <section className="relative px-4 pb-28" style={{ background: NIGHT }}>
+        <StarField stars={PAGE_STARS} twinkle />
+        <ShootingStars />
+        <DriftingPlanets />
         <div className="relative max-w-7xl mx-auto pt-16">
           <motion.h2
             initial={{ opacity: 0, y: 22 }}
@@ -1233,6 +1366,8 @@ export default function PloPloPage() {
           </motion.div>
         </div>
       </section>
+
+      <Seam from={NIGHT} to={DEEP} height="h-20 md:h-24" />
 
       <footer
         className="relative px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-4"
