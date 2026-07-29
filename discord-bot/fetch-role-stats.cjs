@@ -61,7 +61,7 @@ const FALLBACK_ROLES = ['Forerunner', 'Blessed', 'Harmonic', 'Cursed', 'Initiate
 // Badge roles — additive (orthogonal to the contributor ladder). A member can
 // hold a badge in addition to any tracked role. Used to surface special cohorts
 // (e.g. early-deployer registry) on /stats and as standalone /<badge> pages.
-const BADGE_ROLES = ['Genesis 1000'];
+const BADGE_ROLES = ['Genesis 1000', 'PloPlo Holder'];
 
 // Regional community roles (for the Insights tab) — counted over ALL members
 const REGION_ROLES = [
