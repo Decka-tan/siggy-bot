@@ -44,6 +44,14 @@ const MIST = '#E6E6F7';
 const PEACH = '#F5C9A8';
 const PINK = '#E98BA0';
 
+/* The full PloPlo Genesis collection: token 1-940 maps to metadata index
+   3849-4788 (index = tokenId + 3848). Tiles are 300px copies used for the
+   wall and the card stickers; the ten hero planets stay at 720px. */
+const TILE_FROM = 3849;
+const TILE_COUNT = 940;
+const tile = (i: number) => `/ploplo/tiles/${TILE_FROM + (((i % TILE_COUNT) + TILE_COUNT) % TILE_COUNT)}.webp`;
+
+// Hero/marquee art, kept at full size.
 const NFTS = [
   '/ploplo/3862.webp',
   '/ploplo/4003.webp',
@@ -56,6 +64,24 @@ const NFTS = [
   '/ploplo/4215.webp',
   '/ploplo/3948.webp',
 ];
+
+/* A fresh random slice of the collection on every load. Generated in an
+   effect (never during render) so the server and client markup agree. */
+function useRandomTiles(count: number) {
+  const [tiles, setTiles] = useState<string[]>(() =>
+    Array.from({ length: count }, (_, i) => tile(i * 7)),
+  );
+
+  useEffect(() => {
+    const picked = new Set<number>();
+    while (picked.size < Math.min(count, TILE_COUNT)) {
+      picked.add(Math.floor(Math.random() * TILE_COUNT));
+    }
+    setTiles([...picked].map(tile));
+  }, [count]);
+
+  return tiles;
+}
 
 const ROLE_RANK: Record<string, number> = {
   'Radiant Ritualist': 9,
@@ -121,10 +147,12 @@ function formatJoinDate(iso: string | null) {
   if (Number.isNaN(d.getTime())) return 'Unknown';
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
+// Deterministic pick across the whole collection, so a member always gets
+// the same sticker (it is decorative — not their actual token).
 function nftFor(userId: string) {
   let n = 0;
-  for (let i = 0; i < userId.length; i++) n = (n * 31 + userId.charCodeAt(i)) % 9973;
-  return NFTS[n % NFTS.length];
+  for (let i = 0; i < userId.length; i++) n = (n * 31 + userId.charCodeAt(i)) % 999983;
+  return tile(n);
 }
 
 /* Deterministic starfield — seeded so SSR and client agree. */
@@ -410,13 +438,16 @@ function useAvatarColor(src: string) {
    crawling the opposite way, then buried under a heavy scrim so it never
    competes with the content sitting on top. */
 function PloPloWall({ rows = 6, scrim = 0.9 }: { rows?: number; scrim?: number }) {
+  // 7 across per screen; each row gets its own random draw from the 940.
+  const pool = useRandomTiles(rows * 7);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
       <div className="absolute inset-0 flex flex-col justify-center gap-[2vw]">
         {Array.from({ length: rows }, (_, r) => {
           const toLeft = r % 2 === 1;
-          // Two copies of the strip so the loop is seamless.
-          const strip = [...NFTS, ...NFTS, ...NFTS].slice(0, 21);
+          const row = pool.slice(r * 7, r * 7 + 7);
+          // Tripled so the -33.333% loop is seamless.
+          const strip = [...row, ...row, ...row];
           return (
             <motion.div
               key={r}
@@ -873,7 +904,9 @@ export default function PloPloPage() {
     });
   }, [data, filter]);
 
-  const marqueeRow = [...NFTS, ...NFTS];
+  // Two independent random draws so the band's rows never mirror each other.
+  const bandTop = useRandomTiles(14);
+  const bandBottom = useRandomTiles(14);
 
   /* A PloPlo cut into a circle and lit from one side, so it reads as
      a planet sitting on the orbit line. `ring` adds a Saturn band. */
@@ -1157,7 +1190,7 @@ export default function PloPloPage() {
         <StarField stars={PAGE_STARS} />
 
         <motion.div style={{ x: rowLeft }} className="relative flex gap-5 mb-7 w-max">
-          {marqueeRow.map((src, i) => (
+          {[...bandTop, ...bandTop].map((src, i) => (
             <div key={`a${i}`} className="w-36 md:w-52 aspect-square rounded-full overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" loading="lazy" />
@@ -1175,7 +1208,7 @@ export default function PloPloPage() {
         </motion.div>
 
         <motion.div style={{ x: rowRight }} className="relative flex gap-5 mt-7 w-max">
-          {marqueeRow.map((src, i) => (
+          {[...bandBottom, ...bandBottom].map((src, i) => (
             <div key={`b${i}`} className="w-36 md:w-52 aspect-square rounded-full overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" loading="lazy" />
