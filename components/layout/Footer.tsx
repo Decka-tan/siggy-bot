@@ -6,7 +6,7 @@ export function Footer() {
   const pathname = usePathname();
   
   // Hide footer on full-screen VN routes and Chat routes
-  if (pathname === '/story' || pathname === '/chat') return null;
+  if (pathname === '/story' || pathname === '/chat' || pathname === '/ploplo') return null;
 
   return (
     <footer className="py-12 text-center border-t border-border font-mono text-xs text-text-secondary tracking-[0.2em] uppercase">
