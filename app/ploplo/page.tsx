@@ -6,12 +6,11 @@ import { motion, AnimatePresence, useScroll, useTransform, useSpring, useInView 
 /* ─────────────────────────────────────────────────────────────
    PloPlo Holder registry — standalone landing.
 
-   Rules for this page, on purpose:
-   · no gradients anywhere (fills, text, borders) — flat colour only
-   · no blurred blobs — the background is a tiled star pattern, the
-     same star silhouette the characters are built from
-   · rounded chunky type (Baloo 2 / Fredoka) to match the 3D toys
-   · shadows are hard offsets, never soft glows
+   Art direction follows a cosmic reference: deep navy night sky,
+   a big glowing disc as the anchor, thin orbit lines, layered
+   hills. The PloPlo NFTs are cut into circles and placed ON the
+   orbits so they read as planets in the scene rather than
+   stickers floating over it.
    Header/Footer are suppressed for this route.
    ───────────────────────────────────────────────────────────── */
 
@@ -35,27 +34,15 @@ const OPENSEA = 'https://opensea.io/collection/ploplo-genesis';
 const DISPLAY = 'var(--ploplo-display), ui-rounded, system-ui, sans-serif';
 const BODY = 'var(--ploplo-body), ui-rounded, system-ui, sans-serif';
 
-const INK = '#1B1633';
-const CREAM = '#FFF3DE';
-const BLUE = '#2C7BE5';
-const YELLOW = '#FFC93C';
-const PINK = '#FF9EC4';
-const MINT = '#6FD3A9';
-const LILAC = '#B9A7F0';
-const CORAL = '#FF7A6B';
-
-// The PloPlo silhouette, tiled. This is the page's texture — not a blur.
-function starTile(color: string, opacity: number) {
-  const c = encodeURIComponent(color);
-  return (
-    // 120-unit artwork rendered into a 58px tile → fine texture, not bedsheet.
-    `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='58' height='58' viewBox='0 0 120 120'%3E` +
-    `%3Cg fill='${c}' fill-opacity='${opacity}'%3E` +
-    `%3Cpath d='M30 14 L38 32 L57 34 L43 47 L47 66 L30 56 L13 66 L17 47 L3 34 L22 32 Z'/%3E` +
-    `%3Cpath d='M90 74 L98 92 L117 94 L103 107 L107 126 L90 116 L73 126 L77 107 L63 94 L82 92 Z'/%3E` +
-    `%3C/g%3E%3C/svg%3E")`
-  );
-}
+/* Palette lifted from the reference image. */
+const NIGHT = '#0E1330';
+const DEEP = '#1A2150';
+const INDIGO = '#2B3272';
+const HAZE = '#5A61A6';
+const LAVENDER = '#B9B7E0';
+const MIST = '#E6E6F7';
+const PEACH = '#F5C9A8';
+const PINK = '#E98BA0';
 
 const NFTS = [
   '/ploplo/3862.webp',
@@ -84,27 +71,22 @@ const ROLE_RANK: Record<string, number> = {
   Cursed: 0.1,
 };
 
-// Flat swatches only.
+// Muted tints that sit inside the night palette — all light enough
+// to carry NIGHT-coloured type.
 const ROLE_COLOR: Record<string, string> = {
-  'Radiant Ritualist': YELLOW,
-  Zealot: CORAL,
-  Ritualist: MINT,
-  Mage: '#7EC8F2',
-  ritty: LILAC,
-  bitty: BLUE,
-  Forerunner: '#FFA45C',
-  Initiate: '#8FDCEF',
-  Blessed: '#FFE49B',
-  Cursed: '#C8C2D8',
+  'Radiant Ritualist': PEACH,
+  Zealot: '#FF8B87',
+  Ritualist: '#8FD3C8',
+  Mage: '#8FB8E8',
+  ritty: '#A9A5E4',
+  bitty: '#7C86D6',
+  Forerunner: '#E8B98F',
+  Initiate: '#9FD5E8',
+  Blessed: '#F2DFAE',
+  Cursed: '#A7A3BF',
   Harmonic: PINK,
 };
-const OTHER_COLOR = '#DDD5C4';
-
-// Swatches dark enough to carry white type.
-const DARK_FILLS = new Set([BLUE, CORAL]);
-function inkOrWhite(c: string) {
-  return DARK_FILLS.has(c) ? '#fff' : INK;
-}
+const OTHER_COLOR = '#8B90BC';
 
 const MAIN_ROLES = ['Radiant Ritualist', 'Zealot', 'Ritualist', 'ritty', 'bitty'];
 
@@ -145,6 +127,33 @@ function nftFor(userId: string) {
   return NFTS[n % NFTS.length];
 }
 
+/* Deterministic starfield — seeded so SSR and client agree. */
+function makeStars(count: number, seed: number) {
+  let s = seed;
+  const rnd = () => {
+    s = (s * 1103515245 + 12345) % 2147483648;
+    return s / 2147483648;
+  };
+  return Array.from({ length: count }, () => ({
+    x: rnd() * 100,
+    y: rnd() * 100,
+    r: 0.5 + rnd() * 1.6,
+    o: 0.25 + rnd() * 0.65,
+  }));
+}
+const HERO_STARS = makeStars(150, 7);
+const PAGE_STARS = makeStars(90, 21);
+
+function StarField({ stars, className = '' }: { stars: ReturnType<typeof makeStars>; className?: string }) {
+  return (
+    <svg className={`absolute inset-0 w-full h-full pointer-events-none ${className}`} aria-hidden>
+      {stars.map((st, i) => (
+        <circle key={i} cx={`${st.x}%`} cy={`${st.y}%`} r={st.r} fill="#fff" opacity={st.o} />
+      ))}
+    </svg>
+  );
+}
+
 function CountUp({ to, duration = 1100 }: { to: number; duration?: number }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: '-60px' });
@@ -167,17 +176,17 @@ function CountUp({ to, duration = 1100 }: { to: number; duration?: number }) {
 }
 
 function RoleChip({ role, big = false }: { role: string; big?: boolean }) {
-  const c = colorFor(role);
   return (
     <span
       className={`inline-block font-semibold uppercase rounded-full ${big ? 'text-[11px] px-3 py-1.5' : 'text-[10px] px-2.5 py-1'}`}
-      style={{ background: c, color: inkOrWhite(c), border: `2px solid ${INK}`, letterSpacing: '0.03em' }}
+      style={{ background: colorFor(role), color: NIGHT, letterSpacing: '0.04em' }}
     >
       {role}
     </span>
   );
 }
 
+/* ── holder card: a small planet dossier ── */
 function HolderCard({ holder, index, onClick }: { holder: Holder; index: number; onClick: () => void }) {
   const role = displayRoleOf(holder);
   const days = daysSince(holder.joinedAt);
@@ -189,38 +198,40 @@ function HolderCard({ holder, index, onClick }: { holder: Holder; index: number;
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.4, delay: Math.min(index, 14) * 0.02, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, delay: Math.min(index, 14) * 0.02, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -6, transition: { duration: 0.15 } }}
       className="group text-left rounded-3xl overflow-hidden"
-      style={{ background: '#fff', border: `3px solid ${INK}`, boxShadow: `5px 5px 0 ${INK}`, fontFamily: BODY }}
+      style={{ background: DEEP, border: `1px solid ${INDIGO}`, fontFamily: BODY }}
     >
-      <div className="relative aspect-square overflow-hidden" style={{ background: c }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={holder.avatarUrl}
-          alt={holder.displayName}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.06]"
-        />
+      <div className="relative aspect-square flex items-center justify-center p-4">
+        <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 42%, ${INDIGO} 0%, ${DEEP} 68%)` }} />
         <div
-          className="absolute bottom-2 right-2 w-12 h-12 rounded-full overflow-hidden"
-          style={{ border: `3px solid ${INK}`, background: '#fff' }}
+          className="relative w-full aspect-square rounded-full overflow-hidden transition-transform duration-500 group-hover:scale-[1.05]"
+          style={{ boxShadow: `0 0 0 2px ${c}55, 0 14px 34px -12px ${NIGHT}` }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
+        </div>
+        <div
+          className="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full overflow-hidden"
+          style={{ boxShadow: `0 0 0 2px ${DEEP}` }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={nftFor(holder.userId)} alt="" className="w-full h-full object-cover" loading="lazy" />
         </div>
       </div>
 
-      <div className="px-3.5 pt-3 pb-3.5" style={{ borderTop: `3px solid ${INK}` }}>
-        <p className="font-semibold text-[15px] leading-tight truncate" style={{ color: INK }} title={holder.displayName}>
+      <div className="px-3.5 pt-3 pb-3.5" style={{ borderTop: `1px solid ${INDIGO}` }}>
+        <p className="font-semibold text-[15px] leading-tight truncate" style={{ color: MIST }} title={holder.displayName}>
           {holder.displayName}
         </p>
-        <p className="text-xs truncate mb-2.5" style={{ color: '#6F6885' }}>
+        <p className="text-xs truncate mb-2.5" style={{ color: HAZE }}>
           @{holder.username}
         </p>
         <div className="flex items-center justify-between gap-2">
-          {role ? <RoleChip role={role} /> : <span className="text-[10px]" style={{ color: '#9A93AC' }}>no role</span>}
+          {role ? <RoleChip role={role} /> : <span className="text-[10px]" style={{ color: HAZE }}>no role</span>}
           {days !== null && (
-            <span className="text-[10px] font-semibold" style={{ color: '#9A93AC' }}>
+            <span className="text-[10px] font-semibold" style={{ color: HAZE }}>
               {formatDays(days)}
             </span>
           )}
@@ -254,7 +265,7 @@ function HolderModal({ holder, activity, onClose }: { holder: Holder; activity: 
       exit={{ opacity: 0 }}
       onClick={onClose}
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ background: 'rgba(27,22,51,0.82)', fontFamily: BODY }}
+      style={{ background: 'rgba(14,19,48,0.86)', fontFamily: BODY }}
     >
       <motion.div
         initial={{ opacity: 0, y: 26 }}
@@ -263,34 +274,41 @@ function HolderModal({ holder, activity, onClose }: { holder: Holder; activity: 
         transition={{ type: 'spring', stiffness: 300, damping: 26 }}
         onClick={e => e.stopPropagation()}
         className="relative w-full max-w-sm rounded-[28px] overflow-hidden"
-        style={{ background: '#fff', border: `4px solid ${INK}`, boxShadow: `9px 9px 0 ${INK}` }}
+        style={{ background: DEEP, border: `1px solid ${INDIGO}`, boxShadow: `0 50px 90px -40px #000` }}
       >
         <button
           onClick={onClose}
           aria-label="Close"
           className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full font-semibold"
-          style={{ background: CREAM, border: `3px solid ${INK}`, color: INK }}
+          style={{ background: INDIGO, color: MIST }}
         >
           ✕
         </button>
 
-        <div className="relative aspect-square" style={{ background: c }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
+        <div className="relative aspect-square flex items-center justify-center p-7">
+          <div className="absolute inset-0" style={{ background: `radial-gradient(circle at 50% 40%, ${INDIGO} 0%, ${DEEP} 70%)` }} />
+          <StarField stars={PAGE_STARS} />
           <div
-            className="absolute bottom-3 left-3 w-20 h-20 rounded-2xl overflow-hidden"
-            style={{ border: `4px solid ${INK}`, background: '#fff' }}
+            className="relative w-full aspect-square rounded-full overflow-hidden"
+            style={{ boxShadow: `0 0 0 3px ${c}66, 0 0 60px -6px ${c}55` }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
+          </div>
+          <div
+            className="absolute bottom-4 left-4 w-16 h-16 rounded-full overflow-hidden"
+            style={{ boxShadow: `0 0 0 3px ${DEEP}` }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={nftFor(holder.userId)} alt="" className="w-full h-full object-cover" />
           </div>
         </div>
 
-        <div className="px-5 pt-4 pb-6" style={{ borderTop: `4px solid ${INK}`, color: INK }}>
+        <div className="px-5 pt-4 pb-6" style={{ borderTop: `1px solid ${INDIGO}`, color: MIST }}>
           <p className="text-3xl leading-tight" style={{ fontFamily: DISPLAY, fontWeight: 800 }}>
             {holder.displayName}
           </p>
-          <p className="text-sm mb-3" style={{ color: '#6F6885' }}>
+          <p className="text-sm mb-3" style={{ color: HAZE }}>
             @{holder.username}
           </p>
 
@@ -301,14 +319,14 @@ function HolderModal({ holder, activity, onClose }: { holder: Holder; activity: 
           )}
 
           {days !== null && (
-            <div className="rounded-2xl p-3.5 mb-3" style={{ background: CREAM, border: `3px solid ${INK}` }}>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: '#6F6885' }}>
+            <div className="rounded-2xl p-3.5 mb-3" style={{ background: INDIGO }}>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: LAVENDER }}>
                 Locked in for
               </p>
-              <p className="text-3xl leading-none mt-1" style={{ fontFamily: DISPLAY, fontWeight: 800 }}>
+              <p className="text-3xl leading-none mt-1" style={{ fontFamily: DISPLAY, fontWeight: 800, color: PEACH }}>
                 {formatDays(days)}
               </p>
-              <p className="text-[11px] mt-1" style={{ color: '#6F6885' }}>
+              <p className="text-[11px] mt-1" style={{ color: HAZE }}>
                 joined {formatJoinDate(holder.joinedAt)}
               </p>
             </div>
@@ -317,15 +335,15 @@ function HolderModal({ holder, activity, onClose }: { holder: Holder; activity: 
           {activity && (activity.contributions || activity.eventsWon || activity.eventsHosted) ? (
             <div className="grid grid-cols-3 gap-2 mb-4">
               {[
-                { l: 'Contrib', v: activity.contributions ?? 0, c: MINT },
-                { l: 'Won', v: activity.eventsWon ?? 0, c: YELLOW },
-                { l: 'Host', v: activity.eventsHosted ?? 0, c: LILAC },
+                { l: 'Contrib', v: activity.contributions ?? 0, c: '#8FD3C8' },
+                { l: 'Won', v: activity.eventsWon ?? 0, c: PEACH },
+                { l: 'Host', v: activity.eventsHosted ?? 0, c: '#A9A5E4' },
               ].map(t => (
-                <div key={t.l} className="rounded-xl p-2 text-center" style={{ background: t.c, border: `3px solid ${INK}` }}>
-                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: INK, opacity: 0.65 }}>
+                <div key={t.l} className="rounded-xl p-2 text-center" style={{ background: INDIGO }}>
+                  <div className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: HAZE }}>
                     {t.l}
                   </div>
-                  <div className="text-xl leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800 }}>
+                  <div className="text-xl leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800, color: t.c }}>
                     {t.v.toLocaleString()}
                   </div>
                 </div>
@@ -336,7 +354,7 @@ function HolderModal({ holder, activity, onClose }: { holder: Holder; activity: 
           <a
             href={`/stats?u=${encodeURIComponent(holder.username)}`}
             className="block text-center px-3 py-3 rounded-2xl text-xs font-semibold uppercase tracking-[0.12em]"
-            style={{ background: INK, color: CREAM }}
+            style={{ background: MIST, color: NIGHT }}
           >
             View on /stats
           </a>
@@ -365,53 +383,58 @@ function Verdict({ result, query, onClose }: { result: Holder | 'not-found'; que
       exit={{ opacity: 0 }}
       onClick={onClose}
       className="fixed inset-0 z-[210] flex items-center justify-center p-4"
-      style={{ background: 'rgba(27,22,51,0.85)', fontFamily: BODY }}
+      style={{ background: 'rgba(14,19,48,0.9)', fontFamily: BODY }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.94, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', stiffness: 280, damping: 22 }}
         onClick={e => e.stopPropagation()}
-        className="relative w-full max-w-md rounded-[30px] px-8 py-9 text-center"
-        style={{ background: found ? YELLOW : CREAM, border: `4px solid ${INK}`, boxShadow: `11px 11px 0 ${INK}`, color: INK }}
+        className="relative w-full max-w-md rounded-[30px] px-8 py-9 text-center overflow-hidden"
+        style={{ background: DEEP, border: `1px solid ${INDIGO}`, color: MIST }}
       >
+        <StarField stars={PAGE_STARS} />
+
         {found && member ? (
-          <>
-            <div className="w-28 h-28 mx-auto rounded-full overflow-hidden mb-5" style={{ border: `4px solid ${INK}` }}>
+          <div className="relative">
+            <div
+              className="w-28 h-28 mx-auto rounded-full overflow-hidden mb-5"
+              style={{ boxShadow: `0 0 0 3px ${PEACH}, 0 0 70px -6px ${PEACH}99` }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={member.avatarUrl} alt={member.displayName} className="w-full h-full object-cover" />
             </div>
-            <p className="text-5xl leading-none mb-3" style={{ fontFamily: DISPLAY, fontWeight: 800 }}>
+            <p className="text-5xl leading-none mb-3" style={{ fontFamily: DISPLAY, fontWeight: 800, color: PEACH }}>
               You&apos;re in
             </p>
             <p className="font-semibold text-lg leading-tight">{member.displayName}</p>
-            <p className="text-sm mb-4" style={{ color: '#6F6885' }}>
+            <p className="text-sm mb-4" style={{ color: HAZE }}>
               @{member.username}
             </p>
             {displayRoleOf(member) && <RoleChip role={displayRoleOf(member)!} big />}
-          </>
+          </div>
         ) : (
-          <>
+          <div className="relative">
             <div
               className="w-24 h-24 mx-auto rounded-full mb-5 flex items-center justify-center text-4xl"
-              style={{ background: '#fff', border: `4px solid ${INK}`, fontFamily: DISPLAY, fontWeight: 800 }}
+              style={{ background: INDIGO, color: HAZE, fontFamily: DISPLAY, fontWeight: 800 }}
             >
               ?
             </div>
             <p className="text-4xl leading-none mb-3" style={{ fontFamily: DISPLAY, fontWeight: 800 }}>
-              Not on the shelf
+              Not in orbit
             </p>
             <p className="font-semibold">@{query.replace(/^@/, '')}</p>
-            <p className="text-sm mt-3" style={{ color: '#6F6885' }}>
+            <p className="text-sm mt-3" style={{ color: HAZE }}>
               No PloPlo Holder badge on this account yet.
             </p>
-          </>
+          </div>
         )}
 
         <button
           onClick={onClose}
-          className="mt-7 px-7 py-3 rounded-full text-[11px] font-semibold uppercase tracking-[0.16em]"
-          style={{ background: INK, color: CREAM }}
+          className="relative mt-7 px-7 py-3 rounded-full text-[11px] font-semibold uppercase tracking-[0.16em]"
+          style={{ background: MIST, color: NIGHT }}
         >
           Close
         </button>
@@ -440,12 +463,15 @@ export default function PloPloPage() {
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.3 });
 
   const { scrollYProgress: heroP } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroTitleY = useTransform(heroP, [0, 1], [0, -130]);
-  const heroFade = useTransform(heroP, [0, 0.75], [1, 0]);
-  const floatA = useTransform(heroP, [0, 1], [0, -250]);
-  const floatB = useTransform(heroP, [0, 1], [0, -110]);
-  const floatC = useTransform(heroP, [0, 1], [0, -360]);
-  const heroSpin = useTransform(heroP, [0, 1], [0, 14]);
+  const heroTitleY = useTransform(heroP, [0, 1], [0, -120]);
+  const heroFade = useTransform(heroP, [0, 0.8], [1, 0]);
+  const discScale = useTransform(heroP, [0, 1], [1, 1.25]);
+  // Planets drift at different depths — far ones barely move.
+  const planetFar = useTransform(heroP, [0, 1], [0, -70]);
+  const planetMid = useTransform(heroP, [0, 1], [0, -190]);
+  const planetNear = useTransform(heroP, [0, 1], [0, -330]);
+  const hillsY = useTransform(heroP, [0, 1], [0, 90]);
+  const starsY = useTransform(heroP, [0, 1], [0, -40]);
 
   const { scrollYProgress: bandP } = useScroll({ target: bandRef, offset: ['start end', 'end start'] });
   const rowLeft = useTransform(bandP, [0, 1], ['2%', '-38%']);
@@ -540,19 +566,40 @@ export default function PloPloPage() {
 
   const marqueeRow = [...NFTS, ...NFTS];
 
-  const floatCard = (src: string) => (
-    <div className="rounded-[26px] overflow-hidden" style={{ border: `4px solid ${INK}`, boxShadow: `8px 8px 0 ${INK}` }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" />
+  /* A PloPlo cut into a circle and lit from one side, so it reads as
+     a planet sitting on the orbit line. `ring` adds a Saturn band. */
+  const planet = (src: string, ring?: string) => (
+    <div className="relative w-full aspect-square">
+      {ring && (
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-[50%]"
+          style={{
+            width: '168%',
+            height: '46%',
+            border: `6px solid ${ring}`,
+            transform: 'translate(-50%,-50%) rotate(-18deg)',
+            opacity: 0.85,
+          }}
+        />
+      )}
+      <div className="absolute inset-0 rounded-full overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" />
+        {/* terminator shading ties the planet to the scene's light */}
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(120deg, rgba(14,19,48,0) 38%, rgba(14,19,48,.72) 100%)` }}
+        />
+      </div>
     </div>
   );
 
   // No overflow-x-hidden on the root — it would break the sticky filter bar.
   return (
-    <div className="relative" style={{ color: INK, fontFamily: BODY, background: CREAM }}>
+    <div className="relative" style={{ color: MIST, fontFamily: BODY, background: NIGHT }}>
       <motion.div
-        className="fixed top-0 left-0 right-0 h-[6px] z-[300] origin-left"
-        style={{ scaleX: progress, background: BLUE, borderBottom: `2px solid ${INK}` }}
+        className="fixed top-0 left-0 right-0 h-[4px] z-[300] origin-left"
+        style={{ scaleX: progress, background: PEACH }}
       />
 
       <AnimatePresence>
@@ -568,85 +615,107 @@ export default function PloPloPage() {
         {verdict !== 'idle' && <Verdict result={verdict} query={query} onClose={() => setVerdict('idle')} />}
       </AnimatePresence>
 
-      {/* ══ 1. HERO ══ */}
+      {/* ══ 1. HERO — cosmic scene ══ */}
       <section
         ref={heroRef}
-        className="relative h-screen min-h-[640px] flex items-center justify-center px-5 overflow-hidden"
-        style={{ background: CREAM, backgroundImage: starTile(INK, 0.05) }}
+        className="relative h-screen min-h-[680px] overflow-hidden"
+        style={{ background: `linear-gradient(180deg, ${NIGHT} 0%, #171E45 42%, #2A2F63 72%, #4A4A85 100%)` }}
       >
-        <motion.div style={{ y: floatA, rotate: heroSpin }} className="hidden md:block absolute left-[7%] top-[17%] w-36 lg:w-48">
-          {floatCard(NFTS[0])}
-        </motion.div>
-        <motion.div style={{ y: floatB }} className="hidden lg:block absolute right-[9%] top-[13%] w-32 lg:w-40 rotate-6">
-          {floatCard(NFTS[1])}
-        </motion.div>
-        <motion.div style={{ y: floatC }} className="hidden md:block absolute right-[12%] bottom-[14%] w-28 lg:w-36 -rotate-6">
-          {floatCard(NFTS[2])}
-        </motion.div>
-        <motion.div style={{ y: floatB }} className="hidden xl:block absolute left-[10%] bottom-[12%] w-28 rotate-3">
-          {floatCard(NFTS[3])}
+        <motion.div style={{ y: starsY }} className="absolute inset-0">
+          <StarField stars={HERO_STARS} />
         </motion.div>
 
-        <motion.div style={{ y: heroTitleY, opacity: heroFade }} className="relative z-10 w-full max-w-3xl text-center">
+        {/* orbit lines */}
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden preserveAspectRatio="none">
+          <line x1="-5%" y1="34%" x2="105%" y2="16%" stroke={LAVENDER} strokeWidth="1" opacity="0.28" />
+          <line x1="-5%" y1="58%" x2="105%" y2="30%" stroke={LAVENDER} strokeWidth="1" opacity="0.2" />
+          <line x1="-5%" y1="12%" x2="105%" y2="46%" stroke={LAVENDER} strokeWidth="1" opacity="0.16" />
+        </svg>
+
+        {/* the glowing disc — a moon rising behind the hills */}
+        <motion.div
+          style={{ scale: discScale }}
+          className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-[62%] rounded-full"
+        >
+          <div
+            className="rounded-full"
+            style={{
+              width: 'min(56vw, 440px)',
+              height: 'min(56vw, 440px)',
+              background: `radial-gradient(circle at 50% 34%, #C9CBEC 0%, #8E93C8 46%, #5C63A6 78%, #3C4285 100%)`,
+              boxShadow: `0 0 0 10px rgba(255,255,255,.92), 0 0 150px 45px rgba(255,255,255,.4)`,
+            }}
+          />
+        </motion.div>
+
+        {/* planets on the orbits */}
+        <motion.div style={{ y: planetFar }} className="absolute left-[4%] top-[9%] w-24 md:w-36 lg:w-44 opacity-95">
+          {planet(NFTS[0])}
+        </motion.div>
+        <motion.div style={{ y: planetMid }} className="absolute right-[5%] top-[26%] w-28 md:w-40 lg:w-52">
+          {planet(NFTS[1], PEACH)}
+        </motion.div>
+        <motion.div style={{ y: planetFar }} className="absolute right-[24%] top-[8%] w-12 md:w-16 lg:w-20 opacity-90">
+          {planet(NFTS[2])}
+        </motion.div>
+        <motion.div style={{ y: planetNear }} className="absolute left-[13%] bottom-[16%] w-20 md:w-28 lg:w-36">
+          {planet(NFTS[3])}
+        </motion.div>
+        <motion.div style={{ y: planetMid }} className="hidden md:block absolute left-[27%] top-[6%] w-10 lg:w-14 opacity-90">
+          {planet(NFTS[4])}
+        </motion.div>
+
+        {/* layered hills */}
+        <motion.div style={{ y: hillsY }} className="absolute inset-x-0 bottom-0 h-[38%]">
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 1440 400" preserveAspectRatio="none" aria-hidden>
+            <path d="M0 190 C 190 120, 330 205, 520 175 C 700 145, 850 210, 1030 180 C 1200 150, 1330 200, 1440 175 L1440 400 L0 400 Z" fill="#5C5F94" opacity="0.85" />
+            <path d="M0 250 C 210 195, 380 265, 560 240 C 760 210, 900 275, 1090 245 C 1250 220, 1350 265, 1440 245 L1440 400 L0 400 Z" fill="#3B3E73" />
+            <path d="M0 315 C 240 275, 420 335, 640 312 C 860 288, 1010 340, 1200 318 C 1320 305, 1390 325, 1440 315 L1440 400 L0 400 Z" fill="#232750" />
+          </svg>
+        </motion.div>
+
+        {/* copy */}
+        <motion.div
+          style={{ y: heroTitleY, opacity: heroFade }}
+          className="relative z-10 h-full flex flex-col items-center px-5 text-center pt-[13vh]"
+        >
           <motion.span
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="inline-block text-[11px] font-semibold uppercase tracking-[0.22em] px-5 py-2.5 rounded-full mb-8"
-            style={{ background: '#fff', border: `3px solid ${INK}`, boxShadow: `4px 4px 0 ${INK}` }}
+            className="inline-block text-[10px] font-semibold uppercase tracking-[0.26em] px-5 py-2 rounded-full mb-7"
+            style={{ background: 'rgba(230,230,247,.12)', color: MIST, border: `1px solid rgba(230,230,247,.28)` }}
           >
             PloPlo Holder · Ritual community
           </motion.span>
 
           <motion.h1
-            initial={{ opacity: 0, y: 26 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.06 }}
-            className="uppercase leading-[0.92] text-[12vw] sm:text-[10vw] md:text-[7rem]"
-            style={{ fontFamily: DISPLAY, fontWeight: 800 }}
+            className="uppercase leading-[0.94] text-[11vw] sm:text-[9vw] md:text-[6.5rem] max-w-4xl"
+            style={{ fontFamily: DISPLAY, fontWeight: 800, color: MIST, textShadow: '0 6px 40px rgba(14,19,48,.65)' }}
           >
-            <span className="block" style={{ color: INK }}>
-              Are you
-            </span>
-            <span className="block" style={{ color: BLUE }}>
-              PloPlo Holder?
-            </span>
+            <span className="block">Are you</span>
+            <span className="block">PloPlo Holder?</span>
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.26 }}
-            className="mt-6 text-base md:text-lg"
-            style={{ color: '#5B5473' }}
+            className="mt-6 text-sm md:text-base max-w-md"
+            style={{ color: MIST }}
           >
             {data ? `${data.count} members` : '…'} hold the PloPlo Holder badge in the Ritual server.
           </motion.p>
 
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.32 }}
-            className="flex md:hidden justify-center gap-3 mt-6"
-          >
-            {NFTS.slice(0, 3).map((src, i) => (
-              <div
-                key={src}
-                className="w-20 h-20 rounded-2xl overflow-hidden"
-                style={{ border: `3px solid ${INK}`, boxShadow: `4px 4px 0 ${INK}`, transform: `rotate(${[-5, 2, 5][i]}deg)` }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" />
-              </div>
-            ))}
-          </motion.div>
-
-          <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.36 }}
+            transition={{ delay: 0.34 }}
             ref={suggestRef}
-            className="relative max-w-md mx-auto mt-7"
+            className="relative w-full max-w-md mt-7"
           >
             <form
               onSubmit={e => {
@@ -661,13 +730,13 @@ export default function PloPloPage() {
                 onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
                 placeholder="your discord username…"
                 autoComplete="off"
-                className="flex-1 px-5 py-3.5 rounded-2xl outline-none"
-                style={{ background: '#fff', border: `3px solid ${INK}`, color: INK }}
+                className="flex-1 px-5 py-3.5 rounded-full outline-none placeholder:text-[#6E74A8]"
+                style={{ background: 'rgba(14,19,48,.72)', border: `1px solid ${HAZE}`, color: MIST }}
               />
               <button
                 type="submit"
-                className="px-7 py-3.5 rounded-2xl font-semibold uppercase text-xs tracking-[0.12em] transition-transform active:translate-y-1"
-                style={{ background: YELLOW, border: `3px solid ${INK}`, boxShadow: `4px 4px 0 ${INK}`, color: INK }}
+                className="px-7 py-3.5 rounded-full font-semibold uppercase text-xs tracking-[0.12em] transition-transform active:scale-95"
+                style={{ background: PEACH, color: NIGHT }}
               >
                 Check
               </button>
@@ -676,7 +745,7 @@ export default function PloPloPage() {
             {showSuggestions && suggestions.length > 0 && (
               <div
                 className="absolute left-0 right-0 top-full mt-2 rounded-2xl overflow-hidden z-50 text-left"
-                style={{ background: '#fff', border: `3px solid ${INK}`, boxShadow: `5px 5px 0 ${INK}` }}
+                style={{ background: DEEP, border: `1px solid ${INDIGO}` }}
               >
                 {suggestions.map(s => (
                   <button
@@ -686,9 +755,9 @@ export default function PloPloPage() {
                       setShowSuggestions(false);
                       setVerdict(resolve(s.username));
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-black/5 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors"
                   >
-                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0" style={{ border: `2px solid ${INK}` }}>
+                    <div className="w-9 h-9 rounded-full overflow-hidden shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={s.avatarUrl || `/api/avatar?id=${s.userId}`}
@@ -697,8 +766,10 @@ export default function PloPloPage() {
                       />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-sm font-semibold truncate">{s.displayName}</div>
-                      <div className="text-xs truncate" style={{ color: '#6F6885' }}>
+                      <div className="text-sm font-semibold truncate" style={{ color: MIST }}>
+                        {s.displayName}
+                      </div>
+                      <div className="text-xs truncate" style={{ color: HAZE }}>
                         @{s.username}
                       </div>
                     </div>
@@ -711,11 +782,11 @@ export default function PloPloPage() {
 
         <motion.button
           onClick={() => bandRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          style={{ opacity: heroFade, color: '#6F6885' }}
-          className="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.2em]"
+          style={{ opacity: heroFade, color: MIST }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.2em]"
         >
           scroll
-          <motion.span animate={{ y: [0, 7, 0] }} transition={{ repeat: Infinity, duration: 1.4 }} className="text-lg">
+          <motion.span animate={{ y: [0, 6, 0] }} transition={{ repeat: Infinity, duration: 1.4 }} className="text-base">
             ↓
           </motion.span>
         </motion.button>
@@ -725,15 +796,13 @@ export default function PloPloPage() {
       <section
         ref={bandRef}
         className="relative h-screen min-h-[620px] flex flex-col justify-center overflow-hidden"
-        style={{ background: INK, backgroundImage: starTile('%23ffffff', 0.05), borderTop: `4px solid ${INK}` }}
+        style={{ background: NIGHT }}
       >
-        <motion.div style={{ x: rowLeft }} className="flex gap-5 mb-7 w-max">
+        <StarField stars={PAGE_STARS} />
+
+        <motion.div style={{ x: rowLeft }} className="relative flex gap-5 mb-7 w-max">
           {marqueeRow.map((src, i) => (
-            <div
-              key={`a${i}`}
-              className="w-40 md:w-56 aspect-square rounded-[26px] overflow-hidden shrink-0"
-              style={{ border: `4px solid ${CREAM}` }}
-            >
+            <div key={`a${i}`} className="w-36 md:w-52 aspect-square rounded-full overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" loading="lazy" />
             </div>
@@ -741,21 +810,17 @@ export default function PloPloPage() {
         </motion.div>
 
         <motion.div style={{ scale: bandScale }} className="relative z-10 text-center py-4 px-4">
-          <p className="uppercase leading-[0.95] text-[14vw] md:text-[8rem]" style={{ fontFamily: DISPLAY, fontWeight: 800, color: YELLOW }}>
+          <p className="uppercase leading-[0.95] text-[13vw] md:text-[7.5rem]" style={{ fontFamily: DISPLAY, fontWeight: 800, color: PEACH }}>
             <CountUp to={data?.count ?? 0} /> certified
           </p>
-          <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.3em] mt-3" style={{ color: 'rgba(255,243,222,.55)' }}>
+          <p className="text-xs md:text-sm font-semibold uppercase tracking-[0.3em] mt-3" style={{ color: HAZE }}>
             PloPlo Genesis · on-chain art
           </p>
         </motion.div>
 
-        <motion.div style={{ x: rowRight }} className="flex gap-5 mt-7 w-max">
+        <motion.div style={{ x: rowRight }} className="relative flex gap-5 mt-7 w-max">
           {marqueeRow.map((src, i) => (
-            <div
-              key={`b${i}`}
-              className="w-40 md:w-56 aspect-square rounded-[26px] overflow-hidden shrink-0"
-              style={{ border: `4px solid ${CREAM}` }}
-            >
+            <div key={`b${i}`} className="w-36 md:w-52 aspect-square rounded-full overflow-hidden shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="PloPlo Genesis" className="w-full h-full object-cover" loading="lazy" />
             </div>
@@ -764,18 +829,16 @@ export default function PloPloPage() {
       </section>
 
       {/* ══ 3. STATS ══ */}
-      <section
-        className="relative min-h-screen flex flex-col justify-center px-5 py-24"
-        style={{ background: PINK, backgroundImage: starTile(INK, 0.06), borderTop: `4px solid ${INK}` }}
-      >
-        <div className="max-w-5xl mx-auto w-full">
+      <section className="relative min-h-screen flex flex-col justify-center px-5 py-24" style={{ background: DEEP }}>
+        <StarField stars={PAGE_STARS} />
+        <div className="relative max-w-5xl mx-auto w-full">
           <motion.h2
             initial={{ opacity: 0, y: 26 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-80px' }}
             transition={{ duration: 0.5 }}
             className="uppercase text-[12vw] md:text-7xl leading-[0.95] mb-3 text-center"
-            style={{ fontFamily: DISPLAY, fontWeight: 800, color: INK }}
+            style={{ fontFamily: DISPLAY, fontWeight: 800, color: MIST }}
           >
             Who&apos;s inside
           </motion.h2>
@@ -785,7 +848,7 @@ export default function PloPloPage() {
             viewport={{ once: true }}
             transition={{ delay: 0.12 }}
             className="text-center mb-14"
-            style={{ color: '#5B5473' }}
+            style={{ color: LAVENDER }}
           >
             Holders split by their Ritual contributor role.
           </motion.p>
@@ -803,13 +866,14 @@ export default function PloPloPage() {
                     viewport={{ once: true, margin: '-60px' }}
                     transition={{ duration: 0.45, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
                     whileHover={{ y: -5 }}
-                    className="rounded-[26px] p-7"
-                    style={{ background: c, color: inkOrWhite(c), border: `4px solid ${INK}`, boxShadow: `7px 7px 0 ${INK}` }}
+                    className="relative rounded-[26px] p-7 overflow-hidden"
+                    style={{ background: NIGHT, border: `1px solid ${INDIGO}` }}
                   >
-                    <p className="text-6xl leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800 }}>
+                    <div className="absolute -right-6 -top-6 w-24 h-24 rounded-full" style={{ background: c, opacity: 0.16 }} />
+                    <p className="relative text-6xl leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800, color: c }}>
                       <CountUp to={count} />
                     </p>
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] mt-2.5 opacity-75">
+                    <p className="relative text-xs font-semibold uppercase tracking-[0.12em] mt-2.5" style={{ color: LAVENDER }}>
                       {role === 'other' ? 'Other' : role}
                     </p>
                   </motion.div>
@@ -825,7 +889,7 @@ export default function PloPloPage() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="mt-14 mx-auto block w-max px-9 py-4 rounded-full font-semibold uppercase tracking-[0.12em] text-xs transition-transform hover:-translate-y-1"
-            style={{ background: INK, color: CREAM, border: `4px solid ${INK}`, boxShadow: `6px 6px 0 ${CREAM}` }}
+            style={{ background: MIST, color: NIGHT }}
           >
             View the collection on OpenSea ↗
           </motion.a>
@@ -833,28 +897,26 @@ export default function PloPloPage() {
       </section>
 
       {/* ══ 4. ROSTER ══ */}
-      <section
-        className="relative px-4 pb-28"
-        style={{ background: CREAM, backgroundImage: starTile(INK, 0.05), borderTop: `4px solid ${INK}` }}
-      >
-        <div className="max-w-7xl mx-auto pt-16">
+      <section className="relative px-4 pb-28" style={{ background: NIGHT }}>
+        <StarField stars={PAGE_STARS} />
+        <div className="relative max-w-7xl mx-auto pt-16">
           <motion.h2
             initial={{ opacity: 0, y: 22 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             className="uppercase text-[12vw] md:text-7xl leading-[0.95] text-center mb-10"
-            style={{ fontFamily: DISPLAY, fontWeight: 800, color: INK }}
+            style={{ fontFamily: DISPLAY, fontWeight: 800, color: MIST }}
           >
-            The shelf
+            The constellation
           </motion.h2>
 
           {err && (
-            <p className="text-center font-semibold mb-8" style={{ color: CORAL }}>
+            <p className="text-center font-semibold mb-8" style={{ color: '#FF8B87' }}>
               {err}
             </p>
           )}
           {!data && !err && (
-            <p className="text-center mb-8" style={{ color: '#6F6885' }}>
+            <p className="text-center mb-8" style={{ color: HAZE }}>
               Loading registry…
             </p>
           )}
@@ -863,8 +925,8 @@ export default function PloPloPage() {
             <>
               <div className="sticky top-4 z-30 mb-10">
                 <div
-                  className="flex flex-wrap gap-1.5 justify-center p-2 rounded-2xl mx-auto w-max max-w-full"
-                  style={{ background: '#fff', border: `3px solid ${INK}`, boxShadow: `5px 5px 0 ${INK}` }}
+                  className="flex flex-wrap gap-1.5 justify-center p-2 rounded-full mx-auto w-max max-w-full"
+                  style={{ background: 'rgba(26,33,80,.92)', border: `1px solid ${INDIGO}`, backdropFilter: 'blur(8px)' }}
                 >
                   {(['all', ...mainPresent, ...(otherCount > 0 ? ['other'] : [])] as string[]).map(role => {
                     const active = filter === role;
@@ -874,13 +936,13 @@ export default function PloPloPage() {
                         : role === 'other'
                         ? otherCount
                         : data.holders.filter(h => displayRoleOf(h) === role).length;
-                    const c = role === 'all' ? BLUE : role === 'other' ? OTHER_COLOR : colorFor(role);
+                    const c = role === 'all' ? MIST : role === 'other' ? OTHER_COLOR : colorFor(role);
                     return (
                       <button
                         key={role}
                         onClick={() => setFilter(role)}
-                        className="px-4 py-2 rounded-xl text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors"
-                        style={active ? { background: c, color: inkOrWhite(c) } : { color: '#6F6885' }}
+                        className="px-4 py-2 rounded-full text-[11px] font-semibold uppercase tracking-[0.08em] transition-colors"
+                        style={active ? { background: c, color: NIGHT } : { color: LAVENDER }}
                       >
                         {role === 'all' ? 'All' : role === 'other' ? 'Other' : role} ({count})
                       </button>
@@ -896,12 +958,12 @@ export default function PloPloPage() {
               </div>
 
               {sorted.length === 0 && (
-                <p className="text-center mt-10" style={{ color: '#6F6885' }}>
+                <p className="text-center mt-10" style={{ color: HAZE }}>
                   No holders match this filter.
                 </p>
               )}
 
-              <p className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] mt-16" style={{ color: '#9A93AC' }}>
+              <p className="text-center text-[10px] font-semibold uppercase tracking-[0.18em] mt-16" style={{ color: HAZE }}>
                 Updated {new Date(data.updatedAt).toLocaleString()}
               </p>
             </>
@@ -911,12 +973,12 @@ export default function PloPloPage() {
 
       <footer
         className="relative px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-4"
-        style={{ background: INK, backgroundImage: starTile('%23ffffff', 0.05), color: CREAM, borderTop: `4px solid ${INK}` }}
+        style={{ background: DEEP, borderTop: `1px solid ${INDIGO}` }}
       >
-        <p className="text-3xl uppercase leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800, color: YELLOW }}>
+        <p className="text-3xl uppercase leading-none" style={{ fontFamily: DISPLAY, fontWeight: 800, color: PEACH }}>
           PloPlo Holder
         </p>
-        <div className="flex items-center gap-6 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: 'rgba(255,243,222,.6)' }}>
+        <div className="flex items-center gap-6 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: HAZE }}>
           <a href="/genesis" className="hover:text-white transition-colors">
             Genesis 1000
           </a>
