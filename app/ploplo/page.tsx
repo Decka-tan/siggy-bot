@@ -147,13 +147,9 @@ function formatJoinDate(iso: string | null) {
   if (Number.isNaN(d.getTime())) return 'Unknown';
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
-// Deterministic pick across the whole collection, so a member always gets
-// the same sticker (it is decorative — not their actual token).
-function nftFor(userId: string) {
-  let n = 0;
-  for (let i = 0; i < userId.length; i++) n = (n * 31 + userId.charCodeAt(i)) % 999983;
-  return tile(n);
-}
+/* No per-holder NFT is shown anywhere: pinning a specific token to a member
+   reads as a claim of ownership, and we have no wallet↔Discord mapping to
+   back that up. Collection art only appears as decoration (hero, band, wall). */
 
 /* Deterministic starfield — seeded so SSR and client agree. */
 function makeStars(count: number, seed: number) {
@@ -539,13 +535,6 @@ function HolderCard({ holder, index, onClick }: { holder: Holder; index: number;
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
         </div>
-        <div
-          className="absolute bottom-2.5 right-2.5 w-11 h-11 rounded-full overflow-hidden"
-          style={{ boxShadow: `0 0 0 2px rgba(255,255,255,.75)` }}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={nftFor(holder.userId)} alt="" className="w-full h-full object-cover" loading="lazy" />
-        </div>
       </div>
 
       <div className="px-3.5 pt-3 pb-3.5" style={{ borderTop: `2px solid ${c}` }}>
@@ -621,13 +610,6 @@ function HolderModal({ holder, activity, onClose }: { holder: Holder; activity: 
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={holder.avatarUrl} alt={holder.displayName} className="w-full h-full object-cover" />
-          </div>
-          <div
-            className="absolute bottom-4 left-4 w-16 h-16 rounded-full overflow-hidden"
-            style={{ boxShadow: `0 0 0 3px ${DEEP}` }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={nftFor(holder.userId)} alt="" className="w-full h-full object-cover" />
           </div>
         </div>
 
