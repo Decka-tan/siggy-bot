@@ -53,7 +53,9 @@ function groupUnpaidByName(participants) {
   });
   return [...byKey.values()];
 }
-const CLAIM_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+// Long enough to actually open a banking app, transfer and screenshot.
+// Five minutes meant the claim was routinely dead before the proof arrived.
+const CLAIM_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 /**
  * /payment-set command - Set payment info for current user
@@ -434,8 +436,15 @@ async function handleBayarConfirmBills(interaction) {
   pendingClaims.set(interaction.user.id, claimData);
   console.log(`[Payment] Batch claim SET for ${interaction.user.id}: ${items.length} invoice, Rp ${total}`);
 
-  const creatorPaymentInfo = getPaymentInfo(creatorId);
-  const creatorName = interaction.guild?.members?.cache?.get(creatorId)?.user?.username;
+  // The name is already on the bills — the member cache is often cold and was
+  // leaving "Transfer ke:" with a blank recipient.
+  const creatorName = bills[0].creatorName;
+  // payments is keyed by name for entries made through the dashboard and by
+  // Discord id for entries made through /payment-set, so try both.
+  const creatorPaymentInfo =
+    getPaymentInfo(String(creatorId)) ||
+    (creatorName ? getPaymentInfo(creatorName) : null) ||
+    (creatorName ? getPaymentInfoByUsername(creatorName) : null);
 
   let description = `💵 **Bayar ${bills.length} tagihan sekaligus**\n`;
   description += `💰 Total: **Rp ${total.toLocaleString('id-ID')}**\n\n`;
@@ -464,9 +473,39 @@ async function handleBayarConfirmBills(interaction) {
     .setColor(0x3498db)
     .setTitle('🧾 Instruksi Pembayaran')
     .setDescription(description)
+    .setFooter({ text: 'Bukti TF dikirim via DM Siggy' })
     .setTimestamp();
 
-  return interaction.update({ content: '', embeds: [embed], components: [] });
+  await interaction.update({ content: '', embeds: [embed], components: [] });
+
+  // Open the DM ourselves. Telling someone to "DM Siggy" without a thread
+  // already there means hunting for the bot in the member list — and the proof
+  // handler only listens in DMs, so this is the step that makes it usable.
+  try {
+    let dm = `📸 **Kirim bukti transfer di sini!**\n\n`;
+    dm += `Bayar ke: @${creatorName}\n`;
+    dm += `Total: **Rp ${total.toLocaleString('id-ID')}** untuk ${bills.length} tagihan:\n`;
+    for (const it of items) {
+      dm += `   • ${it.title} — Rp ${it.amount.toLocaleString('id-ID')}\n`;
+    }
+    dm += `\nCukup kirim screenshot bukti transfer di chat ini. Bot bakal forward ke @${creatorName} buat dikonfirmasi ✅\n\n`;
+    dm += `_Berlaku 30 menit. Kalau kelewat, jalanin \`/bayar\` lagi._`;
+
+    await interaction.user.send({ content: dm });
+    console.log(`[Payment] Batch DM sent to ${interaction.user.username} — waiting for proof`);
+  } catch (err) {
+    console.log(`[Payment] Could not DM ${interaction.user.username}:`, err.message);
+    // DMs closed — say so instead of leaving them waiting for a message that
+    // will never arrive.
+    try {
+      await interaction.followUp({
+        content: '⚠️ Siggy gak bisa DM kamu (DM dari anggota server kemungkinan kamu matiin).\n' +
+          'Nyalain dulu di **Privacy Settings** server ini, terus jalanin `/bayar` lagi — ' +
+          'bukti transfer cuma bisa diterima lewat DM.',
+        ephemeral: true,
+      });
+    } catch (e) { /* nothing else we can do */ }
+  }
 }
 
 /**

@@ -34,11 +34,13 @@ if (!userId) { console.error('gak ada user ber-Discord-ID di ledger'); process.e
 const user = { id: userId, username };
 let captured = null;
 
+let dmSent = null;
 const fakeInteraction = (extra = {}) => ({
-  user,
+  user: { ...user, send: async (x) => { dmSent = x; return x; } },
   guildId,
   guild: { members: { cache: new Map() } },
   reply: async (x) => { captured = x; return x; },
+  followUp: async (x) => x,
   update: async (x) => { captured = x; return x; },
   ...extra,
 });
