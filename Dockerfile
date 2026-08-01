@@ -3,8 +3,12 @@
 # The VPS has 2GB RAM and `next build` needs >700MB of heap on its own
 # (measured: OOM at 700, clean at 1024), so it must never build there.
 #
-#   docker build -t decolua/siggy-web:latest .
-#   docker push decolua/siggy-web:latest
+#   docker login ghcr.io -u Decka-tan     # password = GitHub PAT, scope write:packages
+#   docker build -t ghcr.io/decka-tan/siggy-web:latest .
+#   docker push ghcr.io/decka-tan/siggy-web:latest
+#
+# Keep the package PRIVATE: the image bakes in extracted-data/, which is
+# ~25MB of Discord member records.
 #
 # Node 20 to match the VPS, and because better-sqlite3 9.x has no prebuilt
 # binaries for Node 22.
