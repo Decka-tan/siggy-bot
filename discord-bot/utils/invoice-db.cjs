@@ -307,8 +307,11 @@ function getAllParticipantNames(guildId = null) {
         });
       }
       const stats = nameMap.get(canonicalName);
-      stats.totalDebt += Number(p.amount) || 0;
+      // Only what is still owed. This used to add every participant row ever
+      // billed, so the /invoice-owe dropdown showed lifetime spend next to an
+      // unpaid count — Cindy read as Rp 1.802.134 against Rp 66.000 actually due.
       if (!p.paid) {
+        stats.totalDebt += Number(p.amount) || 0;
         stats.unpaidCount += 1;
       }
       // Track all aliases for this canonical name
@@ -318,10 +321,12 @@ function getAllParticipantNames(guildId = null) {
     }
   }
 
-  // Convert to array and sort by debt amount (highest first)
+  // Convert to array and sort by debt amount (highest first).
+  // Canonical keys are stored lowercase, so without this the list mixes
+  // "eric" and "Filbert" and reads like two different kinds of entry.
   return Array.from(nameMap.entries())
     .map(([name, stats]) => ({
-      name,
+      name: name.charAt(0).toUpperCase() + name.slice(1),
       ...stats,
       aliases: Array.from(stats.aliases)
     }))
@@ -332,11 +337,26 @@ function getAllParticipantNames(guildId = null) {
  * Get canonical name for a participant (resolves aliases)
  */
 function getCanonicalName(participantName, aliases = null) {
-  const db = aliases || readDB();
+  // The second argument is called `aliases` but was only ever usable as the
+  // whole db. Callers that passed db.nameAliases — the shape the name implies —
+  // resolved nothing and silently returned the raw name, which is how
+  // /invoice-owe ended up listing Accel and Axel as two people.
+  // Accept either shape.
+  let aliasMap;
+  if (!aliases) {
+    aliasMap = readDB().nameAliases || {};
+  } else if (aliases.nameAliases) {
+    aliasMap = aliases.nameAliases;
+  } else if (aliases.invoices) {
+    aliasMap = {}; // a db with no aliases recorded yet
+  } else {
+    aliasMap = aliases; // already the alias map
+  }
+
   const nameLower = participantName.toLowerCase();
 
   // Check if this name is an alias
-  for (const [canonical, aliasesList] of Object.entries(db.nameAliases || {})) {
+  for (const [canonical, aliasesList] of Object.entries(aliasMap)) {
     if (aliasesList.includes(nameLower) || nameLower === canonical.toLowerCase()) {
       return canonical;
     }
@@ -461,13 +481,15 @@ function getDebtsByName(participantName, guildId = null) {
     if (guildId && invoice.guildId !== guildId.toString()) {
       continue;
     }
-    // Find if participant name matches (canonical OR aliases)
-    const userParticipation = invoice.participants.find(p => {
-      const pNameLower = p.username.toLowerCase();
+    // Every matching row, not just the first: one person can be billed more
+    // than once on the same invoice, and .find() quietly dropped the rest.
+    const matches = invoice.participants.filter(p => {
+      const pNameLower = (p.username || '').toLowerCase();
       return pNameLower === canonicalLower || aliases.includes(pNameLower);
     });
 
-    if (userParticipation && !userParticipation.paid) {
+    for (const userParticipation of matches) {
+      if (userParticipation.paid) continue;
       debts.push({
         invoice,
         amount: userParticipation.amount,
