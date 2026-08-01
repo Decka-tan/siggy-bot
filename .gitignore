@@ -51,3 +51,4 @@ discord-bot/data/*.json
 
 # Runtime secrets for the siggy-web container (lives on the VPS only)
 .siggy-web.env
+discord-bot/data/confirm-tokens.json

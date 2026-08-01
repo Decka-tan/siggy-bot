@@ -34,7 +34,49 @@ const pendingClaims = new Map();
 // Confirm tokens for proof-of-payment buttons. Used because customId has a
 // 100-char limit and can't fit a long list of participant indices. Map of
 // token -> { invoiceId, indices, payerId, participantName, amount }.
-const confirmStore = new Map();
+// Disk-backed on purpose. A confirm token can sit for days waiting for the
+// creator to press the button, and this used to be memory-only: every bot
+// restart — a deploy, a crash, a server reboot — silently killed every pending
+// confirmation, and the payer was told it had "expired".
+const fs = require('fs');
+const path = require('path');
+const { withFileLock, writeFileAtomic } = require('../utils/file-lock.cjs');
+
+const CONFIRM_STORE_FILE =
+  process.env.CONFIRM_STORE_PATH ||
+  path.join(process.env.DATA_DIR || path.join(__dirname, '../data'), 'confirm-tokens.json');
+const CONFIRM_TOKEN_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days, just to stop unbounded growth
+
+function loadConfirmTokens() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(CONFIRM_STORE_FILE, 'utf8'));
+    const now = Date.now();
+    return new Map(
+      Object.entries(raw).filter(([, v]) => now - (v?.timestamp || 0) < CONFIRM_TOKEN_TTL)
+    );
+  } catch (e) {
+    return new Map();
+  }
+}
+
+const _confirmTokens = loadConfirmTokens();
+
+function persistConfirmTokens() {
+  try {
+    withFileLock(CONFIRM_STORE_FILE, () => {
+      writeFileAtomic(CONFIRM_STORE_FILE, JSON.stringify(Object.fromEntries(_confirmTokens), null, 2));
+    });
+  } catch (e) {
+    console.error('[Payment] Could not persist confirm tokens:', e.message);
+  }
+}
+
+const confirmStore = {
+  get: (k) => _confirmTokens.get(k),
+  set: (k, v) => { _confirmTokens.set(k, v); persistConfirmTokens(); },
+  delete: (k) => { const had = _confirmTokens.delete(k); if (had) persistConfirmTokens(); return had; },
+  get size() { return _confirmTokens.size; },
+};
 // Which bills a user currently has ticked in the /bayar picker.
 // userId -> { creatorId, values: ["<invoiceId>#<idx>", ...], timestamp }
 const pendingBillSelections = new Map();
@@ -828,7 +870,11 @@ async function handlePaymentConfirm(interaction, action) {
   if (parts.length === 2) {
     const stored = confirmStore.get(parts[1]);
     if (!stored) {
-      return interaction.reply({ content: '❌ Confirmation expired atau sudah diproses.', ephemeral: true });
+      return interaction.reply({
+        content: '❌ Tombol ini udah gak berlaku — kemungkinan pembayarannya udah pernah dikonfirmasi/ditolak.\n\n' +
+          '_Kalau belum, minta yang bayar buat kirim ulang bukti transfernya lewat DM Siggy._',
+        ephemeral: true,
+      });
     }
     if (stored.items && stored.items.length > 1) batchItems = stored.items;
     invoiceId = stored.invoiceId;
@@ -1041,4 +1087,5 @@ module.exports = {
   // Exposed so scripts/dry-run-bayar.cjs can show what /bayar would list
   // without going through Discord.
   __collectOwnUnpaidBills: collectOwnUnpaidBills,
+  __confirmStore: confirmStore,
 };
