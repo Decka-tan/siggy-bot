@@ -44,3 +44,7 @@ discord-bot/node_modules/
 # invoice-db lock dirs + atomic-write temp files
 discord-bot/data/*.lock/
 discord-bot/data/*.tmp.*
+
+# Live invoice/payment data belongs on the VPS only — payment-info.json was
+# committed here with real bank details.
+discord-bot/data/*.json
