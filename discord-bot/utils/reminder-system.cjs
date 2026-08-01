@@ -32,18 +32,11 @@ async function sendAllReminders(client, guildId = null) {
       discordId = resolveName(debtor.canonical);
     }
 
-    // If still no ID, try Discord member search — but ONLY within the guild the
-    // command was invoked in. Searching across every guild the bot is in caused
-    // wrong-user DMs (e.g. a same-named member in the Ritual server got billed).
-    if (!discordId && debtor.username) {
-      const searchGuildId = guildId || debtor.guildId;
-      if (searchGuildId) {
-        try {
-          const members = await client.guilds.cache.get(searchGuildId)?.members.fetch({ query: debtor.username, limit: 1 });
-          discordId = members?.first()?.id;
-        } catch (e) {}
-      }
-    }
+    // Deliberately NOT falling back to a Discord member search by name.
+    // Matching "Eric" against server members is a guess, and the thing being
+    // sent is a bill — it already billed the wrong person once. An identity
+    // here must be one someone explicitly recorded: the userId stored on the
+    // invoice, or an entry in nameLinks. No match means no DM.
 
     // VALIDASI: Hanya proses kalo ID-nya beneran angka (Snowflake)
     const isSnowflake = discordId && /^\d{17,20}$/.test(discordId);
