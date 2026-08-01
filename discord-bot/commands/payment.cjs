@@ -986,16 +986,29 @@ async function handlePaymentConfirm(interaction, action) {
       console.log(`[Payment] Could not send paid notification:`, err.message);
     }
 
-    // Notify payer
+    // Notify payer. A batch settles several invoices at once, so listing only
+    // the first one leaves the payer unsure the rest actually went through.
     try {
       const payer = await interaction.client.users.fetch(payerId);
-      await payer.send({
-        content: `✅ **Pembayaran Dikonfirmasi!**\n\n` +
-          `Invoice: ${invoice.title || 'Untitled'}\n` +
+
+      let note = `✅ **Pembayaran Dikonfirmasi!**\n\n`;
+      if (batchItems) {
+        note += `${billCount} tagihan di ${batchItems.length} invoice — total **Rp ${Number(totalLunas).toLocaleString('id-ID')}**\n\n`;
+        for (const it of batchItems) {
+          const inv = getInvoice(it.invoiceId);
+          const sum = (it.indices || []).reduce(
+            (s, i) => s + (Number(inv?.participants?.[i]?.amount) || 0), 0);
+          note += `• ${inv?.title || 'Untitled'} — Rp ${sum.toLocaleString('id-ID')}\n`;
+        }
+        note += `\nSemuanya udah ditandai LUNAS. Terima kasih! 🎉`;
+      } else {
+        note += `Invoice: ${invoice.title || 'Untitled'}\n` +
           `Untuk: ${participant.username}\n` +
-          `Jumlah: Rp ${Number(participant.amount).toLocaleString('id-ID')}\n\n` +
-          `Terima kasih sudah bayar! 🎉`
-      });
+          `Jumlah: Rp ${Number(totalLunas).toLocaleString('id-ID')}\n\n` +
+          `Terima kasih sudah bayar! 🎉`;
+      }
+
+      await payer.send({ content: note });
     } catch (err) {
       console.log(`[Payment] Could not notify payer:`, err.message);
     }
