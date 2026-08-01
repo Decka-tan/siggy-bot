@@ -48,3 +48,6 @@ discord-bot/data/*.tmp.*
 # Live invoice/payment data belongs on the VPS only — payment-info.json was
 # committed here with real bank details.
 discord-bot/data/*.json
+
+# Runtime secrets for the siggy-web container (lives on the VPS only)
+.siggy-web.env
