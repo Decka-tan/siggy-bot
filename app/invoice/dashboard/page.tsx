@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+// Same lock the Discord bot uses — both processes write these JSON files.
+import { withFileLock, writeFileAtomic } from '@/discord-bot/utils/file-lock.cjs';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -67,11 +69,18 @@ async function markPaidAction(invoiceId: string, participantIndex: number, isPai
   'use server';
   if (!(await checkAuth())) return;
   const dbPath = getInvoiceDbPath();
-  const { db } = getInvoiceDb();
-  if (db.invoices && db.invoices[invoiceId] && db.invoices[invoiceId].participants?.[participantIndex]) {
-    db.invoices[invoiceId].participants[participantIndex].paid = isPaid;
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+  // Re-read inside the lock: the bot may have written since this page rendered.
+  const changed = withFileLock(dbPath, () => {
+    const { db } = getInvoiceDb();
+    if (db.invoices && db.invoices[invoiceId] && db.invoices[invoiceId].participants?.[participantIndex]) {
+      db.invoices[invoiceId].participants[participantIndex].paid = isPaid;
+      writeFileAtomic(dbPath, JSON.stringify(db, null, 2));
+      return true;
+    }
+    return false;
+  });
 
+  if (changed) {
     // Trigger Bot refresh (Delete old message, send new one in Discord)
     try {
       await fetch('http://localhost:8888/api/refresh-invoice', {
@@ -114,27 +123,32 @@ async function linkDiscordAction(formData: FormData) {
   if (!name) return;
 
   const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
-  let db = { payments: {}, nameLinks: {} } as any;
-  
-  if (fs.existsSync(paymentDbPath)) {
-    try {
-      db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
-    } catch (e) {}
-  }
 
-  const nameLower = name.toLowerCase().trim();
-  if (discordId) {
-    db.nameLinks[nameLower] = {
-      ...(db.nameLinks[nameLower] || {}),
-      discordId: discordId,
-      createdAt: db.nameLinks[nameLower]?.createdAt || Date.now(),
-      updatedAt: Date.now()
-    };
-  } else {
-    delete db.nameLinks[nameLower];
-  }
+  withFileLock(paymentDbPath, () => {
+    let db = { payments: {}, nameLinks: {} } as any;
 
-  fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
+    if (fs.existsSync(paymentDbPath)) {
+      try {
+        db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+      } catch (e) {}
+    }
+    db.nameLinks = db.nameLinks || {};
+
+    const nameLower = name.toLowerCase().trim();
+    if (discordId) {
+      db.nameLinks[nameLower] = {
+        ...(db.nameLinks[nameLower] || {}),
+        discordId: discordId,
+        createdAt: db.nameLinks[nameLower]?.createdAt || Date.now(),
+        updatedAt: Date.now()
+      };
+    } else {
+      delete db.nameLinks[nameLower];
+    }
+
+    writeFileAtomic(paymentDbPath, JSON.stringify(db, null, 2));
+  });
+
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
 }
 
@@ -150,48 +164,52 @@ async function linkUserAction(formData: FormData) {
   // 1. Save to payment-info.json
   const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
   if (fs.existsSync(paymentDbPath)) {
-    try {
-      const db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
-      const nameLower = name.toLowerCase().trim();
-      
-      db.nameLinks = db.nameLinks || {};
-      db.nameLinks[nameLower] = {
-        discordId: userId,
-        discordUsername: name,
-        aliases: [],
-        createdAt: db.nameLinks[nameLower]?.createdAt || Date.now(),
-        updatedAt: Date.now()
-      };
-      
-      fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
-    } catch (e) {
-      console.error('Failed to save to payment-info.json', e);
-    }
+    withFileLock(paymentDbPath, () => {
+      try {
+        const db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+        const nameLower = name.toLowerCase().trim();
+
+        db.nameLinks = db.nameLinks || {};
+        db.nameLinks[nameLower] = {
+          discordId: userId,
+          discordUsername: name,
+          aliases: [],
+          createdAt: db.nameLinks[nameLower]?.createdAt || Date.now(),
+          updatedAt: Date.now()
+        };
+
+        writeFileAtomic(paymentDbPath, JSON.stringify(db, null, 2));
+      } catch (e) {
+        console.error('Failed to save to payment-info.json', e);
+      }
+    });
   }
 
   // 2. Save to invoices.json
   const invoiceDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'invoices.json');
   if (fs.existsSync(invoiceDbPath)) {
-    try {
-      const db = JSON.parse(fs.readFileSync(invoiceDbPath, 'utf8'));
-      const nameLower = name.toLowerCase().trim();
-      
-      let updated = false;
-      Object.values(db.invoices || {}).forEach((inv: any) => {
-        (inv.participants || []).forEach((p: any) => {
-          if (p.username.toLowerCase().trim() === nameLower) {
-            p.userId = userId;
-            updated = true;
-          }
+    withFileLock(invoiceDbPath, () => {
+      try {
+        const db = JSON.parse(fs.readFileSync(invoiceDbPath, 'utf8'));
+        const nameLower = name.toLowerCase().trim();
+
+        let updated = false;
+        Object.values(db.invoices || {}).forEach((inv: any) => {
+          (inv.participants || []).forEach((p: any) => {
+            if (p.username.toLowerCase().trim() === nameLower) {
+              p.userId = userId;
+              updated = true;
+            }
+          });
         });
-      });
-      
-      if (updated) {
-        fs.writeFileSync(invoiceDbPath, JSON.stringify(db, null, 2));
+
+        if (updated) {
+          writeFileAtomic(invoiceDbPath, JSON.stringify(db, null, 2));
+        }
+      } catch (e) {
+        console.error('Failed to save to invoices.json', e);
       }
-    } catch (e) {
-      console.error('Failed to save to invoices.json', e);
-    }
+    });
   }
 
   return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
@@ -207,14 +225,16 @@ async function deletePaymentAction(formData: FormData) {
 
   const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
   if (fs.existsSync(paymentDbPath)) {
-    try {
-      const db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
-      const key = name.toLowerCase().trim();
-      if (db.payments[key]) {
-        delete db.payments[key];
-        fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
-      }
-    } catch (e) {}
+    withFileLock(paymentDbPath, () => {
+      try {
+        const db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+        const key = name.toLowerCase().trim();
+        if (db.payments?.[key]) {
+          delete db.payments[key];
+          writeFileAtomic(paymentDbPath, JSON.stringify(db, null, 2));
+        }
+      } catch (e) {}
+    });
   }
   return redirect(`/invoice/dashboard?tab=${tab || 'payments'}`);
 }
@@ -232,24 +252,29 @@ async function savePaymentAction(formData: FormData) {
   if (!name) return;
 
   const paymentDbPath = path.join(process.cwd(), 'discord-bot', 'data', 'payment-info.json');
-  let db = { payments: {}, nameLinks: {} } as any;
-  
-  if (fs.existsSync(paymentDbPath)) {
-    try {
-      db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
-    } catch (e) {}
-  }
 
-  const key = name.toLowerCase().trim();
-  db.payments[key] = {
-    bank,
-    account,
-    name: holder,
-    discordUser,
-    updatedAt: Date.now()
-  };
+  withFileLock(paymentDbPath, () => {
+    let db = { payments: {}, nameLinks: {} } as any;
 
-  fs.writeFileSync(paymentDbPath, JSON.stringify(db, null, 2));
+    if (fs.existsSync(paymentDbPath)) {
+      try {
+        db = JSON.parse(fs.readFileSync(paymentDbPath, 'utf8'));
+      } catch (e) {}
+    }
+    db.payments = db.payments || {};
+
+    const key = name.toLowerCase().trim();
+    db.payments[key] = {
+      bank,
+      account,
+      name: holder,
+      discordUser,
+      updatedAt: Date.now()
+    };
+
+    writeFileAtomic(paymentDbPath, JSON.stringify(db, null, 2));
+  });
+
   return redirect(`/invoice/dashboard?tab=${tab || 'payments'}`);
 }
 
@@ -343,7 +368,12 @@ function getInvoiceDb(): { db: InvoiceDb; dbPath: string } {
   try {
     const raw = fs.readFileSync(dbPath, 'utf8');
     const parsed = JSON.parse(raw);
-    return { db: { invoices: parsed?.invoices || {}, nameAliases: parsed?.nameAliases || {} }, dbPath };
+    // Spread first: this object gets written back verbatim, so dropping any
+    // top-level key the bot owns would silently erase it.
+    return {
+      db: { ...parsed, invoices: parsed?.invoices || {}, nameAliases: parsed?.nameAliases || {} },
+      dbPath,
+    };
   } catch {
     return { db: { invoices: {}, nameAliases: {} }, dbPath };
   }

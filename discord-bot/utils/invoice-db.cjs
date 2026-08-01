@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { withFileLock, writeFileAtomic } = require('./file-lock.cjs');
 
 const DB_FILE = process.env.INVOICE_DB_PATH || path.join(__dirname, '../data/invoices.json');
 const PAYMENT_DB_FILE = path.join(__dirname, '../data/payment-info.json');
@@ -29,10 +30,6 @@ function resolveUserIdFromName(username) {
   }
 }
 
-// Simple in-memory lock for write operations
-let writeLock = false;
-let pendingWrites = [];
-
 // Initialize DB file if not exists
 function initDB() {
   const dir = path.dirname(DB_FILE);
@@ -41,7 +38,7 @@ function initDB() {
   }
 
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({ invoices: {} }, null, 2));
+    writeFileAtomic(DB_FILE, JSON.stringify({ invoices: {} }, null, 2));
   }
 }
 
@@ -78,7 +75,7 @@ function writeDB(data) {
       console.error('[Invoice DB] Invalid data structure, skipping write');
       return false;
     }
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    writeFileAtomic(DB_FILE, JSON.stringify(data, null, 2));
     return true;
   } catch (error) {
     console.error('[Invoice DB] Write error:', error);
@@ -87,20 +84,30 @@ function writeDB(data) {
 }
 
 /**
- * Acquire lock and run operation safely
+ * Every mutating export runs inside this. The whole read-modify-write sequence
+ * is held under one lock, otherwise siggy-web and the bot can each read the same
+ * snapshot and the second writer silently discards the first one's change.
  */
-async function withLock(operation) {
-  // Wait for lock to be released
-  while (writeLock) {
-    await new Promise(resolve => setTimeout(resolve, 10));
-  }
+function locked(fn) {
+  return function (...args) {
+    return withFileLock(DB_FILE, () => fn.apply(this, args));
+  };
+}
 
-  writeLock = true;
-  try {
-    return await operation();
-  } finally {
-    writeLock = false;
-  }
+/**
+ * Read-modify-write in one locked step.
+ *
+ * Callers outside this module must use this instead of readDB() + writeDB():
+ * that pair takes the lock only for the write, leaving the gap between read and
+ * write open for another process to slip a change into and lose it.
+ * Return false from the mutator to skip the write.
+ */
+function updateDB(mutator) {
+  return withFileLock(DB_FILE, () => {
+    const db = readDB();
+    if (mutator(db) === false) return false;
+    return writeDB(db);
+  });
 }
 
 /**
@@ -576,10 +583,22 @@ function calculateTotalOwed(creatorId, guildId) {
 }
 
 module.exports = {
-  createInvoice,
-  addParticipants,
+  // Mutating: read-modify-write must be serialised across bot + web.
+  createInvoice: locked(createInvoice),
+  addParticipants: locked(addParticipants),
+  updateInvoiceMessage: locked(updateInvoiceMessage),
+  linkUserToName: locked(linkUserToName),
+  addNameAlias: locked(addNameAlias),
+  markParticipantPaid: locked(markParticipantPaid),
+  markParticipantPaidByIndex: locked(markParticipantPaidByIndex),
+  markMultiplePaid: locked(markMultiplePaid),
+  deleteInvoice: locked(deleteInvoice),
+  writeDB: locked(writeDB),
+
+  updateDB,
+
+  // Read-only: writeDB renames into place, so a reader always sees a whole file.
   getInvoice,
-  updateInvoiceMessage,
   getGuildInvoices,
   getUserInvoices,
   getUserDebts,
@@ -587,13 +606,6 @@ module.exports = {
   getDebtsByName,
   getCanonicalName,
   getAllDebtors,
-  linkUserToName,
-  addNameAlias,
-  markParticipantPaid,
-  markParticipantPaidByIndex,
-  markMultiplePaid,
-  deleteInvoice,
   calculateTotalOwed,
   readDB,
-  writeDB,
 };

@@ -40,3 +40,7 @@ discord-bot/data/
 *.tsbuildinfo
 next-env.d.ts
 discord-bot/node_modules/
+
+# invoice-db lock dirs + atomic-write temp files
+discord-bot/data/*.lock/
+discord-bot/data/*.tmp.*

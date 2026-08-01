@@ -5,8 +5,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { withFileLock, writeFileAtomic } = require('./file-lock.cjs');
 
-const DB_FILE = path.join(__dirname, '../data/payment-info.json');
+const DB_FILE = process.env.PAYMENT_DB_PATH || path.join(__dirname, '../data/payment-info.json');
 
 // Initialize DB file if not exists
 function initDB() {
@@ -16,7 +17,7 @@ function initDB() {
   }
 
   if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify({
+    writeFileAtomic(DB_FILE, JSON.stringify({
       payments: {},    // creatorName -> { bank, account, name, discordUser, updatedAt }
       nameLinks: {}    // nameLower -> { discordId, discordUsername, aliases[] }
     }, null, 2));
@@ -49,12 +50,34 @@ function readDB() {
 function writeDB(data) {
   initDB();
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+    writeFileAtomic(DB_FILE, JSON.stringify(data, null, 2));
     return true;
   } catch (error) {
     console.error('[Payment DB] Write error:', error);
     return false;
   }
+}
+
+/**
+ * siggy-web's invoice dashboard writes payment-info.json too, so every
+ * read-modify-write here has to be serialised against that other process.
+ */
+function locked(fn) {
+  return function (...args) {
+    return withFileLock(DB_FILE, () => fn.apply(this, args));
+  };
+}
+
+/**
+ * Read-modify-write in one locked step. Use this instead of readDB() + writeDB()
+ * from outside this module. Return false from the mutator to skip the write.
+ */
+function updateDB(mutator) {
+  return withFileLock(DB_FILE, () => {
+    const db = readDB();
+    if (mutator(db) === false) return false;
+    return writeDB(db);
+  });
 }
 
 /**
@@ -243,16 +266,20 @@ function bulkImportLinks(links) {
 }
 
 module.exports = {
-  setPaymentInfo,
+  // Mutating: read-modify-write must be serialised across bot + web.
+  setPaymentInfo: locked(setPaymentInfo),
+  linkName: locked(linkName),
+  addAlias: locked(addAlias),
+  bulkImportLinks: locked(bulkImportLinks),
+  writeDB: locked(writeDB),
+  updateDB,
+
+  // Read-only: writeDB renames into place, so a reader always sees a whole file.
   getPaymentInfo,
   getPaymentInfoByUsername,
-  linkName,
   getNameLink,
   getDiscordIdByName,
   getAllLinks,
-  addAlias,
   resolveName,
-  bulkImportLinks,
   readDB,
-  writeDB,
 };

@@ -246,14 +246,12 @@ async function matchParticipantsToGuild(invoice, guild) {
 
   // Save updated participant data using DB function
   if (updated) {
-    // Update participants in DB by reading, updating, and writing back
+    // Read-modify-write must happen under one lock — siggy-web writes this file too.
     const db = require('../utils/invoice-db.cjs');
-    const data = db.readDB();
-
-    if (data.invoices[invoice.id]) {
+    db.updateDB((data) => {
+      if (!data.invoices[invoice.id]) return false;
       data.invoices[invoice.id].participants = invoice.participants;
-      db.writeDB(data);
-    }
+    });
   }
 }
 
