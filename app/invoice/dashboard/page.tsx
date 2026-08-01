@@ -5,6 +5,9 @@ import { withFileLock, writeFileAtomic } from '@/discord-bot/utils/file-lock.cjs
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+// Mutations re-render in place with this instead of redirecting: a redirect
+// throws away the scroll position and every active filter in the URL.
+import { revalidatePath } from 'next/cache';
 import {
   ArrowRight,
   BarChart3,
@@ -107,18 +110,25 @@ async function markPaidAction(invoiceId: string, participantIndex: number, isPai
   });
 
   if (changed) {
-    // Trigger Bot refresh (Delete old message, send new one in Discord)
+    // Trigger Bot refresh (Delete old message, send new one in Discord).
+    // The bot listens on the HOST, so inside a container "localhost" is wrong —
+    // set BOT_REFRESH_URL to reach the host (host.docker.internal).
+    const refreshUrl = process.env.BOT_REFRESH_URL || 'http://localhost:8888/api/refresh-invoice';
     try {
-      await fetch('http://localhost:8888/api/refresh-invoice', {
+      const res = await fetch(refreshUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: invoiceId })
+        body: JSON.stringify({ invoiceId: invoiceId }),
+        // Without this a dead bot leaves the user's click spinning.
+        signal: AbortSignal.timeout(5000),
       });
+      if (!res.ok) console.error(`[dashboard] bot refresh returned ${res.status} from ${refreshUrl}`);
     } catch (e) {
-      console.error('Failed to trigger bot refresh from dashboard:', e);
+      console.error(`[dashboard] bot refresh failed (${refreshUrl}) — the Discord message will be stale:`, e);
     }
   }
-  return redirect(`/invoice/dashboard?tab=logs`);
+  // Stay on whatever tab and filter the user was looking at.
+  revalidatePath('/invoice/dashboard');
 }
 
 async function filterAction(formData: FormData) {
@@ -175,7 +185,7 @@ async function linkDiscordAction(formData: FormData) {
     writeFileAtomic(paymentDbPath, JSON.stringify(db, null, 2));
   });
 
-  return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
+  revalidatePath('/invoice/dashboard');
 }
 
 async function linkUserAction(formData: FormData) {
@@ -238,7 +248,7 @@ async function linkUserAction(formData: FormData) {
     });
   }
 
-  return redirect(`/invoice/dashboard?tab=${tab || 'debtors'}`);
+  revalidatePath('/invoice/dashboard');
 }
 
 async function deletePaymentAction(formData: FormData) {
@@ -262,7 +272,7 @@ async function deletePaymentAction(formData: FormData) {
       } catch (e) {}
     });
   }
-  return redirect(`/invoice/dashboard?tab=${tab || 'payments'}`);
+  revalidatePath('/invoice/dashboard');
 }
 
 async function savePaymentAction(formData: FormData) {
@@ -301,7 +311,7 @@ async function savePaymentAction(formData: FormData) {
     writeFileAtomic(paymentDbPath, JSON.stringify(db, null, 2));
   });
 
-  return redirect(`/invoice/dashboard?tab=${tab || 'payments'}`);
+  revalidatePath('/invoice/dashboard');
 }
 
 // --- Types ---
@@ -619,7 +629,7 @@ export default async function InvoiceDashboardPage({ searchParams }: { searchPar
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] p-6 text-text-primary">
         <style dangerouslySetInnerHTML={{ __html: `nav.fixed.top-0, footer.border-t.border-white\\/5 { display: none !important; }`}} />
-        <div className="w-full max-w-md space-y-8 rounded-3xl border border-white/5 bg-[#0d0d0d] p-10 shadow-2xl"><div className="text-center"><div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-yellow-500"><Lock className="h-8 w-8 text-black" /></div><h1 className="text-2xl font-bold tracking-tight">Siggy Secure Access</h1></div><form action={loginAction} className="space-y-5"><input name="user" type="text" placeholder="Username" className="w-full rounded-xl border border-white/10 bg-surface/50 px-5 py-3.5 text-sm outline-none" required /><input name="pass" type="password" placeholder="Password" className="w-full rounded-xl border border-white/10 bg-surface/50 px-5 py-3.5 text-sm outline-none" required /><button type="submit" className="w-full rounded-xl bg-gradient-to-r from-accent to-yellow-400 py-4 font-mono text-xs font-bold uppercase tracking-widest text-black transition-all">Unlock Dashboard</button></form></div>
+        <div className="w-full max-w-md space-y-8 rounded-3xl border border-white/5 bg-[#0d0d0d] p-10 shadow-2xl"><div className="text-center"><div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-accent to-yellow-500"><Lock className="h-8 w-8 text-black" /></div><h1 className="text-2xl font-bold tracking-tight">Siggy Secure Access</h1></div>{searchParams.error && (<div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-xs text-red-300"><AlertCircle className="h-4 w-4 shrink-0" /><span>Username atau password salah.</span></div>)}<form action={loginAction} className="space-y-5"><input name="user" type="text" placeholder="Username" className="w-full rounded-xl border border-white/10 bg-surface/50 px-5 py-3.5 text-sm outline-none" required /><input name="pass" type="password" placeholder="Password" className="w-full rounded-xl border border-white/10 bg-surface/50 px-5 py-3.5 text-sm outline-none" required /><button type="submit" className="w-full rounded-xl bg-gradient-to-r from-accent to-yellow-400 py-4 font-mono text-xs font-bold uppercase tracking-widest text-black transition-all">Unlock Dashboard</button></form></div>
       </div>
     );
   }
