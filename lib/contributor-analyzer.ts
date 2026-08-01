@@ -13,12 +13,33 @@ export class ContributorAnalyzer {
   
   private statsData: any = null;
   private rolesData: any = null;
+  private dataFingerprint: string | null = null;
 
   constructor() {
     this.loadData();
   }
 
+  /**
+   * mtime + size of both data files. loadData() runs on every public method,
+   * so without this gate each call re-parses ~5MB of JSON.
+   */
+  private computeFingerprint(): string {
+    return [this.statsPath, this.rolesPath]
+      .map(p => {
+        try {
+          const s = fs.statSync(p);
+          return `${s.mtimeMs}:${s.size}`;
+        } catch {
+          return '-';
+        }
+      })
+      .join('|');
+  }
+
   private loadData(): void {
+    const fingerprint = this.computeFingerprint();
+    if (fingerprint === this.dataFingerprint) return;
+
     try {
       if (fs.existsSync(this.statsPath)) {
         this.statsData = JSON.parse(fs.readFileSync(this.statsPath, 'utf-8'));
@@ -26,6 +47,7 @@ export class ContributorAnalyzer {
       if (fs.existsSync(this.rolesPath)) {
         this.rolesData = JSON.parse(fs.readFileSync(this.rolesPath, 'utf-8'));
       }
+      this.dataFingerprint = fingerprint;
     } catch (e) {
       console.warn('⚠️ ContributorAnalyzer: Data files not found meow!');
     }

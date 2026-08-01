@@ -38,12 +38,34 @@ export class UserChecker {
 
   private memberMap: Map<string, EnrichedUser> = new Map();
   private usernameToIndex: Map<string, string> = new Map();
+  private dataFingerprint: string | null = null;
 
   constructor() {
     this.refreshData();
   }
 
+  /**
+   * mtime + size of every file refreshData() reads.
+   * Costs a few statSync calls; parsing the same files costs ~55MB of heap.
+   */
+  private computeFingerprint(): string {
+    return [this.statsPath, this.rolesPath, this.contributionsPath, this.avatarsPath, this.eventsPath]
+      .map(p => {
+        try {
+          const s = fs.statSync(p);
+          return `${s.mtimeMs}:${s.size}`;
+        } catch {
+          return '-';
+        }
+      })
+      .join('|');
+  }
+
   private refreshData(): void {
+    // Skip the reload entirely when nothing on disk changed since last time.
+    const fingerprint = this.computeFingerprint();
+    if (fingerprint === this.dataFingerprint) return;
+
     this.memberMap.clear();
     this.usernameToIndex.clear();
 
@@ -179,6 +201,9 @@ export class UserChecker {
       this.memberMap.forEach(profile => {
         profile.roles = this.sortRolesByPriority(profile.roles);
       });
+
+      // Only trust the fingerprint after a clean pass, so a failed load retries next call.
+      this.dataFingerprint = fingerprint;
     } catch (e) {}
   }
 
