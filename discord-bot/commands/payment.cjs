@@ -157,56 +157,246 @@ async function handleInvoiceLink(interaction) {
 /**
  * /bayar command - Start payment claim flow
  */
-async function handleBayar(interaction, directInvoiceId) {
-  const { getGuildInvoices } = require('../utils/invoice-db.cjs');
+const isSnowflakeId = (id) => typeof id === 'string' && /^\d{17,20}$/.test(id);
 
+/**
+ * Every unpaid bill in this guild that belongs to `user`.
+ *
+ * Ownership only comes from something recorded on purpose: the Discord id
+ * stored on the participant, an explicit nameLinks entry, or the caller's own
+ * Discord username. Never a fuzzy name match — surfacing someone else's bill
+ * under /bayar invites paying off the wrong person's debt.
+ */
+function collectOwnUnpaidBills(guildId, user) {
+  const { getGuildInvoices, getCanonicalName, readDB } = require('../utils/invoice-db.cjs');
+  const db = readDB();
+
+  const ownNames = new Set([String(user.username || '').toLowerCase().trim()]);
+  try {
+    // getAllLinks() returns an array of { name, discordId, ... }, not a map.
+    for (const link of getAllLinks() || []) {
+      if (link?.discordId === user.id && link.name) ownNames.add(String(link.name).toLowerCase().trim());
+    }
+  } catch (e) { /* nameLinks unavailable — ids stored on the invoice still work */ }
+
+  const ownCanonical = new Set([...ownNames].map(n => getCanonicalName(n, db).toLowerCase().trim()));
+
+  const bills = [];
+  for (const inv of getGuildInvoices(guildId)) {
+    (inv.participants || []).forEach((p, idx) => {
+      if (p.paid) return;
+
+      const byId = isSnowflakeId(p.userId) && p.userId === user.id;
+      const byName = ownCanonical.has(getCanonicalName(p.username || '', db).toLowerCase().trim());
+      if (!byId && !byName) return;
+
+      bills.push({
+        invoiceId: inv.id,
+        index: idx,
+        title: inv.title || 'Untitled',
+        date: inv.date,
+        amount: Number(p.amount) || 0,
+        username: p.username,
+        creatorId: inv.creator?.id,
+        creatorName: inv.creator?.username || 'Unknown',
+      });
+    });
+  }
+  return bills;
+}
+
+async function handleBayar(interaction, directInvoiceId) {
   // Invoked from a specific invoice's "Bayar" button → invoice already known,
-  // skip the invoice picker and go straight to choosing who paid.
+  // skip the picker and go straight to choosing who paid. That path still
+  // allows paying on someone else's behalf; only the slash command is scoped
+  // to the caller.
   if (directInvoiceId) {
     return showPersonSelect(interaction, directInvoiceId, true);
   }
 
-  const invoices = getGuildInvoices(interaction.guildId);
+  const bills = collectOwnUnpaidBills(interaction.guildId, interaction.user);
 
-  // Filter invoices with unpaid participants
-  const unpaidInvoices = invoices.filter(inv =>
-    inv.participants.some(p => !p.paid)
-  );
-
-  if (unpaidInvoices.length === 0) {
+  if (bills.length === 0) {
     return interaction.reply({
-      content: '✅ Semua invoice lunas!',
-      ephemeral: true
+      content: '✅ Kamu gak punya tagihan yang belum lunas!\n\n' +
+        '_Kalau ngerasa punya, kemungkinan invoice-nya belum ke-link ke akun Discord kamu. ' +
+        'Minta pembuat invoice buat nge-link nama kamu._',
+      ephemeral: true,
     });
   }
 
-  // Build invoice select menu
-  const options = unpaidInvoices.slice(0, 25).map(inv => {
-    const unpaidCount = inv.participants.filter(p => !p.paid).length;
-    const totalUnpaid = inv.participants
-      .filter(p => !p.paid)
-      .reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  // Paying = transferring to one person, so a batch only makes sense per
+  // creator. Pick who to settle up with first.
+  const byCreator = new Map();
+  for (const b of bills) {
+    const key = String(b.creatorId || b.creatorName);
+    const g = byCreator.get(key) || { creatorId: b.creatorId, creatorName: b.creatorName, total: 0, count: 0 };
+    g.total += b.amount;
+    g.count += 1;
+    byCreator.set(key, g);
+  }
 
-    return new StringSelectMenuOptionBuilder()
-      .setLabel(`${inv.title || 'Untitled'} - ${inv.date}`)
-      .setValue(inv.id)
-      .setDescription(`${unpaidCount} orang - Rp ${totalUnpaid.toLocaleString('id-ID')} blm bayar`);
-  });
+  if (byCreator.size === 1) {
+    return showOwnBillSelect(interaction, [...byCreator.values()][0].creatorId, true);
+  }
 
-  const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId('bayar_select_invoice')
-    .setPlaceholder('Pilih invoice...')
-    .setMinValues(1)
-    .setMaxValues(1)
-    .addOptions(options);
+  const options = [...byCreator.values()].slice(0, 25).map(g =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${g.creatorName} — Rp ${g.total.toLocaleString('id-ID')}`.slice(0, 100))
+      .setValue(String(g.creatorId))
+      .setDescription(`${g.count} tagihan`)
+  );
 
-  const row = new ActionRowBuilder().addComponents(selectMenu);
+  const grandTotal = bills.reduce((s, b) => s + b.amount, 0);
 
   await interaction.reply({
-    content: '💵 **Bayar Invoice**\n\nPilih invoice yang mau dibayar:',
-    components: [row],
-    ephemeral: true
+    content: `💵 **Tagihan kamu — total Rp ${grandTotal.toLocaleString('id-ID')}**\n\n` +
+      `Transfer itu ke satu orang, jadi pilih dulu mau lunasin ke siapa:`,
+    components: [
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('bayar_select_creator')
+          .setPlaceholder('Bayar ke siapa?')
+          .setMinValues(1)
+          .setMaxValues(1)
+          .addOptions(options)
+      ),
+    ],
+    ephemeral: true,
   });
+}
+
+/**
+ * Second dropdown: the caller's own unpaid bills owed to one creator,
+ * multi-select so several settle in a single transfer.
+ */
+async function showOwnBillSelect(interaction, creatorId, useReply) {
+  const bills = collectOwnUnpaidBills(interaction.guildId, interaction.user)
+    .filter(b => String(b.creatorId) === String(creatorId));
+
+  const respond = (payload) =>
+    useReply ? interaction.reply({ ...payload, ephemeral: true }) : interaction.update(payload);
+
+  if (bills.length === 0) {
+    return respond({ content: '✅ Gak ada tagihan tersisa ke orang ini.', components: [] });
+  }
+
+  const shown = bills.slice(0, 25);
+  const options = shown.map(b =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(String(b.title).slice(0, 100))
+      .setValue(`${b.invoiceId}#${b.index}`)
+      .setDescription(`${b.date} · Rp ${b.amount.toLocaleString('id-ID')}`.slice(0, 100))
+      .setDefault(true) // settling everything is the common case
+  );
+
+  const total = shown.reduce((s, b) => s + b.amount, 0);
+
+  let content = `💵 **Bayar ke @${shown[0].creatorName}**\n\n`;
+  content += `${shown.length} tagihan, total **Rp ${total.toLocaleString('id-ID')}**.\n`;
+  content += `Semua udah kecentang — hilangin centang yang belum mau dibayar, terus konfirmasi.`;
+  if (bills.length > shown.length) {
+    content += `\n\n⚠️ _Kamu punya ${bills.length} tagihan ke orang ini, Discord cuma sanggup nampilin 25 sekaligus. Sisanya muncul setelah yang ini lunas._`;
+  }
+
+  return respond({
+    content,
+    components: [
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`bayar_select_bills|${creatorId}`)
+          .setPlaceholder('Pilih tagihan yang mau dibayar...')
+          .setMinValues(1)
+          .setMaxValues(shown.length)
+          .addOptions(options)
+      ),
+    ],
+  });
+}
+
+async function handleBayarSelectCreator(interaction) {
+  return showOwnBillSelect(interaction, interaction.values[0], false);
+}
+
+/**
+ * Bills chosen → one claim covering all of them, one transfer, one proof.
+ */
+async function handleBayarSelectBills(interaction) {
+  const creatorId = interaction.customId.split('|')[1];
+  const picked = new Set(interaction.values);
+
+  // Re-derive from disk instead of trusting the menu values: the list was built
+  // when the menu was rendered and something may have been paid since.
+  const bills = collectOwnUnpaidBills(interaction.guildId, interaction.user)
+    .filter(b => String(b.creatorId) === String(creatorId))
+    .filter(b => picked.has(`${b.invoiceId}#${b.index}`));
+
+  if (bills.length === 0) {
+    return interaction.update({
+      content: '❌ Tagihan yang kamu pilih udah gak ada (mungkin barusan ditandai lunas). Coba `/bayar` lagi.',
+      components: [],
+    });
+  }
+
+  // One entry per invoice, carrying every index picked from it.
+  const itemMap = new Map();
+  for (const b of bills) {
+    const it = itemMap.get(b.invoiceId) || { invoiceId: b.invoiceId, indices: [], title: b.title, amount: 0 };
+    it.indices.push(b.index);
+    it.amount += b.amount;
+    itemMap.set(b.invoiceId, it);
+  }
+  const items = [...itemMap.values()];
+  const total = bills.reduce((s, b) => s + b.amount, 0);
+  const payerName = bills[0].username || interaction.user.username;
+
+  const claimData = {
+    items,
+    participantName: payerName,
+    amount: total,
+    creatorId,
+    timestamp: Date.now(),
+    // Legacy fields so the single-invoice proof path keeps working unchanged.
+    invoiceId: items[0].invoiceId,
+    participantIndices: items[0].indices,
+    participantUserId: interaction.user.id,
+  };
+  pendingClaims.set(interaction.user.id, claimData);
+  console.log(`[Payment] Batch claim SET for ${interaction.user.id}: ${items.length} invoice, Rp ${total}`);
+
+  const creatorPaymentInfo = getPaymentInfo(creatorId);
+  const creatorName = interaction.guild?.members?.cache?.get(creatorId)?.user?.username;
+
+  let description = `💵 **Bayar ${bills.length} tagihan sekaligus**\n`;
+  description += `💰 Total: **Rp ${total.toLocaleString('id-ID')}**\n\n`;
+  for (const it of items) {
+    description += `• ${it.title} — Rp ${it.amount.toLocaleString('id-ID')}`;
+    description += it.indices.length > 1 ? ` _(${it.indices.length} bill)_\n` : `\n`;
+  }
+
+  description += `\n🏦 **Transfer ke:**\n`;
+  if (creatorName) description += `👤 @${creatorName}\n`;
+  if (creatorPaymentInfo) {
+    if (creatorPaymentInfo.bank) description += `🏦 Bank: **${creatorPaymentInfo.bank}**\n`;
+    if (creatorPaymentInfo.number) description += `🔢 No. Rek: ||${creatorPaymentInfo.number}||\n`;
+    if (creatorPaymentInfo.name) description += `👤 Atas Nama: ${creatorPaymentInfo.name}\n`;
+  } else {
+    description += `⚠️ Dia belum set info pembayaran. DM aja orangnya!\n`;
+  }
+
+  description += `\n📸 **Langkah selanjutnya:**\n`;
+  description += `1. Transfer **satu kali** sejumlah total di atas\n`;
+  description += `2. Screenshot bukti transfer\n`;
+  description += `3. **DM Siggy dan kirim bukti**\n\n`;
+  description += `_Sekali dikonfirmasi, ${bills.length} tagihan itu langsung lunas semua._`;
+
+  const embed = new EmbedBuilder()
+    .setColor(0x3498db)
+    .setTitle('🧾 Instruksi Pembayaran')
+    .setDescription(description)
+    .setTimestamp();
+
+  return interaction.update({ content: '', embeds: [embed], components: [] });
 }
 
 /**
@@ -432,7 +622,19 @@ async function handlePaymentProofDM(message, client) {
   proofContent += `💵 Dari: @${message.author.username}\n`;
   proofContent += `👤 Untuk: ${pending.participantName}\n`;
   proofContent += `💰 Jumlah: Rp ${Number(pending.amount).toLocaleString('id-ID')}\n`;
-  proofContent += `📋 Invoice: ${invoice.title || 'Untitled'} (${invoice.date})\n\n`;
+
+  // A batch claim settles several invoices in one transfer — list them all, so
+  // the creator can see exactly what one click is about to mark paid.
+  if (pending.items && pending.items.length > 1) {
+    proofContent += `📋 **${pending.items.length} invoice sekaligus:**\n`;
+    for (const it of pending.items) {
+      const inv = getInvoice(it.invoiceId);
+      proofContent += `   • ${inv?.title || it.title || 'Untitled'} — Rp ${Number(it.amount || 0).toLocaleString('id-ID')}\n`;
+    }
+    proofContent += `\n`;
+  } else {
+    proofContent += `📋 Invoice: ${invoice.title || 'Untitled'} (${invoice.date})\n\n`;
+  }
 
   // Build confirm/reject buttons. customId has a 100-char limit so we can't put
   // a long list of indices in there — instead we save the claim into an
@@ -441,6 +643,7 @@ async function handlePaymentProofDM(message, client) {
   confirmStore.set(token, {
     invoiceId: pending.invoiceId,
     indices: pending.participantIndices || (pending.participantIdx !== undefined ? [pending.participantIdx] : []),
+    items: pending.items || null,
     participantUserId: pending.participantUserId,
     participantName: pending.participantName,
     amount: pending.amount,
@@ -510,12 +713,15 @@ async function handlePaymentConfirm(interaction, action) {
   // Legacy:        payment_confirm|<invoiceId>|<userId[:idx]>|<payerId>
   const parts = customId.split('|');
   let invoiceId, participantUserId, participantIdx = null, participantIndices = null, payerId, participantName, amount;
+  // Set when the claim covers more than one invoice (batch pay).
+  let batchItems = null;
 
   if (parts.length === 2) {
     const stored = confirmStore.get(parts[1]);
     if (!stored) {
       return interaction.reply({ content: '❌ Confirmation expired atau sudah diproses.', ephemeral: true });
     }
+    if (stored.items && stored.items.length > 1) batchItems = stored.items;
     invoiceId = stored.invoiceId;
     participantIndices = stored.indices || [];
     participantIdx = participantIndices[0] ?? null;
@@ -555,7 +761,12 @@ async function handlePaymentConfirm(interaction, action) {
 
   if (action === 'confirm') {
     // Mark every bill in the group as paid (one user can have multiple bills).
-    if (participantIndices && participantIndices.length) {
+    if (batchItems) {
+      // Batch: settle every invoice in the claim, not just the first one.
+      for (const it of batchItems) {
+        for (const i of it.indices || []) markParticipantPaidByIndex(it.invoiceId, i);
+      }
+    } else if (participantIndices && participantIndices.length) {
       for (const i of participantIndices) markParticipantPaidByIndex(invoiceId, i);
     } else {
       markParticipantPaid(invoiceId, participantUserId);
@@ -563,45 +774,53 @@ async function handlePaymentConfirm(interaction, action) {
     // Free the token (one-shot).
     if (parts.length === 2) confirmStore.delete(parts[1]);
 
-    // Get updated invoice
-    const updatedInvoice = getInvoice(invoiceId);
     const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification } = require('./invoice-simple.cjs');
+    const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
 
-    // Get channel and delete old invoice message if exists
-    const channel = await interaction.client.channels.fetch(updatedInvoice.channelId);
+    // Every invoice touched by this claim needs its channel message redrawn,
+    // otherwise a batch leaves the other invoices showing stale "belum bayar".
+    const affected = batchItems ? batchItems.map(i => i.invoiceId) : [invoiceId];
 
-    // Delete the original invoice message (the one with buttons)
-    if (updatedInvoice.messageId) {
+    for (const affectedId of affected) {
+      const updated = getInvoice(affectedId);
+      if (!updated) continue;
       try {
-        const oldMessage = await channel.messages.fetch(updatedInvoice.messageId);
-        await oldMessage.delete();
-        console.log(`[Payment] Old invoice message deleted`);
+        const channel = await interaction.client.channels.fetch(updated.channelId);
+
+        if (updated.messageId) {
+          try {
+            const oldMessage = await channel.messages.fetch(updated.messageId);
+            await oldMessage.delete();
+          } catch (err) {
+            console.log(`[Payment] Could not delete old message for ${affectedId}: ${err.message}`);
+          }
+        }
+
+        const newMessage = await channel.send({
+          content: `✅ 1 orang ditandai lunas!`,
+          embeds: [renderInvoiceEmbed(updated)],
+          components: [buildInvoiceButtons(updated.id)],
+        });
+        updateInvoiceMessage(updated.id, newMessage.id);
+        console.log(`[Payment] Invoice ${affectedId} message refreshed: ${newMessage.id}`);
       } catch (err) {
-        console.log(`[Payment] Could not delete old message: ${err.message}`);
+        // One unreachable channel must not abort the rest of the batch —
+        // the bills are already marked paid on disk at this point.
+        console.error(`[Payment] Could not refresh invoice ${affectedId}:`, err.message);
       }
     }
 
-    // Send new updated invoice message
-    const embed = renderInvoiceEmbed(updatedInvoice);
-    const components = buildInvoiceButtons(updatedInvoice.id);
-
-    const newMessage = await channel.send({
-      content: `✅ 1 orang ditandai lunas!`,
-      embeds: [embed],
-      components: [components]
-    });
-
-    // Update messageId in database
-    const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
-    updateInvoiceMessage(updatedInvoice.id, newMessage.id);
-
-    console.log(`[Payment] New invoice message sent: ${newMessage.id}`);
+    const updatedInvoice = getInvoice(invoiceId);
 
     const totalLunas = amount || (participantIndices ? participantIndices.reduce((s, i) => s + (Number(invoice.participants[i]?.amount) || 0), 0) : Number(participant.amount) || 0);
-    const billCount = participantIndices ? participantIndices.length : 1;
+    const billCount = batchItems
+      ? batchItems.reduce((s, i) => s + (i.indices?.length || 0), 0)
+      : (participantIndices ? participantIndices.length : 1);
+    const scope = batchItems ? ` _(${billCount} bill di ${batchItems.length} invoice)_` : (billCount > 1 ? ` _(gabungan ${billCount} bill)_` : '');
+
     await interaction.update({
       content: `✅ Pembayaran dikonfirmasi!\n\n` +
-        `👤 ${participantName || participant.username} - Rp ${totalLunas.toLocaleString('id-ID')} → LUNAS${billCount > 1 ? ` _(gabungan ${billCount} bill)_` : ''}`,
+        `👤 ${participantName || participant.username} - Rp ${totalLunas.toLocaleString('id-ID')} → LUNAS${scope}`,
       components: []
     });
 
@@ -702,9 +921,14 @@ module.exports = {
   handleBayar,
   handleBayarSelectInvoice,
   handleBayarSelectPerson,
+  handleBayarSelectCreator,
+  handleBayarSelectBills,
   handlePaymentProofDM,
   handlePaymentConfirm,
   getPaymentDisplay,
   paymentCommands,
   pendingClaims,
+  // Exposed so scripts/dry-run-bayar.cjs can show what /bayar would list
+  // without going through Discord.
+  __collectOwnUnpaidBills: collectOwnUnpaidBills,
 };

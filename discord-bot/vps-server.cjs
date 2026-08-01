@@ -106,6 +106,8 @@ const {
   handleBayar,
   handleBayarSelectInvoice,
   handleBayarSelectPerson,
+  handleBayarSelectCreator,
+  handleBayarSelectBills,
   handlePaymentProofDM,
   handlePaymentConfirm,
   paymentCommands,
@@ -1836,6 +1838,8 @@ client.on('interactionCreate', async (interaction) => {
         return handleFindDebtSelect(interaction);
       }
       if (customId === 'bayar_select_invoice') return handleBayarSelectInvoice(interaction);
+      if (customId === 'bayar_select_creator') return handleBayarSelectCreator(interaction);
+      if (customId.startsWith('bayar_select_bills|')) return handleBayarSelectBills(interaction);
       if (customId.startsWith('bayar_select_person_')) return handleBayarSelectPerson(interaction);
       return;
     }
