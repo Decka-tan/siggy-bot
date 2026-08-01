@@ -40,25 +40,51 @@ import {
 export const dynamic = 'force-dynamic';
 
 // --- AUTH CONFIG ---
-const AUTH_USER = "Sopmod";
-const AUTH_PASS = "4r1p1n";
-const COOKIE_NAME = "siggy_session_v3";
-const SESSION_VALUE = "authenticated_siggy_admin_access";
+// All three come from the environment. They used to be literals in this file,
+// which is in a public repo — and SESSION_VALUE being a known constant meant
+// anyone could set the cookie by hand and skip the login form entirely.
+const AUTH_USER = process.env.SIGGY_ADMIN_USER;
+const AUTH_PASS = process.env.SIGGY_ADMIN_PASS;
+const SESSION_VALUE = process.env.SIGGY_SESSION_SECRET;
+const COOKIE_NAME = "siggy_session_v4";
+
+function authConfigured() {
+  if (AUTH_USER && AUTH_PASS && SESSION_VALUE) return true;
+  console.error(
+    '[invoice-dashboard] locked: set SIGGY_ADMIN_USER, SIGGY_ADMIN_PASS and SIGGY_SESSION_SECRET'
+  );
+  return false;
+}
+
+// Constant-time compare so a wrong guess cannot be narrowed down by timing.
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 async function checkAuth() {
-  const cookieStore = cookies();
-  const session = cookieStore.get(COOKIE_NAME);
-  return session?.value === SESSION_VALUE;
+  if (!authConfigured()) return false;
+  const session = cookies().get(COOKIE_NAME);
+  return !!session?.value && safeEqual(session.value, SESSION_VALUE as string);
 }
 
 // --- SERVER ACTIONS ---
 async function loginAction(formData: FormData) {
   'use server';
-  const user = formData.get('user');
-  const pass = formData.get('pass');
-  if (user === AUTH_USER && pass === AUTH_PASS) {
-    cookies().set(COOKIE_NAME, SESSION_VALUE, { 
-      httpOnly: true, secure: false, sameSite: 'lax', maxAge: 60 * 60 * 24 * 7, path: '/' 
+  if (!authConfigured()) return redirect('/invoice/dashboard?error=1');
+
+  const user = String(formData.get('user') ?? '');
+  const pass = String(formData.get('pass') ?? '');
+
+  if (safeEqual(user, AUTH_USER as string) && safeEqual(pass, AUTH_PASS as string)) {
+    cookies().set(COOKIE_NAME, SESSION_VALUE as string, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
     });
     return redirect('/invoice/dashboard');
   }
