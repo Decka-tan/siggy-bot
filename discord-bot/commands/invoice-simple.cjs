@@ -1127,12 +1127,22 @@ async function handleInvoiceSearch(interaction) {
     filtered = filtered.filter(inv => new Date(inv.date) >= monthAgo);
   }
 
-  // Filter by query (username or title)
+  // Filter by query (username or title).
+  // Resolve the query through the alias map too: searching "Stefan" has to find
+  // the invoices where he is written as "Clee", otherwise the merge everything
+  // else honours stops at this one screen.
   if (query) {
+    const { getCanonicalName } = require('../utils/invoice-db.cjs');
     const lowerQuery = query.toLowerCase();
+    const queryCanonical = getCanonicalName(query, allData).toLowerCase().trim();
+
     filtered = filtered.filter(inv =>
       inv.title?.toLowerCase().includes(lowerQuery) ||
-      inv.participants.some(p => p.username?.toLowerCase().includes(lowerQuery))
+      inv.participants.some(p => {
+        const raw = (p.username || '').toLowerCase();
+        if (raw.includes(lowerQuery)) return true;
+        return getCanonicalName(p.username || '', allData).toLowerCase().trim() === queryCanonical;
+      })
     );
   }
 

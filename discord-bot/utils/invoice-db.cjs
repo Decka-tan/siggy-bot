@@ -376,8 +376,39 @@ function addNameAlias(canonicalName, aliasName) {
     db.nameAliases = {};
   }
 
-  const canonicalLower = canonicalName.toLowerCase();
-  const aliasLower = aliasName.toLowerCase();
+  const canonicalLower = canonicalName.toLowerCase().trim();
+  const aliasLower = aliasName.toLowerCase().trim();
+
+  if (!canonicalLower || !aliasLower) {
+    return { success: false, message: 'Nama gak boleh kosong' };
+  }
+
+  // A name aliased to itself is a no-op that clutters the map.
+  if (canonicalLower === aliasLower) {
+    return { success: false, message: `"${aliasName}" gak bisa jadi alias buat dirinya sendiri` };
+  }
+
+  // Registering both directions makes the winner depend on key order, so the
+  // same person can silently split in two later. The ledger already carries
+  // abimanyu<->abi from before this check existed.
+  if ((db.nameAliases[aliasLower] || []).includes(canonicalLower)) {
+    return {
+      success: false,
+      message: `"${canonicalName}" udah kedaftar sebagai alias dari "${aliasName}". ` +
+        `Hapus yang itu dulu kalau mau dibalik arahnya.`,
+    };
+  }
+
+  // Already pointing somewhere else — merging it again would give one name two
+  // owners, and which one wins depends on iteration order.
+  for (const [existing, list] of Object.entries(db.nameAliases)) {
+    if (existing !== canonicalLower && (list || []).includes(aliasLower)) {
+      return {
+        success: false,
+        message: `"${aliasName}" udah digabung ke "${existing}". Satu nama cuma boleh punya satu induk.`,
+      };
+    }
+  }
 
   if (!db.nameAliases[canonicalLower]) {
     db.nameAliases[canonicalLower] = [];
