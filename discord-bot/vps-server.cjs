@@ -108,6 +108,7 @@ const {
   handleBayarSelectPerson,
   handleBayarSelectCreator,
   handleBayarSelectBills,
+  handleBayarConfirmBills,
   handlePaymentProofDM,
   handlePaymentConfirm,
   paymentCommands,
@@ -1819,6 +1820,7 @@ client.on('interactionCreate', async (interaction) => {
       if (customId.startsWith('mark_paid_page_')) return handleMarkPaidPage(interaction);
       if (customId.startsWith('analytics_prev_')) return handleAnalyticsPagination(interaction, 'prev');
       if (customId.startsWith('analytics_next_')) return handleAnalyticsPagination(interaction, 'next');
+      if (customId.startsWith('bayar_confirm_bills|')) return handleBayarConfirmBills(interaction);
       if (customId.startsWith('payment_confirm|')) return handlePaymentConfirm(interaction, 'confirm');
       if (customId.startsWith('payment_reject|')) return handlePaymentConfirm(interaction, 'reject');
       

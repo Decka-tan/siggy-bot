@@ -35,6 +35,9 @@ const pendingClaims = new Map();
 // 100-char limit and can't fit a long list of participant indices. Map of
 // token -> { invoiceId, indices, payerId, participantName, amount }.
 const confirmStore = new Map();
+// Which bills a user currently has ticked in the /bayar picker.
+// userId -> { creatorId, values: ["<invoiceId>#<idx>", ...], timestamp }
+const pendingBillSelections = new Map();
 
 // Group all UNPAID participants by case-insensitive username. Returns
 // [{ username, total, indices: [int,...] }, ...]
@@ -290,17 +293,47 @@ async function showOwnBillSelect(interaction, creatorId, useReply) {
       .setDefault(true) // settling everything is the common case
   );
 
-  const total = shown.reduce((s, b) => s + b.amount, 0);
+  // Everything starts selected, and a select menu only fires when the selection
+  // CHANGES — so without an explicit button, someone who wants to pay all of it
+  // has nothing to press.
+  const allValues = shown.map(b => `${b.invoiceId}#${b.index}`);
+  pendingBillSelections.set(interaction.user.id, { creatorId: String(creatorId), values: allValues, timestamp: Date.now() });
 
+  return respond(buildBillSelectPayload(shown, allValues, creatorId, bills.length));
+}
+
+/**
+ * Message body for the bill picker. Rebuilt on every change so the checkboxes
+ * and the running total stay in sync.
+ */
+function buildBillSelectPayload(shown, selectedValues, creatorId, totalBillCount) {
+  const selected = new Set(selectedValues);
+  const options = shown.map(b =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(String(b.title).slice(0, 100))
+      .setValue(`${b.invoiceId}#${b.index}`)
+      .setDescription(`${b.date} · Rp ${b.amount.toLocaleString('id-ID')}`.slice(0, 100))
+      .setDefault(selected.has(`${b.invoiceId}#${b.index}`))
+  );
+
+  const pickedTotal = shown
+    .filter(b => selected.has(`${b.invoiceId}#${b.index}`))
+    .reduce((s, b) => s + b.amount, 0);
+
+  const leftover = shown.length - selected.size;
   let content = `💵 **Bayar ke @${shown[0].creatorName}**\n\n`;
-  content += `${shown.length} tagihan, total **Rp ${total.toLocaleString('id-ID')}**.\n`;
-  content += `Semua udah kecentang — hilangin centang yang belum mau dibayar, terus konfirmasi.`;
-  if (bills.length > shown.length) {
-    content += `\n\n⚠️ _Kamu punya ${bills.length} tagihan ke orang ini, Discord cuma sanggup nampilin 25 sekaligus. Sisanya muncul setelah yang ini lunas._`;
+  content += `Dipilih: **${selected.size} dari ${shown.length}** tagihan — **Rp ${pickedTotal.toLocaleString('id-ID')}**\n`;
+  content += leftover === 0
+    ? `Semua kecentang. Kalau ada yang belum mau dibayar, hilangin centangnya dulu.\n`
+    : `${leftover} tagihan gak ikut dibayar dan tetep jadi utang.\n`;
+  content += `Kalau udah pas, pencet **Lanjut Bayar** di bawah.`;
+  if (totalBillCount > shown.length) {
+    content += `\n\n⚠️ _Kamu punya ${totalBillCount} tagihan ke orang ini, Discord cuma sanggup nampilin 25 sekaligus. Sisanya muncul setelah yang ini lunas._`;
   }
 
-  return respond({
+  return {
     content,
+    embeds: [],
     components: [
       new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
@@ -310,8 +343,14 @@ async function showOwnBillSelect(interaction, creatorId, useReply) {
           .setMaxValues(shown.length)
           .addOptions(options)
       ),
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`bayar_confirm_bills|${creatorId}`)
+          .setLabel(`✅ Lanjut Bayar (${selected.size})`)
+          .setStyle(ButtonStyle.Success)
+      ),
     ],
-  });
+  };
 }
 
 async function handleBayarSelectCreator(interaction) {
@@ -319,14 +358,45 @@ async function handleBayarSelectCreator(interaction) {
 }
 
 /**
- * Bills chosen → one claim covering all of them, one transfer, one proof.
+ * Checkbox changed — remember it and redraw so the total tracks the selection.
  */
 async function handleBayarSelectBills(interaction) {
   const creatorId = interaction.customId.split('|')[1];
-  const picked = new Set(interaction.values);
+  pendingBillSelections.set(interaction.user.id, {
+    creatorId: String(creatorId),
+    values: interaction.values,
+    timestamp: Date.now(),
+  });
 
-  // Re-derive from disk instead of trusting the menu values: the list was built
-  // when the menu was rendered and something may have been paid since.
+  const shown = collectOwnUnpaidBills(interaction.guildId, interaction.user)
+    .filter(b => String(b.creatorId) === String(creatorId));
+
+  if (shown.length === 0) {
+    return interaction.update({ content: '✅ Gak ada tagihan tersisa ke orang ini.', components: [], embeds: [] });
+  }
+
+  return interaction.update(buildBillSelectPayload(shown.slice(0, 25), interaction.values, creatorId, shown.length));
+}
+
+/**
+ * Bills chosen → one claim covering all of them, one transfer, one proof.
+ */
+async function handleBayarConfirmBills(interaction) {
+  const creatorId = interaction.customId.split('|')[1];
+  const remembered = pendingBillSelections.get(interaction.user.id);
+
+  if (!remembered || remembered.creatorId !== String(creatorId)) {
+    return interaction.update({
+      content: '❌ Pilihannya udah kadaluarsa (bot sempat restart?). Jalanin `/bayar` lagi ya.',
+      components: [],
+      embeds: [],
+    });
+  }
+  const picked = new Set(remembered.values);
+  pendingBillSelections.delete(interaction.user.id);
+
+  // Re-derive from disk instead of trusting the remembered values: the list was
+  // built when the menu was rendered and something may have been paid since.
   const bills = collectOwnUnpaidBills(interaction.guildId, interaction.user)
     .filter(b => String(b.creatorId) === String(creatorId))
     .filter(b => picked.has(`${b.invoiceId}#${b.index}`));
@@ -923,6 +993,7 @@ module.exports = {
   handleBayarSelectPerson,
   handleBayarSelectCreator,
   handleBayarSelectBills,
+  handleBayarConfirmBills,
   handlePaymentProofDM,
   handlePaymentConfirm,
   getPaymentDisplay,
