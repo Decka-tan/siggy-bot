@@ -1,0 +1,23 @@
+node_modules
+discord-bot/node_modules
+.next
+.git
+.github
+
+# Live data belongs on the host and is bind-mounted in — baking a stale copy
+# into the image would shadow the real one if the mount is ever missing.
+discord-bot/data
+
+*.log
+npm-debug.log*
+.env
+.env.*
+!.env.example
+
+.vscode
+.idea
+*.md
+!README.md
+tmp-*
+temp
+scratch

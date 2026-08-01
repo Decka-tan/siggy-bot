@@ -1,6 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Ships a self-contained server with only the traced deps, so the runtime
+  // image does not carry a full node_modules. Needed to keep this thing small
+  // enough to be comfortable on a 2GB VPS.
+  output: 'standalone',
   async headers() {
     return [
       {
