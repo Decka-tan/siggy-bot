@@ -16,6 +16,12 @@ async function sendAllReminders(client, guildId = null) {
   let failCount = 0;
   const results = [];
 
+  // Resolve everyone first, then merge by Discord ID before sending anything.
+  // getAllDebtors() groups by canonical name, but a spelling that is not in
+  // nameAliases yet becomes its own debtor — and two of those can still point at
+  // the same person, who would then get one DM per spelling.
+  const resolved = [];
+
   for (const debtor of debtors) {
     // Try to resolve Discord ID if not already in debtor info
     let discordId = debtor.userId && /^\d{17,20}$/.test(debtor.userId) ? debtor.userId : null;
@@ -47,23 +53,49 @@ async function sendAllReminders(client, guildId = null) {
       continue;
     }
 
+    resolved.push({ debtor, discordId });
+  }
+
+  // One entry per Discord user, carrying every name they appear under.
+  const byUser = new Map();
+  for (const { debtor, discordId } of resolved) {
+    const merged = byUser.get(discordId);
+    if (!merged) {
+      byUser.set(discordId, {
+        discordId,
+        username: debtor.username,
+        names: [debtor.username],
+        totalDebt: debtor.totalDebt,
+        invoices: [...(debtor.invoices || [])],
+      });
+      continue;
+    }
+    merged.totalDebt += debtor.totalDebt;
+    merged.invoices.push(...(debtor.invoices || []));
+    if (!merged.names.includes(debtor.username)) merged.names.push(debtor.username);
+  }
+
+  for (const target of byUser.values()) {
+    // Shown in the report so a merge is visible rather than silent.
+    const label = target.names.length > 1 ? `${target.username} (+${target.names.slice(1).join(', ')})` : target.username;
+
     try {
-      const user = await client.users.fetch(discordId);
+      const user = await client.users.fetch(target.discordId);
       if (!user) throw new Error('User not found in Discord');
 
-      const embed = buildReminderEmbed(debtor);
+      const embed = buildReminderEmbed(target);
       await user.send({ embeds: [embed] });
-      
+
       sentCount++;
-      results.push({ name: debtor.username, status: 'sent' });
+      results.push({ name: label, status: 'sent' });
     } catch (error) {
-      console.error(`Failed to remind ${debtor.username}:`, error.message);
+      console.error(`Failed to remind ${label}:`, error.message);
       failCount++;
-      
+
       let reason = error.message;
       if (error.code === 50007) reason = 'DMs Closed/Blocked';
-      
-      results.push({ name: debtor.username, status: 'failed', error: reason });
+
+      results.push({ name: label, status: 'failed', error: reason });
     }
   }
 
