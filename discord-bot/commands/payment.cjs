@@ -84,15 +84,29 @@ const pendingBillSelections = new Map();
 // Group all UNPAID participants by case-insensitive username. Returns
 // [{ username, total, indices: [int,...] }, ...]
 function groupUnpaidByName(participants) {
+  const { getCanonicalName, readDB } = require('../utils/invoice-db.cjs');
+  const db = readDB();
+
   const byKey = new Map();
   participants.forEach((p, idx) => {
     if (p.paid) return;
-    const key = (p.username || '').toLowerCase().trim();
-    if (!byKey.has(key)) byKey.set(key, { username: p.username, total: 0, indices: [] });
+    // Group by canonical name, not the raw string. "Clee" and "Stepan" are one
+    // person; listing them as two rows makes the payer guess which one they are
+    // and leaves the other half unpaid.
+    const key = getCanonicalName(p.username || '', db).toLowerCase().trim();
+    if (!byKey.has(key)) {
+      byKey.set(key, { username: p.username, canonical: key, spellings: [], total: 0, indices: [] });
+    }
     const g = byKey.get(key);
     g.total += Number(p.amount) || 0;
     g.indices.push(idx);
+    if (p.username && !g.spellings.includes(p.username)) g.spellings.push(p.username);
   });
+
+  // Show the canonical name, so the same person always reads the same way.
+  for (const g of byKey.values()) {
+    g.username = g.canonical.charAt(0).toUpperCase() + g.canonical.slice(1);
+  }
   return [...byKey.values()];
 }
 // Long enough to actually open a banking app, transfer and screenshot.
@@ -462,7 +476,13 @@ async function handleBayarConfirmBills(interaction) {
   }
   const items = [...itemMap.values()];
   const total = bills.reduce((s, b) => s + b.amount, 0);
-  const payerName = bills[0].username || interaction.user.username;
+  // Canonical, so the creator sees the same name everywhere instead of whichever
+  // spelling happened to be on the first invoice.
+  const { getCanonicalName, readDB } = require('../utils/invoice-db.cjs');
+  const canon = getCanonicalName(bills[0].username || '', readDB()).trim();
+  const payerName = canon
+    ? canon.charAt(0).toUpperCase() + canon.slice(1)
+    : (bills[0].username || interaction.user.username);
 
   const claimData = {
     items,
@@ -585,11 +605,15 @@ async function showPersonSelect(interaction, rawInvoiceId, useReply) {
   }
   const options = groups.slice(0, 25).map((g, gi) => {
     const fmt = `Rp ${g.total.toLocaleString('id-ID')}`;
-    const desc = g.indices.length > 1 ? `${fmt} · ${g.indices.length} bills` : fmt;
+    const parts = [fmt];
+    if (g.indices.length > 1) parts.push(`${g.indices.length} bill`);
+    // Spell out the merge so nobody wonders why their own name is missing.
+    const others = (g.spellings || []).filter(s => s.toLowerCase().trim() !== g.canonical);
+    if (others.length) parts.push(`alias: ${others.join(', ')}`);
     return new StringSelectMenuOptionBuilder()
-      .setLabel(`${g.username} - ${fmt}`)
+      .setLabel(`${g.username} - ${fmt}`.slice(0, 100))
       .setValue(`g_${gi}`)
-      .setDescription(desc);
+      .setDescription(parts.join(' · ').slice(0, 100));
   });
 
   const selectMenu = new StringSelectMenuBuilder()
@@ -1101,4 +1125,5 @@ module.exports = {
   // without going through Discord.
   __collectOwnUnpaidBills: collectOwnUnpaidBills,
   __confirmStore: confirmStore,
+  __groupUnpaidByName: groupUnpaidByName,
 };
