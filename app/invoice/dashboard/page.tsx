@@ -425,6 +425,11 @@ function getPaymentDb(): any {
   }
 }
 
+// Same shape the bot checks for: a real Discord snowflake, not a "temp_" placeholder.
+function isSnowflake(id: unknown): id is string {
+  return typeof id === 'string' && /^\d{17,20}$/.test(id);
+}
+
 function getCanonicalName(name: string, aliases: Record<string, string[]>) {
   const inputLower = (name || 'Unknown').toLowerCase().trim();
   for (const [canonical, aliasList] of Object.entries(aliases || {})) {
@@ -502,16 +507,23 @@ function buildDashboardData(selectedGuildId?: string, filters?: { q?: string; st
       const canonical = getCanonicalName(participant.username || 'Unknown', db.nameAliases || {});
       const debtorKey = canonical.toLowerCase().trim();
       const linkedInfo = paymentDb.nameLinks?.[debtorKey];
-      
-      const debtorStats = debtorMap.get(debtorKey) || { 
-        name: canonical, 
-        totalDebt: 0, 
-        unpaidCount: 0, 
-        invoiceCount: 0, 
+      // The bot already stores the Discord ID on the participant when it builds
+      // an invoice from a mention. Reading only nameLinks made every debtor look
+      // unlinked even though invoices.json had an ID for all of them.
+      const participantId = isSnowflake(participant.userId) ? participant.userId : null;
+
+      const debtorStats = debtorMap.get(debtorKey) || {
+        name: canonical,
+        totalDebt: 0,
+        unpaidCount: 0,
+        invoiceCount: 0,
         invoices: [],
         recap: {},
-        discordId: linkedInfo?.discordId || null
+        discordId: linkedInfo?.discordId || participantId
       };
+
+      // A later invoice may carry an ID the first one lacked.
+      if (!debtorStats.discordId && participantId) debtorStats.discordId = participantId;
       
       const amt = Number(participant.amount || 0);
       debtorStats.totalDebt += amt;
