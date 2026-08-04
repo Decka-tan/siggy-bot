@@ -939,6 +939,16 @@ async function handlePaymentConfirm(interaction, action) {
   }
 
   if (action === 'confirm') {
+    // Discord kills the interaction token after 3 seconds. Confirming a batch
+    // redraws one channel message per invoice (fetch + delete + send each), so a
+    // 9-invoice claim spends ~36 API calls before it can answer — the reply then
+    // died with 10062 "Unknown interaction" and the creator saw "Siggy didn't
+    // respond in time", even though every bill had already been marked paid.
+    // Claiming the interaction first buys 15 minutes for the work below.
+    // Nothing has been mutated yet, so if this throws the token is still intact
+    // and the button can simply be pressed again.
+    await interaction.deferUpdate();
+
     // Mark every bill in the group as paid (one user can have multiple bills).
     if (batchItems) {
       // Batch: settle every invoice in the claim, not just the first one.
@@ -997,7 +1007,8 @@ async function handlePaymentConfirm(interaction, action) {
       : (participantIndices ? participantIndices.length : 1);
     const scope = batchItems ? ` _(${billCount} bill di ${batchItems.length} invoice)_` : (billCount > 1 ? ` _(gabungan ${billCount} bill)_` : '');
 
-    await interaction.update({
+    // editReply, not update — the interaction was already claimed by deferUpdate.
+    await interaction.editReply({
       content: `✅ Pembayaran dikonfirmasi!\n\n` +
         `👤 ${participantName || participant.username} - Rp ${totalLunas.toLocaleString('id-ID')} → LUNAS${scope}`,
       components: []
