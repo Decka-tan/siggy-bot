@@ -215,6 +215,11 @@ The bot automatically detects Siggy's mood from responses and displays the appro
 npm start
 ```
 
+> **Entry point:** production runs `discord-bot/vps-server.cjs` (see the repo `Procfile`).
+> `index.js` is an older, cut-down build kept for reference only — it is missing the
+> Guild Members intent, so starting it silently breaks `/check` roles and join dates.
+> Do not start `index.js`.
+
 ### Option 2: Run on VPS (Railway, Render, etc.)
 ```bash
 # Install dependencies
@@ -222,7 +227,7 @@ npm install
 
 # Start with PM2 (keeps bot running)
 npm install -g pm2
-pm2 start index.js --name siggy-bot
+pm2 start vps-server.cjs --name siggy-bot
 pm2 save
 pm2 startup
 ```
@@ -234,7 +239,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-CMD ["node", "index.js"]
+CMD ["node", "vps-server.cjs"]
 ```
 
 ---
@@ -244,7 +249,7 @@ CMD ["node", "index.js"]
 ### Enable Logging (Optional)
 ```bash
 # Run with logging
-node index.js 2>&1 | tee siggy-bot.log
+node vps-server.cjs 2>&1 | tee siggy-bot.log
 ```
 
 ### Check Bot Stats

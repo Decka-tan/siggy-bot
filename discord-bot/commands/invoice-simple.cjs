@@ -223,6 +223,57 @@ async function processInvoiceCreateModal(interaction) {
  */
 async function matchParticipantsToGuild(invoice, guild) {
   const { updateInvoiceMessage: updateMsg, getInvoice: getInv, markMultiplePaid } = require('../utils/invoice-db.cjs');
+  const { getCanonicalName, readDB } = require('../utils/invoice-db.cjs');
+  const { getDiscordIdByName } = require('../utils/payment-db.cjs');
+
+  const db = readDB();
+  const eq = (a, b) => String(a || '').toLowerCase().trim() === String(b || '').toLowerCase().trim();
+
+  // Matching a member against one written name. Nickname counts too — people are
+  // billed by whatever they are called in the group, not by their Discord handle.
+  const looksLike = (m, name) =>
+    eq(m.user.username, name) || eq(m.displayName, name) || eq(m.nickname, name);
+
+  // Names repeat across participants; resolve each one once per invoice.
+  const resolved = new Map();
+
+  async function resolveName(name) {
+    if (resolved.has(name)) return resolved.get(name);
+    let id = null;
+
+    // 1. Whoever has already claimed this name. Free, exact, and survives a cold
+    //    cache — which is the case this function kept losing to.
+    const canonical = getCanonicalName(name, db);
+    id = getDiscordIdByName(name) || getDiscordIdByName(canonical);
+
+    // 2. Whatever the cache happens to hold.
+    if (!id) {
+      const hit = guild.members.cache.find(m => looksLike(m, name) || looksLike(m, canonical));
+      if (hit) id = hit.id;
+    }
+
+    // 3. Ask Discord. The cache is only warm right after a restart on a small
+    //    guild, so every name typed without an @mention used to fall through to
+    //    unknown_ and stay invisible to /bayar forever. A query search costs one
+    //    request and works cold.
+    if (!id) {
+      try {
+        const found = await guild.members.fetch({ query: name, limit: 10 });
+        const exact = [...found.values()].filter(m => looksLike(m, name) || looksLike(m, canonical));
+        // Only one candidate may win: billing the wrong person is worse than
+        // leaving the row unresolved for a human to sort out.
+        if (exact.length === 1) id = exact[0].id;
+        else if (exact.length > 1) {
+          console.log(`[Invoice] "${name}" cocok ke ${exact.length} member, dibiarkan unknown_`);
+        }
+      } catch (err) {
+        console.log(`[Invoice] Gagal cari member "${name}": ${err.message}`);
+      }
+    }
+
+    resolved.set(name, id);
+    return id;
+  }
 
   let updated = false;
 
@@ -232,14 +283,9 @@ async function matchParticipantsToGuild(invoice, guild) {
       continue;
     }
 
-    // Try to find by username
-    const member = guild.members.cache.find(
-      m => m.user.username.toLowerCase() === participant.username.toLowerCase() ||
-           m.displayName.toLowerCase() === participant.username.toLowerCase()
-    );
-
-    if (member) {
-      participant.userId = member.id;
+    const id = await resolveName(participant.username);
+    if (id) {
+      participant.userId = id;
       updated = true;
     }
   }
@@ -752,8 +798,23 @@ async function handleInvoiceOwe(interaction) {
     });
   }
 
-  // Limit to 25 (Discord select menu max)
-  const topNames = withUnpaid.slice(0, 25);
+  // Discord rejects the ENTIRE component if two options share a value, which
+  // takes the whole command down with COMPONENT_OPTION_VALUE_DUPLICATED rather
+  // than just dropping the offending row. getAllParticipantNames() now merges
+  // names that differ only in case, but values are also truncated to 100 chars,
+  // so two long names can still collide. Skip duplicates instead of crashing.
+  const seenValues = new Set();
+  const topNames = [];
+  for (const nameInfo of withUnpaid) {
+    const value = truncateSelectText(nameInfo.name, 100);
+    if (seenValues.has(value)) {
+      console.warn(`[invoice-owe] skipping duplicate dropdown value: "${value}"`);
+      continue;
+    }
+    seenValues.add(value);
+    topNames.push({ ...nameInfo, value });
+    if (topNames.length === 25) break; // Discord select menu max
+  }
 
   const options = topNames.map(nameInfo => {
     const hasUnpaid = nameInfo.unpaidCount > 0;
@@ -764,7 +825,7 @@ async function handleInvoiceOwe(interaction) {
 
     return new StringSelectMenuOptionBuilder()
       .setLabel(truncateSelectText(label))
-      .setValue(truncateSelectText(nameInfo.name, 100))
+      .setValue(nameInfo.value)
       .setDescription(truncateSelectText(description));
   });
 
@@ -1725,6 +1786,8 @@ module.exports = {
   buildAddPeopleModal: () => {},
   // Export tempInvoiceStorage for compatibility
   tempInvoiceStorage: new Map(),
+  // Exposed so the name-resolution path can be tested without a live guild.
+  __matchParticipantsToGuild: matchParticipantsToGuild,
 };
 
 

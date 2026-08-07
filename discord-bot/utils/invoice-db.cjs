@@ -299,14 +299,23 @@ function getAllParticipantNames(guildId = null) {
       // Get canonical name (resolve alias)
       const canonicalName = getCanonicalName(rawName, db.nameAliases);
 
-      if (!nameMap.has(canonicalName)) {
-        nameMap.set(canonicalName, {
+      // Key on the lowercased name. getCanonicalName() returns the raw name
+      // untouched when it matches no alias, so "yudha" and "Yudha" produced two
+      // separate entries that both rendered as "Yudha" — Discord rejected the
+      // whole /invoice-owe dropdown with COMPONENT_OPTION_VALUE_DUPLICATED.
+      // getDebtsByName() already matches case-insensitively and getAllDebtors()
+      // already keys on toLowerCase().trim() — this function was the outlier.
+      const key = canonicalName.toLowerCase().trim();
+
+      if (!nameMap.has(key)) {
+        nameMap.set(key, {
+          display: canonicalName,
           totalDebt: 0,
           unpaidCount: 0,
           aliases: new Set(),
         });
       }
-      const stats = nameMap.get(canonicalName);
+      const stats = nameMap.get(key);
       // Only what is still owed. This used to add every participant row ever
       // billed, so the /invoice-owe dropdown showed lifetime spend next to an
       // unpaid count — Cindy read as Rp 1.802.134 against Rp 66.000 actually due.
@@ -324,11 +333,11 @@ function getAllParticipantNames(guildId = null) {
   // Convert to array and sort by debt amount (highest first).
   // Canonical keys are stored lowercase, so without this the list mixes
   // "eric" and "Filbert" and reads like two different kinds of entry.
-  return Array.from(nameMap.entries())
-    .map(([name, stats]) => ({
-      name: name.charAt(0).toUpperCase() + name.slice(1),
+  return Array.from(nameMap.values())
+    .map(({ display, aliases, ...stats }) => ({
+      name: display.charAt(0).toUpperCase() + display.slice(1),
       ...stats,
-      aliases: Array.from(stats.aliases)
+      aliases: Array.from(aliases)
     }))
     .sort((a, b) => b.totalDebt - a.totalDebt);
 }

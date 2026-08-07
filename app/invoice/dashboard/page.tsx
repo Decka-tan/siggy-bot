@@ -117,8 +117,12 @@ async function markPaidAction(invoiceId: string, participantIndex: number, isPai
     try {
       const res = await fetch(refreshUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: invoiceId }),
+        headers: {
+          'Content-Type': 'application/json',
+          // The bot rejects unauthenticated calls; both sides read the same env var.
+          'x-siggy-token': process.env.INTERNAL_API_TOKEN || '',
+        },
+        body: JSON.stringify({ invoiceId }),
         // Without this a dead bot leaves the user's click spinning.
         signal: AbortSignal.timeout(5000),
       });
@@ -227,12 +231,16 @@ async function linkUserAction(formData: FormData) {
     withFileLock(invoiceDbPath, () => {
       try {
         const db = JSON.parse(fs.readFileSync(invoiceDbPath, 'utf8'));
-        const nameLower = name.toLowerCase().trim();
+        const target = getCanonicalName(name, db.nameAliases || {}).toLowerCase().trim();
 
+        // Match on the canonical name, not the raw string. The ledger groups
+        // "Clee"/"Stepan" under "stefan" via nameAliases, so a literal compare
+        // linked only the rows that happened to spell the canonical name and
+        // silently skipped the rest of the same person's invoices.
         let updated = false;
         Object.values(db.invoices || {}).forEach((inv: any) => {
           (inv.participants || []).forEach((p: any) => {
-            if (p.username.toLowerCase().trim() === nameLower) {
+            if (getCanonicalName(p.username || '', db.nameAliases || {}).toLowerCase().trim() === target) {
               p.userId = userId;
               updated = true;
             }

@@ -14,7 +14,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="text-text-secondary font-mono text-sm">
-            Last Updated: April 25, 2026
+            Last Updated: August 5, 2026
           </p>
         </div>
 
@@ -65,7 +65,7 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 space-y-2">
               <li>Generate personalized AI responses from Siggy Bot</li>
               <li>Track user contributions and engagement in Discord servers</li>
-              <li>Improve the AI model and service quality</li>
+              <li>Improve service quality and reliability</li>
               <li>Provide technical support and service maintenance</li>
               <li>Analyze usage patterns to enhance user experience</li>
               <li>Demonstrate service uptime and reliability</li>
@@ -79,10 +79,16 @@ export default function PrivacyPage() {
               For Discord bot functionality:
             </p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Messages are stored for contribution analysis and service improvement</li>
-              <li>Message history is retained to track user engagement over time</li>
+              <li><strong>Only messages addressed to Siggy are stored.</strong> The bot reads a message
+              when you directly @mention it in a channel the server administrator has allowed. Messages
+              that do not mention the bot are not stored</li>
+              <li>We keep the last 50 messages of your conversation with Siggy so the character has
+              short-term memory. Older messages are dropped automatically</li>
+              <li>For contribution and event tracking we store counters (a number), not the text of
+              your messages</li>
               <li>Data is stored securely with appropriate access controls</li>
-              <li>You can request deletion of your message history at any time</li>
+              <li>You can delete your conversation history and profile at any time with the
+              <code className="text-accent">/reset</code> command</li>
             </ul>
 
             <h3 className="text-xl font-semibold text-text-primary mb-3 mt-6">Web Application</h3>
@@ -103,7 +109,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Your messages are processed by AI models to generate responses</li>
-              <li>We do not use your conversations to train AI models without explicit consent</li>
+              <li>We do not use your conversations to train or fine-tune AI models</li>
               <li>AI processing may involve third-party services (OpenAI, Ritual Forge)</li>
               <li>Message content is processed securely and not permanently stored by AI providers</li>
             </ul>
@@ -150,10 +156,13 @@ export default function PrivacyPage() {
               When using Siggy Bot on Discord:
             </p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>The bot can only see messages sent in channels it has access to</li>
-              <li>User commands and interactions are logged for service improvement</li>
-              <li>Server administrators can configure the bot's permissions and access</li>
-              <li>Message tracking demonstrates service uptime but respects user privacy</li>
+              <li>The bot only reads and replies to messages that directly @mention it, and only in
+              channels the server administrator has allowed</li>
+              <li>User commands and interactions are logged for troubleshooting and abuse prevention</li>
+              <li>Server administrators can configure the bot's permissions, restrict it to specific
+              channels, or remove it from the server at any time</li>
+              <li>Profile lookups (roles, join date) used by the <code className="text-accent">/check</code> command
+              are read live from Discord at the moment the command runs and are not stored</li>
             </ul>
           </section>
 
@@ -162,8 +171,13 @@ export default function PrivacyPage() {
             <p className="leading-relaxed mb-4">You have the right to:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Access:</strong> Request a copy of your personal data</li>
-              <li><strong>Deletion:</strong> Request deletion of your message history and account data</li>
-              <li><strong>Opt-out:</strong> Stop using the service at any time</li>
+              <li><strong>Deletion:</strong> Delete your conversation history and profile yourself at
+              any time by running the <code className="text-accent">/reset</code> command in Discord.
+              This erases your stored conversation history and user state from our database immediately</li>
+              <li><strong>Opt-out:</strong> Siggy only reads a message when you choose to @mention it,
+              so tracking is opt-in. To stop entirely, stop mentioning the bot and run
+              <code className="text-accent">/reset</code>. Server administrators can also limit the bot
+              to specific channels or remove it from the server</li>
               <li><strong>Data Portability:</strong> Request your data in a machine-readable format</li>
               <li><strong>Correct:</strong> Update or correct inaccurate personal information</li>
             </ul>
@@ -219,7 +233,10 @@ export default function PrivacyPage() {
               We retain data for the following periods:
             </p>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Discord Messages:</strong> Retained for contribution analysis and service improvement</li>
+              <li><strong>Discord Conversation History:</strong> Last 50 messages per user, rolling.
+              Deletable at any time with <code className="text-accent">/reset</code></li>
+              <li><strong>Contribution & Event Counters:</strong> Numeric counters tied to your Discord
+              user ID, retained until you run <code className="text-accent">/reset</code></li>
               <li><strong>User Preferences:</strong> Retained until you delete your account or change preferences</li>
               <li><strong>Web Conversations:</strong> Stored locally in your browser until cleared</li>
               <li><strong>Service Logs:</strong> Retained for 90 days for technical support and security purposes</li>

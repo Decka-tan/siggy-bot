@@ -81,12 +81,30 @@ function saveDatabase() {
   }
 }
 
+// Debounced save. The 30s interval below is only a backstop: on its own it lost
+// up to 30 seconds of conversation and relationship state on every hard kill
+// (OOM, SIGKILL, VPS reboot) — SIGINT/SIGTERM are handled, those are not.
+// Mutations now schedule a write ~2s out, so bursts still coalesce into one
+// write but nothing sits unsaved for long.
+const SAVE_DEBOUNCE_MS = 2000;
+let pendingSave = null;
+
+function scheduleSave() {
+  if (pendingSave) return;
+  pendingSave = setTimeout(() => {
+    pendingSave = null;
+    saveDatabase();
+  }, SAVE_DEBOUNCE_MS);
+  if (pendingSave.unref) pendingSave.unref();
+}
+
 // Auto-save every 30 seconds
 const saveInterval = setInterval(saveDatabase, 30000);
 
 // Clear interval and save on process exit
 const shutdown = () => {
   clearInterval(saveInterval);
+  if (pendingSave) clearTimeout(pendingSave);
   saveDatabase();
   process.exit(0);
 };
@@ -125,7 +143,7 @@ function saveUserState(state) {
     ...state,
     lastInteraction: state.lastInteraction || Date.now(),
   };
-  // Don't save on every write - rely on interval
+  scheduleSave();
 }
 
 function updateUserState(userId, updates) {
@@ -164,6 +182,8 @@ function addConversationMessage(userId, role, content) {
   if (db.conversationHistory[userId].length > 50) {
     db.conversationHistory[userId] = db.conversationHistory[userId].slice(-50);
   }
+
+  scheduleSave();
 }
 
 function setConversationHistory(userId, messages) {
@@ -171,6 +191,7 @@ function setConversationHistory(userId, messages) {
     ...msg,
     timestamp: msg.timestamp || Date.now(),
   }));
+  scheduleSave();
 }
 
 function clearConversationHistory(userId) {

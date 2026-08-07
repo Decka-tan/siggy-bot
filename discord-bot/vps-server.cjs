@@ -60,6 +60,8 @@ const {
   getGlobalStats,
   getTopUsers,
   getUserRank,
+  cleanupOldMessages,
+  flush,
 } = require('./db.cjs');
 
 // Crypto commands
@@ -369,20 +371,29 @@ const EASTER_EGGS = {
   },
 };
 
-// Pre-build trigger map for O(1) easter egg lookup
-const EASTER_EGG_TRIGGERS = new Map();
-for (const [name, egg] of Object.entries(EASTER_EGGS)) {
-  for (const trigger of egg.triggers) {
-    EASTER_EGG_TRIGGERS.set(trigger, { name, ...egg });
-  }
+// Pre-build trigger list. Each trigger is matched on word boundaries: plain
+// substring matching meant "I like purple shirts" fired the purple easter egg,
+// which replaces the entire AI reply with a canned one. Longer triggers are
+// tested first so "turn into a cat" wins over a bare "cat".
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function checkEasterEggs(message) {
-  const lower = message.toLowerCase();
+const EASTER_EGG_TRIGGERS = [];
+for (const [name, egg] of Object.entries(EASTER_EGGS)) {
+  for (const trigger of egg.triggers) {
+    EASTER_EGG_TRIGGERS.push({
+      trigger,
+      pattern: new RegExp(`(?:^|[^\\p{L}\\p{N}])${escapeRegExp(trigger)}(?![\\p{L}\\p{N}])`, 'iu'),
+      egg: { name, ...egg },
+    });
+  }
+}
+EASTER_EGG_TRIGGERS.sort((a, b) => b.trigger.length - a.trigger.length);
 
-  // Quick lookup using pre-built map
-  for (const [trigger, egg] of EASTER_EGG_TRIGGERS) {
-    if (lower.includes(trigger)) {
+function checkEasterEggs(message) {
+  for (const { pattern, egg } of EASTER_EGG_TRIGGERS) {
+    if (pattern.test(message)) {
       return {
         triggered: true,
         name: egg.name,
@@ -624,8 +635,13 @@ process.on('unhandledRejection', (error) => {
   console.error('Unhandled rejection:', error);
 });
 
+// After an uncaught exception the process state is undefined — continuing means
+// the in-memory database can be flushed to disk in a corrupted state. Persist
+// what we have, then let the process manager restart us clean.
 process.on('uncaughtException', (error) => {
   console.error('Uncaught exception:', error);
+  try { flush(); } catch (e) { console.error('Flush on crash failed:', e.message); }
+  process.exit(1);
 });
 
 client.on('error', (error) => {
@@ -939,122 +955,6 @@ async function handleCheck(interaction) {
   }
 }
 
-// ============================================================================
-// DEPRECATED: OLD STRING-BASED VERSION
-// ============================================================================
-// ============================================================================
-//
-// async function handleCheck(interaction) {
-//   const userId = interaction.user.id;
-//   const rateLimit = checkRateLimit(userId, 'check');
-//
-//   if (!rateLimit.allowed) {
-//     return interaction.reply({
-//       content: `⏱️ Slow down! Try again in ${rateLimit.retryAfter}s`,
-//       ephemeral: true,
-//     });
-//   }
-//
-//   await interaction.deferReply();
-//
-//   // Get Discord user from mention
-//   const targetUser = interaction.options.getUser('user');
-//   const username = targetUser.username;
-//
-//   // Check cache first
-//   const cacheKey = `check_${username}`;
-//   const cached = getCache(cacheKey);
-//
-//   // Track this command as a message for relationship
-//   const state = trackCommandAsMessage(userId, interaction.user.username, 'check', interaction.guildId);
-//
-//   if (cached) {
-//     // Parse cached data - support both old format (string) and new format (JSON with avatar)
-//     let analysisText = cached;
-//     let avatarUrl = null;
-//
-//     try {
-//       const parsed = JSON.parse(cached);
-//       if (parsed.analysis) {
-//         analysisText = parsed.analysis;
-//         avatarUrl = parsed.avatar;
-//       }
-//     } catch {
-//       // Old cache format - just use the string
-//     }
-//
-//     const embed = new EmbedBuilder()
-//       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
-//       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-//       .setDescription(analysisText);
-//
-//     if (avatarUrl) {
-//       embed.setThumbnail(avatarUrl);
-//     }
-//
-//     embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
-//       .setTimestamp();
-//
-//     return interaction.editReply({ embeds: [embed] });
-//   }
-//
-//   try {
-//     const response = await fetch(`${CONFIG.apiBaseUrl}/api/analyze`, {
-//       method: 'POST',
-//       headers: { 'Content-Type': 'application/json' },
-//       body: JSON.stringify({ username }),
-//     });
-//
-//     if (!response.ok) {
-//       const errorText = await response.text();
-//       console.error('API Error:', response.status, errorText);
-//       throw new Error(`API ${response.status}: ${response.statusText}`);
-//     }
-//
-//     const data = await response.json();
-//
-//     // Cache the result with avatar
-//     setCache(cacheKey, JSON.stringify({ analysis: data.analysis, avatar: data.user?.avatar }));
-//
-//     // Truncate analysis to Discord's 4096 char embed limit
-//     const analysisText = (data.analysis || 'No data available').substring(0, 4096);
-//
-//     const embed = new EmbedBuilder()
-//       .setColor(MOOD_COLORS[state.mood] || MOOD_COLORS.DEFAULT)
-//       .setAuthor({ name: 'Siggy Contributor Intelligence', iconURL: SPRITES.CAT.DEFAULT })
-//       .setDescription(analysisText);
-//
-//     // Add user avatar as thumbnail if available
-//     if (data.user?.avatar) {
-//       embed.setThumbnail(data.user.avatar);
-//     }
-//
-//     embed.setFooter({ text: `Multiversal Cat Girl AI • Mood: ${state.mood} • Bond: ${getRelationshipLevel(state.relationshipScore)} • Msg #${state.messageCount}` })
-//       .setTimestamp();
-//
-//     await interaction.editReply({ embeds: [embed] });
-//   } catch (error) {
-//     console.error('Check command error:', error);
-//     await interaction.editReply(`❌ Error: ${error.message}\n\n*Note: This uses local Ritual community data, not live Discord API.*`);
-//   }
-// }
-//
-// ============================================================================
-// COMMAND DEFINITION (Replace current check command in registerCommands)
-// ============================================================================
-//
-// {
-//   name: 'check',
-//   description: 'Analyze a Ritual contributor with AI',
-//   options: [{
-//     name: 'user',
-//     description: 'Discord user to check',
-//     type: 6,  // USER type - enables @mention with autocomplete
-//     required: true,
-//   }],
-// },
-//
-// ============================================================================
 
 async function handleResearch(interaction) {
   const userId = interaction.user.id;
@@ -1313,15 +1213,16 @@ async function handleHelp(interaction) {
     .setTitle('🐱 Siggy - Multiversal Cat Girl AI')
     .setDescription('*A multi-dimensional feline entity descended to Earth as an anime girl*')
     .addFields(
-      { name: '🔍 Info Commands', value: '`/check` | `/research` | `/stats` | `/top`', inline: false },
-      { name: '💰 Crypto Commands', value: '`/price` | `/trending` | `/chart`', inline: false },
-      { name: '🏆 Leaderboard', value: '`/leaderboard` | `/leaderboard create` | `/leaderboard add` | `/leaderboard show`', inline: false },
-      { name: '🎮 Fun & Social', value: '`/hug` | `/slap` | `/pat` | `/highfive` | `/rate` | `/fact` | `/quote` | `/shuffle`', inline: false },
+      { name: '🔍 Info', value: '`/check` | `/research` | `/stats` | `/top` | `/ask-siggy`', inline: false },
+      { name: '💰 Crypto', value: '`/price` | `/trending` | `/chart`', inline: false },
+      { name: '🏆 Leaderboard', value: '`/leaderboard start` | `/leaderboard add` | `/leaderboard end`', inline: false },
+      { name: '🎮 Fun & Social', value: '`/hug` | `/slap` | `/pat` | `/highfive` | `/rate` | `/fact` | `/quote` | `/shuffle` | `/howgay` | `/simp`', inline: false },
       { name: '🎲 Games', value: '`/flip` | `/roll` | `/choose` | `/avatar`', inline: false },
-      { name: '🐾 Form & Mood', value: '`/transform` | `/mood` | `/reset`', inline: false },
-      { name: '💬 Chat', value: '@Siggy <message> - Chat with me directly!', inline: false },
-      { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "cat", "dekka"', inline: false },
-      { name: '⚡ Rate Limits', value: '3 commands per 5 seconds per user', inline: false },
+      { name: '🐾 Siggy', value: '`/transform` — switch CAT/ANIME form\n`/relationship` — your bond, mood and message count\n`/mood` — post how you\'re feeling\n`/reset` — wipe your stored data', inline: false },
+      { name: '💬 Chat', value: '@Siggy <message> — I only reply when you mention me', inline: false },
+      { name: '🥚 Easter Eggs', value: 'Try: "purple", "summoner", "anime", "dekka"', inline: false },
+      { name: '⚡ Rate Limits', value: '3 commands per 5 seconds, plus a 3 second gap between commands', inline: false },
+      { name: '🔒 Your Data', value: 'I store our conversation so I can remember you. `/reset` erases it instantly.\n[Privacy Policy](https://siggy-bot.vercel.app/privacy) • [Terms](https://siggy-bot.vercel.app/terms)', inline: false },
     )
     .setFooter({ text: 'Built by Decka-tan • Ritual Soul Forge Quest' })
     .setTimestamp();
@@ -1341,7 +1242,9 @@ async function registerCommands() {
   console.log('🔧 Starting command registration...');
   console.log(`   Client ID: ${CONFIG.clientId ? CONFIG.clientId.substring(0, 10) + '...' : 'MISSING'}`);
   console.log(`   Guild ID: ${CONFIG.guildId || 'NOT SET (will use global - 1hr delay)'}`);
-  console.log(`   Token: ${CONFIG.token ? CONFIG.token.substring(0, 20) + '...' : 'MISSING'}`);
+  // Never print any part of the bot token — the first segment alone identifies
+  // the application and the rest has leaked from logs in plenty of projects.
+  console.log(`   Token: ${CONFIG.token ? 'present' : 'MISSING'}`);
 
   if (!CONFIG.token || !CONFIG.clientId) {
     console.error('❌ CRITICAL: DISCORD_BOT_TOKEN or DISCORD_CLIENT_ID is missing!');
@@ -1454,6 +1357,31 @@ async function registerCommands() {
     }
   }
 
+  // Discord rate-limits application command registration per day. This used to
+  // run unconditionally on every boot, so a restart loop (the VPS has OOM'd
+  // before) could burn the quota and leave the server with no slash commands.
+  // Register only when the definitions actually changed.
+  const invoiceAndPaymentCommands = [...invoiceCommandsSimple, ...paymentCommands];
+  const SIGNATURE_FILE = path.join(
+    process.env.DATA_DIR || path.join(__dirname, 'data'),
+    'command-signature.json',
+  );
+  const signature = require('crypto')
+    .createHash('sha256')
+    .update(JSON.stringify({ commands, invoiceAndPaymentCommands, guildId: CONFIG.guildId }))
+    .digest('hex');
+
+  if (process.env.FORCE_COMMAND_SYNC !== 'true') {
+    try {
+      const prev = JSON.parse(fs.readFileSync(SIGNATURE_FILE, 'utf8'));
+      if (prev.signature === signature) {
+        console.log('⏭️  Command definitions unchanged — skipping registration.');
+        console.log('   (set FORCE_COMMAND_SYNC=true to re-register anyway)');
+        return true;
+      }
+    } catch { /* no signature yet — fall through and register */ }
+  }
+
   try {
     // Guild commands for instant update (dev/main guild)
     if (CONFIG.guildId) {
@@ -1481,7 +1409,6 @@ async function registerCommands() {
     // in FULL_COMMAND_GUILD_IDS we ALSO push the main `commands` set so new/
     // updated slash commands (e.g. /mood) take effect instantly, bypassing the
     // ~1h global propagation.
-    const invoiceAndPaymentCommands = [...invoiceCommandsSimple, ...paymentCommands];
     const FULL_COMMAND_GUILD_IDS = new Set(['1455014277197860908']);
     console.log(`💰 Registering ${invoiceAndPaymentCommands.length} invoice/payment commands to ${INVOICE_GUILD_IDS.length} allowed guilds...`);
     for (const guildId of INVOICE_GUILD_IDS) {
@@ -1497,6 +1424,14 @@ async function registerCommands() {
       } catch (error) {
         console.error(`❌ Failed to register commands to guild ${guildId}:`, error.message);
       }
+    }
+
+    // Remember what we just pushed so the next boot can skip this entirely.
+    try {
+      fs.mkdirSync(path.dirname(SIGNATURE_FILE), { recursive: true });
+      fs.writeFileSync(SIGNATURE_FILE, JSON.stringify({ signature, at: Date.now() }), 'utf8');
+    } catch (e) {
+      console.error('⚠️  Could not persist command signature:', e.message);
     }
 
     return true;
@@ -1516,6 +1451,26 @@ async function registerCommands() {
     }
     return false;
   }
+}
+
+// ============ RETENTION ============
+// Drop stored conversation messages older than CONVERSATION_RETENTION_DAYS.
+// cleanupOldMessages() existed in db.cjs but was never called, so history was
+// kept indefinitely (bounded only by the 50-message-per-user cap).
+const CONVERSATION_RETENTION_DAYS = Number(process.env.CONVERSATION_RETENTION_DAYS || 30);
+cron.schedule('30 3 * * *', () => {
+  try {
+    const removed = cleanupOldMessages(CONVERSATION_RETENTION_DAYS);
+    console.log(`[Retention] Removed ${removed} messages older than ${CONVERSATION_RETENTION_DAYS} days`);
+  } catch (err) {
+    console.error('[Retention] cleanup failed:', err.message);
+  }
+}, { timezone: 'Asia/Jakarta' });
+// Also run once at boot so a bot that restarts often still prunes.
+try {
+  cleanupOldMessages(CONVERSATION_RETENTION_DAYS);
+} catch (err) {
+  console.error('[Retention] initial cleanup failed:', err.message);
 }
 
 // ============ EVENTS ============
@@ -1736,27 +1691,22 @@ client.on('interactionCreate', async (interaction) => {
           break;
         case 'hug':
           setLastCommand(userId, 'hug', options);
-          const { handleHug } = require('./commands/fun.cjs');
           await handleHug(interaction);
           break;
         case 'slap':
           setLastCommand(userId, 'slap', options);
-          const { handleSlap } = require('./commands/fun.cjs');
           await handleSlap(interaction);
           break;
         case 'pat':
           setLastCommand(userId, 'pat', options);
-          const { handlePat } = require('./commands/fun.cjs');
           await handlePat(interaction);
           break;
         case 'highfive':
           setLastCommand(userId, 'highfive', options);
-          const { handleHighfive } = require('./commands/fun.cjs');
           await handleHighfive(interaction);
           break;
         case 'fact':
           setLastCommand(userId, 'fact', options);
-          const { handleFact } = require('./commands/fun.cjs');
           await handleFact(interaction);
           break;
         case 'quote': await handleQuote(interaction); break;
@@ -1873,35 +1823,20 @@ client.on('interactionCreate', async (interaction) => {
 });
 
 // ============ MESSAGE HANDLING (@Mentions) ============
-// Conversation history is now stored in SQLite database (db.js)
+// Conversation history lives in db.cjs (JSON store).
 
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
 
-  // Track contributions in #contributions channel (Ritual only)
-  const RITUAL_GUILD_ID = '1210468736205852672';
-  const CONTRIBUTIONS_CHANNEL_ID = '1314448920633413673';
-  const EVENT_CHANNEL_ID = '1389298240762937414';
-
-  if (message.guildId === RITUAL_GUILD_ID &&
-      message.channelId === CONTRIBUTIONS_CHANNEL_ID) {
-    const state = getUserState(message.author.id, message.guildId);
-    state.contributionCount = (state.contributionCount || 0) + 1;
-    saveUserState(state);
-  }
-
-  // Track event participation (mentions in #event channel)
-  if (message.guildId === RITUAL_GUILD_ID &&
-      message.channelId === EVENT_CHANNEL_ID) {
-    // Count all @mentions in the message and increment their event participation
-    const mentionedUsers = message.mentions.users.filter(u => !u.bot);
-    for (const [userId, user] of mentionedUsers) {
-      const state = getUserState(userId, message.guildId);
-      state.eventParticipationCount = (state.eventParticipationCount || 0) + 1;
-      saveUserState(state);
-    }
-  }
+  // NOTE: this handler used to increment state.contributionCount and
+  // state.eventParticipationCount on every post in #contributions / #event.
+  // Nothing ever read those two fields — /check sources its numbers from
+  // activity-state.json (see readActivityCounts), which is produced by
+  // fetch-activity.cjs and already excludes users who left. The event branch was
+  // worse than useless: it created a stored profile for anyone merely @mentioned
+  // in a channel, including people who never interacted with the bot at all.
+  // Both were removed; the counters are computed by the daily job instead.
 
   // Handle payment proof DMs (DM = no guild)
   if (!message.guild) {
@@ -2064,33 +1999,83 @@ const http = require('http');
 
 const PORT = process.env.PORT || 8888;
 
+// Bind to loopback by default. This server exposes an endpoint that makes the
+// bot post into a guild channel, so it must not be reachable from the internet
+// unless someone deliberately opts in via HEALTH_BIND_HOST.
+const BIND_HOST = process.env.HEALTH_BIND_HOST || '127.0.0.1';
+
+// Shared secret for /api/refresh-invoice. Fail closed: with no secret
+// configured the endpoint is disabled rather than left open.
+const INTERNAL_API_TOKEN = process.env.INTERNAL_API_TOKEN || '';
+
+// Constant-time compare so a wrong token can't be recovered by timing.
+const crypto = require('crypto');
+function tokenMatches(supplied) {
+  if (!INTERNAL_API_TOKEN || !supplied) return false;
+  const a = Buffer.from(String(supplied));
+  const b = Buffer.from(INTERNAL_API_TOKEN);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
+const MAX_BODY_BYTES = 16 * 1024;
+
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {
+    // Liveness only — no guild//server details, this is not an admin surface.
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       status: 'healthy',
       uptime: process.uptime(),
       discord: client.isReady() ? 'connected' : 'connecting',
-      guilds: client.guilds ? client.guilds.cache.size : 0,
     }));
   } else if (req.url === '/api/refresh-invoice' && req.method === 'POST') {
+    if (!INTERNAL_API_TOKEN) {
+      res.writeHead(503);
+      return res.end('Endpoint disabled: INTERNAL_API_TOKEN is not configured');
+    }
+    if (!tokenMatches(req.headers['x-siggy-token'])) {
+      res.writeHead(401);
+      return res.end('Unauthorized');
+    }
+
     let body = '';
-    req.on('data', chunk => { body += chunk.toString(); });
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      body += chunk.toString();
+      if (body.length > MAX_BODY_BYTES) {
+        aborted = true;
+        res.writeHead(413);
+        res.end('Payload too large');
+        req.destroy();
+      }
+    });
     req.on('end', async () => {
+      if (aborted) return;
       try {
         const data = JSON.parse(body);
-        const { invoiceId, guildId } = data;
-        
+        const { invoiceId } = data;
+
         if (!invoiceId) {
           res.writeHead(400);
           return res.end('Missing invoiceId');
         }
 
-        // Use first guild if not specified (or find guild)
-        const guild = guildId ? client.guilds.cache.get(guildId) : client.guilds.cache.first();
-        
+        // The guild comes from the invoice record itself, never from the
+        // request. The old code fell back to client.guilds.cache.first(),
+        // which could redraw an invoice into an unrelated server.
+        const { getInvoice } = require('./utils/invoice-db.cjs');
+        const invoice = getInvoice(invoiceId);
+        if (!invoice) {
+          res.writeHead(404);
+          return res.end('Invoice not found');
+        }
+
+        const guild = client.guilds.cache.get(invoice.guildId);
+
         if (!guild) {
-          res.writeHead(500);
+          res.writeHead(404);
           return res.end('Guild not found');
         }
 
@@ -2100,8 +2085,10 @@ const server = http.createServer((req, res) => {
         res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(result));
       } catch (e) {
+        // Don't echo internal error text back over HTTP.
+        console.error('[refresh-invoice] error:', e.message);
         res.writeHead(500);
-        res.end(e.message);
+        res.end('Internal error');
       }
     });
   } else if (req.url === '/') {
@@ -2113,8 +2100,9 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`🏥 Healthcheck server running on port ${PORT}`);
+server.listen(PORT, BIND_HOST, () => {
+  console.log(`🏥 Healthcheck server running on ${BIND_HOST}:${PORT}` +
+    (INTERNAL_API_TOKEN ? '' : ' (refresh-invoice disabled: no INTERNAL_API_TOKEN)'));
 }).on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
     console.log(`⚠️ Port ${PORT} already in use, skipping healthcheck server`);

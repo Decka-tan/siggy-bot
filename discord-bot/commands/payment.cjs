@@ -928,6 +928,23 @@ async function handlePaymentConfirm(interaction, action) {
     });
   }
 
+  // Only the invoice creator may settle or reject a claim. These buttons live in
+  // the creator's DM today, so nobody else should ever see them — but nothing in
+  // the code enforced that, and the same buttons rendered in a channel would let
+  // anyone mark anyone's bills paid. Every other creator-only action already
+  // checks this (invoice-simple.cjs).
+  const claimedInvoiceIds = batchItems ? batchItems.map(i => i.invoiceId) : [invoiceId];
+  for (const id of claimedInvoiceIds) {
+    const inv = id === invoiceId ? invoice : getInvoice(id);
+    if (!inv) continue;
+    if (inv.creator?.id !== interaction.user.id) {
+      return interaction.reply({
+        content: '❌ Cuma yang bikin invoice ini yang bisa konfirmasi atau nolak pembayarannya.',
+        ephemeral: true,
+      });
+    }
+  }
+
   const participant = participantIndices && participantIndices.length
     ? invoice.participants[participantIndices[0]]
     : invoice.participants.find(p => p.userId === participantUserId);
