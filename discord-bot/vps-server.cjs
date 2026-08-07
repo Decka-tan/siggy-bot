@@ -1848,8 +1848,10 @@ client.on('messageCreate', async (message) => {
   // Check if message is in allowed channel (per-server)
   if (!isChannelAllowed(message.guildId, message.channelId)) return;
 
-  // Only respond if @mentioned
-  if (!message.mentions.has(client.user)) return;
+  // Only respond if @mentioned. ignoreEveryone: an @here/@everyone ping counts
+  // as a mention of every member (Siggy included) by default, so announcements
+  // were dragging the AI reply out on the whole channel.
+  if (!message.mentions.has(client.user, { ignoreEveryone: true })) return;
 
   // Servers where AI chat replies are disabled (Siggy still runs slash commands
   // / scheduled posts there, but won't auto-respond to mentions).
