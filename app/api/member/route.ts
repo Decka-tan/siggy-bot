@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDeepSeekClient } from '@/lib/deepseek-client';
+import { getAnalysisClient } from '@/lib/analysis-client';
 import { computeStats } from '@/lib/card-stats';
 import { r2GetObject } from '@/lib/r2-get';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
@@ -43,7 +43,7 @@ async function generateContributions(
   ];
 
   try {
-    const deepseek = getDeepSeekClient();
+    const ai = getAnalysisClient();
     const topRole = roleNames.find(r =>
       ['Radiant Ritualist', 'Ritualist', 'Zealot', 'ritty', 'bitty', 'Mods', 'Events'].includes(r)
     ) || type;
@@ -55,7 +55,7 @@ async function generateContributions(
       if (tweets) tweetContext = `\nRecent tweets: ${tweets}`;
     }
 
-    const res = await deepseek.chat([
+    const res = await ai.chat([
       {
         role: 'system',
         content: 'You write exactly 1 short contribution line for a TCG-style Web3 community member card. Output format — one line: TITLE | flavor. TITLE = 3-5 words, action-oriented. flavor = 4-7 words, lowercase. No emojis, no markdown, no numbers. If tweet data is provided, use it to make the line specific to the person.',
@@ -457,7 +457,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Generate contribution rows via DeepSeek (cached per userId+xHandle, 1h)
+    // Generate contribution rows via the analysis client (cached per userId+xHandle, 1h)
     cardData.contributions = await generateContributions(
       cardData.userId,
       cardData.name,

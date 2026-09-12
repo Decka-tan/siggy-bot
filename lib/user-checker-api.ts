@@ -3,7 +3,7 @@
  * Fetches data directly from Discord API
  */
 
-import { getDeepSeekClient } from './deepseek-client';
+import { getAnalysisClient } from './analysis-client';
 
 interface EnrichedUser {
   userId: string;
@@ -19,7 +19,7 @@ interface EnrichedUser {
 }
 
 export class UserCheckerAPI {
-  private deepseek = getDeepSeekClient();
+  private ai = getAnalysisClient();
   private guildId = process.env.DISCORD_GUILD_ID || '';
   private botToken = process.env.DISCORD_BOT_TOKEN || '';
 
@@ -217,7 +217,7 @@ User ID: ${user.userId}
 Provide a fun cat-themed analysis!`;
 
     try {
-      const response = await this.deepseek.chat([
+      const response = await this.ai.chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ], { maxTokens: 800 });
@@ -226,7 +226,7 @@ Provide a fun cat-themed analysis!`;
 
       return `${basicStats}\n\n${rawResponse}`;
     } catch (e: any) {
-      console.error('DeepSeek analysis error:', e?.message || e);
+      console.error('Analysis error:', e?.message || e);
       return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection glitched, but your stats are looking grit nyann~! 🐱`;
     }
   }

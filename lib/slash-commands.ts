@@ -13,7 +13,7 @@ import path from 'path';
 const commands = [
   {
     name: 'check',
-    description: 'AI-powered user analysis (DeepSeek + RAG)',
+    description: 'AI-powered user analysis (AI + RAG)',
     options: [
       {
         name: 'username',

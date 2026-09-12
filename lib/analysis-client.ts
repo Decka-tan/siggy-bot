@@ -1,17 +1,25 @@
 /**
- * DEEPSEEK V3 CLIENT
- * Cost-effective AI for Siggy bot
- * - 20x cheaper than GPT-4o for input
- * - 5x cheaper for output
- * - 64k context window
+ * ANALYSIS CLIENT
+ *
+ * Backs the analysis paths (/check, /api/analyze, /api/member card lines) that
+ * are separate from Siggy's chat. Used to be DeepSeek V3 on cost grounds; that
+ * account ran out of credit and every call came back 402, so these features
+ * were dead while chat kept working. Now on OpenAI like the rest of the bot,
+ * one provider and one balance to watch.
+ *
+ * Default model is gpt-4o-mini — the analysis paths are the verbose,
+ * high-volume ones, and mini sits in the same price bracket DeepSeek was
+ * picked for. Set ANALYSIS_MODEL to override (e.g. gpt-4o for better reports).
  */
 
-interface DeepSeekMessage {
+import OpenAI from 'openai';
+
+interface AnalysisMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
 }
 
-interface DeepSeekResponse {
+interface AnalysisResponse {
   choices: Array<{
     message: {
       content: string;
@@ -26,67 +34,68 @@ interface DeepSeekResponse {
   };
 }
 
-class DeepSeekClient {
-  private apiKey: string;
-  private baseUrl = 'https://api.deepseek.com/v1';
+const DEFAULT_MODEL = process.env.ANALYSIS_MODEL || 'gpt-4o-mini';
+
+// USD per 1M tokens. Only used for the cost line in the logs — an unknown
+// model logs no cost rather than a wrong one.
+const PRICING: Record<string, { input: number; output: number }> = {
+  'gpt-4o-mini': { input: 0.15, output: 0.6 },
+  'gpt-4o': { input: 2.5, output: 10 },
+};
+
+class AnalysisClient {
+  private client: OpenAI;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.DEEPSEEK_API_KEY || '';
-    if (!this.apiKey) {
-      console.warn('⚠️  DEEPSEEK_API_KEY not found in environment');
+    const key = apiKey || process.env.OPENAI_API_KEY || '';
+    if (!key) {
+      console.warn('⚠️  OPENAI_API_KEY not found in environment');
     }
+    this.client = new OpenAI({ apiKey: key });
   }
 
   /**
-   * Chat completion using DeepSeek V3
-   * Cost: $0.14/M input tokens, $2.19/M output tokens
+   * Chat completion. Same signature and response shape the DeepSeek client
+   * had, so every call site is unchanged.
    */
   async chat(
-    messages: DeepSeekMessage[],
+    messages: AnalysisMessage[],
     options: {
       temperature?: number;
       maxTokens?: number;
       model?: string;
     } = {}
-  ): Promise<DeepSeekResponse> {
+  ): Promise<AnalysisResponse> {
     const {
       temperature = 0.7,
       maxTokens = 2000,
-      model = 'deepseek-chat'
+      model = DEFAULT_MODEL,
     } = options;
 
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          max_tokens: maxTokens,
-        }),
+      const data = await this.client.chat.completions.create({
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`DeepSeek API error: ${response.status} - ${error}`);
+      // usage is optional on the API type; a missing block must not throw here
+      // and take the whole analysis down with it.
+      const usage = data.usage;
+      const price = PRICING[model];
+      if (usage && price) {
+        const cost =
+          (usage.prompt_tokens / 1_000_000) * price.input +
+          (usage.completion_tokens / 1_000_000) * price.output;
+        console.log(
+          `💰 OpenAI (${model}) Cost: $${cost.toFixed(4)} (${usage.total_tokens} tokens)`
+        );
       }
 
-      const data = await response.json();
-
-      // Log cost for monitoring
-      const inputCost = (data.usage.prompt_tokens / 1000000) * 0.14;
-      const outputCost = (data.usage.completion_tokens / 1000000) * 2.19;
-      const totalCost = inputCost + outputCost;
-
-      console.log(`💰 DeepSeek Cost: $${totalCost.toFixed(4)} (${data.usage.total_tokens} tokens)`);
-
-      return data;
+      return data as unknown as AnalysisResponse;
     } catch (error) {
-      console.error('DeepSeek API call failed:', error);
+      console.error('OpenAI analysis call failed:', error);
       throw error;
     }
   }
@@ -132,7 +141,7 @@ ${topContributors.slice(0, 5).map((m, i) => `${i+1}. @${m.username} (${m.message
 
 Provide a fun analysis!`;
 
-    const messages: DeepSeekMessage[] = [
+    const messages: AnalysisMessage[] = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ];
@@ -162,7 +171,7 @@ Twitter links: ${userData.twitterLinks?.length || 0}
 
 Generate a quick fun summary!`;
 
-    const messages: DeepSeekMessage[] = [
+    const messages: AnalysisMessage[] = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
     ];
@@ -181,14 +190,14 @@ Generate a quick fun summary!`;
 }
 
 // Singleton instance
-let deepseekInstance: DeepSeekClient | null = null;
+let analysisInstance: AnalysisClient | null = null;
 
-export function getDeepSeekClient(): DeepSeekClient {
-  if (!deepseekInstance) {
-    deepseekInstance = new DeepSeekClient();
+export function getAnalysisClient(): AnalysisClient {
+  if (!analysisInstance) {
+    analysisInstance = new AnalysisClient();
   }
-  return deepseekInstance;
+  return analysisInstance;
 }
 
-export { DeepSeekClient };
-export type { DeepSeekMessage, DeepSeekResponse };
+export { AnalysisClient };
+export type { AnalysisMessage, AnalysisResponse };

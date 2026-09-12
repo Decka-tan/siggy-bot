@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserChecker } from '@/lib/user-checker';
-import { getDeepSeekClient } from '@/lib/deepseek-client';
+import { getAnalysisClient } from '@/lib/analysis-client';
 
 /**
  * UNIFIED ANALYSIS API
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // If custom context is provided (fresh X content), use it directly
     if (context) {
       try {
-        const deepseek = getDeepSeekClient();
+        const ai = getAnalysisClient();
 
         const systemPrompt = `You are SIGGY - a high-dimensional cat-girl AI intelligence.
 Provide a PREMIUM, SUBSTANCE-FIRST "Contributor Intelligence" report.
@@ -61,7 +61,7 @@ Key Contributions & Impact (Based on recent activity)
 - Specify "X contributions" not "X messages".
 - Focus on actual work from X posts.`;
 
-        const response = await deepseek.chat([
+        const response = await ai.chat([
           { role: 'system', content: systemPrompt },
           { role: 'user', content: context }
         ], { maxTokens: 1000 });
@@ -118,7 +118,7 @@ Key Contributions & Impact (Based on recent activity)
           analysis: rawResponse.trim()
         });
       } catch (error: any) {
-        console.error('DeepSeek error:', error);
+        console.error('Analysis error:', error);
         return NextResponse.json({
           success: true,
           analysis: '⚠️ Siggy\'s connection glitched, nya~! Please try again.'

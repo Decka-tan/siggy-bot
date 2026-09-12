@@ -1134,7 +1134,7 @@ export default function ChatPage() {
     inputRef.current?.focus();
   };
 
-  // Analyze contributor with DeepSeek
+  // Analyze contributor with the analysis API
   const analyzeContributor = async (contributor: ContributorSearchResult) => {
     let targetConvId = activeConversationId;
     

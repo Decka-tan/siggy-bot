@@ -6,7 +6,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { getDeepSeekClient } from './deepseek-client';
+import { getAnalysisClient } from './analysis-client';
 import { getRelevantKnowledge } from './siggy-knowledge';
 
 interface EnrichedUser {
@@ -26,7 +26,7 @@ interface EnrichedUser {
 }
 
 export class UserChecker {
-  private deepseek = getDeepSeekClient();
+  private ai = getAnalysisClient();
   private statsPath = path.join(process.cwd(), 'extracted-data', 'member-activity-analysis.json');
   private rolesPath = path.join(process.cwd(), 'extracted-data', 'user-roles-summary.json');  // Use optimized file
   private rolesMapPath = path.join(process.cwd(), 'extracted-data', 'roles-map.json');
@@ -372,7 +372,7 @@ Provide a detailed, evidence-based report.`;
     }
 
     try {
-      const response = await this.deepseek.chat([
+      const response = await this.ai.chat([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
       ], { maxTokens: 1500 });
@@ -415,8 +415,8 @@ Provide a detailed, evidence-based report.`;
 
       return `${basicStats}\n\n${formatted}`;
     } catch (e: any) {
-      console.error('DeepSeek analysis error:', e?.message || e);
-      return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection to DeepSeek glitched (${e?.message || 'unknown error'}), but your stats are looking grit nyann~! 🐱`;
+      console.error('Analysis error:', e?.message || e);
+      return `${basicStats}\n\n⚠️ **Siggy's Note**: My dimensional connection glitched (${e?.message || 'unknown error'}), but your stats are looking grit nyann~! 🐱`;
     }
   }
 
