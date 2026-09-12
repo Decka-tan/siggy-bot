@@ -980,7 +980,7 @@ async function handlePaymentConfirm(interaction, action) {
     // Free the token (one-shot).
     if (parts.length === 2) confirmStore.delete(parts[1]);
 
-    const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification } = require('./invoice-simple.cjs');
+    const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification, buildPaidStickerFiles } = require('./invoice-simple.cjs');
     const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
 
     // Every invoice touched by this claim needs its channel message redrawn,
@@ -1060,7 +1060,14 @@ async function handlePaymentConfirm(interaction, action) {
           `Terima kasih sudah bayar! 🎉`;
       }
 
-      await payer.send({ content: note });
+      // Someone paying for themselves already got the sticker from
+      // sendPaidNotification above — only attach it when the payer is a
+      // different person (paying on behalf of the billed participant).
+      const payerIsParticipant = payerId === participant.userId;
+      await payer.send({
+        content: note,
+        files: payerIsParticipant ? [] : buildPaidStickerFiles(),
+      });
     } catch (err) {
       console.log(`[Payment] Could not notify payer:`, err.message);
     }

@@ -16,7 +16,30 @@ const {
   markMultiplePaid,
   deleteInvoice,
 } = require('../utils/invoice-db.cjs');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, AttachmentBuilder } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
+
+// Sticker attached to every "payment confirmed" DM.
+const PAID_STICKER_PATH = path.join(__dirname, '..', 'assets', 'payment-confirmed.png');
+const PAID_STICKER_NAME = 'payment-confirmed.png';
+
+/**
+ * Build the paid sticker attachment. Returns [] when the file is missing so a
+ * bad deploy degrades to a text-only DM instead of killing the notification.
+ */
+function buildPaidStickerFiles() {
+  try {
+    if (!fs.existsSync(PAID_STICKER_PATH)) {
+      console.log(`[Invoice] Paid sticker missing at ${PAID_STICKER_PATH}`);
+      return [];
+    }
+    return [new AttachmentBuilder(PAID_STICKER_PATH, { name: PAID_STICKER_NAME })];
+  } catch (err) {
+    console.log('[Invoice] Could not build paid sticker:', err.message);
+    return [];
+  }
+}
 
 /**
  * Parse participants from argument string
@@ -342,7 +365,8 @@ async function sendPaidNotification(invoice, participant, guild) {
             `Invoice: **${invoice.title || 'Untitled'}**\n` +
             `💰 Jumlah: Rp ${amount.toLocaleString('id-ID')}\n` +
             `📅 Tanggal: ${invoice.date}\n\n` +
-            `_Terima kasih sudah melunasi!_`
+            `_Terima kasih sudah melunasi!_`,
+          files: buildPaidStickerFiles(),
         });
       }
     } catch (err) {
@@ -1777,6 +1801,7 @@ module.exports = {
   buildMarkPaidComponent,
   sendInvoiceNotifications,
   sendPaidNotification,
+  buildPaidStickerFiles,
   safeInvoiceTitle,
   truncateSelectText,
   // Also export empty handlers for backward compatibility
