@@ -10,6 +10,7 @@ require('dotenv').config();
 
 const { Client, GatewayIntentBits, REST, Routes, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const cron = require('node-cron');
+const { guardInteraction } = require('./lib/interaction-guard.cjs');
 const fs = require('fs');
 const path = require('path');
 
@@ -1571,6 +1572,10 @@ client.once('ready', () => {
 
 // ============ CONSOLIDATED INTERACTION HANDLER ============
 client.on('interactionCreate', async (interaction) => {
+  // Guards the 3s interaction token for EVERY handler below, so a slow one
+  // degrades into a deferred answer instead of "Siggy didn't respond in time".
+  // See lib/interaction-guard.cjs.
+  const disarmGuard = guardInteraction(interaction);
   try {
     // 1. HANDLE SLASH COMMANDS
     if (interaction.isChatInputCommand()) {
@@ -1825,6 +1830,9 @@ client.on('interactionCreate', async (interaction) => {
         await interaction.editReply({ content: `❌ Interaction Error: ${error.message}`, components: [] });
       }
     } catch (e) { console.error('Failed to report interaction error:', e); }
+  } finally {
+    // Every exit path, including the dozens of early returns above.
+    disarmGuard();
   }
 });
 
