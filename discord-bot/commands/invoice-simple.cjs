@@ -200,6 +200,16 @@ async function processInvoiceCreateModal(interaction) {
     });
   }
 
+  // Discord kills the interaction token 3 seconds after the modal is submitted.
+  // matchParticipantsToGuild below asks Discord to resolve every name typed
+  // without an @mention, one REST call at a time — seven plain names at ~250ms
+  // ping already blows the budget, the reply then died with 10062 and the
+  // submitter saw Discord's "Something went wrong. Try again." even though the
+  // invoice had been written to disk and only the channel message was missing.
+  // Claiming the interaction first buys 15 minutes. Nothing has been created
+  // yet, so an early parse error above can still answer ephemerally.
+  await interaction.deferReply();
+
   // Create invoice
   const invoice = createInvoice(
     interaction.guildId,
@@ -212,32 +222,45 @@ async function processInvoiceCreateModal(interaction) {
   const result = addParticipants(invoice.id, participants);
 
   if (!result.success) {
-    return interaction.reply({
+    return interaction.editReply({
       content: `❌ Error: ${result.error}`,
-      ephemeral: true
     });
   }
 
   const finalInvoice = result.invoice;
 
-  // Try to match participants to guild members for DM
-  await matchParticipantsToGuild(finalInvoice, interaction.guild);
+  // The invoice is on disk from here on. Anything that throws below must say so
+  // out loud: the failure this replaces left the row saved with no message and
+  // no warning, so the group thought the invoice had never been created and the
+  // only trace was a null messageId nobody looks at.
+  try {
+    // Try to match participants to guild members for DM
+    await matchParticipantsToGuild(finalInvoice, interaction.guild);
 
-  const embed = renderInvoiceEmbed(finalInvoice);
-  const buttons = buildInvoiceButtons(finalInvoice.id);
+    const embed = renderInvoiceEmbed(finalInvoice);
+    const buttons = buildInvoiceButtons(finalInvoice.id);
 
-  await interaction.reply({
-    content: '✅ Invoice berhasil dibuat!',
-    embeds: [embed],
-    components: [buttons]
-  });
+    await interaction.editReply({
+      content: '✅ Invoice berhasil dibuat!',
+      embeds: [embed],
+      components: [buttons]
+    });
 
-  // Update message ID
-  const message = await interaction.fetchReply();
-  updateInvoiceMessage(finalInvoice.id, message.id);
+    // Update message ID
+    const message = await interaction.fetchReply();
+    updateInvoiceMessage(finalInvoice.id, message.id);
 
-  // Send DM notifications to participants
-  await sendInvoiceNotifications(finalInvoice, interaction.guild);
+    // Send DM notifications to participants
+    await sendInvoiceNotifications(finalInvoice, interaction.guild);
+  } catch (err) {
+    console.error(`[Invoice] ${finalInvoice.id} tersimpan tapi gagal ditampilkan:`, err);
+    await interaction.editReply({
+      content: `⚠️ Invoice **${finalInvoice.title || 'Untitled'}** udah tersimpan (${finalInvoice.participants.length} orang), ` +
+        `tapi Siggy gagal nampilin kartunya di channel.\n\n` +
+        `Pakai \`/invoice-list\` buat lihat, atau tombol refresh buat munculin ulang.\n` +
+        `_ID: ${finalInvoice.id}_`,
+    }).catch(() => {});
+  }
 }
 
 /**
@@ -988,17 +1011,25 @@ async function handleMarkPaidSelect(interaction, providedInvoiceId) {
     });
   } catch (error) {
     console.error('Mark paid select error:', error);
-    await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
+    await (interaction.deferred || interaction.replied
+      ? interaction.editReply({ content: `❌ Error: ${error.message}` })
+      : interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true })).catch(() => {});
   }
 }
 
 async function handleAddPeopleSubmit(interaction) {
   try {
+    // Same 3s trap as processInvoiceCreateModal: the redraw below spends four
+    // REST calls (fetch channel, fetch message, delete, send) before answering,
+    // so on a slow link the reply landed after the token had already expired.
+    // Every reply in this handler is ephemeral, so the defer is too.
+    await interaction.deferReply({ ephemeral: true });
+
     const customId = interaction.customId;
     const invoiceId = customId.replace('add_people_modal_', '');
-    
+
     const invoice = getInvoice(invoiceId);
-    if (!invoice) return interaction.reply({ content: '❌ Invoice tidak ditemukan.', ephemeral: true });
+    if (!invoice) return interaction.editReply({ content: '❌ Invoice tidak ditemukan.' });
 
     const userMentions = interaction.fields.getTextInputValue('user_mentions');
     const amountStr = interaction.fields.getTextInputValue('amount');
@@ -1010,7 +1041,7 @@ async function handleAddPeopleSubmit(interaction) {
     if (cleanAmount.endsWith('k')) amount = parseFloat(cleanAmount) * 1000;
     else amount = parseFloat(cleanAmount);
 
-    if (isNaN(amount) || amount <= 0) return interaction.reply({ content: '❌ Jumlah tidak valid.', ephemeral: true });
+    if (isNaN(amount) || amount <= 0) return interaction.editReply({ content: '❌ Jumlah tidak valid.' });
 
     // Parse users
     const users = userMentions.split(/,|\n/).map(u => u.trim()).filter(u => u);
@@ -1024,7 +1055,7 @@ async function handleAddPeopleSubmit(interaction) {
     const { addParticipants, updateInvoiceMessage } = require('../utils/invoice-db.cjs');
     const result = addParticipants(invoiceId, participants);
 
-    if (!result.success) return interaction.reply({ content: `❌ Gagal: ${result.error}`, ephemeral: true });
+    if (!result.success) return interaction.editReply({ content: `❌ Gagal: ${result.error}` });
 
     // DELETE OLD, SEND NEW
     const updated = getInvoice(invoiceId);
@@ -1044,7 +1075,7 @@ async function handleAddPeopleSubmit(interaction) {
       } catch (e) { console.error('Add re-send err:', e); }
     }
 
-    return interaction.reply({ content: `✅ Berhasil menambahkan ${participants.length} orang!`, ephemeral: true });
+    return interaction.editReply({ content: `✅ Berhasil menambahkan ${participants.length} orang!` });
   } catch (error) {
     console.error('Add people submit error:', error);
     await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
