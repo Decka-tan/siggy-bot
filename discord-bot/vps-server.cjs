@@ -1722,6 +1722,12 @@ client.on('interactionCreate', async (interaction) => {
     if (interaction.isButton()) {
       const { customId } = interaction;
 
+      // A button token is only valid for 3s after Discord stamps it. Log how
+      // much of that budget was already gone before the event reached us: a big
+      // number here means the delay is upstream (gateway delivery or the REST
+      // queue), not in the handler below.
+      console.log(`[btn] ${customId} age=${Date.now() - interaction.createdTimestamp}ms ping=${Math.round(client.ws.ping)}ms`);
+
       // Basic buttons
       if (customId.startsWith('copy_')) {
         const embed = interaction.message.embeds[0];
