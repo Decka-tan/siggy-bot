@@ -951,18 +951,26 @@ async function handleMarkPaidSelect(interaction, providedInvoiceId) {
       invoice = getInvoice(invoiceId);
     }
 
+    // Same 3s trap as the create-invoice modal, and the worst offender of the
+    // three: this redraws the channel message (fetch, fetch, delete, send) and
+    // then DMs every newly paid person — each DM now carrying an image. Seven
+    // people is four REST calls plus fourteen more before it could answer, so
+    // the creator got "Siggy didn't respond in time" while the bills had in
+    // fact been marked paid.
+    await interaction.deferReply({ ephemeral: true });
+
     if (!invoice) {
-      return interaction.reply({ content: '❌ Invoice tidak ditemukan.', ephemeral: true });
+      return interaction.editReply({ content: '❌ Invoice tidak ditemukan.' });
     }
 
     // Permission check
     if (invoice.creator.id !== interaction.user.id) {
-      return interaction.reply({ content: '❌ Hanya pembuat invoice yang bisa aksi ini.', ephemeral: true });
+      return interaction.editReply({ content: '❌ Hanya pembuat invoice yang bisa aksi ini.' });
     }
 
     const selectedUserIds = interaction.values;
     if (!selectedUserIds || selectedUserIds.length === 0) {
-      return interaction.reply({ content: '❌ Tidak ada peserta yang dipilih.', ephemeral: true });
+      return interaction.editReply({ content: '❌ Tidak ada peserta yang dipilih.' });
     }
 
     const { markMultiplePaid } = require('../utils/invoice-db.cjs');
@@ -999,16 +1007,20 @@ async function handleMarkPaidSelect(interaction, providedInvoiceId) {
       }
     }
 
-    // Send notifications
-    for (const pId of selectedUserIds) {
-      const p = updated.participants.find(part => part.userId === pId);
-      if (p) await sendPaidNotification(updated, p, interaction.guild).catch(() => {});
-    }
-
-    return interaction.reply({
+    // Answer before the DMs, not after. The bills are already marked paid and
+    // the channel message already redrawn, so the creator has nothing left to
+    // wait for — and the DMs are the slow part, one image upload per person.
+    await interaction.editReply({
       content: `✅ Berhasil menandai ${selectedUserIds.length} orang sebagai LUNAS!`,
-      ephemeral: true
     });
+
+    // Fan the notifications out instead of queueing them behind each other.
+    // One unreachable recipient must not hold up the rest.
+    await Promise.allSettled(selectedUserIds.map(pId => {
+      const p = updated.participants.find(part => part.userId === pId);
+      return p ? sendPaidNotification(updated, p, interaction.guild) : Promise.resolve();
+    }));
+    return;
   } catch (error) {
     console.error('Mark paid select error:', error);
     await (interaction.deferred || interaction.replied
