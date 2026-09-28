@@ -624,10 +624,13 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.DirectMessages,
-    GatewayIntentBits.GuildMembers, // WAJIB ADA INI BOS
+    // Privileged intents are blocked until Discord approves the review.
+    // Set PRIVILEGED_INTENTS=off in .env to log in without them.
+    ...(process.env.PRIVILEGED_INTENTS === "off"
+      ? []
+      : [GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMembers]),
   ],
 });
 
