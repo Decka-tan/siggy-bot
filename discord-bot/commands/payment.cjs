@@ -6,6 +6,7 @@
 const {
   getPaymentInfo,
   getPaymentInfoByUsername,
+  getCreatorPaymentInfo,
   setPaymentInfo,
   linkName,
   getNameLink,
@@ -501,12 +502,7 @@ async function handleBayarConfirmBills(interaction) {
   // The name is already on the bills — the member cache is often cold and was
   // leaving "Transfer ke:" with a blank recipient.
   const creatorName = bills[0].creatorName;
-  // payments is keyed by name for entries made through the dashboard and by
-  // Discord id for entries made through /payment-set, so try both.
-  const creatorPaymentInfo =
-    getPaymentInfo(String(creatorId)) ||
-    (creatorName ? getPaymentInfo(creatorName) : null) ||
-    (creatorName ? getPaymentInfoByUsername(creatorName) : null);
+  const creatorPaymentInfo = getCreatorPaymentInfo(creatorId, creatorName);
 
   let description = `💵 **Bayar ${bills.length} tagihan sekaligus**\n`;
   description += `💰 Total: **Rp ${total.toLocaleString('id-ID')}**\n\n`;
@@ -676,7 +672,7 @@ async function handleBayarSelectPerson(interaction) {
   const participantIdx = groupIndices[0];
 
   // Get creator's payment info
-  const creatorPaymentInfo = getPaymentInfo(invoice.creator.id);
+  const creatorPaymentInfo = getCreatorPaymentInfo(invoice.creator.id, invoice.creator.username);
 
   // Store pending claim
   const claimData = {
@@ -980,7 +976,7 @@ async function handlePaymentConfirm(interaction, action) {
     // Free the token (one-shot).
     if (parts.length === 2) confirmStore.delete(parts[1]);
 
-    const { renderInvoiceEmbed, buildInvoiceButtons, sendPaidNotification, buildPaidStickerFiles } = require('./invoice-simple.cjs');
+    const { renderInvoiceEmbed, buildInvoiceComponents, sendPaidNotification, buildPaidStickerFiles } = require('./invoice-simple.cjs');
     const { updateInvoiceMessage } = require('../utils/invoice-db.cjs');
 
     // Every invoice touched by this claim needs its channel message redrawn,
@@ -1005,7 +1001,7 @@ async function handlePaymentConfirm(interaction, action) {
         const newMessage = await channel.send({
           content: `✅ 1 orang ditandai lunas!`,
           embeds: [renderInvoiceEmbed(updated)],
-          components: [buildInvoiceButtons(updated.id)],
+          components: buildInvoiceComponents(updated.id),
         });
         updateInvoiceMessage(updated.id, newMessage.id);
         console.log(`[Payment] Invoice ${affectedId} message refreshed: ${newMessage.id}`);
@@ -1103,7 +1099,7 @@ async function handlePaymentConfirm(interaction, action) {
  * Get payment display for invoice recap/owe
  */
 function getPaymentDisplay(discordId, username) {
-  const paymentInfo = getPaymentInfo(discordId);
+  const paymentInfo = getCreatorPaymentInfo(discordId, username);
 
   if (!paymentInfo) {
     return `👤 @${username}\n⚠️ Belum set info pembayaran`;

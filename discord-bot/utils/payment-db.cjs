@@ -265,6 +265,28 @@ function bulkImportLinks(links) {
   return { success: true, imported };
 }
 
+/**
+ * Where to transfer for an invoice creator.
+ *
+ * Dashboard entries are keyed by a display name ("sopmod") that nameLinks ties
+ * to the creator's Discord id, /payment-set entries by the id itself, so the id
+ * alone or the Discord username alone misses most of them. The number is stored
+ * as `account`; `number` is filled too because the embeds read that name.
+ */
+function getCreatorPaymentInfo(creatorId, creatorName) {
+  const db = readDB();
+  const payments = db.payments || {};
+  const byKey = (k) => (k ? payments[String(k).toLowerCase().trim()] || null : null);
+  let info = byKey(creatorId) || byKey(creatorName);
+  if (!info && creatorId) {
+    const linked = Object.keys(payments).find(k => db.nameLinks?.[k]?.discordId === String(creatorId));
+    if (linked) info = payments[linked];
+  }
+  if (!info && creatorName) info = getPaymentInfoByUsername(creatorName);
+  if (!info) return null;
+  return { ...info, number: info.account || info.number || '' };
+}
+
 module.exports = {
   // Mutating: read-modify-write must be serialised across bot + web.
   setPaymentInfo: locked(setPaymentInfo),
@@ -277,6 +299,7 @@ module.exports = {
   // Read-only: writeDB renames into place, so a reader always sees a whole file.
   getPaymentInfo,
   getPaymentInfoByUsername,
+  getCreatorPaymentInfo,
   getNameLink,
   getDiscordIdByName,
   getAllLinks,

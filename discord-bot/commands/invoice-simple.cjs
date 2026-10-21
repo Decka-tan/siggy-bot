@@ -238,12 +238,12 @@ async function processInvoiceCreateModal(interaction) {
     await matchParticipantsToGuild(finalInvoice, interaction.guild);
 
     const embed = renderInvoiceEmbed(finalInvoice);
-    const buttons = buildInvoiceButtons(finalInvoice.id);
+    const buttons = buildInvoiceComponents(finalInvoice.id);
 
     await interaction.editReply({
       content: '✅ Invoice berhasil dibuat!',
       embeds: [embed],
-      components: [buttons]
+      components: buttons
     });
 
     // Update message ID
@@ -509,6 +509,24 @@ function buildInvoiceButtons(invoiceId) {
 }
 
 /**
+ * Every row under an invoice message: the action buttons plus a link to the
+ * member page, where people see all their bills and who to transfer to.
+ */
+function buildInvoiceComponents(invoiceId) {
+  const base = (process.env.INVOICE_PUBLIC_URL || 'https://invoice.decka.my.id').replace(/\/+$/, '');
+  return [
+    buildInvoiceButtons(invoiceId),
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setURL(`${base}/invoice`)
+        .setLabel('Lihat semua tagihan di web')
+        .setEmoji('🌐')
+    ),
+  ];
+}
+
+/**
  * Render invoice recap embed
  */
 function renderInvoiceRecapEmbed(invoices, creatorId) {
@@ -749,7 +767,7 @@ async function handleInvoiceButton(interaction, action) {
       // DELETE OLD, SEND NEW
       const updated = getInvoice(invoiceId);
       const newEmbed = renderInvoiceEmbed(updated);
-      const newComponents = [buildInvoiceButtons(invoiceId)];
+      const newComponents = buildInvoiceComponents(invoiceId);
       
       if (invoice.messageId && invoice.channelId) {
         try {
@@ -979,7 +997,7 @@ async function handleMarkPaidSelect(interaction, providedInvoiceId) {
     // Update original message: DELETE OLD, SEND NEW
     const updated = getInvoice(invoiceId);
     const newEmbed = renderInvoiceEmbed(updated);
-    const newComponents = [buildInvoiceButtons(invoiceId)];
+    const newComponents = buildInvoiceComponents(invoiceId);
     
     if (invoice.messageId && invoice.channelId) {
       try {
@@ -1072,7 +1090,7 @@ async function handleAddPeopleSubmit(interaction) {
     // DELETE OLD, SEND NEW
     const updated = getInvoice(invoiceId);
     const newEmbed = renderInvoiceEmbed(updated);
-    const newComponents = [buildInvoiceButtons(invoiceId)];
+    const newComponents = buildInvoiceComponents(invoiceId);
 
     if (invoice.messageId && invoice.channelId) {
       try {
@@ -1755,7 +1773,7 @@ async function handleInvoiceRefreshAll(interaction) {
         // 2. Send new message
         const newMsg = await channel.send({
           embeds: [renderInvoiceEmbed(inv)],
-          components: [buildInvoiceButtons(inv.id)]
+          components: buildInvoiceComponents(inv.id)
         });
         
         // 3. Update messageId in DB
@@ -1802,7 +1820,7 @@ async function refreshInvoiceMessage(invoiceId, guild) {
     // 2. Send new message
     const updated = getInvoice(invoiceId);
     const newEmbed = renderInvoiceEmbed(updated);
-    const newComponents = [buildInvoiceButtons(invoiceId)];
+    const newComponents = buildInvoiceComponents(invoiceId);
 
     const newMsg = await channel.send({
       embeds: [newEmbed],
@@ -1834,6 +1852,7 @@ module.exports = {
   handleFindDebtSelect,
   renderInvoiceEmbed,
   buildInvoiceButtons,
+  buildInvoiceComponents,
   renderInvoiceRecapEmbed,
   invoiceCommandsSimple,
   handleInvoiceButton,

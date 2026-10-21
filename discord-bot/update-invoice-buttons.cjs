@@ -17,7 +17,7 @@ const { Client, GatewayIntentBits } = require('discord.js');
 
 // Import functions (relative to discord-bot folder)
 const { readDB } = require('./utils/invoice-db.cjs');
-const { renderInvoiceEmbed, buildInvoiceButtons } = require('./commands/invoice-simple.cjs');
+const { renderInvoiceEmbed, buildInvoiceComponents } = require('./commands/invoice-simple.cjs');
 
 // Create client
 const client = new Client({
@@ -65,12 +65,12 @@ client.once('ready', async () => {
 
       // Generate new embed and buttons
       const embed = renderInvoiceEmbed(invoice);
-      const buttons = buildInvoiceButtons(invoice.id);
+      const buttons = buildInvoiceComponents(invoice.id);
 
       // Update the message
       await message.edit({
         embeds: [embed],
-        components: [buttons]
+        components: buttons
       });
 
       console.log(`✅ Updated ${invoice.id} - ${invoice.title || 'Untitled'}`);
