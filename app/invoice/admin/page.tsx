@@ -20,6 +20,7 @@ import {
   getPaymentDbPath,
   isSnowflake,
 } from '../lib/data';
+import { Initial, PAGE_CSS, Siggy } from '../ui';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Siggy Admin' };
@@ -327,7 +328,7 @@ function buildAdminData(filters: Filters) {
 }
 
 // --- UI ---
-const card = 'rounded-xl border border-white/5 bg-white/[0.03]';
+const card = 'inv-card rounded-2xl';
 const input = 'rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-accent/50';
 const TABS = [
   { key: 'invoices', label: 'Tagihan' },
@@ -343,9 +344,10 @@ export default async function InvoiceAdminPage({
 }) {
   if (!checkAuth()) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4 text-text-primary">
-        <form action={loginAction} className="w-full max-w-xs space-y-3">
-          <h1 className="text-xl font-bold">Siggy Admin</h1>
+      <div className="inv-bg flex min-h-screen items-center justify-center px-4 text-text-primary">
+        <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+        <form action={loginAction} className="inv-card w-full max-w-xs space-y-3 rounded-2xl p-6">
+          <div className="flex flex-col items-center gap-3 pb-2"><Siggy mood="shy" size={64} /><h1 className="text-xl font-bold">Siggy Admin</h1></div>
           {searchParams.error && <p className="text-xs text-red-400">Username atau password salah.</p>}
           <input name="user" placeholder="Username" required className={`${input} w-full`} />
           <input name="pass" type="password" placeholder="Password" required className={`${input} w-full`} />
@@ -373,11 +375,11 @@ export default async function InvoiceAdminPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] px-4 py-6 text-text-primary">
-      <style dangerouslySetInnerHTML={{ __html: `body { background-color: #0a0a0a !important; }` }} />
+    <div className="inv-bg min-h-screen px-4 py-6 text-text-primary">
+      <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-lg font-bold">Siggy Admin</h1>
+          <div className="flex items-center gap-2"><Siggy size={32} /><h1 className="text-lg font-bold">Siggy Admin</h1></div>
           <nav className="flex gap-1 text-sm">
             {TABS.map(t => (
               <Link key={t.key} href={href({ tab: t.key, limit: null })} className={`rounded-lg px-3 py-1.5 ${tab === t.key ? 'bg-accent/15 font-bold text-accent' : 'text-text-secondary hover:text-text-primary'}`}>
@@ -479,7 +481,8 @@ export default async function InvoiceAdminPage({
             {data.debtors.map(d => (
               <details key={d.name} className={`${card} p-4`}>
                 <summary className="flex cursor-pointer items-baseline justify-between gap-3">
-                  <span className="min-w-0 truncate">
+                  <span className="flex min-w-0 items-center gap-3 truncate">
+                    <Initial name={d.name} size={30} />
                     <span className="font-bold">{d.name}</span>{' '}
                     <span className="text-xs text-text-secondary">· {d.bills.length} tagihan · {d.linkedId ? 'ke-link' : 'belum ke-link'}</span>
                   </span>

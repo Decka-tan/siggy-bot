@@ -290,8 +290,15 @@ export function buildMemberView(userId: string): MemberView {
     }
   }
 
+  // Creators are stored by Discord username ("takodachi.s"); show the name
+  // people actually use for them when nameLinks knows it.
+  const knownName = new Map(listLoginPeople().map(p => [p.id, p.name]));
   const owedByCreator = [...owed.values()]
-    .map(g => ({ ...g, payment: findPaymentInfo(paymentDb, g.creatorId, g.creatorName) }))
+    .map(g => ({
+      ...g,
+      payment: findPaymentInfo(paymentDb, g.creatorId, g.creatorName),
+      creatorName: (g.creatorId && knownName.get(g.creatorId)) || g.creatorName,
+    }))
     .sort((a, b) => b.total - a.total);
 
   return {
@@ -300,7 +307,9 @@ export function buildMemberView(userId: string): MemberView {
     owedTotal: owedByCreator.reduce((s, g) => s + g.total, 0),
     paidBills,
     created,
-    owedToMe: [...owedToMe.values()].sort((a, b) => b.total - a.total),
+    owedToMe: [...owedToMe.values()]
+      .map(p => ({ ...p, name: p.name.charAt(0).toUpperCase() + p.name.slice(1) }))
+      .sort((a, b) => b.total - a.total),
     receivableTotal: created.reduce((s, inv) => s + inv.outstanding, 0),
   };
 }
