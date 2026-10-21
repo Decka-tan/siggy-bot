@@ -482,7 +482,7 @@ export default async function InvoiceAdminPage({
               <details key={d.name} className={`${card} p-4`}>
                 <summary className="flex cursor-pointer items-baseline justify-between gap-3">
                   <span className="flex min-w-0 items-center gap-3 truncate">
-                    <Initial name={d.name} size={30} />
+                    <Initial name={d.name} size={30} id={d.linkedId || d.seenId} />
                     <span className="font-bold">{d.name}</span>{' '}
                     <span className="text-xs text-text-secondary">· {d.bills.length} tagihan · {d.linkedId ? 'ke-link' : 'belum ke-link'}</span>
                   </span>

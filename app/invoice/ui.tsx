@@ -16,7 +16,19 @@ details[open] .inv-chevron { transform: rotate(90deg); }
 
 const AVATAR_COLORS = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#14b8a6', '#ef4444', '#eab308'];
 
-export function Initial({ name, size = 36 }: { name: string; size?: number }) {
+export function Initial({ name, size = 36, id }: { name: string; size?: number; id?: string | null }) {
+  if (id) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/invoice/avatar/${id}`}
+        alt={name}
+        loading="lazy"
+        className="shrink-0 rounded-full bg-white/5 object-cover ring-1 ring-white/10"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   let h = 0;
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) >>> 0;
   const color = AVATAR_COLORS[h % AVATAR_COLORS.length];

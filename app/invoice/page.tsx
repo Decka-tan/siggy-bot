@@ -109,9 +109,12 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
             <Siggy size={28} />
             <span className="text-sm font-bold">Tagihan Siggy</span>
           </div>
-          <form action="/invoice/auth/logout" method="post">
-            <button type="submit" className="rounded-lg px-3 py-1.5 text-xs text-text-secondary ring-1 ring-white/10 hover:text-text-primary">Keluar</button>
-          </form>
+          <div className="flex items-center gap-2">
+            <Initial name={view.displayName} id={memberId} size={28} />
+            <form action="/invoice/auth/logout" method="post">
+              <button type="submit" className="rounded-lg px-3 py-1.5 text-xs text-text-secondary ring-1 ring-white/10 hover:text-text-primary">Keluar</button>
+            </form>
+          </div>
         </header>
 
         <section className="inv-card rounded-2xl p-5">
@@ -142,7 +145,7 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
             view.owedByCreator.map(group => (
               <div key={group.creatorId || group.creatorName} className="inv-card rounded-2xl p-4">
                 <div className="flex items-center gap-3">
-                  <Initial name={group.creatorName} />
+                  <Initial name={group.creatorName} id={group.creatorId} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-bold">ke {group.creatorName}</p>
                     <p className="text-xs text-text-secondary">{group.bills.length} tagihan</p>
@@ -185,7 +188,7 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
               {view.owedToMe.map(person => (
                 <details key={person.name} className="px-4 py-3">
                   <summary className="flex cursor-pointer items-center gap-3">
-                    <Initial name={person.name} size={32} />
+                    <Initial name={person.name} size={32} id={person.id} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-bold">{person.name}</span>
                       <span className="text-xs text-text-secondary">{person.bills.length} tagihan</span>

@@ -206,7 +206,7 @@ export type MemberView = {
   paidBills: MemberBill[];
   created: (InvoiceRecord & { outstanding: number; unpaidCount: number })[];
   // Who still owes the user, one entry per person (aliases merged).
-  owedToMe: { name: string; total: number; bills: { title: string; date: string; amount: number }[] }[];
+  owedToMe: { name: string; id: string | null; total: number; bills: { title: string; date: string; amount: number }[] }[];
   receivableTotal: number;
 };
 
@@ -277,7 +277,7 @@ export function buildMemberView(userId: string): MemberView {
       for (const p of unpaid) {
         const name = getCanonicalName(p.username || 'Unknown', aliases);
         const key = name.toLowerCase().trim();
-        const person = owedToMe.get(key) || { name, total: 0, bills: [] };
+        const person = owedToMe.get(key) || { name, id: paymentDb.nameLinks?.[key]?.discordId || (isSnowflake(p.userId) ? p.userId : null), total: 0, bills: [] };
         person.total += Number(p.amount) || 0;
         person.bills.push({ title: inv.title || 'Untitled', date: inv.date, amount: Number(p.amount) || 0 });
         owedToMe.set(key, person);

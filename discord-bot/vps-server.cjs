@@ -2168,6 +2168,28 @@ const server = http.createServer((req, res) => {
         res.end('DM failed');
       }
     });
+  } else if (req.url?.startsWith('/api/user-avatar/') && req.method === 'GET') {
+    // invoice.decka.my.id shows Discord profile pictures; the web has no bot
+    // token, so it asks here for the avatar hash and loads the image from the CDN.
+    if (!tokenMatches(req.headers['x-siggy-token'])) {
+      res.writeHead(401);
+      return res.end('Unauthorized');
+    }
+    const id = req.url.slice('/api/user-avatar/'.length);
+    if (!/^\d{17,20}$/.test(id)) {
+      res.writeHead(400);
+      return res.end('Bad request');
+    }
+    client.users.fetch(id)
+      .then(user => {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ avatar: user.avatar || null }));
+      })
+      .catch(e => {
+        console.error('[user-avatar] error:', e.message);
+        res.writeHead(404);
+        res.end('Not found');
+      });
   } else if (req.url === '/') {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Siggy Discord Bot is running! 🐱');
