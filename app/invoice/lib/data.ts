@@ -166,6 +166,33 @@ export function resolveDiscordIds(name: string): string[] {
   return [...ids].slice(0, 3);
 }
 
+/**
+ * Login picker: one entry per Discord id that nameLinks knows, labelled with
+ * the name used most on invoices. Only linked people can get a login DM anyway.
+ */
+export function listLoginPeople(): { id: string; name: string }[] {
+  const { db } = getInvoiceDb();
+  const paymentDb = getPaymentDb();
+  const uses = new Map<string, number>();
+  for (const inv of Object.values(db.invoices || {})) {
+    for (const p of inv.participants || []) {
+      const k = (p.username || '').toLowerCase().trim();
+      uses.set(k, (uses.get(k) || 0) + 1);
+    }
+  }
+  const best = new Map<string, { name: string; uses: number }>();
+  for (const [name, link] of Object.entries(paymentDb.nameLinks || {})) {
+    const id = (link as any)?.discordId;
+    if (!isSnowflake(id)) continue;
+    const n = uses.get(name.toLowerCase().trim()) || 0;
+    const cur = best.get(id);
+    if (!cur || n > cur.uses) best.set(id, { name, uses: n });
+  }
+  return [...best.entries()]
+    .map(([id, { name }]) => ({ id, name: name.charAt(0).toUpperCase() + name.slice(1) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export type MemberView = {
   displayName: string;
   owedByCreator: {
