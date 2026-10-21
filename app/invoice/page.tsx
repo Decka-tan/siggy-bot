@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { buildMemberView, formatCurrency, formatDate, listLoginPeople, resolveDiscordIds } from './lib/data';
-import { getMemberId, makeLoginToken, publicBase } from './lib/session';
+import { getMemberId, makeLoginToken, oauthConfig, publicBase } from './lib/session';
 import { AccountBox, Chevron, Initial, MonthBars, PAGE_CSS, SectionTitle, Siggy, StatTile, StatusPill } from './ui';
 
 export const dynamic = 'force-dynamic';
@@ -57,8 +57,10 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
       dm: ['err', 'Aku gak bisa PM kamu. Kamu harus satu server sama Siggy, dan DM dari member server harus kebuka.'],
       wait: ['err', 'Link baru aja dikirim. Tunggu semenit sebelum minta lagi.'],
       unknown: ['err', 'Nama itu belum ke-link ke akun Discord. Minta pembuat invoice nge-link nama kamu.'],
+      oauth: ['err', 'Login Discord gagal atau dibatalin. Coba lagi.'],
     } as Record<string, [string, string]>;
     const shown = searchParams.sent ? notice.sent : notice[searchParams.error || ''];
+    const discordLogin = !!oauthConfig();
     return (
       <div className="inv-bg min-h-screen text-text-primary">
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
@@ -77,13 +79,37 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
               </div>
             </div>
             <p className="mt-4 text-sm leading-relaxed text-text-secondary">
-              Liat utang, piutang, dan rekening tujuan transfer dari semua invoice Siggy. Pilih nama kamu, nanti aku PM link login ke Discord.
+              Liat utang, piutang, dan rekening tujuan transfer dari semua invoice Siggy.{' '}
+              {discordLogin ? 'Masuk pakai akun Discord kamu, satu klik.' : 'Pilih nama kamu, nanti aku PM link login ke Discord.'}
             </p>
             {shown && (
               <p className={`mt-5 rounded-xl border px-4 py-3 text-sm ${shown[0] === 'ok' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-red-500/30 bg-red-500/10 text-red-300'}`}>
                 {shown[1]}
               </p>
             )}
+            {discordLogin && (
+              <a href="/invoice/auth/discord" className="mt-6 flex w-full items-center justify-center gap-2.5 rounded-xl bg-[#5865F2] py-3.5 text-sm font-black text-white shadow-lg shadow-[#5865F2]/30 transition hover:brightness-110 active:scale-[0.99]">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                Masuk pakai Discord
+              </a>
+            )}
+            {discordLogin ? (
+              <details className="mt-4 rounded-xl bg-white/[0.03] px-4 py-3 text-xs text-text-secondary">
+                <summary className="flex cursor-pointer items-center gap-2 hover:text-text-primary"><Chevron /> Atau minta link login lewat PM Siggy</summary>
+                <div className="mt-1">
+            <form action={requestLinkAction} className="mt-3 space-y-3">
+              <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">Nama kamu</label>
+              <select name="id" required defaultValue="" className="w-full appearance-none rounded-xl border border-white/10 bg-[#101015] bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23999%22 stroke-width=%222%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:16px] bg-[right_14px_center] bg-no-repeat px-4 py-3.5 text-sm outline-none transition focus:border-accent/60 focus:ring-4 focus:ring-accent/10">
+                <option value="" disabled>Pilih nama…</option>
+                {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+              <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-accent py-3.5 text-sm font-black text-black shadow-lg shadow-accent/20 transition hover:brightness-110 active:scale-[0.99]">
+                Kirim link login ke DM →
+              </button>
+            </form>
+                </div>
+              </details>
+            ) : (
             <form action={requestLinkAction} className="mt-6 space-y-3">
               <label className="block text-xs font-bold uppercase tracking-wider text-text-secondary">Nama kamu</label>
               <select name="id" required defaultValue="" className="w-full appearance-none rounded-xl border border-white/10 bg-[#101015] bg-[url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23999%22 stroke-width=%222%22><path d=%22m6 9 6 6 6-6%22/></svg>')] bg-[length:16px] bg-[right_14px_center] bg-no-repeat px-4 py-3.5 text-sm outline-none transition focus:border-accent/60 focus:ring-4 focus:ring-accent/10">
@@ -94,14 +120,15 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
                 Kirim link login ke DM →
               </button>
             </form>
-            <details className="mt-5 rounded-xl bg-white/[0.03] px-4 py-3 text-xs text-text-secondary">
+            )}
+            <details className={`${discordLogin ? 'mt-2' : 'mt-5'} rounded-xl bg-white/[0.03] px-4 py-3 text-xs text-text-secondary`}>
               <summary className="flex cursor-pointer items-center gap-2 hover:text-text-primary"><Chevron /> Nama kamu gak ada di daftar?</summary>
               <form action={requestLinkAction} className="mt-3 flex gap-2">
                 <input name="name" required maxLength={64} placeholder="Username Discord / nama di invoice" className="min-w-0 flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-accent/50" />
                 <button type="submit" className="rounded-lg bg-white/10 px-3 text-sm font-bold hover:bg-white/15">Kirim</button>
               </form>
             </details>
-            <p className="mt-6 text-center text-[11px] text-text-secondary/70">Link berlaku 10 menit · cuma bisa dibuka pemilik akun Discord-nya</p>
+            <p className="mt-6 text-center text-[11px] text-text-secondary/70">{discordLogin ? 'Login nempel 30 hari di device ini' : 'Link berlaku 10 menit · cuma bisa dibuka pemilik akun Discord-nya'}</p>
           </div>
         </div>
       </div>

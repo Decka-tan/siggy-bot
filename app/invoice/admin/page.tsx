@@ -329,6 +329,9 @@ function buildAdminData(filters: Filters) {
     creators,
     listed,
     labelOf,
+    // Discord id for a participant row: saved on the row, else from nameLinks.
+    pidOf: (p: { userId?: string; username: string }) =>
+      isSnowflake(p.userId) ? p.userId : paymentDb.nameLinks?.[getCanonicalName(p.username || '', aliases).toLowerCase().trim()]?.discordId || null,
     outstandingOf,
     billed,
     outstanding,
@@ -438,17 +441,41 @@ export default async function InvoiceAdminPage({
       </header>
 
       <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
-        <section className="inv-rise grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <div className="inv-hero inv-grain col-span-2 overflow-hidden rounded-2xl p-5 lg:col-span-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-text-secondary">Belum dibayar</p>
-            <p className="mt-1 text-3xl font-black tracking-tight text-amber-400 sm:text-4xl">{formatCurrency(data.outstanding)}</p>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
-              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300" style={{ width: `${data.paidRate}%` }} />
+        <section className="inv-hero inv-grain inv-rise relative overflow-hidden rounded-3xl p-6 sm:p-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/siggy-transparent.png" alt="" className="inv-float pointer-events-none absolute -bottom-28 -right-6 h-[340px] w-auto opacity-25 sm:right-4 sm:h-[420px] sm:opacity-100 md:-bottom-32 md:h-[460px]" />
+          <div className="relative max-w-2xl">
+            <div className="flex items-center gap-3">
+              <Siggy mood={data.outstanding > 1000000 ? 'shock' : 'default'} size={44} />
+              <p className="rounded-2xl rounded-bl-sm bg-white/10 px-3 py-2 text-sm backdrop-blur">
+                {data.debtors.length} orang masih utang{data.debtors[0] ? <>, paling gede <b>{data.debtors[0].name}</b> {formatCurrency(data.debtors[0].total)}</> : ''}.
+              </p>
             </div>
-            <p className="mt-2 text-xs text-text-secondary"><b className="text-emerald-300">{data.paidRate}%</b> baris tagihan udah lunas · {data.debtors.length} orang masih utang</p>
+            <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-text-secondary">Belum dibayar</p>
+            <p className="mt-1 text-4xl font-black tracking-tight text-amber-400 sm:text-5xl">{formatCurrency(data.outstanding)}</p>
+            <div className="mt-5 flex max-w-md items-center gap-3">
+              <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300" style={{ width: `${data.paidRate}%` }} />
+              </div>
+              <span className="text-sm font-bold text-emerald-300">{data.paidRate}% lunas</span>
+            </div>
+            <div className="mt-5 flex items-center gap-3">
+              <div className="flex -space-x-2">
+                {data.debtors.slice(0, 6).map(d => (
+                  <span key={d.name} className="rounded-full ring-2 ring-[#15131c]"><Initial name={d.name} id={d.linkedId || d.seenId} size={32} /></span>
+                ))}
+              </div>
+              {data.debtors.length > 6 && <span className="text-xs text-text-secondary">+{data.debtors.length - 6} lainnya</span>}
+              <Link href={href({ tab: 'debtors', limit: null })} className="ml-1 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold backdrop-blur hover:bg-white/15">Liat penghutang →</Link>
+            </div>
           </div>
+        </section>
+
+        <section className="inv-rise inv-rise-2 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile label="Total ditagih" value={formatCurrency(data.billed)} hint={`${data.invoiceCount} invoice`} />
+          <StatTile label="Bulan ini" value={formatCurrency(data.months[data.months.length - 1]?.amount || 0)} hint={`${data.months[data.months.length - 1]?.count || 0} invoice`} tone="amber" />
           <StatTile label="Ke-link" value={`${linkedCount}/${data.debtors.length}`} hint="penghutang bisa /bayar" tone="violet" />
+          <StatTile label="Rekening" value={`${data.payments.length} orang`} hint="tujuan transfer terdaftar" tone="emerald" />
         </section>
 
         {data.guilds.length > 1 && (
@@ -502,6 +529,7 @@ export default async function InvoiceAdminPage({
                             title={p.paid ? 'Klik buat tandai belum bayar' : 'Klik buat tandai lunas'}
                             className={`group flex items-center gap-1.5 rounded-lg py-1 pl-1.5 pr-2 text-xs ring-1 transition ${p.paid ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/20 hover:bg-emerald-500/20' : 'bg-amber-500/10 text-amber-200 ring-amber-500/25 hover:bg-amber-500/20'}`}
                           >
+                            <Initial name={p.username || '?'} id={data.pidOf(p)} size={20} />
                             <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${p.paid ? 'bg-emerald-400 text-black' : 'ring-1 ring-amber-400/60 group-hover:bg-amber-400/30'}`}>{p.paid ? '✓' : ''}</span>
                             <span className="font-bold">{p.username}</span>
                             <span className="font-mono opacity-80">{formatCurrency(p.amount).replace('Rp ', '')}</span>

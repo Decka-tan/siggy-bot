@@ -49,6 +49,17 @@ export const readLoginToken = (t: string | undefined) => open('link', t);
 export const makeSessionValue = (id: string) => seal('session', id, SESSION_SECONDS);
 export const sessionMaxAge = SESSION_SECONDS;
 
+// "Login with Discord". Off until DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET
+// are set; the redirect URI is fixed here, never taken from the request.
+export function oauthConfig() {
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  const clientSecret = process.env.DISCORD_CLIENT_SECRET;
+  if (!clientId || !clientSecret || !process.env.SIGGY_SESSION_SECRET) return null;
+  return { clientId, clientSecret, redirectUri: `${publicBase()}/invoice/auth/callback` };
+}
+
+export const STATE_COOKIE = 'siggy_oauth_state';
+
 export function getMemberId() {
   return open('session', cookies().get(MEMBER_COOKIE)?.value);
 }
