@@ -51,7 +51,7 @@ export function Header() {
   };
 
   // Standalone pages render without the global header
-  if (pathname?.startsWith('/stats') || pathname?.startsWith('/ploplo')) return null;
+  if (pathname?.startsWith('/stats') || pathname?.startsWith('/ploplo') || pathname?.startsWith('/invoice')) return null;
 
   const toggleVNMode = () => {
     playHeavyClick();

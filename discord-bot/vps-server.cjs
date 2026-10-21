@@ -2038,6 +2038,7 @@ function tokenMatches(supplied) {
 }
 
 const MAX_BODY_BYTES = 16 * 1024;
+const loginLinkSentAt = new Map(); // discordId -> ms, rate limit for /api/send-login-link
 
 const server = http.createServer((req, res) => {
   if (req.url === '/health') {
@@ -2108,6 +2109,63 @@ const server = http.createServer((req, res) => {
         console.error('[refresh-invoice] error:', e.message);
         res.writeHead(500);
         res.end('Internal error');
+      }
+    });
+  } else if (req.url === '/api/send-login-link' && req.method === 'POST') {
+    // invoice.decka.my.id member login: the web signs a short-lived link and
+    // Siggy DMs it, so owning the Discord account is the proof of identity.
+    if (!INTERNAL_API_TOKEN) {
+      res.writeHead(503);
+      return res.end('Endpoint disabled: INTERNAL_API_TOKEN is not configured');
+    }
+    if (!tokenMatches(req.headers['x-siggy-token'])) {
+      res.writeHead(401);
+      return res.end('Unauthorized');
+    }
+
+    let body = '';
+    let aborted = false;
+    req.on('data', chunk => {
+      if (aborted) return;
+      body += chunk.toString();
+      if (body.length > MAX_BODY_BYTES) {
+        aborted = true;
+        res.writeHead(413);
+        res.end('Payload too large');
+        req.destroy();
+      }
+    });
+    req.on('end', async () => {
+      if (aborted) return;
+      try {
+        const { discordId, url } = JSON.parse(body);
+        // Only ever DM a login link to our own site, so a leaked token can't
+        // turn Siggy into a phishing sender.
+        const base = (process.env.INVOICE_PUBLIC_URL || 'https://invoice.decka.my.id').replace(/\/+$/, '');
+        if (!/^\d{17,20}$/.test(String(discordId)) || typeof url !== 'string' || !url.startsWith(`${base}/invoice/auth/verify?t=`)) {
+          res.writeHead(400);
+          return res.end('Bad request');
+        }
+        // Anyone can type a name on the site; cap how often one person gets pinged.
+        const last = loginLinkSentAt.get(discordId) || 0;
+        if (Date.now() - last < 60_000) {
+          res.writeHead(429);
+          return res.end('Too many requests');
+        }
+        loginLinkSentAt.set(discordId, Date.now());
+
+        const user = await client.users.fetch(discordId);
+        await user.send(
+          `🔐 Link login tagihan kamu di invoice.decka.my.id (berlaku 10 menit):\n${url}\n\n` +
+          `_Gak ngerasa minta? Abaikan aja, gak ada yang bisa masuk tanpa link ini._`
+        );
+        res.writeHead(200);
+        res.end('ok');
+      } catch (e) {
+        // Most often the user has DMs from server members turned off.
+        console.error('[send-login-link] error:', e.message);
+        res.writeHead(502);
+        res.end('DM failed');
       }
     });
   } else if (req.url === '/') {

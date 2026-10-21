@@ -38,7 +38,7 @@ docker run -d \
   --label traefik.http.routers.siggyweb.tls.certresolver=letsencrypt \
   --label traefik.http.routers.siggyweb.middlewares=siggyweb-root \
   --label 'traefik.http.middlewares.siggyweb-root.redirectregex.regex=^https?://[^/]+/?$' \
-  --label "traefik.http.middlewares.siggyweb-root.redirectregex.replacement=https://$DOMAIN/invoice/dashboard" \
+  --label "traefik.http.middlewares.siggyweb-root.redirectregex.replacement=https://$DOMAIN/invoice" \
   --label traefik.http.services.siggyweb.loadbalancer.server.port=3000 \
   --label "traefik.http.routers.siggyweb-http.rule=Host(\`$DOMAIN\`)" \
   --label traefik.http.routers.siggyweb-http.entrypoints=http \
