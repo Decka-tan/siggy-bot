@@ -135,6 +135,7 @@ export type MemberBill = {
   paid: boolean;
   creatorId?: string;
   creatorName: string;
+  at: number; // invoice createdAt, ms
 };
 
 /**
@@ -208,6 +209,11 @@ export type MemberView = {
   // Who still owes the user, one entry per person (aliases merged).
   owedToMe: { name: string; id: string | null; total: number; bills: { title: string; date: string; amount: number }[] }[];
   receivableTotal: number;
+  // Every bill that was the user's, paid or not, newest first.
+  history: MemberBill[];
+  // The user's share per month, last 6 months with any bills.
+  monthly: { key: string; label: string; amount: number; count: number }[];
+  lifetime: { billed: number; paid: number; count: number; avg: number; creators: number };
 };
 
 /**
@@ -244,6 +250,7 @@ export function buildMemberView(userId: string): MemberView {
   const paidBills: MemberBill[] = [];
   const created: MemberView['created'] = [];
   const owedToMe = new Map<string, MemberView['owedToMe'][number]>();
+  const history: MemberBill[] = [];
 
   for (const inv of invoices) {
     (inv.participants || []).forEach((p, idx) => {
@@ -260,7 +267,9 @@ export function buildMemberView(userId: string): MemberView {
         paid: !!p.paid,
         creatorId: inv.creator?.id,
         creatorName: inv.creator?.username || 'Unknown',
+        at: inv.createdAt || 0,
       };
+      history.push(bill);
       if (bill.paid) {
         paidBills.push(bill);
         return;
@@ -301,8 +310,30 @@ export function buildMemberView(userId: string): MemberView {
     }))
     .sort((a, b) => b.total - a.total);
 
+  for (const b of history) b.creatorName = (b.creatorId && knownName.get(b.creatorId)) || b.creatorName;
+  const months = new Map<string, MemberView['monthly'][number]>();
+  for (const b of history) {
+    const d = new Date(b.at);
+    if (!b.at || Number.isNaN(d.getTime())) continue;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const m = months.get(key) || { key, label: d.toLocaleDateString('id-ID', { month: 'short' }), amount: 0, count: 0 };
+    m.amount += b.amount;
+    m.count += 1;
+    months.set(key, m);
+  }
+  const billed = history.reduce((s, b) => s + b.amount, 0);
+
   return {
     displayName,
+    history,
+    monthly: [...months.values()].sort((a, b) => a.key.localeCompare(b.key)).slice(-6),
+    lifetime: {
+      billed,
+      paid: history.filter(b => b.paid).reduce((s, b) => s + b.amount, 0),
+      count: history.length,
+      avg: history.length ? Math.round(billed / history.length) : 0,
+      creators: new Set(history.map(b => b.creatorId || b.creatorName)).size,
+    },
     owedByCreator,
     owedTotal: owedByCreator.reduce((s, g) => s + g.total, 0),
     paidBills,

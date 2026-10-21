@@ -14,9 +14,9 @@ export function CopyButton({ value }: { value: string }) {
           setTimeout(() => setCopied(false), 1500);
         } catch {}
       }}
-      className={`shrink-0 rounded-md px-2.5 py-1 text-xs font-bold transition-colors ${copied ? 'bg-emerald-500/20 text-emerald-300' : 'bg-accent/15 text-accent hover:bg-accent/25'}`}
+      className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold backdrop-blur transition ${copied ? 'bg-emerald-400 text-black' : 'bg-white/20 text-white hover:bg-white/30'}`}
     >
-      {copied ? 'Disalin' : 'Salin'}
+      {copied ? '✓ Disalin' : 'Salin'}
     </button>
   );
 }

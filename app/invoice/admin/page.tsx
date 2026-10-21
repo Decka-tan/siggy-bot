@@ -19,8 +19,10 @@ import {
   getPaymentDb,
   getPaymentDbPath,
   isSnowflake,
+  listLoginPeople,
 } from '../lib/data';
-import { Initial, PAGE_CSS, Siggy } from '../ui';
+import { AccountBox, Chevron, Initial, MonthBars, PAGE_CSS, SectionTitle, Siggy, StatTile } from '../ui';
+import { Toolbar } from './Toolbar';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Siggy Admin' };
@@ -240,7 +242,17 @@ function buildAdminData(filters: Filters) {
   const all = Object.values(db.invoices || {}).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const guilds = [...new Set(all.map(inv => inv.guildId).filter(Boolean))];
   const invoices = filters.guild ? all.filter(inv => inv.guildId === filters.guild) : all;
-  const creators = [...new Set(invoices.map(inv => inv.creator?.username || 'Unknown'))].sort();
+  // Creators are stored by Discord username; label them by the name people use.
+  const knownName = new Map(listLoginPeople().map(p => [p.id, p.name]));
+  const labelOf = (inv: InvoiceRecord) => (inv.creator?.id && knownName.get(inv.creator.id)) || inv.creator?.username || 'Unknown';
+  const creatorMap = new Map<string, { value: string; label: string; id: string | null; count: number }>();
+  for (const inv of invoices) {
+    const value = (inv.creator?.username || 'Unknown').toLowerCase();
+    const c = creatorMap.get(value) || { value, label: labelOf(inv), id: isSnowflake(inv.creator?.id) ? inv.creator.id : null, count: 0 };
+    c.count += 1;
+    creatorMap.set(value, c);
+  }
+  const creators = [...creatorMap.values()].sort((a, b) => b.count - a.count);
 
   const outstandingOf = (inv: InvoiceRecord) =>
     (inv.participants || []).filter(p => !p.paid).reduce((s, p) => s + (Number(p.amount) || 0), 0);
@@ -248,7 +260,8 @@ function buildAdminData(filters: Filters) {
   const listed = invoices.filter(inv => {
     if (filters.q) {
       const q = filters.q.toLowerCase();
-      if (!(inv.title || '').toLowerCase().includes(q) && !(inv.participants || []).some(p => (p.username || '').toLowerCase().includes(q))) return false;
+      const hay = [inv.title, labelOf(inv), inv.creator?.username, ...(inv.participants || []).map(p => p.username)].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
     }
     if (filters.creator && (inv.creator?.username || '').toLowerCase() !== filters.creator.toLowerCase()) return false;
     if (filters.status === 'unpaid' && outstandingOf(inv) === 0) return false;
@@ -257,21 +270,21 @@ function buildAdminData(filters: Filters) {
   });
 
   const debtors = new Map<string, Debtor>();
-  const months = new Map<string, { label: string; amount: number; count: number }>();
-  const byCreator = new Map<string, { name: string; billed: number; outstanding: number; count: number }>();
+  const months = new Map<string, { key: string; label: string; amount: number; count: number }>();
+  const byCreator = new Map<string, { name: string; id: string | null; billed: number; outstanding: number; count: number }>();
   let billed = 0;
   let outstanding = 0;
   let rows = 0;
   let paidRows = 0;
 
   for (const inv of invoices) {
-    const creator = inv.creator?.username || 'Unknown';
+    const creator = labelOf(inv);
     const total = Number(inv.totalAmount || 0);
     const open = outstandingOf(inv);
     billed += total;
     outstanding += open;
 
-    const c = byCreator.get(creator) || { name: creator, billed: 0, outstanding: 0, count: 0 };
+    const c = byCreator.get(creator) || { name: creator, id: isSnowflake(inv.creator?.id) ? inv.creator.id : null, billed: 0, outstanding: 0, count: 0 };
     c.billed += total;
     c.outstanding += open;
     c.count += 1;
@@ -280,7 +293,7 @@ function buildAdminData(filters: Filters) {
     const d = new Date(inv.date || inv.createdAt);
     if (!Number.isNaN(d.getTime())) {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      const m = months.get(key) || { label: d.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }), amount: 0, count: 0 };
+      const m = months.get(key) || { key, label: d.toLocaleDateString('id-ID', { month: 'short' }), amount: 0, count: 0 };
       m.amount += total;
       m.count += 1;
       months.set(key, m);
@@ -315,12 +328,15 @@ function buildAdminData(filters: Filters) {
     guilds,
     creators,
     listed,
+    labelOf,
     outstandingOf,
     billed,
     outstanding,
     paidRate: rows ? Math.round((paidRows / rows) * 100) : 0,
     invoiceCount: invoices.length,
-    debtors: [...debtors.values()].sort((a, b) => b.total - a.total),
+    debtors: [...debtors.values()]
+      .map(d => ({ ...d, name: d.name.charAt(0).toUpperCase() + d.name.slice(1) }))
+      .sort((a, b) => b.total - a.total),
     months: [...months.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-6).map(([, v]) => v),
     byCreator: [...byCreator.values()].sort((a, b) => b.billed - a.billed),
     payments: Object.entries(paymentDb.payments || {}) as [string, any][],
@@ -329,13 +345,21 @@ function buildAdminData(filters: Filters) {
 
 // --- UI ---
 const card = 'inv-card rounded-2xl';
-const input = 'rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-accent/50';
+const input = 'rounded-xl border border-white/10 bg-black/40 px-3.5 py-2.5 text-sm outline-none transition focus:border-accent/60 focus:ring-4 focus:ring-accent/10';
 const TABS = [
-  { key: 'invoices', label: 'Tagihan' },
-  { key: 'debtors', label: 'Penghutang' },
-  { key: 'payments', label: 'Rekening' },
-  { key: 'stats', label: 'Statistik' },
+  { key: 'invoices', label: 'Tagihan', icon: 'M4 4h16v16H4zM8 9h8M8 13h8M8 17h5' },
+  { key: 'debtors', label: 'Penghutang', icon: 'M16 19v-1a4 4 0 0 0-8 0v1M12 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6z' },
+  { key: 'payments', label: 'Rekening', icon: 'M3 7h18v10H3zM3 11h18M7 15h3' },
+  { key: 'stats', label: 'Statistik', icon: 'M5 20V10M12 20V4M19 20v-7' },
 ] as const;
+
+function Icon({ d, className = 'h-4 w-4' }: { d: string; className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
+  );
+}
 
 export default async function InvoiceAdminPage({
   searchParams,
@@ -346,12 +370,18 @@ export default async function InvoiceAdminPage({
     return (
       <div className="inv-bg flex min-h-screen items-center justify-center px-4 text-text-primary">
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
-        <form action={loginAction} className="inv-card w-full max-w-xs space-y-3 rounded-2xl p-6">
-          <div className="flex flex-col items-center gap-3 pb-2"><Siggy mood="shy" size={64} /><h1 className="text-xl font-bold">Siggy Admin</h1></div>
-          {searchParams.error && <p className="text-xs text-red-400">Username atau password salah.</p>}
+        <form action={loginAction} className="inv-card inv-rise w-full max-w-sm space-y-3 rounded-3xl p-7 shadow-2xl shadow-black/60">
+          <div className="flex flex-col items-center gap-3 pb-3 text-center">
+            <Siggy mood="shy" size={72} />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">Siggy Ledger</p>
+              <h1 className="text-2xl font-black tracking-tight">Admin</h1>
+            </div>
+          </div>
+          {searchParams.error && <p className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">Username atau password salah.</p>}
           <input name="user" placeholder="Username" required className={`${input} w-full`} />
           <input name="pass" type="password" placeholder="Password" required className={`${input} w-full`} />
-          <button type="submit" className="w-full rounded-lg bg-accent py-2.5 text-sm font-bold text-black">Masuk</button>
+          <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-accent py-3 text-sm font-black text-black shadow-lg shadow-accent/20 transition hover:brightness-110">Masuk</button>
         </form>
       </div>
     );
@@ -366,6 +396,9 @@ export default async function InvoiceAdminPage({
   };
   const limit = Math.max(30, Number(searchParams.limit) || 30);
   const data = buildAdminData(filters);
+  const maxDebt = Math.max(...data.debtors.map(d => d.total), 1);
+  const maxCreator = Math.max(...data.byCreator.map(c => c.billed), 1);
+  const linkedCount = data.debtors.filter(d => d.linkedId).length;
 
   const href = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams();
@@ -375,209 +408,242 @@ export default async function InvoiceAdminPage({
   };
 
   return (
-    <div className="inv-bg min-h-screen px-4 py-6 text-text-primary">
+    <div className="inv-bg min-h-screen text-text-primary">
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
-      <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2"><Siggy size={32} /><h1 className="text-lg font-bold">Siggy Admin</h1></div>
-          <nav className="flex gap-1 text-sm">
+      <header className="sticky top-0 z-20 border-b border-white/5 bg-[#07070a]/75 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-2.5">
+          <div className="flex items-center gap-2.5">
+            <Siggy size={30} />
+            <span className="hidden text-sm font-black tracking-tight sm:inline">Siggy <span className="text-accent">Admin</span></span>
+          </div>
+          <nav className="flex flex-1 justify-center gap-1 overflow-x-auto">
             {TABS.map(t => (
-              <Link key={t.key} href={href({ tab: t.key, limit: null })} className={`rounded-lg px-3 py-1.5 ${tab === t.key ? 'bg-accent/15 font-bold text-accent' : 'text-text-secondary hover:text-text-primary'}`}>
-                {t.label}
+              <Link
+                key={t.key}
+                href={href({ tab: t.key, limit: null })}
+                className={`flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-bold transition ${tab === t.key ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:bg-white/5 hover:text-text-primary'}`}
+              >
+                <Icon d={t.icon} />
+                <span className="hidden sm:inline">{t.label}</span>
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-3 text-xs">
-            <Link href="/invoice" className="text-text-secondary hover:text-text-primary">Halaman member</Link>
+          <div className="flex items-center gap-2 text-xs">
+            <Link href="/invoice" className="hidden rounded-lg px-2.5 py-1.5 text-text-secondary ring-1 ring-white/10 hover:text-text-primary md:inline">Halaman member</Link>
             <form action={logoutAction}>
-              <button type="submit" className="text-text-secondary hover:text-text-primary">Keluar</button>
+              <button type="submit" className="rounded-lg px-2.5 py-1.5 text-text-secondary ring-1 ring-white/10 hover:text-text-primary">Keluar</button>
             </form>
           </div>
-        </header>
-
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[
-            ['Total ditagih', formatCurrency(data.billed), ''],
-            ['Belum dibayar', formatCurrency(data.outstanding), 'text-amber-400'],
-            ['Baris lunas', `${data.paidRate}%`, 'text-emerald-400'],
-            ['Invoice', String(data.invoiceCount), ''],
-          ].map(([label, value, color]) => (
-            <div key={label} className={`${card} p-4`}>
-              <p className="text-xs text-text-secondary">{label}</p>
-              <p className={`mt-1 text-lg font-bold ${color}`}>{value}</p>
-            </div>
-          ))}
         </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl space-y-6 px-4 py-6">
+        <section className="inv-rise grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="inv-hero inv-grain col-span-2 overflow-hidden rounded-2xl p-5 lg:col-span-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-text-secondary">Belum dibayar</p>
+            <p className="mt-1 text-3xl font-black tracking-tight text-amber-400 sm:text-4xl">{formatCurrency(data.outstanding)}</p>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-300" style={{ width: `${data.paidRate}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-text-secondary"><b className="text-emerald-300">{data.paidRate}%</b> baris tagihan udah lunas · {data.debtors.length} orang masih utang</p>
+          </div>
+          <StatTile label="Total ditagih" value={formatCurrency(data.billed)} hint={`${data.invoiceCount} invoice`} />
+          <StatTile label="Ke-link" value={`${linkedCount}/${data.debtors.length}`} hint="penghutang bisa /bayar" tone="violet" />
+        </section>
 
         {data.guilds.length > 1 && (
           <div className="flex flex-wrap gap-2 text-xs">
-            <Link href={href({ guild: null, limit: null })} className={`rounded-lg px-3 py-1 ${!filters.guild ? 'bg-accent/15 text-accent' : 'bg-white/5'}`}>Semua server</Link>
+            <Link href={href({ guild: null, limit: null })} className={`rounded-full px-3 py-1.5 font-bold ring-1 ${!filters.guild ? 'bg-white text-black ring-white' : 'text-text-secondary ring-white/10'}`}>Semua server</Link>
             {data.guilds.map(g => (
-              <Link key={g} href={href({ guild: g, limit: null })} className={`rounded-lg px-3 py-1 font-mono ${filters.guild === g ? 'bg-accent/15 text-accent' : 'bg-white/5'}`}>{g.slice(0, 8)}</Link>
+              <Link key={g} href={href({ guild: g, limit: null })} className={`rounded-full px-3 py-1.5 font-mono ring-1 ${filters.guild === g ? 'bg-accent/15 text-accent ring-accent/50' : 'text-text-secondary ring-white/10'}`}>{g.slice(0, 8)}</Link>
             ))}
           </div>
         )}
 
         {tab === 'invoices' && (
           <section className="space-y-3">
-            <form method="get" className="flex flex-wrap gap-2">
-              {filters.guild && <input type="hidden" name="guild" value={filters.guild} />}
-              <input name="q" defaultValue={filters.q} placeholder="Cari judul / nama" className={`${input} min-w-0 flex-1`} />
-              <select name="creator" defaultValue={filters.creator || ''} className={input}>
-                <option value="">Semua pembuat</option>
-                {data.creators.map(c => <option key={c} value={c.toLowerCase()}>{c}</option>)}
-              </select>
-              <select name="status" defaultValue={filters.status || ''} className={input}>
-                <option value="">Semua status</option>
-                <option value="unpaid">Masih ada utang</option>
-                <option value="paid">Lunas</option>
-              </select>
-              <button type="submit" className="rounded-lg bg-accent px-4 text-sm font-bold text-black">Cari</button>
-            </form>
-            <p className="text-xs text-text-secondary">{data.listed.length} invoice. Klik nama buat ganti lunas / belum.</p>
-            {data.listed.slice(0, limit).map(inv => {
-              const open = data.outstandingOf(inv);
-              return (
-                <div key={inv.id} className={`${card} p-4`}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="min-w-0 truncate font-bold">
-                      {inv.title || 'Untitled'}{' '}
-                      <span className="text-xs font-normal text-text-secondary">· {inv.creator?.username} · {formatDate(inv.date)}</span>
-                    </p>
-                    <p className={`shrink-0 font-mono text-sm font-bold ${open ? 'text-amber-400' : 'text-emerald-400'}`}>
-                      {open ? `${formatCurrency(open)} / ${formatCurrency(inv.totalAmount)}` : `Lunas ${formatCurrency(inv.totalAmount)}`}
-                    </p>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
-                    {(inv.participants || []).map((p, i) => (
-                      <form key={i} action={markPaidAction}>
-                        <input type="hidden" name="invoiceId" value={inv.id} />
-                        <input type="hidden" name="index" value={i} />
-                        <input type="hidden" name="paid" value={p.paid ? '0' : '1'} />
-                        <button
-                          type="submit"
-                          title={p.paid ? 'Tandai belum bayar' : 'Tandai lunas'}
-                          className={`rounded px-2 py-0.5 text-xs ${p.paid ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'}`}
-                        >
-                          {p.paid ? '✓ ' : ''}{p.username} {formatCurrency(p.amount)}
-                        </button>
-                      </form>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+            <Toolbar creators={data.creators} total={data.invoiceCount} shown={data.listed.length} />
+            {data.listed.length === 0 && (
+              <div className={`${card} flex flex-col items-center gap-3 p-10 text-center`}>
+                <Siggy mood="sad" size={64} />
+                <p className="text-sm text-text-secondary">Gak ada invoice yang cocok sama filter ini.</p>
+              </div>
+            )}
+            <div className="grid gap-3 lg:grid-cols-2">
+              {data.listed.slice(0, limit).map(inv => {
+                const open = data.outstandingOf(inv);
+                const total = Number(inv.totalAmount) || 0;
+                const pct = total ? Math.round(((total - open) / total) * 100) : 100;
+                const parts = inv.participants || [];
+                return (
+                  <article key={inv.id} className={`${card} flex flex-col p-4 transition hover:border-white/15`}>
+                    <div className="flex items-start gap-3">
+                      <Initial name={data.labelOf(inv)} id={inv.creator?.id} size={36} />
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 font-bold leading-snug">{inv.title || 'Untitled'}</p>
+                        <p className="mt-0.5 text-xs text-text-secondary">{data.labelOf(inv)} · {formatDate(inv.date)} · {parts.length} orang</p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className={`font-black ${open ? 'text-amber-400' : 'text-emerald-400'}`}>{open ? formatCurrency(open) : 'Lunas'}</p>
+                        <p className="text-[11px] text-text-secondary">dari {formatCurrency(total)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 h-1 overflow-hidden rounded-full bg-white/5">
+                      <div className={`h-full rounded-full ${open ? 'bg-gradient-to-r from-emerald-500 to-amber-400' : 'bg-emerald-400'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {parts.map((p, i) => (
+                        <form key={i} action={markPaidAction}>
+                          <input type="hidden" name="invoiceId" value={inv.id} />
+                          <input type="hidden" name="index" value={i} />
+                          <input type="hidden" name="paid" value={p.paid ? '0' : '1'} />
+                          <button
+                            type="submit"
+                            title={p.paid ? 'Klik buat tandai belum bayar' : 'Klik buat tandai lunas'}
+                            className={`group flex items-center gap-1.5 rounded-lg py-1 pl-1.5 pr-2 text-xs ring-1 transition ${p.paid ? 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/20 hover:bg-emerald-500/20' : 'bg-amber-500/10 text-amber-200 ring-amber-500/25 hover:bg-amber-500/20'}`}
+                          >
+                            <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${p.paid ? 'bg-emerald-400 text-black' : 'ring-1 ring-amber-400/60 group-hover:bg-amber-400/30'}`}>{p.paid ? '✓' : ''}</span>
+                            <span className="font-bold">{p.username}</span>
+                            <span className="font-mono opacity-80">{formatCurrency(p.amount).replace('Rp ', '')}</span>
+                          </button>
+                        </form>
+                      ))}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
             {data.listed.length > limit && (
-              <Link href={href({ limit: String(limit + 30) })} className="block text-center text-sm text-accent">Tampilkan 30 lagi</Link>
+              <Link href={href({ limit: String(limit + 30) })} className="mx-auto block w-fit rounded-xl px-5 py-2.5 text-sm font-bold text-accent ring-1 ring-accent/30 hover:bg-accent/10">
+                Tampilkan 30 lagi ({data.listed.length - limit} sisa)
+              </Link>
             )}
           </section>
         )}
 
         {tab === 'debtors' && (
-          <section className="space-y-2">
-            <p className="text-xs text-text-secondary">
-              {data.debtors.length} orang. &quot;Ke-link&quot; = ada di nameLinks, jadi tagihannya muncul di /bayar dan halaman member.
-            </p>
-            {data.debtors.map(d => (
-              <details key={d.name} className={`${card} p-4`}>
-                <summary className="flex cursor-pointer items-baseline justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-3 truncate">
-                    <Initial name={d.name} size={30} id={d.linkedId || d.seenId} />
-                    <span className="font-bold">{d.name}</span>{' '}
-                    <span className="text-xs text-text-secondary">· {d.bills.length} tagihan · {d.linkedId ? 'ke-link' : 'belum ke-link'}</span>
-                  </span>
-                  <span className="shrink-0 font-mono font-bold text-amber-400">{formatCurrency(d.total)}</span>
-                </summary>
-                <div className="mt-3 space-y-3 text-sm">
-                  <p className="text-xs text-text-secondary">
-                    Bayar ke: {Object.entries(d.perCreator).map(([c, amt]) => `${c} ${formatCurrency(amt)}`).join(' · ')}
-                  </p>
-                  <ul className="divide-y divide-white/5">
-                    {d.bills.map((b, i) => (
-                      <li key={i} className="flex justify-between gap-3 py-1">
-                        <span className="truncate">{b.title} <span className="text-xs text-text-secondary">· {b.creator} · {formatDate(b.date)}</span></span>
-                        <span className="shrink-0 font-mono">{formatCurrency(b.amount)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <form action={linkUserAction} className="flex flex-wrap items-center gap-2">
-                    <input type="hidden" name="name" value={d.name} />
-                    <input name="userId" defaultValue={d.linkedId || ''} placeholder="Discord user ID" className={`${input} font-mono`} />
-                    <button type="submit" className="rounded-lg bg-white/10 px-3 py-2 text-xs font-bold">Simpan link</button>
-                    {!d.linkedId && d.seenId && <span className="text-xs text-text-secondary">ID dari invoice lama: <span className="select-all font-mono">{d.seenId}</span> (belum disimpan)</span>}
-                  </form>
-                </div>
-              </details>
-            ))}
+          <section className="space-y-3">
+            <SectionTitle aside={`${linkedCount} ke-link · ${data.debtors.length - linkedCount} belum`}>Penghutang</SectionTitle>
+            <div className={`${card} divide-y divide-white/5 overflow-hidden`}>
+              {data.debtors.map((d, i) => (
+                <details key={d.name} className="px-4 py-3 transition hover:bg-white/[0.02]">
+                  <summary className="flex cursor-pointer items-center gap-3">
+                    <span className="w-5 text-center text-xs font-bold text-text-secondary">{i + 1}</span>
+                    <Initial name={d.name} size={36} id={d.linkedId || d.seenId} />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className="truncate font-bold">{d.name}</span>
+                          {d.linkedId
+                            ? <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300">ke-link</span>
+                            : <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-300">belum ke-link</span>}
+                        </span>
+                        <span className="shrink-0 font-black text-amber-400">{formatCurrency(d.total)}</span>
+                      </span>
+                      <span className="mt-1.5 flex items-center gap-2">
+                        <span className="h-1 flex-1 overflow-hidden rounded-full bg-white/5">
+                          <span className="block h-full rounded-full bg-gradient-to-r from-amber-500 to-amber-300" style={{ width: `${(d.total / maxDebt) * 100}%` }} />
+                        </span>
+                        <span className="shrink-0 text-[11px] text-text-secondary">{d.bills.length} tagihan</span>
+                      </span>
+                    </span>
+                    <Chevron />
+                  </summary>
+                  <div className="mt-4 space-y-4 pl-[4.25rem] text-sm">
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(d.perCreator).map(([c, amt]) => (
+                        <span key={c} className="rounded-lg bg-white/5 px-2.5 py-1 text-xs">ke <b>{c}</b> <span className="font-mono text-amber-300">{formatCurrency(amt)}</span></span>
+                      ))}
+                    </div>
+                    <ul className="space-y-1">
+                      {d.bills.map((b, j) => (
+                        <li key={j} className="flex justify-between gap-3 rounded-lg bg-white/[0.03] px-3 py-1.5">
+                          <span className="min-w-0 truncate">{b.title} <span className="text-xs text-text-secondary">· {b.creator} · {formatDate(b.date)}</span></span>
+                          <span className="shrink-0 font-mono">{formatCurrency(b.amount)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <form action={linkUserAction} className="flex flex-wrap items-center gap-2 rounded-xl bg-black/30 p-3 ring-1 ring-white/5">
+                      <input type="hidden" name="name" value={d.name} />
+                      <span className="text-xs font-bold text-text-secondary">Discord ID</span>
+                      <input name="userId" defaultValue={d.linkedId || d.seenId || ''} placeholder="mis. 392321900577161219" className={`${input} min-w-0 flex-1 py-2 font-mono`} />
+                      <button type="submit" className="rounded-xl bg-accent px-4 py-2 text-xs font-black text-black hover:brightness-110">Simpan link</button>
+                      {!d.linkedId && d.seenId && <p className="w-full text-xs text-text-secondary">ID diisi dari invoice lama, belum kesimpen. Pencet Simpan link biar /bayar kebaca.</p>}
+                    </form>
+                  </div>
+                </details>
+              ))}
+            </div>
           </section>
         )}
 
         {tab === 'payments' && (
-          <section className="space-y-4">
-            <div className={`${card} divide-y divide-white/5`}>
-              {data.payments.length === 0 && <p className="p-4 text-sm text-text-secondary">Belum ada rekening.</p>}
-              {data.payments.map(([key, info]) => (
-                <div key={key} className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
-                  <div>
-                    <p className="font-bold">{key} <span className="text-xs font-normal text-text-secondary">@{info?.discordUser || '-'}</span></p>
-                    <p className="text-xs text-text-secondary">{info?.bank} <span className="select-all font-mono text-text-primary">{info?.account}</span> a/n {info?.name}</p>
+          <section className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+            <div className="space-y-3">
+              <SectionTitle aside={`${data.payments.length} rekening`}>Rekening tujuan</SectionTitle>
+              {data.payments.length === 0 && <p className={`${card} p-5 text-sm text-text-secondary`}>Belum ada rekening.</p>}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {data.payments.map(([key, info]) => (
+                  <div key={key} className="space-y-2">
+                    <AccountBox bank={info?.bank} account={info?.account} holder={info?.name} />
+                    <div className="flex items-center justify-between px-1 text-xs">
+                      <span><b className="text-text-primary">{key}</b> <span className="text-text-secondary">@{info?.discordUser || '-'}</span></span>
+                      <details className="relative">
+                        <summary className="cursor-pointer text-red-400 hover:text-red-300">Hapus</summary>
+                        <form action={deletePaymentAction} className="absolute right-0 z-10 mt-1">
+                          <input type="hidden" name="name" value={key} />
+                          <button type="submit" className="whitespace-nowrap rounded-lg bg-red-500 px-3 py-1.5 font-bold text-white shadow-lg">Yakin hapus {key}</button>
+                        </form>
+                      </details>
+                    </div>
                   </div>
-                  <details className="text-xs">
-                    <summary className="cursor-pointer text-red-400">Hapus</summary>
-                    <form action={deletePaymentAction} className="mt-2">
-                      <input type="hidden" name="name" value={key} />
-                      <button type="submit" className="rounded bg-red-500/20 px-2 py-1 text-red-300">Yakin hapus {key}</button>
-                    </form>
-                  </details>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <form action={savePaymentAction} className={`${card} grid gap-2 p-4 sm:grid-cols-2`}>
-              <p className="text-sm font-bold sm:col-span-2">Tambah / ganti rekening</p>
-              <input name="name" required placeholder="Nama di invoice (mis. sopmod)" className={input} />
-              <input name="discordUser" placeholder="Username Discord" className={input} />
-              <input name="bank" required placeholder="Bank (mis. BCA)" className={input} />
-              <input name="account" required placeholder="Nomor rekening" className={input} />
-              <input name="holder" required placeholder="Atas nama" className={`${input} sm:col-span-2`} />
-              <button type="submit" className="rounded-lg bg-accent py-2 text-sm font-bold text-black sm:col-span-2">Simpan</button>
+            <form action={savePaymentAction} className={`${card} h-fit space-y-3 p-5`}>
+              <p className="font-bold">Tambah / ganti rekening</p>
+              <p className="text-xs text-text-secondary">Nama di invoice dipakai buat nyocokin ke pembuat invoice. Nama yang udah ada bakal ketimpa.</p>
+              <input name="name" required placeholder="Nama di invoice (mis. sopmod)" className={`${input} w-full`} />
+              <input name="discordUser" placeholder="Username Discord" className={`${input} w-full`} />
+              <div className="grid grid-cols-2 gap-2">
+                <input name="bank" required placeholder="Bank (mis. BCA)" className={input} />
+                <input name="account" required placeholder="Nomor rekening" className={`${input} font-mono`} />
+              </div>
+              <input name="holder" required placeholder="Atas nama" className={`${input} w-full`} />
+              <button type="submit" className="w-full rounded-xl bg-gradient-to-r from-amber-400 to-accent py-3 text-sm font-black text-black hover:brightness-110">Simpan rekening</button>
             </form>
           </section>
         )}
 
         {tab === 'stats' && (
-          <section className="grid gap-4 md:grid-cols-2">
-            <div className={`${card} space-y-3 p-4`}>
-              <p className="text-sm font-bold">Ditagih per bulan</p>
-              {data.months.map(m => (
-                <div key={m.label} className="space-y-1">
-                  <div className="flex justify-between text-xs"><span>{m.label} · {m.count} invoice</span><span className="font-mono">{formatCurrency(m.amount)}</span></div>
-                  <div className="h-1.5 rounded-full bg-white/5">
-                    <div className="h-full rounded-full bg-accent" style={{ width: `${(m.amount / Math.max(...data.months.map(x => x.amount), 1)) * 100}%` }} />
-                  </div>
-                </div>
-              ))}
+          <section className="grid gap-6 lg:grid-cols-2">
+            <div className={`${card} p-5`}>
+              <SectionTitle aside="6 bulan terakhir">Ditagih per bulan</SectionTitle>
+              <div className="mt-5"><MonthBars months={data.months} /></div>
             </div>
-            <div className={`${card} p-4`}>
-              <p className="mb-2 text-sm font-bold">Per pembuat</p>
-              <table className="w-full text-xs">
-                <thead className="text-text-secondary">
-                  <tr><th className="py-1 text-left font-normal">Nama</th><th className="text-right font-normal">Invoice</th><th className="text-right font-normal">Ditagih</th><th className="text-right font-normal">Belum dibayar</th></tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {data.byCreator.map(c => (
-                    <tr key={c.name}>
-                      <td className="py-1.5">{c.name}</td>
-                      <td className="text-right">{c.count}</td>
-                      <td className="text-right font-mono">{formatCurrency(c.billed)}</td>
-                      <td className="text-right font-mono text-amber-400">{formatCurrency(c.outstanding)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className={`${card} p-5`}>
+              <SectionTitle aside="semua waktu">Per pembuat</SectionTitle>
+              <ul className="mt-4 space-y-3">
+                {data.byCreator.map(c => (
+                  <li key={c.name} className="flex items-center gap-3">
+                    <Initial name={c.name} id={c.id} size={34} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2 text-sm">
+                        <span className="truncate font-bold">{c.name} <span className="text-xs font-normal text-text-secondary">· {c.count} invoice</span></span>
+                        <span className="shrink-0 font-mono">{formatCurrency(c.billed)}</span>
+                      </div>
+                      <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/5">
+                        <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-accent" style={{ width: `${(c.billed / maxCreator) * 100}%` }} />
+                      </div>
+                      {c.outstanding > 0 && <p className="mt-1 text-[11px] text-amber-300">{formatCurrency(c.outstanding)} belum dibayar</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           </section>
         )}
-      </div>
+      </main>
     </div>
   );
 }
