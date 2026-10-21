@@ -606,7 +606,7 @@ export default async function InvoiceAdminPage({
         )}
 
         {tab === 'payments' && (
-          <section className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
+          <section className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
             <div className="space-y-3">
               <SectionTitle aside={`${data.payments.length} rekening`}>Rekening tujuan</SectionTitle>
               {data.payments.length === 0 && <p className={`${card} p-5 text-sm text-text-secondary`}>Belum ada rekening.</p>}

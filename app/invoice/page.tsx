@@ -64,7 +64,7 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
     return (
       <div className="inv-bg min-h-screen text-text-primary">
         <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
-        <div className="mx-auto grid min-h-screen max-w-5xl items-center gap-8 px-4 py-10 md:grid-cols-[1.1fr_1fr]">
+        <div className="mx-auto grid min-h-screen max-w-5xl items-center gap-8 px-4 py-10 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="inv-rise relative hidden md:block">
             <div className="absolute inset-x-10 bottom-0 top-16 rounded-full bg-accent/10 blur-3xl" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -210,8 +210,8 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
           <StatTile label="Ditagih sama" value={`${view.lifetime.creators} orang`} hint="sejak awal" />
         </section>
 
-        <div className="grid gap-6 lg:grid-cols-[1.25fr_1fr]">
-          <section className="inv-rise inv-rise-3 space-y-3">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
+          <section className="inv-rise inv-rise-3 min-w-0 space-y-3">
             <SectionTitle aside={view.owedByCreator.length ? `${view.owedByCreator.length} orang` : undefined}>Yang harus kamu bayar</SectionTitle>
             {view.owedByCreator.length === 0 ? (
               <div className="inv-card flex items-center gap-4 rounded-2xl p-6">
@@ -267,7 +267,7 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
             )}
           </section>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {view.monthly.length > 0 && (
               <section className="inv-rise inv-rise-3 inv-card rounded-2xl p-5">
                 <SectionTitle aside="6 bulan terakhir">Pengeluaran kamu</SectionTitle>
