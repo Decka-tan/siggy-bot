@@ -68,7 +68,6 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
   }
 
   const view = buildMemberView(memberId);
-  const openCreated = view.created.filter(inv => inv.unpaidCount > 0);
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] px-4 py-8 text-text-primary">
@@ -127,23 +126,27 @@ export default async function MemberInvoicePage({ searchParams }: { searchParams
           )}
         </section>
 
-        {openCreated.length > 0 && (
-          <section className="space-y-3">
+        {view.owedToMe.length > 0 && (
+          <section className="space-y-2">
             <h2 className="text-sm font-bold">Yang belum bayar ke kamu</h2>
-            {openCreated.map(inv => (
-              <div key={inv.id} className="rounded-xl border border-white/5 bg-white/[0.03] p-4">
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="truncate font-bold">{inv.title || 'Untitled'} <span className="text-xs font-normal text-text-secondary">· {formatDate(inv.date)}</span></p>
-                  <p className="shrink-0 font-mono font-bold text-emerald-400">{formatCurrency(inv.outstanding)}</p>
-                </div>
-                <ul className="mt-2 flex flex-wrap gap-1.5 text-xs">
-                  {inv.participants.filter(p => !p.paid).map((p, i) => (
-                    <li key={i} className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-300">
-                      {p.username} {formatCurrency(p.amount)}
+            {view.owedToMe.map(person => (
+              <details key={person.name} className="rounded-xl border border-white/5 bg-white/[0.03] p-4">
+                <summary className="flex cursor-pointer items-baseline justify-between gap-3">
+                  <span className="truncate">
+                    <span className="font-bold">{person.name}</span>{' '}
+                    <span className="text-xs text-text-secondary">· {person.bills.length} tagihan</span>
+                  </span>
+                  <span className="shrink-0 font-mono font-bold text-emerald-400">{formatCurrency(person.total)}</span>
+                </summary>
+                <ul className="mt-2 divide-y divide-white/5 text-sm">
+                  {person.bills.map((b, i) => (
+                    <li key={i} className="flex justify-between gap-3 py-1.5">
+                      <span className="truncate">{b.title} <span className="text-xs text-text-secondary">· {formatDate(b.date)}</span></span>
+                      <span className="shrink-0 font-mono">{formatCurrency(b.amount)}</span>
                     </li>
                   ))}
                 </ul>
-              </div>
+              </details>
             ))}
           </section>
         )}

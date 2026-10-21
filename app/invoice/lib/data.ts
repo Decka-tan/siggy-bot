@@ -178,6 +178,8 @@ export type MemberView = {
   owedTotal: number;
   paidBills: MemberBill[];
   created: (InvoiceRecord & { outstanding: number; unpaidCount: number })[];
+  // Who still owes the user, one entry per person (aliases merged).
+  owedToMe: { name: string; total: number; bills: { title: string; date: string; amount: number }[] }[];
   receivableTotal: number;
 };
 
@@ -214,6 +216,7 @@ export function buildMemberView(userId: string): MemberView {
   const owed = new Map<string, MemberView['owedByCreator'][number]>();
   const paidBills: MemberBill[] = [];
   const created: MemberView['created'] = [];
+  const owedToMe = new Map<string, MemberView['owedToMe'][number]>();
 
   for (const inv of invoices) {
     (inv.participants || []).forEach((p, idx) => {
@@ -244,6 +247,14 @@ export function buildMemberView(userId: string): MemberView {
 
     if (inv.creator?.id === user.id) {
       const unpaid = (inv.participants || []).filter(p => !p.paid);
+      for (const p of unpaid) {
+        const name = getCanonicalName(p.username || 'Unknown', aliases);
+        const key = name.toLowerCase().trim();
+        const person = owedToMe.get(key) || { name, total: 0, bills: [] };
+        person.total += Number(p.amount) || 0;
+        person.bills.push({ title: inv.title || 'Untitled', date: inv.date, amount: Number(p.amount) || 0 });
+        owedToMe.set(key, person);
+      }
       created.push({
         ...inv,
         outstanding: unpaid.reduce((s, p) => s + (Number(p.amount) || 0), 0),
@@ -262,6 +273,7 @@ export function buildMemberView(userId: string): MemberView {
     owedTotal: owedByCreator.reduce((s, g) => s + g.total, 0),
     paidBills,
     created,
+    owedToMe: [...owedToMe.values()].sort((a, b) => b.total - a.total),
     receivableTotal: created.reduce((s, inv) => s + inv.outstanding, 0),
   };
 }
