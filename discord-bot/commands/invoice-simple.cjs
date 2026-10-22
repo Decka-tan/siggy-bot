@@ -434,45 +434,55 @@ function safeInputPlaceholder(value, fallback = 'Isi di sini') {
 
 /**
  * Render invoice embed
+ *
+ * Who still owes comes first and on its own line, so nobody has to scan the
+ * whole list for the few names without a tick.
  */
+function formatInvoiceDate(value) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ''));
+  if (!m) return String(value || '-');
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function renderInvoiceEmbed(invoice) {
-  const paidCount = invoice.participants.filter(p => p.paid).length;
-  const totalCount = invoice.participants.length;
+  const rp = (n) => `Rp ${(Number(n) || 0).toLocaleString('id-ID')}`;
+  const participants = invoice.participants || [];
+  const unpaid = participants.filter(p => !p.paid);
+  const paid = participants.filter(p => p.paid);
+  const unpaidTotal = unpaid.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const totalAmount = Number(invoice.totalAmount) || participants.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+  const paidTotal = totalAmount - unpaidTotal;
+  const note = (p) => (p.notes ? ` *(${p.notes})*` : '');
 
-  let description = invoice.title
-    ? `**${invoice.title}**\n\n`
-    : '';
+  const creator = /^\d{17,20}$/.test(String(invoice.creator?.id || ''))
+    ? `<@${invoice.creator.id}>`
+    : `@${invoice.creator?.username || 'Unknown'}`;
 
-  description += `📅 **Date:** ${invoice.date}\n`;
-  description += `👤 **Created by:** ${invoice.creator.username}\n\n`;
-  description += '**Participants:**\n';
+  let description = `${formatInvoiceDate(invoice.date)} · dibuat ${creator} · ${participants.length} orang\n\n`;
 
-  invoice.participants?.forEach((p, i) => {
-    const status = p.paid ? '✅' : '💰';
-    const notes = p.notes ? ` *(${p.notes})*` : '';
-    const amount = isNaN(Number(p.amount)) ? 0 : Number(p.amount);
-    description += `${i + 1}. **${p.username || 'Unknown'}** - Rp ${amount.toLocaleString('id-ID')} ${status}${notes}\n`;
-  });
+  if (unpaid.length > 0) {
+    description += `⏳ **Belum bayar — ${rp(unpaidTotal)}**\n`;
+    description += unpaid.map(p => `**${p.username || 'Unknown'}** ${rp(p.amount)}${note(p)}`).join(' · ') + '\n\n';
+  } else if (participants.length > 0) {
+    description += `🎉 **Lunas semua!**\n\n`;
+  }
 
-  const unpaidTotal = invoice.participants
-    .filter(p => !p.paid)
-    .reduce((sum, p) => sum + (isNaN(p.amount) ? 0 : p.amount), 0);
+  if (paid.length > 0) {
+    description += `✅ **Lunas (${paid.length}/${participants.length})**\n`;
+    description += paid.map(p => `${p.username || 'Unknown'}${note(p)}`).join(' · ') + '\n\n';
+  }
 
-  const totalAmount = isNaN(invoice.totalAmount) ? 0 : invoice.totalAmount;
+  const cells = 10;
+  const filled = totalAmount > 0 ? Math.round((paidTotal / totalAmount) * cells) : 0;
+  description += `${'▰'.repeat(filled)}${'▱'.repeat(cells - filled)}  ${rp(paidTotal)} / ${rp(totalAmount)}`;
 
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setColor(unpaidTotal > 0 ? 0xf39c12 : 0x27ae60)
-    .setTitle(safeInvoiceTitle('🧾 INVOICE'))
+    .setTitle(safeInvoiceTitle(`🧾 ${invoice.title || 'Untitled'}`))
     .setDescription(safeEmbedDescription(description))
-    .addFields(
-      { name: '💰 Total', value: safeFieldValue(`Rp ${totalAmount.toLocaleString('id-ID')}`), inline: true },
-      { name: '📊 Status', value: safeFieldValue(`${paidCount}/${totalCount} paid`), inline: true },
-      { name: '⏳ Outstanding', value: safeFieldValue(`Rp ${unpaidTotal.toLocaleString('id-ID')}`), inline: true }
-    )
-    .setFooter({ text: `Invoice ID: ${invoice.id}` })
+    .setFooter({ text: `ID ${invoice.id}` })
     .setTimestamp(invoice.createdAt);
-
-  return embed;
 }
 
 /**
@@ -491,26 +501,22 @@ function buildInvoiceButtons(invoiceId) {
       .setEmoji('💵')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId(`invoice_settle_${invoiceId}`)
-      .setLabel('Settle All')
-      .setEmoji('💵')
-      .setStyle(ButtonStyle.Success),
+      .setCustomId(`invoice_edit_${invoiceId}`)
+      .setLabel('Edit')
+      .setEmoji('✏️')
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`invoice_add_${invoiceId}`)
       .setLabel('Add')
       .setEmoji('➕')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId(`invoice_del_${invoiceId}`)
-      .setLabel('Delete')
-      .setEmoji('🗑️')
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Primary)
   );
 }
 
 /**
- * Every row under an invoice message: the action buttons plus a link to the
- * member page, where people see all their bills and who to transfer to.
+ * Every row under an invoice message. Settle All left the card (nobody used
+ * it; its handler stays for cards drawn before). Delete sits on its own row,
+ * away from the buttons people press every day.
  */
 function buildInvoiceComponents(invoiceId) {
   const base = (process.env.INVOICE_PUBLIC_URL || 'https://invoice.decka.my.id').replace(/\/+$/, '');
@@ -520,8 +526,13 @@ function buildInvoiceComponents(invoiceId) {
       new ButtonBuilder()
         .setStyle(ButtonStyle.Link)
         .setURL(`${base}/invoice`)
-        .setLabel('Lihat semua tagihan di web')
-        .setEmoji('🌐')
+        .setLabel('Lihat di web')
+        .setEmoji('🌐'),
+      new ButtonBuilder()
+        .setCustomId(`invoice_del_${invoiceId}`)
+        .setLabel('Delete')
+        .setEmoji('🗑️')
+        .setStyle(ButtonStyle.Danger)
     ),
   ];
 }
@@ -694,6 +705,7 @@ async function handleInvoiceButton(interaction, action) {
     else if (customId.startsWith('invoice_bayar_')) invoiceId = customId.replace('invoice_bayar_', '');
     else if (customId.startsWith('inv_bayar_')) invoiceId = customId.replace('inv_bayar_', '');
     else if (customId.startsWith('invoice_settle_')) invoiceId = customId.replace('invoice_settle_', '');
+    else if (customId.startsWith('invoice_edit_')) invoiceId = customId.replace('invoice_edit_', '');
     else if (customId.startsWith('invoice_add_')) invoiceId = customId.replace('invoice_add_', '');
     else if (customId.startsWith('invoice_del_')) invoiceId = customId.replace('invoice_del_', '');
     else if (customId.startsWith('inv_del_')) invoiceId = customId.replace('inv_del_', '');
@@ -716,8 +728,8 @@ async function handleInvoiceButton(interaction, action) {
 
     // Permission check:
     // - bayar: Anyone can use (to claim they've paid)
-    // - pay, settle, add, delete: Only creator
-    const actionsRequiringCreator = ['pay', 'settle', 'add', 'delete'];
+    // - pay, settle, edit, add, delete: Only creator
+    const actionsRequiringCreator = ['pay', 'settle', 'edit', 'add', 'delete'];
     if (actionsRequiringCreator.includes(action) && invoice.creator.id !== interaction.user.id) {
       return interaction.reply({
         content: '❌ Hanya pembuat invoice yang bisa aksi ini.',
@@ -785,6 +797,31 @@ async function handleInvoiceButton(interaction, action) {
       return interaction.reply({
         content: `✅ Semua ${unpaid.length} orang ditandai lunas!`,
         ephemeral: true
+      });
+
+    } else if (action === 'edit') {
+      const participants = invoice.participants || [];
+      if (participants.length === 0) {
+        return interaction.reply({ content: 'Invoice ini belum ada pesertanya.', ephemeral: true });
+      }
+      const options = participants.slice(0, 25).map((p, i) =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(truncateSelectText(`${p.username || 'Unknown'} — Rp ${(Number(p.amount) || 0).toLocaleString('id-ID')}`))
+          .setDescription(p.paid ? 'Lunas' : 'Belum bayar')
+          .setValue(String(i))
+      );
+      return interaction.reply({
+        content: `✏️ **Edit — ${safeInvoiceTitle(invoice.title)}**\nPilih siapa yang nama atau nominalnya mau dibenerin:` +
+          (participants.length > 25 ? `\n_(cuma 25 orang pertama yang bisa ditampilin)_` : ''),
+        components: [
+          new ActionRowBuilder().addComponents(
+            new StringSelectMenuBuilder()
+              .setCustomId(`invoice_edit_pick|${invoiceId}`)
+              .setPlaceholder('Pilih orangnya…')
+              .addOptions(options)
+          ),
+        ],
+        ephemeral: true,
       });
 
     } else if (action === 'add') {
@@ -1110,6 +1147,90 @@ async function handleAddPeopleSubmit(interaction) {
     console.error('Add people submit error:', error);
     await interaction.reply({ content: `❌ Error: ${error.message}`, ephemeral: true }).catch(() => {});
   }
+}
+
+/**
+ * Edit step 2: the creator picked a participant, ask for the corrected values.
+ */
+async function handleInvoiceEditPick(interaction) {
+  const invoiceId = interaction.customId.split('|')[1];
+  const index = Number(interaction.values[0]);
+  const invoice = getInvoice(invoiceId);
+  const p = invoice?.participants?.[index];
+  if (!p) return interaction.update({ content: '❌ Peserta tidak ditemukan.', components: [] });
+  if (invoice.creator.id !== interaction.user.id) {
+    return interaction.update({ content: '❌ Hanya pembuat invoice yang bisa aksi ini.', components: [] });
+  }
+
+  const modal = new ModalBuilder()
+    .setCustomId(`invoice_edit_modal|${invoiceId}|${index}`)
+    .setTitle(safeModalTitle(`Edit ${p.username || 'peserta'}`))
+    .addComponents(
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('name')
+          .setLabel('Nama')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setMaxLength(64)
+          .setValue(String(p.username || '').slice(0, 64))
+      ),
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('amount')
+          .setLabel('Nominal (boleh 15k)')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setMaxLength(20)
+          .setValue(String(Number(p.amount) || ''))
+      )
+    );
+  return interaction.showModal(modal);
+}
+
+/**
+ * Edit step 3: save, then redraw the card in place (no repost, no channel bump).
+ */
+async function handleInvoiceEditSubmit(interaction) {
+  await interaction.deferReply({ ephemeral: true });
+  const [, invoiceId, rawIndex] = interaction.customId.split('|');
+  const index = Number(rawIndex);
+  const invoice = getInvoice(invoiceId);
+  if (!invoice) return interaction.editReply({ content: '❌ Invoice tidak ditemukan.' });
+  if (invoice.creator.id !== interaction.user.id) {
+    return interaction.editReply({ content: '❌ Hanya pembuat invoice yang bisa aksi ini.' });
+  }
+
+  const name = interaction.fields.getTextInputValue('name');
+  const clean = interaction.fields.getTextInputValue('amount').toLowerCase().replace(/rp|\.|,|\s/g, '');
+  const amount = clean.endsWith('k') ? parseFloat(clean) * 1000 : parseFloat(clean);
+
+  const { editParticipant, updateInvoiceMessage } = require('../utils/invoice-db.cjs');
+  const result = editParticipant(invoiceId, index, { username: name, amount });
+  if (!result.success) return interaction.editReply({ content: `❌ ${result.error}` });
+
+  const updated = getInvoice(invoiceId);
+  if (updated.messageId && updated.channelId) {
+    try {
+      const channel = await interaction.client.channels.fetch(updated.channelId);
+      const msg = await channel.messages.fetch(updated.messageId).catch(() => null);
+      if (msg) {
+        await msg.edit({ embeds: [renderInvoiceEmbed(updated)], components: buildInvoiceComponents(invoiceId) });
+      } else {
+        const sent = await channel.send({ embeds: [renderInvoiceEmbed(updated)], components: buildInvoiceComponents(invoiceId) });
+        updateInvoiceMessage(invoiceId, sent.id);
+      }
+    } catch (e) {
+      console.error('[Invoice Edit] redraw failed:', e.message);
+    }
+  }
+
+  const rp = (n) => `Rp ${(Number(n) || 0).toLocaleString('id-ID')}`;
+  const { before, after } = result;
+  const changes = [];
+  if (before.username !== after.username) changes.push(`nama **${before.username}** → **${after.username}**`);
+  if (Number(before.amount) !== Number(after.amount)) changes.push(`nominal ${rp(before.amount)} → ${rp(after.amount)}`);
+  return interaction.editReply({ content: changes.length ? `✅ Diubah: ${changes.join(', ')}.` : 'Gak ada yang berubah.' });
 }
 
 /**
@@ -1853,6 +1974,8 @@ module.exports = {
   renderInvoiceEmbed,
   buildInvoiceButtons,
   buildInvoiceComponents,
+  handleInvoiceEditPick,
+  handleInvoiceEditSubmit,
   renderInvoiceRecapEmbed,
   invoiceCommandsSimple,
   handleInvoiceButton,

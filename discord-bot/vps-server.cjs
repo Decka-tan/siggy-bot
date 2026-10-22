@@ -1779,6 +1779,7 @@ client.on('interactionCreate', async (interaction) => {
       if (customId.startsWith('invoice_pay_') || customId.startsWith('inv_pay_')) return handleInvoiceButton(interaction, 'pay');
       if (customId.startsWith('invoice_bayar_') || customId.startsWith('inv_bayar_')) return handleInvoiceButton(interaction, 'bayar');
       if (customId.startsWith('invoice_settle_')) return handleInvoiceButton(interaction, 'settle');
+      if (customId.startsWith('invoice_edit_')) return handleInvoiceButton(interaction, 'edit');
       if (customId.startsWith('invoice_add_')) return handleInvoiceButton(interaction, 'add');
       if (customId.startsWith('invoice_del_') || customId.startsWith('inv_del_')) return handleInvoiceButton(interaction, 'delete');
       if (customId.startsWith('mark_paid_page_')) return handleMarkPaidPage(interaction);
@@ -1799,6 +1800,10 @@ client.on('interactionCreate', async (interaction) => {
         return handleMarkPaidSelect(interaction);
       }
       if (customId === 'delete_invoice_select') return handleDeleteInvoiceSelect(interaction);
+      if (customId.startsWith('invoice_edit_pick|')) {
+        const { handleInvoiceEditPick } = require('./commands/invoice-simple.cjs');
+        return handleInvoiceEditPick(interaction);
+      }
       if (customId === 'find_debt_select') {
         const { handleFindDebtSelect } = require('./commands/invoice-simple.cjs');
         return handleFindDebtSelect(interaction);
@@ -1818,6 +1823,10 @@ client.on('interactionCreate', async (interaction) => {
       if (customId.startsWith('add_people_modal_')) {
         const { handleAddPeopleSubmit } = require('./commands/invoice-simple.cjs');
         return handleAddPeopleSubmit(interaction);
+      }
+      if (customId.startsWith('invoice_edit_modal|')) {
+        const { handleInvoiceEditSubmit } = require('./commands/invoice-simple.cjs');
+        return handleInvoiceEditSubmit(interaction);
       }
       if (customId === 'payment_set_modal') return processPaymentSetModal(interaction);
       if (customId === 'clear_invoice_modal') return handleClearInvoiceModal(interaction);

@@ -196,6 +196,34 @@ function addParticipants(invoiceId, participants) {
 }
 
 /**
+ * Fix one participant's name and/or amount (typo, wrong person, wrong price).
+ * A new name gets the Discord id that name is linked to, or a fresh unknown_
+ * id; keeping the old id would leave the bill showing up for the old person.
+ */
+function editParticipant(invoiceId, index, { username, amount }) {
+  const db = readDB();
+  const invoice = db.invoices[invoiceId];
+  const p = invoice?.participants?.[index];
+  if (!p) return { success: false, error: 'Peserta tidak ditemukan' };
+
+  const name = String(username || '').trim();
+  const value = Number(amount);
+  if (!name) return { success: false, error: 'Nama kosong' };
+  if (!Number.isFinite(value) || value <= 0) return { success: false, error: 'Jumlah tidak valid' };
+
+  const before = { username: p.username, amount: p.amount };
+  if (name.toLowerCase() !== String(p.username || '').toLowerCase().trim()) {
+    p.username = name;
+    p.userId = resolveUserIdFromName(name) || `unknown_${Date.now()}_${index}_${Math.random().toString(36).slice(2, 5)}`;
+  }
+  p.amount = value;
+  invoice.totalAmount = invoice.participants.reduce((sum, x) => sum + (Number(x.amount) || 0), 0);
+
+  writeDB(db);
+  return { success: true, before, after: { username: p.username, amount: p.amount }, invoice };
+}
+
+/**
  * Get a single invoice
  */
 function getInvoice(invoiceId) {
@@ -648,6 +676,7 @@ module.exports = {
   // Mutating: read-modify-write must be serialised across bot + web.
   createInvoice: locked(createInvoice),
   addParticipants: locked(addParticipants),
+  editParticipant: locked(editParticipant),
   updateInvoiceMessage: locked(updateInvoiceMessage),
   linkUserToName: locked(linkUserToName),
   addNameAlias: locked(addNameAlias),
