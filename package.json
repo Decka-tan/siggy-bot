@@ -24,7 +24,7 @@
     "@aws-sdk/client-s3": "^3.1058.0",
     "ai": "^3.0.0",
     "animejs": "^4.4.1",
-    "better-sqlite3": "^9.2.2",
+    "better-sqlite3": "^12.11.1",
     "canvas": "^3.2.2",
     "discord-interactions": "^4.4.0",
     "discord.js": "^14.25.1",
@@ -60,6 +60,6 @@
     "typescript": "^5.3.0"
   },
   "engines": {
-    "node": "22.x"
+    "node": "24.x"
   }
 }

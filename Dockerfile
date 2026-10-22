@@ -14,7 +14,7 @@
 # binaries for Node 22.
 
 # ---------------------------------------------------------------- deps
-FROM node:20-bookworm-slim AS deps
+FROM node:24.22.1-bookworm-slim AS deps
 WORKDIR /app
 
 # better-sqlite3 (lib/data-manager.ts) and canvas may fall back to compiling.
@@ -27,7 +27,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 # --------------------------------------------------------------- build
-FROM node:20-bookworm-slim AS builder
+FROM node:24.22.1-bookworm-slim AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -39,7 +39,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # ------------------------------------------------------------- runtime
-FROM node:20-bookworm-slim AS runner
+FROM node:24.22.1-bookworm-slim AS runner
 WORKDIR /app
 
 # canvas needs its shared libs at runtime even though it is only built once.
