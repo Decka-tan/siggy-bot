@@ -30,7 +30,9 @@ client.once('ready', async () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 
   const db = readDB();
-  const invoices = Object.values(db.invoices || {});
+  // Optional: node update-invoice-buttons.cjs <invoiceId> redraws just that card.
+  const only = process.argv[2];
+  const invoices = Object.values(db.invoices || {}).filter(inv => !only || inv.id === only);
 
   console.log(`\n📊 Found ${invoices.length} invoices total\n`);
 

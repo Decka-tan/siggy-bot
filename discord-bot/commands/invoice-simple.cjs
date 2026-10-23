@@ -454,33 +454,39 @@ function renderInvoiceEmbed(invoice) {
   const totalAmount = Number(invoice.totalAmount) || participants.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const paidTotal = totalAmount - unpaidTotal;
   const note = (p) => (p.notes ? ` *(${p.notes})*` : '');
+  const line = (p) => `**${p.username || 'Unknown'}** · ${rp(p.amount)}${note(p)}`;
 
   const creator = /^\d{17,20}$/.test(String(invoice.creator?.id || ''))
     ? `<@${invoice.creator.id}>`
     : `@${invoice.creator?.username || 'Unknown'}`;
 
-  let description = `${formatInvoiceDate(invoice.date)} · dibuat ${creator} · ${participants.length} orang\n\n`;
-
-  if (unpaid.length > 0) {
-    description += `⏳ **Belum bayar — ${rp(unpaidTotal)}**\n`;
-    description += unpaid.map(p => `**${p.username || 'Unknown'}** ${rp(p.amount)}${note(p)}`).join(' · ') + '\n\n';
-  } else if (participants.length > 0) {
-    description += `🎉 **Lunas semua!**\n\n`;
-  }
-
-  if (paid.length > 0) {
-    description += `✅ **Lunas (${paid.length}/${participants.length})**\n`;
-    description += paid.map(p => `${p.username || 'Unknown'}${note(p)}`).join(' · ') + '\n\n';
-  }
-
   const cells = 10;
   const filled = totalAmount > 0 ? Math.round((paidTotal / totalAmount) * cells) : 0;
-  description += `${'▰'.repeat(filled)}${'▱'.repeat(cells - filled)}  ${rp(paidTotal)} / ${rp(totalAmount)}`;
+
+  // One person per line, owed and settled side by side; a single paragraph of
+  // names was hard to scan.
+  const fields = [];
+  if (unpaid.length > 0) {
+    fields.push({ name: `⏳ Belum bayar (${unpaid.length})`, value: safeFieldValue(unpaid.map(line).join('\n')), inline: true });
+  }
+  if (paid.length > 0) {
+    fields.push({
+      name: unpaid.length ? `✅ Lunas (${paid.length})` : '🎉 Lunas semua',
+      value: safeFieldValue(paid.map(line).join('\n')),
+      inline: true,
+    });
+  }
+  fields.push({
+    name: unpaid.length ? `Sisa ${rp(unpaidTotal)}` : 'Selesai',
+    value: `\`${'▰'.repeat(filled)}${'▱'.repeat(cells - filled)}\`  ${rp(paidTotal)} / ${rp(totalAmount)}`,
+    inline: false,
+  });
 
   return new EmbedBuilder()
     .setColor(unpaidTotal > 0 ? 0xf39c12 : 0x27ae60)
     .setTitle(safeInvoiceTitle(`🧾 ${invoice.title || 'Untitled'}`))
-    .setDescription(safeEmbedDescription(description))
+    .setDescription(`📅 ${formatInvoiceDate(invoice.date)}  ·  👤 ${creator}  ·  👥 ${participants.length} orang`)
+    .addFields(fields)
     .setFooter({ text: `ID ${invoice.id}` })
     .setTimestamp(invoice.createdAt);
 }
