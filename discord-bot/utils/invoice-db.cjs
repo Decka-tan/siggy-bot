@@ -181,6 +181,7 @@ function addParticipants(invoiceId, participants) {
       username: p.username,
       amount: Number(p.amount), // Ensure it's a number
       paid: p.paid || false,
+      ...(p.notes ? { notes: String(p.notes) } : {}),
     });
   });
 

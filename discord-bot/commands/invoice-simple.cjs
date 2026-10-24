@@ -131,67 +131,42 @@ async function processInvoiceCreateModal(interaction) {
 
   const guild = interaction.guild;
 
-  // Parse people input
-  const participants = [];
-  const lines = people.split('\n').filter(l => l.trim());
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    // Match: @mention amount or username amount
-    const match = trimmed.match(/^(<@!?(\d+)>|[\w\d]+)\s+(\d+[kK]?\s*)(.*)?$/);
-    if (match) {
-      const mentionOrUsername = match[1];
-      const userId = match[2] || null;
-      let amountStr = match[3].toLowerCase().replace('k', '000');
-      const notes = match[4] ? match[4].trim() : '';
-
-      let amount = parseInt(amountStr.replace(/\D/g, ''));
-      if (amountStr.includes('k')) {
-        amount = parseInt(amountStr.replace('k', '000')) || amount;
-      }
-
-      // Validate amount is a positive number
-      if (isNaN(amount) || amount <= 0) {
-        continue; // Skip invalid entries
-      }
-
-      if (amount > 0) {
-        let finalUsername = mentionOrUsername;
-        let finalUserId = userId;
-
-        if (userId) {
-          try {
-            const member = guild.members.cache.get(userId);
-            if (member) {
-              finalUsername = member.user.username;
-              finalUserId = userId;
-            }
-          } catch (err) {
-            // Member fetch failed, will use username as-is
-            console.error(`[Invoice] Error fetching user ${userId}: ${err.message}`);
-          }
-        } else {
-          // No @mention - just use the name as-is (nickname/real name is fine)
-          finalUsername = mentionOrUsername;
-          finalUserId = null; // No Discord ID available
-        }
-
-        const isPaid = /lunas|paid|bayar/i.test(notes);
-
-        participants.push({
-          // Include participants.length so multiple "unknown" entries added in
-          // the same millisecond can't collide (Date.now() alone isn't enough).
-          userId: finalUserId || `unknown_${Date.now()}_${participants.length}_${Math.random().toString(36).slice(2, 5)}`,
-          username: finalUsername,
-          amount: amount,
-          notes: notes || null,
-          paid: isPaid,
-        });
-      }
+  // Parse people input. Amounts go through parseAmount (10.5k, 10.000, 13rb),
+  // the same person on several lines is merged, and lines that don't parse are
+  // reported back instead of silently dropped.
+  const { parsePersonLine, mergeSamePerson } = require('../utils/amount-parse.cjs');
+  const parsed = [];
+  const unreadable = [];
+  for (const line of people.split('\n').map(l => l.trim()).filter(Boolean)) {
+    const entry = parsePersonLine(line);
+    if (!entry) {
+      unreadable.push(line);
+      continue;
     }
+    entry.paid = /lunas|paid|bayar/i.test(entry.notes);
+    parsed.push(entry);
   }
+
+  const participants = mergeSamePerson(parsed).map((e, i) => {
+    let finalUsername = e.name;
+    let finalUserId = e.userId;
+    if (e.userId) {
+      const member = guild.members.cache.get(e.userId);
+      if (member) finalUsername = member.user.username;
+    }
+    // A merged person counts as paid only if every one of their lines was.
+    const lines = parsed.filter(p => (e.userId ? p.userId === e.userId : !p.userId && p.name.toLowerCase() === e.name.toLowerCase()));
+    return {
+      // Include the index so several "unknown" entries made in the same
+      // millisecond can't collide (Date.now() alone isn't enough).
+      userId: finalUserId || `unknown_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 5)}`,
+      username: finalUsername,
+      amount: e.amount,
+      notes: e.notes || null,
+      paid: lines.every(l => l.paid),
+      mergedCount: e.count,
+    };
+  });
 
   if (participants.length === 0) {
     return interaction.reply({
@@ -241,7 +216,13 @@ async function processInvoiceCreateModal(interaction) {
     const buttons = buildInvoiceComponents(finalInvoice.id);
 
     await interaction.editReply({
-      content: '✅ Invoice berhasil dibuat!',
+      content: '✅ Invoice berhasil dibuat!' + (() => {
+        const merged = participants.filter(p => p.mergedCount > 1).map(p => `${p.username} (${p.mergedCount} baris)`);
+        let extra = '';
+        if (merged.length) extra += `\n🔗 Digabung: ${merged.join(', ')}`;
+        if (unreadable.length) extra += `\n⚠️ Baris gak kebaca, cek lagi lalu pakai ➕ Add:\n${unreadable.map(l => `• \`${l.slice(0, 80)}\``).join('\n')}`;
+        return extra;
+      })(),
       embeds: [embed],
       components: buttons
     });
@@ -1109,12 +1090,9 @@ async function handleAddPeopleSubmit(interaction) {
     const notes = interaction.fields.getTextInputValue('notes') || '';
 
     // Parse amount (support 15k, etc)
-    let amount = 0;
-    const cleanAmount = amountStr.toLowerCase().replace(/rp|\.|\s/g, '');
-    if (cleanAmount.endsWith('k')) amount = parseFloat(cleanAmount) * 1000;
-    else amount = parseFloat(cleanAmount);
-
-    if (isNaN(amount) || amount <= 0) return interaction.editReply({ content: '❌ Jumlah tidak valid.' });
+    const { parseAmount } = require('../utils/amount-parse.cjs');
+    const amount = parseAmount(amountStr);
+    if (!amount) return interaction.editReply({ content: '❌ Jumlah tidak valid. Contoh: 15k, 10.5k, 10.000' });
 
     // Parse users
     const users = userMentions.split(/,|\n/).map(u => u.trim()).filter(u => u);
@@ -1208,8 +1186,8 @@ async function handleInvoiceEditSubmit(interaction) {
   }
 
   const name = interaction.fields.getTextInputValue('name');
-  const clean = interaction.fields.getTextInputValue('amount').toLowerCase().replace(/rp|\.|,|\s/g, '');
-  const amount = clean.endsWith('k') ? parseFloat(clean) * 1000 : parseFloat(clean);
+  const { parseAmount } = require('../utils/amount-parse.cjs');
+  const amount = parseAmount(interaction.fields.getTextInputValue('amount'));
 
   const { editParticipant, updateInvoiceMessage } = require('../utils/invoice-db.cjs');
   const result = editParticipant(invoiceId, index, { username: name, amount });
