@@ -751,6 +751,29 @@ async function handleBayarSelectPerson(interaction) {
 // the reminders kept coming. token -> { payerId, files, timestamp }
 const unclaimedProofs = new Map();
 
+// One open forward per payer -> creator. More proofs get attached to that same
+// message instead of opening a new DM each, so nobody can flood the person they
+// owe. Cleared when the creator confirms or rejects; expires after a day.
+// "payerId|creatorId" -> { messageId, timestamp }
+const openForwards = new Map();
+const OPEN_FORWARD_TTL = 24 * 60 * 60 * 1000;
+const MAX_PROOF_FILES = 10;
+// "udah bayar" without a screenshot gets a nudge at most this often.
+const textNudgedAt = new Map();
+const TEXT_NUDGE_EVERY = 6 * 60 * 60 * 1000;
+
+function clearOpenForward(payerId, creatorId) {
+  openForwards.delete(`${payerId}|${creatorId}`);
+}
+
+const FORWARD_REPLY = {
+  sent: (name) => `✅ Bukti diterusin ke @${name}. Tunggu dikonfirmasi ya!`,
+  appended: (name) => `✅ Ditambahin ke bukti sebelumnya buat @${name}. Tunggu dikonfirmasi ya!`,
+  full: (name) => `⏳ Bukti buat @${name} yang sebelumnya masih nunggu dikonfirmasi, dan satu bukti maksimal ${MAX_PROOF_FILES} gambar. Tunggu dia proses dulu ya.`,
+};
+const forwardReply = (result, name) =>
+  (FORWARD_REPLY[result] || (() => '❌ Gagal neruskan bukti. Coba kirim ulang, atau DM orangnya langsung.'))(name);
+
 function proofFiles(message) {
   const files = [];
   message.attachments.forEach(att => {
@@ -781,7 +804,9 @@ async function handleUnclaimedProofDM(message, client) {
   if (files.length === 0) {
     // "udah bayar" with nothing attached. Only worth an answer when there is
     // actually something to pay; otherwise it's just chatter.
-    if (bills.length) {
+    const last = textNudgedAt.get(message.author.id) || 0;
+    if (bills.length && Date.now() - last > TEXT_NUDGE_EVERY) {
+      textNudgedAt.set(message.author.id, Date.now());
       await message.reply('Kalau udah bayar, kirim **screenshot bukti transfernya** di sini ya. Siggy terusin ke yang nagih buat dikonfirmasi.');
     }
     return;
@@ -802,8 +827,8 @@ async function handleUnclaimedProofDM(message, client) {
 
   if (byCreator.size === 1) {
     const only = [...byCreator.values()][0];
-    await forwardUnclaimedProof(client, message.author, only.creatorId, files);
-    await message.reply(`✅ Bukti diterusin ke @${only.creatorName}. Tunggu dikonfirmasi ya!`);
+    const result = await forwardUnclaimedProof(client, message.author, only.creatorId, files);
+    await message.reply(forwardReply(result, only.creatorName));
     return;
   }
 
@@ -843,12 +868,9 @@ async function handleProofCreatorSelect(interaction) {
   unclaimedProofs.delete(token);
 
   const creatorId = interaction.values[0];
-  const ok = await forwardUnclaimedProof(interaction.client, interaction.user, creatorId, stored.files);
+  const result = await forwardUnclaimedProof(interaction.client, interaction.user, creatorId, stored.files);
   const name = collectUnpaidBillsAllGuilds(interaction.user).find(b => String(b.creatorId) === creatorId)?.creatorName || 'yang nagih';
-  return interaction.update({
-    content: ok ? `✅ Bukti diterusin ke @${name}. Tunggu dikonfirmasi ya!` : '❌ Gagal neruskan bukti. Coba kirim ulang, atau DM orangnya langsung.',
-    components: [],
-  });
+  return interaction.update({ content: forwardReply(result, name), components: [] });
 }
 
 function billOptions(bills, selected = new Set()) {
@@ -874,18 +896,43 @@ function unclaimedProofSelect(payerId, creatorId, bills, selected) {
   );
 }
 
+/**
+ * Returns 'sent' (new DM), 'appended' (added to the still-open one), 'full'
+ * (open one already holds MAX_PROOF_FILES), or null on failure.
+ */
 async function forwardUnclaimedProof(client, payer, creatorId, files) {
   const bills = collectUnpaidBillsAllGuilds(payer).filter(b => String(b.creatorId) === String(creatorId));
-  if (bills.length === 0) return false;
+  if (bills.length === 0) return null;
+  const key = `${payer.id}|${creatorId}`;
   try {
     const creator = await client.users.fetch(creatorId);
+
+    const open = openForwards.get(key);
+    if (open && Date.now() - open.timestamp < OPEN_FORWARD_TTL) {
+      try {
+        const dm = await creator.createDM();
+        const prev = await dm.messages.fetch(open.messageId);
+        // No components left = already confirmed or rejected; start a new one.
+        if (prev.components.length) {
+          const kept = [...prev.attachments.values()];
+          if (kept.length + files.length > MAX_PROOF_FILES) return 'full';
+          await prev.edit({ attachments: kept, files });
+          console.log(`[Payment Proof DM] Proof from ${payer.username} appended to open forward for ${creatorId}`);
+          return 'appended';
+        }
+      } catch (err) {
+        console.log(`[Payment Proof DM] Open forward unusable, sending a new one:`, err.message);
+      }
+    }
+    openForwards.delete(key);
+
     const total = bills.reduce((s, b) => s + b.amount, 0);
     let content = `📸 **Bukti transfer dari @${payer.username}**\n`;
     content += `_Dikirim langsung tanpa \`/bayar\`, jadi Siggy gak tau ini buat tagihan yang mana._\n\n`;
     content += `Tagihan dia ke kamu yang belum lunas: **${bills.length}**, total **Rp ${total.toLocaleString('id-ID')}**.\n`;
     content += `Cocokin sama nominal di bukti, terus pilih tagihan yang dibayar.`;
     if (bills.length > 25) content += `\n\n⚠️ _Cuma 25 tagihan terlama yang muat di pilihan._`;
-    await creator.send({
+    const sent = await creator.send({
       content,
       files,
       components: [
@@ -898,11 +945,12 @@ async function forwardUnclaimedProof(client, payer, creatorId, files) {
         ),
       ],
     });
+    openForwards.set(key, { messageId: sent.id, timestamp: Date.now() });
     console.log(`[Payment Proof DM] Unclaimed proof from ${payer.username} forwarded to ${creatorId}`);
-    return true;
+    return 'sent';
   } catch (err) {
     console.log(`[Payment Proof DM] Could not forward unclaimed proof:`, err.message);
-    return false;
+    return null;
   }
 }
 
@@ -974,6 +1022,7 @@ async function handleProofReject(interaction) {
   if (interaction.user.id !== creatorId) {
     return interaction.reply({ content: '❌ Cuma yang nagih yang bisa nolak ini.', ephemeral: true });
   }
+  clearOpenForward(payerId, creatorId);
   for (const row of interaction.message.components || []) {
     for (const c of row.components || []) {
       if (c.customId?.startsWith('payment_confirm|')) confirmStore.delete(c.customId.split('|')[1]);
@@ -1190,6 +1239,10 @@ async function handlePaymentConfirm(interaction, action) {
       ephemeral: true
     });
   }
+
+  // Either answer closes an unclaimed-proof forward, so the payer's next proof
+  // starts a fresh message instead of being attached to a settled one.
+  if (payerId) clearOpenForward(payerId, interaction.user.id);
 
   if (action === 'confirm') {
     // Discord kills the interaction token after 3 seconds. Confirming a batch
