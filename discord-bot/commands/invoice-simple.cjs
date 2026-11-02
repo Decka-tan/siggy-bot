@@ -430,12 +430,10 @@ function renderInvoiceEmbed(invoice) {
   const rp = (n) => `Rp ${(Number(n) || 0).toLocaleString('id-ID')}`;
   const participants = invoice.participants || [];
   const unpaid = participants.filter(p => !p.paid);
-  const paid = participants.filter(p => p.paid);
   const unpaidTotal = unpaid.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const totalAmount = Number(invoice.totalAmount) || participants.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
   const paidTotal = totalAmount - unpaidTotal;
   const note = (p) => (p.notes ? ` *(${p.notes})*` : '');
-  const line = (p) => `**${p.username || 'Unknown'}** · ${rp(p.amount)}${note(p)}`;
 
   const creator = /^\d{17,20}$/.test(String(invoice.creator?.id || ''))
     ? `<@${invoice.creator.id}>`
@@ -444,30 +442,23 @@ function renderInvoiceEmbed(invoice) {
   const cells = 10;
   const filled = totalAmount > 0 ? Math.round((paidTotal / totalAmount) * cells) : 0;
 
-  // One person per line, owed and settled side by side; a single paragraph of
-  // names was hard to scan.
-  const fields = [];
-  if (unpaid.length > 0) {
-    fields.push({ name: `⏳ Belum bayar (${unpaid.length})`, value: safeFieldValue(unpaid.map(line).join('\n')), inline: true });
-  }
-  if (paid.length > 0) {
-    fields.push({
-      name: unpaid.length ? `✅ Lunas (${paid.length})` : '🎉 Lunas semua',
-      value: safeFieldValue(paid.map(line).join('\n')),
-      inline: true,
-    });
-  }
-  fields.push({
-    name: unpaid.length ? `Sisa ${rp(unpaidTotal)}` : 'Selesai',
-    value: `\`${'▰'.repeat(filled)}${'▱'.repeat(cells - filled)}\`  ${rp(paidTotal)} / ${rp(totalAmount)}`,
-    inline: false,
-  });
+  // One list in entry order with a tick per person. The owed/settled columns
+  // tried before read worse to the people using it (Discord, 2 Nov).
+  const list = participants
+    .map((p, i) => `${i + 1}. **${p.username || 'Unknown'}** · ${rp(p.amount)} ${p.paid ? '✅' : '⏳'}${note(p)}`)
+    .join('\n');
 
   return new EmbedBuilder()
     .setColor(unpaidTotal > 0 ? 0xf39c12 : 0x27ae60)
     .setTitle(safeInvoiceTitle(`🧾 ${invoice.title || 'Untitled'}`))
-    .setDescription(`📅 ${formatInvoiceDate(invoice.date)}  ·  👤 ${creator}  ·  👥 ${participants.length} orang`)
-    .addFields(fields)
+    .setDescription(safeEmbedDescription(
+      `📅 ${formatInvoiceDate(invoice.date)}  ·  👤 ${creator}  ·  👥 ${participants.length} orang\n\n${list}`
+    ))
+    .addFields({
+      name: unpaid.length ? `Sisa ${rp(unpaidTotal)} · ${unpaid.length} belum bayar` : '🎉 Lunas semua',
+      value: `\`${'▰'.repeat(filled)}${'▱'.repeat(cells - filled)}\`  ${rp(paidTotal)} / ${rp(totalAmount)}`,
+      inline: false,
+    })
     .setFooter({ text: `ID ${invoice.id}` })
     .setTimestamp(invoice.createdAt);
 }
