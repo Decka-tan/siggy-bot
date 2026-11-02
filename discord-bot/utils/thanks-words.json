@@ -1,0 +1,20 @@
+{
+  "_note": "Thanks words for the 'kek keong' reply. prefix = matches the start of a word (AutoMod 'word*'), exact = whole word only (AutoMod 'word'), anywhere = non-Latin scripts without spaces (AutoMod '*word*'). Left out on purpose because they collide with ordinary words: tak (ID 'not'), takk* (takkan), toda (ES 'all'), tack (EN), dank (EN slang), cam on (camera on), rahmat/rahmet (names), domo, spc.",
+  "prefix": [
+    "thank", "thx", "thanx", "thnx", "thnks", "thks", "thnk", "tks", "tysm", "tyy", "tq", "thankyu", "thenks", "tenks", "tengs",
+    "tengkyu", "tenkyu", "thengkyu", "tengkiu", "tenkiu", "sankyu", "senkyu", "sengkyu", "sangkyu", "san9", "san-9",
+    "makasih", "makasi", "makaci", "maaci", "maacih", "makaseh", "mkasih", "mksh", "trims", "trimakasih", "terimakasih",
+    "terima kasi", "trmksh", "suwun", "nuwun", "nuhun", "kamsia",
+    "arigat", "gomawo", "gomapda", "gamsahamnida", "kamsahamnida", "kamsahabnida", "xiexie", "xie xie", "xièxiè", "duoxie",
+    "merci", "mersi", "danke", "dankie", "gracias", "grazie", "obrigad", "spasib", "shukr", "dhanyav", "dhanyaw", "dhanyabad",
+    "tesekkur", "teşekkür", "mahalo", "asante", "kiitos", "dziek", "dzięk", "dekuj", "děkuj", "dakuj", "ďakuj", "koszon",
+    "köszön", "multumesc", "mulțumesc", "efharisto", "hvala", "aitah", "aitäh", "paldies", "aciu", "ačiū", "dyakuyu",
+    "cảm ơn", "khob khun", "khop khun", "kop khun", "mamnoon", "mamnun", "tashakor", "ngiyabonga", "salamat"
+  ],
+  "exact": ["tx", "txs", "ty", "mks", "tyvm", "takk", "tusen takk"],
+  "anywhere": [
+    "ありがと", "アリガト", "サンキュ", "あざす", "あざっす", "谢谢", "謝謝", "多谢", "多謝", "感谢", "感謝", "감사", "고마워", "고맙",
+    "спасибо", "дякую", "благодарю", "شكرا", "شکریہ", "ممنون", "תודה", "धन्यवाद", "शुक्रिया", "ขอบคุณ", "ευχαριστώ",
+    "ধন্যবাদ", "நன்றி", "ధన్యవాదాలు", "ಧನ್ಯವಾದ", "ຂອບໃຈ", "អរគុណ", "ကျေးဇူး"
+  ]
+}

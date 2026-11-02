@@ -626,6 +626,8 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.DirectMessages,
+    // Not privileged: lets the thanks auto-reply work without Message Content.
+    GatewayIntentBits.AutoModerationExecution,
     // Privileged intents are blocked until Discord approves the review.
     // Set PRIVILEGED_INTENTS=off in .env to log in without them.
     ...(process.env.PRIVILEGED_INTENTS === "off"
@@ -1851,6 +1853,54 @@ client.on('interactionCreate', async (interaction) => {
 // ============ MESSAGE HANDLING (@Mentions) ============
 // Conversation history lives in db.cjs (JSON store).
 
+// ============ THANKS AUTO-REPLY ============
+// Message Content is not granted, so Siggy can't read normal messages. Instead a
+// server AutoMod keyword rule (alert-only, never blocks) matches thanks-style
+// words, and Discord hands us the match through AutoModerationActionExecution.
+// Rule "siggy-thanks" lives in Bang The Cry!; edit its keywords in Server Settings.
+const THANKS_RULE_ID = '1555130625898450974';
+const THANKS_REPLY_CHANNELS = new Set(['1455014277847973984']); // #obrolan-pecundang
+
+// AutoMod always skips members with Manage Server / Administrator, so for them
+// the same reply also fires when they @mention Siggy (mentions carry content).
+// Built from utils/thanks-words.json, the same list the AutoMod rule uses, so
+// the two paths can't drift. prefix = start of a word, exact = whole word,
+// anywhere = scripts written without spaces (CJK, Thai, ...).
+const THANKS_WORDS = require('./utils/thanks-words.json');
+const reEsc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const THANKS_PATTERN = new RegExp(
+  `(?:^|[^\\p{L}\\p{N}])(?:${THANKS_WORDS.prefix.map(reEsc).join('|')})` +
+  `|(?:^|[^\\p{L}\\p{N}])(?:${THANKS_WORDS.exact.map(reEsc).join('|')})(?=[^\\p{L}\\p{N}]|$)` +
+  `|(?:${THANKS_WORDS.anywhere.map(reEsc).join('|')})`,
+  'iu'
+);
+
+// A non-admin writing "thx @Siggy" triggers both paths; reply once per message.
+const thanksReplied = new Set();
+
+async function replyKekKeong(channelOrId, messageId) {
+  if (thanksReplied.has(messageId)) return;
+  thanksReplied.add(messageId);
+  if (thanksReplied.size > 500) thanksReplied.delete(thanksReplied.values().next().value);
+  try {
+    const channel = typeof channelOrId === 'string' ? await client.channels.fetch(channelOrId) : channelOrId;
+    await channel.send({
+      content: 'kek keong \u{1F40C}',
+      reply: { messageReference: messageId, failIfNotExists: false },
+      allowedMentions: { repliedUser: false },
+    });
+  } catch (e) {
+    console.error('[Thanks Reply] Error:', e.message);
+  }
+}
+
+client.on('autoModerationActionExecution', async (execution) => {
+  // Discord fires one execution per rule action; the rule only has the alert action.
+  if (execution.ruleId !== THANKS_RULE_ID) return;
+  if (!THANKS_REPLY_CHANNELS.has(execution.channelId) || !execution.messageId) return;
+  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId);
+});
+
 client.on('messageCreate', async (message) => {
   // Ignore bot messages
   if (message.author.bot) return;
@@ -1878,6 +1928,11 @@ client.on('messageCreate', async (message) => {
   // as a mention of every member (Siggy included) by default, so announcements
   // were dragging the AI reply out on the whole channel.
   if (!message.mentions.has(client.user, { ignoreEveryone: true })) return;
+
+  if (THANKS_REPLY_CHANNELS.has(message.channelId)
+      && THANKS_PATTERN.test(message.content.replace(/<@[!&]?\d+>/g, ' '))) {
+    return replyKekKeong(message.channel, message.id);
+  }
 
   // Servers where AI chat replies are disabled (Siggy still runs slash commands
   // / scheduled posts there, but won't auto-respond to mentions).
