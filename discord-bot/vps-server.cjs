@@ -113,6 +113,9 @@ const {
   handleBayarSelectBills,
   handleBayarConfirmBills,
   handlePaymentProofDM,
+  handleProofCreatorSelect,
+  handleProofBillsSelect,
+  handleProofReject,
   handlePaymentConfirm,
   paymentCommands,
 } = require('./commands/payment.cjs');
@@ -1790,7 +1793,8 @@ client.on('interactionCreate', async (interaction) => {
       if (customId.startsWith('bayar_confirm_bills|')) return handleBayarConfirmBills(interaction);
       if (customId.startsWith('payment_confirm|')) return handlePaymentConfirm(interaction, 'confirm');
       if (customId.startsWith('payment_reject|')) return handlePaymentConfirm(interaction, 'reject');
-      
+      if (customId.startsWith('proof_reject|')) return handleProofReject(interaction);
+
       return;
     }
 
@@ -1814,6 +1818,8 @@ client.on('interactionCreate', async (interaction) => {
       if (customId === 'bayar_select_creator') return handleBayarSelectCreator(interaction);
       if (customId.startsWith('bayar_select_bills|')) return handleBayarSelectBills(interaction);
       if (customId.startsWith('bayar_select_person_')) return handleBayarSelectPerson(interaction);
+      if (customId.startsWith('proof_creator|')) return handleProofCreatorSelect(interaction);
+      if (customId.startsWith('proof_bills|')) return handleProofBillsSelect(interaction);
       return;
     }
 

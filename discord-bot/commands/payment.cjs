@@ -746,6 +746,248 @@ async function handleBayarSelectPerson(interaction) {
   }
 }
 
+// Proofs DM'd without going through /bayar first. Those used to be dropped
+// without a word: the payer believed they had paid, the bill stayed open, and
+// the reminders kept coming. token -> { payerId, files, timestamp }
+const unclaimedProofs = new Map();
+
+function proofFiles(message) {
+  const files = [];
+  message.attachments.forEach(att => {
+    if (att.contentType?.startsWith('image/')) files.push(att.url);
+  });
+  message.stickers.forEach(sticker => {
+    if (sticker.url) files.push(sticker.url);
+  });
+  return files;
+}
+
+// A DM has no guild, so look across every server that has invoices.
+function collectUnpaidBillsAllGuilds(user) {
+  const { readDB } = require('../utils/invoice-db.cjs');
+  const guildIds = new Set(Object.values(readDB().invoices || {}).map(i => i.guildId).filter(Boolean));
+  return [...guildIds].flatMap(g => collectOwnUnpaidBills(g, user));
+}
+
+/**
+ * A proof with no /bayar claim behind it: send it to whoever the payer owes and
+ * let that person pick which bills it covers. When the payer owes more than one
+ * person, ask them first who the transfer went to.
+ */
+async function handleUnclaimedProofDM(message, client) {
+  const files = proofFiles(message);
+  const bills = collectUnpaidBillsAllGuilds(message.author);
+
+  if (files.length === 0) {
+    // "udah bayar" with nothing attached. Only worth an answer when there is
+    // actually something to pay; otherwise it's just chatter.
+    if (bills.length) {
+      await message.reply('Kalau udah bayar, kirim **screenshot bukti transfernya** di sini ya. Siggy terusin ke yang nagih buat dikonfirmasi.');
+    }
+    return;
+  }
+
+  if (bills.length === 0) {
+    await message.reply('✅ Kamu gak punya tagihan yang belum lunas, jadi bukti ini gak Siggy terusin ke siapa-siapa.');
+    return;
+  }
+
+  const byCreator = new Map();
+  for (const b of bills) {
+    const g = byCreator.get(String(b.creatorId)) || { creatorId: String(b.creatorId), creatorName: b.creatorName, total: 0, count: 0 };
+    g.total += b.amount;
+    g.count += 1;
+    byCreator.set(String(b.creatorId), g);
+  }
+
+  if (byCreator.size === 1) {
+    const only = [...byCreator.values()][0];
+    await forwardUnclaimedProof(client, message.author, only.creatorId, files);
+    await message.reply(`✅ Bukti diterusin ke @${only.creatorName}. Tunggu dikonfirmasi ya!`);
+    return;
+  }
+
+  const token = Math.random().toString(36).slice(2, 10);
+  unclaimedProofs.set(token, { payerId: message.author.id, files, timestamp: Date.now() });
+  const options = [...byCreator.values()].slice(0, 25).map(g =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(`${g.creatorName} — Rp ${g.total.toLocaleString('id-ID')}`.slice(0, 100))
+      .setValue(g.creatorId)
+      .setDescription(`${g.count} tagihan belum lunas`)
+  );
+  await message.reply({
+    content: '📸 Bukti diterima! Kamu punya tagihan ke beberapa orang. Transfer ini buat siapa?',
+    components: [
+      new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId(`proof_creator|${token}`)
+          .setPlaceholder('Transfer ke siapa?')
+          .setMinValues(1)
+          .setMaxValues(1)
+          .addOptions(options)
+      ),
+    ],
+  });
+}
+
+async function handleProofCreatorSelect(interaction) {
+  const token = interaction.customId.split('|')[1];
+  const stored = unclaimedProofs.get(token);
+  if (!stored || Date.now() - stored.timestamp > CLAIM_TIMEOUT) {
+    unclaimedProofs.delete(token);
+    return interaction.update({ content: '❌ Udah kadaluarsa. Kirim ulang screenshot buktinya ya.', components: [] });
+  }
+  if (stored.payerId !== interaction.user.id) {
+    return interaction.reply({ content: '❌ Ini bukan bukti kamu.', ephemeral: true });
+  }
+  unclaimedProofs.delete(token);
+
+  const creatorId = interaction.values[0];
+  const ok = await forwardUnclaimedProof(interaction.client, interaction.user, creatorId, stored.files);
+  const name = collectUnpaidBillsAllGuilds(interaction.user).find(b => String(b.creatorId) === creatorId)?.creatorName || 'yang nagih';
+  return interaction.update({
+    content: ok ? `✅ Bukti diterusin ke @${name}. Tunggu dikonfirmasi ya!` : '❌ Gagal neruskan bukti. Coba kirim ulang, atau DM orangnya langsung.',
+    components: [],
+  });
+}
+
+function billOptions(bills, selected = new Set()) {
+  return bills.slice(0, 25).map(b =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(String(b.title).slice(0, 100))
+      .setValue(`${b.invoiceId}#${b.index}`)
+      .setDescription(`${b.date} · Rp ${b.amount.toLocaleString('id-ID')}`.slice(0, 100))
+      .setDefault(selected.has(`${b.invoiceId}#${b.index}`))
+  );
+}
+
+// Payer id and creator id ride in the customId, so these menus keep working
+// across restarts without a store.
+function unclaimedProofSelect(payerId, creatorId, bills, selected) {
+  return new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId(`proof_bills|${payerId}|${creatorId}`)
+      .setPlaceholder('Bukti ini buat tagihan yang mana?')
+      .setMinValues(1)
+      .setMaxValues(Math.min(bills.length, 25))
+      .addOptions(billOptions(bills, selected))
+  );
+}
+
+async function forwardUnclaimedProof(client, payer, creatorId, files) {
+  const bills = collectUnpaidBillsAllGuilds(payer).filter(b => String(b.creatorId) === String(creatorId));
+  if (bills.length === 0) return false;
+  try {
+    const creator = await client.users.fetch(creatorId);
+    const total = bills.reduce((s, b) => s + b.amount, 0);
+    let content = `📸 **Bukti transfer dari @${payer.username}**\n`;
+    content += `_Dikirim langsung tanpa \`/bayar\`, jadi Siggy gak tau ini buat tagihan yang mana._\n\n`;
+    content += `Tagihan dia ke kamu yang belum lunas: **${bills.length}**, total **Rp ${total.toLocaleString('id-ID')}**.\n`;
+    content += `Cocokin sama nominal di bukti, terus pilih tagihan yang dibayar.`;
+    if (bills.length > 25) content += `\n\n⚠️ _Cuma 25 tagihan terlama yang muat di pilihan._`;
+    await creator.send({
+      content,
+      files,
+      components: [
+        unclaimedProofSelect(payer.id, creatorId, bills, new Set()),
+        new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId(`proof_reject|${payer.id}|${creatorId}`)
+            .setLabel('❌ Bukan buat aku / salah')
+            .setStyle(ButtonStyle.Danger)
+        ),
+      ],
+    });
+    console.log(`[Payment Proof DM] Unclaimed proof from ${payer.username} forwarded to ${creatorId}`);
+    return true;
+  } catch (err) {
+    console.log(`[Payment Proof DM] Could not forward unclaimed proof:`, err.message);
+    return false;
+  }
+}
+
+/**
+ * Creator picked which bills the proof covers: turn the pick into an ordinary
+ * confirm token, so Confirm & Lunasi runs the same path as a /bayar claim.
+ */
+async function handleProofBillsSelect(interaction) {
+  const [, payerId, creatorId] = interaction.customId.split('|');
+  if (interaction.user.id !== creatorId) {
+    return interaction.reply({ content: '❌ Cuma yang nagih yang bisa milih ini.', ephemeral: true });
+  }
+
+  const payer = await interaction.client.users.fetch(payerId);
+  const open = collectUnpaidBillsAllGuilds(payer).filter(b => String(b.creatorId) === creatorId);
+  const picked = new Set(interaction.values);
+  const bills = open.filter(b => picked.has(`${b.invoiceId}#${b.index}`));
+  if (bills.length === 0) {
+    return interaction.update({ content: `${interaction.message.content}\n\n✅ Tagihan yang dipilih udah lunas semua.`, components: [] });
+  }
+
+  // Re-picking replaces the earlier choice, so drop the token it left behind.
+  for (const row of interaction.message.components || []) {
+    for (const c of row.components || []) {
+      if (c.customId?.startsWith('payment_confirm|')) confirmStore.delete(c.customId.split('|')[1]);
+    }
+  }
+
+  const itemMap = new Map();
+  for (const b of bills) {
+    const it = itemMap.get(b.invoiceId) || { invoiceId: b.invoiceId, indices: [], title: b.title, amount: 0 };
+    it.indices.push(b.index);
+    it.amount += b.amount;
+    itemMap.set(b.invoiceId, it);
+  }
+  const items = [...itemMap.values()];
+  const total = bills.reduce((s, b) => s + b.amount, 0);
+  const { getCanonicalName, readDB } = require('../utils/invoice-db.cjs');
+  const canon = getCanonicalName(bills[0].username || '', readDB()).trim();
+  const payerName = canon ? canon.charAt(0).toUpperCase() + canon.slice(1) : (bills[0].username || payer.username);
+
+  const token = Math.random().toString(36).slice(2, 10);
+  confirmStore.set(token, {
+    invoiceId: items[0].invoiceId,
+    indices: items[0].indices,
+    items,
+    participantUserId: payerId,
+    participantName: payerName,
+    amount: total,
+    payerId,
+    timestamp: Date.now(),
+  });
+
+  const base = interaction.message.content.split('\n\n**Dipilih:')[0];
+  return interaction.update({
+    content: `${base}\n\n**Dipilih: ${bills.length} tagihan — Rp ${total.toLocaleString('id-ID')}.** Kalau udah pas sama buktinya, pencet Confirm.`,
+    components: [
+      unclaimedProofSelect(payerId, creatorId, open, picked),
+      new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`payment_confirm|${token}`).setLabel(`✅ Confirm & Lunasi (${bills.length})`).setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`proof_reject|${payerId}|${creatorId}`).setLabel('❌ Bukan buat aku / salah').setStyle(ButtonStyle.Danger)
+      ),
+    ],
+  });
+}
+
+async function handleProofReject(interaction) {
+  const [, payerId, creatorId] = interaction.customId.split('|');
+  if (interaction.user.id !== creatorId) {
+    return interaction.reply({ content: '❌ Cuma yang nagih yang bisa nolak ini.', ephemeral: true });
+  }
+  for (const row of interaction.message.components || []) {
+    for (const c of row.components || []) {
+      if (c.customId?.startsWith('payment_confirm|')) confirmStore.delete(c.customId.split('|')[1]);
+    }
+  }
+  await interaction.update({ content: `${interaction.message.content.split('\n\n**Dipilih:')[0]}\n\n❌ Ditolak.`, components: [] });
+  try {
+    const payer = await interaction.client.users.fetch(payerId);
+    await payer.send(`⚠️ Bukti transfer kamu ditolak sama @${interaction.user.username}. Cek lagi nominal/tujuannya, atau hubungi orangnya langsung.`);
+  } catch (err) {
+    console.log(`[Payment] Could not notify payer of rejected proof:`, err.message);
+  }
+}
+
 /**
  * Handle payment proof DM (image attachment)
  */
@@ -753,24 +995,22 @@ async function handlePaymentProofDM(message, client) {
   console.log(`[Payment Proof DM] Received from ${message.author.username} (${message.author.id})`);
   console.log(`[Payment Proof DM] Attachments: ${message.attachments.size}, Stickers: ${message.stickers.size}`);
 
-  const pending = pendingClaims.get(message.author.id);
+  let pending = pendingClaims.get(message.author.id);
   console.log(`[Payment Proof DM] Pending claim:`, pending ? 'FOUND' : 'NOT FOUND');
 
-  // No pending claim, ignore
-  if (!pending) {
-    console.log(`[Payment Proof DM] No pending claim for ${message.author.id}. Did you complete all 3 forms?`);
-    return;
-  }
-  if (Date.now() - pending.timestamp > CLAIM_TIMEOUT) {
+  if (pending && Date.now() - pending.timestamp > CLAIM_TIMEOUT) {
     console.log(`[Payment Proof DM] Claim expired for ${message.author.id}`);
     pendingClaims.delete(message.author.id);
+    pending = null;
+  }
+  if (!pending) return handleUnclaimedProofDM(message, client);
+
+  // Text alone isn't a proof. Forwarding it used to burn the claim on a
+  // "bentar ya" and leave nothing for the screenshot that came after.
+  if (proofFiles(message).length === 0) {
+    await message.reply('Kirim **screenshot bukti transfernya** ya, bukan teks doang.');
     return;
   }
-
-  // Check if message has attachment or sticker
-  const hasImage =
-    message.attachments.size > 0 ||
-    message.stickers.size > 0;
 
   const invoice = getInvoice(pending.invoiceId);
   if (!invoice) {
@@ -1148,6 +1388,9 @@ module.exports = {
   handleBayarSelectBills,
   handleBayarConfirmBills,
   handlePaymentProofDM,
+  handleProofCreatorSelect,
+  handleProofBillsSelect,
+  handleProofReject,
   handlePaymentConfirm,
   getPaymentDisplay,
   paymentCommands,
@@ -1156,5 +1399,7 @@ module.exports = {
   // without going through Discord.
   __collectOwnUnpaidBills: collectOwnUnpaidBills,
   __confirmStore: confirmStore,
+  __unclaimedProofs: unclaimedProofs,
+  __collectUnpaidBillsAllGuilds: collectUnpaidBillsAllGuilds,
   __groupUnpaidByName: groupUnpaidByName,
 };
