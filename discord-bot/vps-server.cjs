@@ -1890,33 +1890,33 @@ const THANKS_PATTERN = new RegExp(
 
 // Words with their own reply (thanks-words.json "special"), e.g. bokur -> kek monyet.
 // Checked before the thanks list, so a message carrying both gets the special one.
+// A reply is sometimes one of the GIFs in its assets/<folder> instead of the text.
+const gifsIn = (folder) => {
+  const dir = require('path').join(__dirname, 'assets', folder);
+  try { return fs.readdirSync(dir).filter((f) => f.endsWith('.gif')).map((f) => require('path').join(dir, f)); }
+  catch { return []; }
+};
+const REPLY_GIF_CHANCE = 1 / 3;
 const SPECIAL_REPLIES = (THANKS_WORDS.special || []).map((s) => ({
   words: s.prefix.map((w) => w.toLowerCase()),
   pattern: new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${s.prefix.map(reEsc).join('|')})`, 'iu'),
   reply: s.reply,
+  gifs: s.gifs ? gifsIn(s.gifs) : [],
 }));
-const KEK_KEONG = 'kek keong \u{1F40C}';
-// The plain thanks reply is sometimes one of the animated snail GIFs instead of the text.
-const KEK_KEONG_DIR = require('path').join(__dirname, 'assets', 'kek-keong');
-const KEK_KEONG_GIFS = (() => {
-  try { return fs.readdirSync(KEK_KEONG_DIR).filter((f) => f.endsWith('.gif')).map((f) => require('path').join(KEK_KEONG_DIR, f)); }
-  catch { return []; }
-})();
-const KEK_KEONG_GIF_CHANCE = 1 / 3;
+const KEK_KEONG = { reply: 'kek keong \u{1F40C}', gifs: gifsIn('kek-keong') };
 
 // A non-admin writing "thx @Siggy" triggers both paths; reply once per message.
 const thanksReplied = new Set();
 
-async function replyKekKeong(channelOrId, messageId, content = KEK_KEONG) {
+async function replyKekKeong(channelOrId, messageId, { reply, gifs } = KEK_KEONG) {
   if (thanksReplied.has(messageId)) return;
   thanksReplied.add(messageId);
   if (thanksReplied.size > 500) thanksReplied.delete(thanksReplied.values().next().value);
   try {
     const channel = typeof channelOrId === 'string' ? await client.channels.fetch(channelOrId) : channelOrId;
-    const gif = content === KEK_KEONG && KEK_KEONG_GIFS.length && Math.random() < KEK_KEONG_GIF_CHANCE
-      ? KEK_KEONG_GIFS[Math.floor(Math.random() * KEK_KEONG_GIFS.length)] : null;
+    const gif = gifs.length && Math.random() < REPLY_GIF_CHANCE ? gifs[Math.floor(Math.random() * gifs.length)] : null;
     await channel.send({
-      ...(gif ? { files: [{ attachment: gif, name: 'kek-keong.gif' }] } : { content }),
+      ...(gif ? { files: [{ attachment: gif, name: require('path').basename(gif) }] } : { content: reply }),
       reply: { messageReference: messageId, failIfNotExists: false },
       allowedMentions: { repliedUser: false },
     });
@@ -1932,7 +1932,7 @@ client.on('autoModerationActionExecution', async (execution) => {
   // matchedKeyword is the rule keyword itself ("bokur*"), readable without Message Content.
   const kw = String(execution.matchedKeyword || '').replace(/\*/g, '').toLowerCase();
   const special = SPECIAL_REPLIES.find((s) => s.words.includes(kw));
-  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId, special?.reply);
+  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId, special);
 });
 
 client.on('messageCreate', async (message) => {
@@ -1966,7 +1966,7 @@ client.on('messageCreate', async (message) => {
   if (repliesThanksIn(message.guildId, message.channelId)) {
     const text = message.content.replace(/<@[!&]?\d+>/g, ' ');
     const special = SPECIAL_REPLIES.find((s) => s.pattern.test(text));
-    if (special) return replyKekKeong(message.channel, message.id, special.reply);
+    if (special) return replyKekKeong(message.channel, message.id, special);
     if (THANKS_PATTERN.test(text)) return replyKekKeong(message.channel, message.id);
   }
 

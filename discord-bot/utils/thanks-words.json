@@ -142,13 +142,14 @@
     "អរគុណ",
     "ကျေးဇူး"
   ],
-  "_note_special": "special = words that get their own reply instead of kek keong. Each entry's prefix words go into the same AutoMod rule as 'word*'.",
+  "_note_special": "special = words that get their own reply instead of kek keong. Each entry's prefix words go into the same AutoMod rule as 'word*'. gifs = folder under assets/ whose GIFs sometimes replace the text reply.",
   "special": [
     {
       "prefix": [
         "bokur"
       ],
-      "reply": "kek monyet 🐒"
+      "reply": "kek monyet 🐒",
+      "gifs": "kek-monyet"
     }
   ]
 }
