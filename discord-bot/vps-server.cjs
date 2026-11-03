@@ -1864,8 +1864,12 @@ client.on('interactionCreate', async (interaction) => {
 // server AutoMod keyword rule (alert-only, never blocks) matches thanks-style
 // words, and Discord hands us the match through AutoModerationActionExecution.
 // Rule "siggy-thanks" lives in Bang The Cry!; edit its keywords in Server Settings.
-const THANKS_RULE_ID = '1555130625898450974';
+// A server listed in THANKS_REPLY_GUILDS replies in every channel; its own rule id goes
+// in THANKS_RULE_IDS once Siggy has Manage Server there to create it.
+const THANKS_RULE_IDS = new Set(['1555130625898450974']);
 const THANKS_REPLY_CHANNELS = new Set(['1455014277847973984']); // #obrolan-pecundang
+const THANKS_REPLY_GUILDS = new Set(['1509843155963609118']); // Aku OnePieceTeRpadu... Season 2
+const repliesThanksIn = (guildId, channelId) => THANKS_REPLY_CHANNELS.has(channelId) || THANKS_REPLY_GUILDS.has(guildId);
 
 // AutoMod always skips members with Manage Server / Administrator, so for them
 // the same reply also fires when they @mention Siggy (mentions carry content).
@@ -1920,8 +1924,8 @@ async function replyKekKeong(channelOrId, messageId, content = KEK_KEONG) {
 
 client.on('autoModerationActionExecution', async (execution) => {
   // Discord fires one execution per rule action; the rule only has the alert action.
-  if (execution.ruleId !== THANKS_RULE_ID) return;
-  if (!THANKS_REPLY_CHANNELS.has(execution.channelId) || !execution.messageId) return;
+  if (!THANKS_RULE_IDS.has(execution.ruleId)) return;
+  if (!repliesThanksIn(execution.guild?.id, execution.channelId) || !execution.messageId) return;
   // matchedKeyword is the rule keyword itself ("bokur*"), readable without Message Content.
   const kw = String(execution.matchedKeyword || '').replace(/\*/g, '').toLowerCase();
   const special = SPECIAL_REPLIES.find((s) => s.words.includes(kw));
@@ -1956,7 +1960,7 @@ client.on('messageCreate', async (message) => {
   // were dragging the AI reply out on the whole channel.
   if (!message.mentions.has(client.user, { ignoreEveryone: true })) return;
 
-  if (THANKS_REPLY_CHANNELS.has(message.channelId)) {
+  if (repliesThanksIn(message.guildId, message.channelId)) {
     const text = message.content.replace(/<@[!&]?\d+>/g, ' ');
     const special = SPECIAL_REPLIES.find((s) => s.pattern.test(text));
     if (special) return replyKekKeong(message.channel, message.id, special.reply);
