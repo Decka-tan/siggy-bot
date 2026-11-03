@@ -1864,9 +1864,12 @@ client.on('interactionCreate', async (interaction) => {
 // server AutoMod keyword rule (alert-only, never blocks) matches thanks-style
 // words, and Discord hands us the match through AutoModerationActionExecution.
 // Rule "siggy-thanks" lives in Bang The Cry!; edit its keywords in Server Settings.
-// A server listed in THANKS_REPLY_GUILDS replies in every channel; its own rule id goes
-// in THANKS_RULE_IDS once Siggy has Manage Server there to create it.
-const THANKS_RULE_IDS = new Set(['1555130625898450974']);
+// A server listed in THANKS_REPLY_GUILDS replies in every channel and has its own copy of
+// the rule (scratchpad automod-clone.cjs), alerting into a hidden #siggy-log.
+const THANKS_RULE_IDS = new Set([
+  '1555130625898450974', // Bang The Cry!
+  '1567132667088998430', // Aku OnePieceTeRpadu... Season 2
+]);
 const THANKS_REPLY_CHANNELS = new Set(['1455014277847973984']); // #obrolan-pecundang
 const THANKS_REPLY_GUILDS = new Set(['1509843155963609118']); // Aku OnePieceTeRpadu... Season 2
 const repliesThanksIn = (guildId, channelId) => THANKS_REPLY_CHANNELS.has(channelId) || THANKS_REPLY_GUILDS.has(guildId);
