@@ -1881,17 +1881,26 @@ const THANKS_PATTERN = new RegExp(
   'iu'
 );
 
+// Words with their own reply (thanks-words.json "special"), e.g. bokur -> kek monyet.
+// Checked before the thanks list, so a message carrying both gets the special one.
+const SPECIAL_REPLIES = (THANKS_WORDS.special || []).map((s) => ({
+  words: s.prefix.map((w) => w.toLowerCase()),
+  pattern: new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${s.prefix.map(reEsc).join('|')})`, 'iu'),
+  reply: s.reply,
+}));
+const KEK_KEONG = 'kek keong \u{1F40C}';
+
 // A non-admin writing "thx @Siggy" triggers both paths; reply once per message.
 const thanksReplied = new Set();
 
-async function replyKekKeong(channelOrId, messageId) {
+async function replyKekKeong(channelOrId, messageId, content = KEK_KEONG) {
   if (thanksReplied.has(messageId)) return;
   thanksReplied.add(messageId);
   if (thanksReplied.size > 500) thanksReplied.delete(thanksReplied.values().next().value);
   try {
     const channel = typeof channelOrId === 'string' ? await client.channels.fetch(channelOrId) : channelOrId;
     await channel.send({
-      content: 'kek keong \u{1F40C}',
+      content,
       reply: { messageReference: messageId, failIfNotExists: false },
       allowedMentions: { repliedUser: false },
     });
@@ -1904,7 +1913,10 @@ client.on('autoModerationActionExecution', async (execution) => {
   // Discord fires one execution per rule action; the rule only has the alert action.
   if (execution.ruleId !== THANKS_RULE_ID) return;
   if (!THANKS_REPLY_CHANNELS.has(execution.channelId) || !execution.messageId) return;
-  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId);
+  // matchedKeyword is the rule keyword itself ("bokur*"), readable without Message Content.
+  const kw = String(execution.matchedKeyword || '').replace(/\*/g, '').toLowerCase();
+  const special = SPECIAL_REPLIES.find((s) => s.words.includes(kw));
+  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId, special?.reply);
 });
 
 client.on('messageCreate', async (message) => {
@@ -1935,9 +1947,11 @@ client.on('messageCreate', async (message) => {
   // were dragging the AI reply out on the whole channel.
   if (!message.mentions.has(client.user, { ignoreEveryone: true })) return;
 
-  if (THANKS_REPLY_CHANNELS.has(message.channelId)
-      && THANKS_PATTERN.test(message.content.replace(/<@[!&]?\d+>/g, ' '))) {
-    return replyKekKeong(message.channel, message.id);
+  if (THANKS_REPLY_CHANNELS.has(message.channelId)) {
+    const text = message.content.replace(/<@[!&]?\d+>/g, ' ');
+    const special = SPECIAL_REPLIES.find((s) => s.pattern.test(text));
+    if (special) return replyKekKeong(message.channel, message.id, special.reply);
+    if (THANKS_PATTERN.test(text)) return replyKekKeong(message.channel, message.id);
   }
 
   // Servers where AI chat replies are disabled (Siggy still runs slash commands
