@@ -1889,6 +1889,13 @@ const SPECIAL_REPLIES = (THANKS_WORDS.special || []).map((s) => ({
   reply: s.reply,
 }));
 const KEK_KEONG = 'kek keong \u{1F40C}';
+// The plain thanks reply is sometimes one of the animated snail GIFs instead of the text.
+const KEK_KEONG_DIR = require('path').join(__dirname, 'assets', 'kek-keong');
+const KEK_KEONG_GIFS = (() => {
+  try { return fs.readdirSync(KEK_KEONG_DIR).filter((f) => f.endsWith('.gif')).map((f) => require('path').join(KEK_KEONG_DIR, f)); }
+  catch { return []; }
+})();
+const KEK_KEONG_GIF_CHANCE = 1 / 3;
 
 // A non-admin writing "thx @Siggy" triggers both paths; reply once per message.
 const thanksReplied = new Set();
@@ -1899,8 +1906,10 @@ async function replyKekKeong(channelOrId, messageId, content = KEK_KEONG) {
   if (thanksReplied.size > 500) thanksReplied.delete(thanksReplied.values().next().value);
   try {
     const channel = typeof channelOrId === 'string' ? await client.channels.fetch(channelOrId) : channelOrId;
+    const gif = content === KEK_KEONG && KEK_KEONG_GIFS.length && Math.random() < KEK_KEONG_GIF_CHANCE
+      ? KEK_KEONG_GIFS[Math.floor(Math.random() * KEK_KEONG_GIFS.length)] : null;
     await channel.send({
-      content,
+      ...(gif ? { files: [{ attachment: gif, name: 'kek-keong.gif' }] } : { content }),
       reply: { messageReference: messageId, failIfNotExists: false },
       allowedMentions: { repliedUser: false },
     });
