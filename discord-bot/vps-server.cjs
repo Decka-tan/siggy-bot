@@ -1896,7 +1896,7 @@ const gifsIn = (folder) => {
   try { return fs.readdirSync(dir).filter((f) => f.endsWith('.gif')).map((f) => require('path').join(dir, f)); }
   catch { return []; }
 };
-const REPLY_GIF_CHANCE = 1 / 3;
+const REPLY_GIF_CHANCE = 1 / 2;
 const SPECIAL_REPLIES = (THANKS_WORDS.special || []).map((s) => ({
   words: s.prefix.map((w) => w.toLowerCase()),
   pattern: new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${s.prefix.map(reEsc).join('|')})`, 'iu'),
