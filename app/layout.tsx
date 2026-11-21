@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -30,6 +31,7 @@ export default function RootLayout({
             </ToastProvider>
           </SettingsProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
