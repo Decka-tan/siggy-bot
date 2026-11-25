@@ -212,6 +212,12 @@ async function processInvoiceCreateModal(interaction) {
     // Try to match participants to guild members for DM
     await matchParticipantsToGuild(finalInvoice, interaction.guild);
 
+    // Free lunch for a finished GIF card set (utils/gif-collection.cjs). Only Daffa's
+    // invoices in #invoice-makan-siang; marks the winner's row paid before rendering.
+    let rewards = [];
+    try { rewards = require('../utils/gif-collection.cjs').applyLunchRewards(finalInvoice); }
+    catch (e) { console.error(`[Invoice] GIF reward on ${finalInvoice.id} failed:`, e.message); }
+
     const embed = renderInvoiceEmbed(finalInvoice);
     const buttons = buildInvoiceComponents(finalInvoice.id);
 
@@ -221,6 +227,9 @@ async function processInvoiceCreateModal(interaction) {
         let extra = '';
         if (merged.length) extra += `\n🔗 Digabung: ${merged.join(', ')}`;
         if (unreadable.length) extra += `\n⚠️ Baris gak kebaca, cek lagi lalu pakai ➕ Add:\n${unreadable.map(l => `• \`${l.slice(0, 80)}\``).join('\n')}`;
+        for (const r of rewards) {
+          extra += `\n🍱 <@${r.userId}> gratis Rp ${r.amount.toLocaleString('id-ID')}: hadiah koleksi GIF ${r.category} lengkap`;
+        }
         return extra;
       })(),
       embeds: [embed],

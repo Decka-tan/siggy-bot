@@ -1912,24 +1912,64 @@ const SPECIAL_REPLIES = (THANKS_WORDS.special || []).map((s) => ({
   words: [...(s.prefix || []), ...(s.exact || []), ...(s.anywhere || [])].map((w) => w.toLowerCase()),
   pattern: wordsPattern(s),
   reply: s.reply,
+  folder: s.gifs || null,
   gifs: s.gifs ? gifsIn(s.gifs) : [],
 }));
-const KEK_KEONG = { reply: 'kek keong \u{1F40C}', gifs: gifsIn('kek-keong') };
+const KEK_KEONG = { reply: 'kek keong \u{1F40C}', folder: 'kek-keong', gifs: gifsIn('kek-keong') };
 
 // A non-admin writing "thx @Siggy" triggers both paths; reply once per message.
 const thanksReplied = new Set();
 
-async function replyKekKeong(channelOrId, messageId, { reply, gifs } = KEK_KEONG) {
+// Cooldown like Mudae: REPLY_LIMIT replies per person per window, the window resets
+// for everyone at the same clock time (every 3 h from 00:00 UTC). Once over, Siggy
+// says so once and then stays quiet until the reset. In memory; a restart resets it.
+const REPLY_LIMIT = 10;
+const REPLY_WINDOW_MS = 3 * 3600 * 1000;
+const replyUse = new Map(); // userId -> { window, n, warned }
+function takeReplySlot(userId) {
+  if (!userId) return { ok: true };
+  const window = Math.floor(Date.now() / REPLY_WINDOW_MS);
+  let u = replyUse.get(userId);
+  if (!u || u.window !== window) { u = { window, n: 0, warned: false }; replyUse.set(userId, u); }
+  if (u.n < REPLY_LIMIT) { u.n += 1; return { ok: true }; }
+  const resetAt = Math.floor(((window + 1) * REPLY_WINDOW_MS) / 1000);
+  if (u.warned) return { ok: false };
+  u.warned = true;
+  return { ok: false, warn: `⏳ jatah balesan Siggy lo abis (${REPLY_LIMIT}x per 3 jam), reset <t:${resetAt}:R>` };
+}
+
+const gifCollection = require('./utils/gif-collection.cjs');
+
+async function replyKekKeong(channelOrId, messageId, { reply, gifs, folder } = KEK_KEONG, user = {}) {
   if (thanksReplied.has(messageId)) return;
   thanksReplied.add(messageId);
   if (thanksReplied.size > 500) thanksReplied.delete(thanksReplied.values().next().value);
   try {
     const channel = typeof channelOrId === 'string' ? await client.channels.fetch(channelOrId) : channelOrId;
+    const slot = takeReplySlot(user.id);
+    if (!slot.ok) {
+      if (slot.warn) {
+        await channel.send({ content: slot.warn, reply: { messageReference: messageId, failIfNotExists: false }, allowedMentions: { repliedUser: false } });
+      }
+      return;
+    }
     const gif = gifs.length && Math.random() < REPLY_GIF_CHANCE ? gifs[Math.floor(Math.random() * gifs.length)] : null;
+    const gifName = gif ? require('path').basename(gif) : null;
+    // A shown GIF may drop as a collectible card (utils/gif-collection.cjs).
+    const card = gif && folder
+      ? gifCollection.maybeDropCard({ userId: user.id, username: user.username, category: folder, gifName, total: gifs.length })
+      : null;
+    let content;
+    if (card?.completed) {
+      content = `\u{1F389} <@${user.id}> koleksi **${reply}** lengkap ${card.total}/${card.total}! ` +
+        `makan siang berikutnya di invoice Daffa gratis \u{1F371}`;
+    } else if (card) {
+      content = `✨ kartu baru: **${reply}** ${card.count}/${card.total}`;
+    }
     await channel.send({
-      ...(gif ? { files: [{ attachment: gif, name: require('path').basename(gif) }] } : { content: reply }),
+      ...(gif ? { files: [{ attachment: gif, name: gifName }], ...(content ? { content } : {}) } : { content: reply }),
       reply: { messageReference: messageId, failIfNotExists: false },
-      allowedMentions: { repliedUser: false },
+      allowedMentions: card?.completed ? { users: [user.id], repliedUser: true } : { repliedUser: false },
     });
   } catch (e) {
     console.error('[Thanks Reply] Error:', e.message);
@@ -1943,7 +1983,8 @@ client.on('autoModerationActionExecution', async (execution) => {
   // matchedKeyword is the rule keyword itself ("bokur*"), readable without Message Content.
   const kw = String(execution.matchedKeyword || '').replace(/\*/g, '').toLowerCase();
   const special = SPECIAL_REPLIES.find((s) => s.words.includes(kw));
-  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId, special);
+  await replyKekKeong(execution.channel ?? execution.channelId, execution.messageId, special,
+    { id: execution.userId, username: execution.member?.user?.username });
 });
 
 client.on('messageCreate', async (message) => {
@@ -1977,8 +2018,9 @@ client.on('messageCreate', async (message) => {
   if (repliesThanksIn(message.guildId, message.channelId)) {
     const text = message.content.replace(/<@[!&]?\d+>/g, ' ');
     const special = SPECIAL_REPLIES.find((s) => s.pattern.test(text));
-    if (special) return replyKekKeong(message.channel, message.id, special);
-    if (THANKS_PATTERN.test(text)) return replyKekKeong(message.channel, message.id);
+    const who = { id: message.author.id, username: message.author.username };
+    if (special) return replyKekKeong(message.channel, message.id, special, who);
+    if (THANKS_PATTERN.test(text)) return replyKekKeong(message.channel, message.id, undefined, who);
   }
 
   // Servers where AI chat replies are disabled (Siggy still runs slash commands
