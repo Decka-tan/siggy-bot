@@ -1,5 +1,5 @@
 {
-  "_note": "Thanks words for the 'kek keong' reply. prefix = matches the start of a word (AutoMod 'word*'), exact = whole word only (AutoMod 'word'), anywhere = non-Latin scripts without spaces (AutoMod '*word*'). Left out on purpose because they collide with ordinary words: tak (ID 'not'), takk* (takkan), toda (ES 'all'), tack (EN), dank (EN slang), cam on (camera on), rahmat/rahmet (names), domo, spc.",
+  "_note": "Thanks words for the 'kek keong' reply. prefix = matches the start of a word (AutoMod 'word*'), exact = whole word only (AutoMod 'word'), anywhere = non-Latin scripts without spaces (AutoMod '*word*'). Left out on purpose because they collide with ordinary words: tak (ID 'not'), takk* (takkan), toda (ES 'all'), tack (EN), dank (EN slang), cam on (camera on), rahmat/rahmet (names), domo, spc. special = words with their own reply; the approval entry (ok, kk, acc, approve ...) answers with a clapping Siggy, short words are exact so 'ok' doesn't hit 'oktober'.",
   "prefix": [
     "thank",
     "thx",
@@ -150,6 +150,39 @@
       ],
       "reply": "kek monyet 🐒",
       "gifs": "kek-monyet"
+    },
+    {
+      "prefix": [
+        "approv",
+        "aprov",
+        "okok",
+        "okey",
+        "okay",
+        "okee",
+        "setuju",
+        "disetujui"
+      ],
+      "exact": [
+        "ok",
+        "oke",
+        "okeh",
+        "okk",
+        "oks",
+        "okie",
+        "kk",
+        "kkk",
+        "acc",
+        "sip",
+        "sipp",
+        "siap",
+        "gas",
+        "gass",
+        "deal",
+        "noted",
+        "yoi"
+      ],
+      "reply": "kek anjing laut 🦭",
+      "gifs": "tepuk-tangan"
     }
   ]
 }

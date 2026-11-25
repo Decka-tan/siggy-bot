@@ -1897,9 +1897,15 @@ const gifsIn = (folder) => {
   catch { return []; }
 };
 const REPLY_GIF_CHANCE = 1 / 2;
+// prefix = start of a word (AutoMod 'word*'), exact = whole word (AutoMod 'word'),
+// same meaning as the thanks list. Approval words (ok, kk, acc) must be exact.
+const wordsPattern = ({ prefix = [], exact = [] }) => new RegExp([
+  prefix.length && `(?:^|[^\\p{L}\\p{N}])(?:${prefix.map(reEsc).join('|')})`,
+  exact.length && `(?:^|[^\\p{L}\\p{N}])(?:${exact.map(reEsc).join('|')})(?=[^\\p{L}\\p{N}]|$)`,
+].filter(Boolean).join('|'), 'iu');
 const SPECIAL_REPLIES = (THANKS_WORDS.special || []).map((s) => ({
-  words: s.prefix.map((w) => w.toLowerCase()),
-  pattern: new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${s.prefix.map(reEsc).join('|')})`, 'iu'),
+  words: [...(s.prefix || []), ...(s.exact || [])].map((w) => w.toLowerCase()),
+  pattern: wordsPattern(s),
   reply: s.reply,
   gifs: s.gifs ? gifsIn(s.gifs) : [],
 }));
