@@ -20,7 +20,7 @@ const path = require('path');
 const { withFileLock, writeFileAtomic } = require('./file-lock.cjs');
 
 const DB_FILE = process.env.GIF_COLLECTION_DB_PATH || path.join(__dirname, '../data/gif-collection.json');
-const CARD_CHANCE = 1 / 8;
+const CARD_CHANCE = 1 / 20; // was 1/8; Daffa: "gede bgt" (25 Nov 2026)
 const LUNCH_REWARD = {
   creatorId: '392321900577161219', // decka_tan
   channelId: '1459522899932086420', // #invoice-makan-siang
