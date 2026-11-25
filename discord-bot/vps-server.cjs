@@ -1939,6 +1939,7 @@ function takeReplySlot(userId) {
 }
 
 const gifCollection = require('./utils/gif-collection.cjs');
+const CARD_DROP_CHANNEL = '1575118797596266516'; // #siggy-spam
 
 async function replyKekKeong(channelOrId, messageId, { reply, gifs, folder } = KEK_KEONG, user = {}) {
   if (thanksReplied.has(messageId)) return;
@@ -1956,8 +1957,9 @@ async function replyKekKeong(channelOrId, messageId, { reply, gifs, folder } = K
     const gif = gifs.length && Math.random() < REPLY_GIF_CHANCE ? gifs[Math.floor(Math.random() * gifs.length)] : null;
     const gifName = gif ? require('path').basename(gif) : null;
     // A shown GIF may drop as a collectible card (utils/gif-collection.cjs).
-    const card = gif && folder
-      ? gifCollection.maybeDropCard({ userId: user.id, username: user.username, category: folder, gifName, total: gifs.length })
+    // Cards drop only in #siggy-spam (Daffa, 25 Nov 2026); elsewhere the GIF is just a reply.
+    const card = gif && folder && channel.id === CARD_DROP_CHANNEL
+      ?gifCollection.maybeDropCard({ userId: user.id, username: user.username, category: folder, gifName, total: gifs.length })
       : null;
     let content;
     if (card?.completed) {
