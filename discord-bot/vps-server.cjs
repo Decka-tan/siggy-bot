@@ -1869,7 +1869,10 @@ client.on('interactionCreate', async (interaction) => {
 const THANKS_RULE_IDS = new Set([
   '1555130625898450974', // Bang The Cry!
 ]);
-const THANKS_REPLY_CHANNELS = new Set(['1455014277847973984']); // #obrolan-pecundang
+const THANKS_REPLY_CHANNELS = new Set([
+  '1455014277847973984', // #obrolan-pecundang
+  '1575118797596266516', // #siggy-spam
+]);
 // Aku OnePieceTeRpadu... Season 2 (1509843155963609118, rule 1567132667088998430) was turned off on 5 Nov 2026.
 const THANKS_REPLY_GUILDS = new Set([]);
 const repliesThanksIn = (guildId, channelId) => THANKS_REPLY_CHANNELS.has(channelId) || THANKS_REPLY_GUILDS.has(guildId);
