@@ -404,22 +404,6 @@ async function handleDeleteInvoiceSelect(interaction) {
 }
 
 /**
- * /invoice-clear modal: delete every invoice the user created
- */
-async function handleClearInvoiceModal(interaction) {
-  const confirm = interaction.fields.getTextInputValue('confirm').trim();
-  if (confirm !== 'DELETE') {
-    return interaction.reply({ content: '❌ Konfirmasi salah, gak ada yang dihapus. Ketik persis `DELETE`.', ephemeral: true });
-  }
-  const ids = getUserInvoices(interaction.user.id).map((i) => i.id);
-  const deleted = deleteOwnInvoices(interaction.user.id, ids, interaction.client);
-  return interaction.reply({
-    content: `🗑️ ${deleted.length} invoice dihapus. DM ke peserta diganti jadi "Invoice Dihapus".`,
-    ephemeral: true,
-  });
-}
-
-/**
  * Send DM notification when marked as paid
  */
 async function sendPaidNotification(invoice, participant, guild) {
@@ -1368,37 +1352,6 @@ async function handleInvoiceDelete(interaction) {
 }
 
 /**
- * /invoice-clear handler - Delete all invoices (with confirmation)
- */
-async function handleInvoiceClear(interaction) {
-  const invoices = getUserInvoices(interaction.user.id);
-
-  if (invoices.length === 0) {
-    return interaction.reply({
-      content: '📋 Belum ada invoice.',
-      ephemeral: true
-    });
-  }
-
-  const modal = new ModalBuilder()
-    .setCustomId('clear_invoice_modal')
-    .setTitle(safeModalTitle('🗑️ Hapus Semua Invoice', 'Hapus Semua Invoice'));
-
-  const confirmInput = new TextInputBuilder()
-    .setCustomId('confirm')
-    .setLabel(safeInputLabel(`Ketik "DELETE" untuk menghapus ${invoices.length} invoice`, 'Ketik DELETE untuk konfirmasi'))
-    .setPlaceholder(safeInputPlaceholder('DELETE'))
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true)
-    .setMaxLength(10);
-
-  const row = new ActionRowBuilder().addComponents(confirmInput);
-  modal.addComponents(row);
-
-  await interaction.showModal(modal);
-}
-
-/**
  * /invoice-search handler - Search invoices with filters (PER-SERVER)
  */
 async function handleInvoiceSearch(interaction) {
@@ -1858,10 +1811,6 @@ const invoiceCommandsSimple = [
     description: 'Hapus invoice (pilih dari daftar)',
   },
   {
-    name: 'invoice-clear',
-    description: 'Hapus SEMUA invoice',
-  },
-  {
     name: 'invoice-owe',
     description: 'Cek hutang yang belum kamu bayar',
   },
@@ -2008,7 +1957,6 @@ module.exports = {
   handleAnalyticsPagination,
   handleInvoiceDelete,
   handleDeleteInvoiceSelect,
-  handleClearInvoiceModal,
   handleInvoiceOwe,
   handleInvoiceMerge,
   handleFindDebtSelect,

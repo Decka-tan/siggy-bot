@@ -89,7 +89,6 @@ const {
   handleInvoiceAnalytics,
   handleInvoiceDelete,
   handleDeleteInvoiceSelect,
-  handleClearInvoiceModal,
   handleInvoiceOwe,
   handleInvoiceMerge,
   handleAnalyticsPagination,
@@ -1839,7 +1838,6 @@ client.on('interactionCreate', async (interaction) => {
         return handleInvoiceEditSubmit(interaction);
       }
       if (customId === 'payment_set_modal') return processPaymentSetModal(interaction);
-      if (customId === 'clear_invoice_modal') return handleClearInvoiceModal(interaction);
       return;
     }
 
