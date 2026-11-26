@@ -88,6 +88,8 @@ const {
   handleInvoiceSearch,
   handleInvoiceAnalytics,
   handleInvoiceDelete,
+  handleDeleteInvoiceSelect,
+  handleClearInvoiceModal,
   handleInvoiceOwe,
   handleInvoiceMerge,
   handleAnalyticsPagination,

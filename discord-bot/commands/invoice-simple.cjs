@@ -341,20 +341,15 @@ async function matchParticipantsToGuild(invoice, guild) {
  * Send DM notifications to invoice participants
  */
 async function sendInvoiceNotifications(invoice, guild) {
+  const { newInvoiceText } = require('../utils/invoice-dm.cjs');
+  const notices = [];
   for (const participant of invoice.participants) {
     if (participant.userId && participant.userId.startsWith && !participant.userId.startsWith('unknown_')) {
       try {
         const user = await guild.client.users.fetch(participant.userId);
         if (user && !user.bot) {
-          const amount = isNaN(participant.amount) ? 0 : participant.amount;
-          await user.send({
-            content: `🧾 **Invoice Baru!**\n\n` +
-              `Kamu ditambahkan ke invoice: **${invoice.title || 'Untitled'}**\n` +
-              `💰 Jumlah: Rp ${amount.toLocaleString('id-ID')}\n` +
-              `📅 Tanggal: ${invoice.date}\n` +
-              `👤 Dibuat oleh: ${invoice.creator.username}\n\n` +
-              `_Silakan lunasi secepatnya. Terima kasih!_`
-          });
+          const sent = await user.send({ content: newInvoiceText(invoice, participant.amount) });
+          notices.push({ userId: participant.userId, channelId: sent.channelId, messageId: sent.id });
         }
       } catch (err) {
         // User has DMs disabled or doesn't exist, skip
@@ -362,6 +357,66 @@ async function sendInvoiceNotifications(invoice, guild) {
       }
     }
   }
+  // Remember where each DM went so deleting the invoice can edit them.
+  if (notices.length) {
+    try {
+      require('../utils/invoice-db.cjs').updateDB((data) => {
+        const inv = data.invoices[invoice.id];
+        if (!inv) return false;
+        inv.dmNotices = [...(inv.dmNotices || []), ...notices];
+      });
+    } catch (err) {
+      console.log(`[Invoice] Could not store DM ids for ${invoice.id}:`, err.message);
+    }
+  }
+}
+
+/**
+ * Delete invoices the user created and mark their "Invoice Baru" DMs as cancelled.
+ * Returns the deleted invoices.
+ */
+function deleteOwnInvoices(userId, invoiceIds, client) {
+  const { retractInvoiceNotices } = require('../utils/invoice-dm.cjs');
+  const deleted = [];
+  for (const id of invoiceIds) {
+    const inv = getInvoice(id);
+    if (!inv || inv.creator?.id !== userId) continue;
+    if (deleteInvoice(id).success) deleted.push(inv);
+  }
+  // DMs are edited in the background; the interaction must answer within 3 s.
+  (async () => {
+    for (const inv of deleted) await retractInvoiceNotices(client, inv);
+  })().catch((err) => console.error('[Invoice] DM retract failed:', err));
+  return deleted;
+}
+
+/**
+ * /invoice-delete select menu
+ */
+async function handleDeleteInvoiceSelect(interaction) {
+  const deleted = deleteOwnInvoices(interaction.user.id, interaction.values || [], interaction.client);
+  return interaction.update({
+    content: deleted.length
+      ? `🗑️ ${deleted.length} invoice dihapus:\n${deleted.map((i) => `• ${i.title || 'Untitled'} (${i.date})`).join('\n')}\n_DM ke peserta diganti jadi "Invoice Dihapus"._`
+      : '❌ Gak ada invoice yang kehapus (udah dihapus, atau bukan punya lo).',
+    components: [],
+  });
+}
+
+/**
+ * /invoice-clear modal: delete every invoice the user created
+ */
+async function handleClearInvoiceModal(interaction) {
+  const confirm = interaction.fields.getTextInputValue('confirm').trim();
+  if (confirm !== 'DELETE') {
+    return interaction.reply({ content: '❌ Konfirmasi salah, gak ada yang dihapus. Ketik persis `DELETE`.', ephemeral: true });
+  }
+  const ids = getUserInvoices(interaction.user.id).map((i) => i.id);
+  const deleted = deleteOwnInvoices(interaction.user.id, ids, interaction.client);
+  return interaction.reply({
+    content: `🗑️ ${deleted.length} invoice dihapus. DM ke peserta diganti jadi "Invoice Dihapus".`,
+    ephemeral: true,
+  });
 }
 
 /**
@@ -817,11 +872,11 @@ async function handleInvoiceButton(interaction, action) {
       return interaction.showModal(modal);
 
     } else if (action === 'delete') {
-      const result = deleteInvoice(invoiceId);
+      const deleted = deleteOwnInvoices(interaction.user.id, [invoice.id], interaction.client);
 
-      if (!result.success) {
+      if (!deleted.length) {
         return interaction.reply({
-          content: `❌ Error: ${result.error}`,
+          content: '❌ Error: Invoice not found',
           ephemeral: true
         });
       }
@@ -1952,6 +2007,8 @@ module.exports = {
   handleInvoiceAnalytics,
   handleAnalyticsPagination,
   handleInvoiceDelete,
+  handleDeleteInvoiceSelect,
+  handleClearInvoiceModal,
   handleInvoiceOwe,
   handleInvoiceMerge,
   handleFindDebtSelect,
